@@ -18,23 +18,6 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Guia** com as regras da ficha e as fontes científicas.
 - **Backup** em JSON (exportar/importar) e exportação das séries em CSV.
 
-## Como eu publico (GitHub Pages)
-
-1. Criei um repositório vazio no GitHub chamado `augment`.
-2. Na pasta do projeto:
-   ```bash
-   git init
-   git add .
-   git commit -m "AUGMENT 1.0"
-   git branch -M main
-   git remote add origin https://github.com/igordev-exe/augment.git
-   git push -u origin main
-   ```
-3. No GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Espero a aba **Actions** terminar (≈1 min). O app fica em `https://igordev-exe.github.io/augment/`.
-
-Cada `git push` na `main` roda os testes e publica de novo.
-
 ## Como eu instalo no celular
 
 - **Android (Chrome):** abro o link → menu ⋮ → **Instalar app**.
