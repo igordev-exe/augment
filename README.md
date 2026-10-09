@@ -1,63 +1,64 @@
 # AUGMENT
 
-App web pessoal para rodar o **Programa de Hipertrofia v2** (Push A / Pull A / Lower A / Upper B / Lower B) no celular, durante o treino,
-com estética cyberpunk. Funciona offline, instala na tela inicial e guarda tudo no próprio aparelho.
+Meu app de treino. Fiz para rodar o meu **Programa de Hipertrofia v2** (Push A / Pull A / Lower A / Upper B / Lower B) no celular,
+durante o treino, com estética cyberpunk. Funciona offline, fica instalado na minha tela inicial e guarda tudo no próprio aparelho.
 
-## O que tem
+## O que ele faz
 
-- **Treino do dia** pela agenda da ficha. Se você perder um dia, a sequência é empurrada, não pulada.
-- **Registro de carga** série por série: peso, reps, aquecimento, unidade kg/lb por exercício.
-- **Sugestão de progressão** (dupla progressão com carga fixa): manter com meta de reps, subir ou baixar, com a última vez ao lado.
-- **−15% automático**: se uma série cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
+- **Treino do dia** pela agenda da minha ficha. Se eu perder um dia, a sequência é empurrada, não pulada.
+- **Registro de carga** série por série: peso, reps, aquecimento e unidade kg/lb por exercício.
+- **Sugestão de progressão** (dupla progressão com carga fixa): manter com meta de reps, subir ou baixar, com a minha última vez ao lado.
+- **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.
-- **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga, avisos de recorde ao concluir o treino.
-- **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta da ficha, treinos por semana.
-- **Biblioteca** dos 34 exercícios: preparação, execução, erros comuns, por que está na ficha, alternativas, busca de vídeo e o seu vídeo de referência embutido.
+- **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga e aviso quando eu bato um recorde ao concluir o treino.
+- **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta da ficha e treinos por semana.
+- **Biblioteca** dos 34 exercícios da ficha: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.
 - **Guia** com as regras da ficha e as fontes científicas.
 - **Backup** em JSON (exportar/importar) e exportação das séries em CSV.
 
-## Publicar no GitHub Pages (5 minutos)
+## Como eu publico (GitHub Pages)
 
-1. Crie um repositório vazio no GitHub (ex.: `augment`). Pode ser público ou privado (veja "Privacidade").
+1. Criei um repositório vazio no GitHub chamado `augment`.
 2. Na pasta do projeto:
    ```bash
    git init
    git add .
    git commit -m "AUGMENT 1.0"
    git branch -M main
-   git remote add origin https://github.com/SEU-USUARIO/augment.git
+   git remote add origin https://github.com/igordev-exe/augment.git
    git push -u origin main
    ```
 3. No GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Aguarde a aba **Actions** terminar (≈1 min). O app fica em `https://SEU-USUARIO.github.io/augment/`.
+4. Espero a aba **Actions** terminar (≈1 min). O app fica em `https://igordev-exe.github.io/augment/`.
 
 Cada `git push` na `main` roda os testes e publica de novo.
 
-## Instalar no celular
+## Como eu instalo no celular
 
-- **Android (Chrome):** abra o link → menu ⋮ → **Instalar app**.
-- **iPhone (Safari):** abra o link → Compartilhar → **Adicionar à Tela de Início**.
+- **Android (Chrome):** abro o link → menu ⋮ → **Instalar app**.
+- **iPhone (Safari):** abro o link → Compartilhar → **Adicionar à Tela de Início**.
 
-Depois de aberto uma vez, funciona sem internet.
+Depois de aberto uma vez, funciona sem internet, inclusive na academia sem sinal.
 
-## Seus dados
+## Meus dados
 
-Os treinos ficam no IndexedDB do navegador do celular. Nada vai para servidor.
+Os meus treinos ficam no IndexedDB do navegador do celular. Nada vai para servidor.
 
-- Exporte um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar dados do navegador.
+- Exporto um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar os dados do navegador.
 - O CSV de séries abre em qualquer planilha.
 
 ## Privacidade
 
-O código e a ficha (incluindo as metas de dieta do guia) ficam visíveis se o repositório for público. Seus registros de treino **não** vão para o repositório.
+Com o repositório público, o código e a minha ficha (incluindo as metas de dieta do guia) ficam visíveis. Os meus registros de treino
+**não** vão para o repositório.
 
-Para deixar o repositório privado: GitHub Pages em repositório privado exige GitHub Pro, que é grátis para estudantes pelo
-[GitHub Student Developer Pack](https://education.github.com/pack). Outra opção gratuita é conectar o repositório privado à Vercel, Netlify ou
-Cloudflare Pages (build: `npm run build`, pasta: `dist`).
+Se eu quiser deixar o repositório privado: GitHub Pages em repositório privado exige GitHub Pro, que é grátis para estudantes pelo
+[GitHub Student Developer Pack](https://education.github.com/pack). Outra opção gratuita é conectar o repositório privado à Vercel, Netlify
+ou Cloudflare Pages (build: `npm run build`, pasta: `dist`).
 
-## Mudar o programa
+## Como eu mudo o programa
 
 Tudo da ficha está em `src/data/program.ts` (séries, reps, descanso, até onde ir, ▲, intensificadores, dicas) e a biblioteca em
 `src/data/library.ts`. As regras do mesociclo estão em `src/lib/mesocycle.ts` e a progressão em `src/lib/progression.ts`.
@@ -86,4 +87,5 @@ Stack: React 18, TypeScript, Vite, Dexie (IndexedDB), vite-plugin-pwa. Gráficos
 
 ---
 
-Orientação geral baseada em literatura pública. Não substitui avaliação de médico, nutricionista ou educador físico.
+Este é o meu treino pessoal, montado a partir de literatura pública. Não é recomendação para outras pessoas e não substitui avaliação
+de médico, nutricionista ou educador físico.
