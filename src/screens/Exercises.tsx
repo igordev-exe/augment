@@ -12,7 +12,11 @@ export function Exercises() {
 
   return (
     <div className="stack-lg">
-      <PageHead code="AUG.OS // BANCO DE MÓDULOS" title="Exercícios" sub="Execução, erros comuns, vídeo e progresso de cada exercício da ficha." />
+      <PageHead
+        code="AUG.OS // BANCO DE MÓDULOS"
+        title="Exercícios"
+        sub="Execução, erros comuns, vídeo e progresso de cada exercício da ficha."
+      />
       <input
         className="input"
         type="search"

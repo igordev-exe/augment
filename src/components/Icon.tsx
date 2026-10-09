@@ -6,12 +6,10 @@ type Name =
   | "chart"
   | "book"
   | "guide"
-  | "gear"
   | "check"
   | "back"
   | "chev"
   | "plus"
-  | "play"
   | "repeat"
   | "trophy"
   | "video"
@@ -69,13 +67,6 @@ export function Icon({ name, size = 22 }: { name: Name; size?: number }) {
           <path d="M12 11v5M12 8h.01" />
         </svg>
       );
-    case "gear":
-      return (
-        <svg {...p}>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z" />
-        </svg>
-      );
     case "check":
       return (
         <svg {...p} strokeWidth={2.4}>
@@ -98,12 +89,6 @@ export function Icon({ name, size = 22 }: { name: Name; size?: number }) {
       return (
         <svg {...p}>
           <path d="M12 5v14M5 12h14" />
-        </svg>
-      );
-    case "play":
-      return (
-        <svg {...p}>
-          <path d="M7 5l12 7-12 7V5z" />
         </svg>
       );
     case "repeat":

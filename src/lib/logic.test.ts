@@ -65,26 +65,72 @@ describe("dupla progressão", () => {
   });
 
   it("todas no topo → sobe", () => {
-    const s = suggest(hack, entry(hack.id, [[120, 10], [120, 10], [120, 10], [120, 10]]), 4, 3, 5);
+    const s = suggest(
+      hack,
+      entry(hack.id, [
+        [120, 10],
+        [120, 10],
+        [120, 10],
+        [120, 10],
+      ]),
+      4,
+      3,
+      5,
+    );
     expect(s.kind).toBe("up");
     expect(s.weight).toBe(125);
   });
 
   it("dentro da faixa → mantém e busca +1 rep", () => {
-    const s = suggest(hack, entry(hack.id, [[120, 8], [120, 7], [120, 7], [120, 6]]), 4, 3, 5);
+    const s = suggest(
+      hack,
+      entry(hack.id, [
+        [120, 8],
+        [120, 7],
+        [120, 7],
+        [120, 6],
+      ]),
+      4,
+      3,
+      5,
+    );
     expect(s.kind).toBe("same");
     expect(s.weight).toBe(120);
     expect(s.targets).toEqual([9, 8, 8, 7]);
   });
 
   it("1ª série abaixo do piso → baixa ~10%", () => {
-    const s = suggest(hack, entry(hack.id, [[140, 4], [140, 3]]), 4, 3, 5);
+    const s = suggest(
+      hack,
+      entry(hack.id, [
+        [140, 4],
+        [140, 3],
+      ]),
+      4,
+      3,
+      5,
+    );
     expect(s.kind).toBe("down");
     expect(s.weight).toBe(125);
   });
 
   it("usou −15% → não sobe ainda", () => {
-    const s = suggest(hack, entry(hack.id, [[120, 10], [120, 10], [120, 10], [102.5, 10]], ["work", "work", "work", "drop"]), 4, 3, 5);
+    const s = suggest(
+      hack,
+      entry(
+        hack.id,
+        [
+          [120, 10],
+          [120, 10],
+          [120, 10],
+          [102.5, 10],
+        ],
+        ["work", "work", "work", "drop"],
+      ),
+      4,
+      3,
+      5,
+    );
     expect(s.kind).toBe("same");
   });
 
@@ -94,8 +140,18 @@ describe("dupla progressão", () => {
 });
 
 describe("recordes", () => {
-  const a = session("a", "2026-09-24", "lower-a", [entry(hack.id, [[120, 6], [110, 8]])]);
-  const b = session("b", "2026-10-01", "lower-a", [entry(hack.id, [[120, 8], [125, 5]])]);
+  const a = session("a", "2026-09-24", "lower-a", [
+    entry(hack.id, [
+      [120, 6],
+      [110, 8],
+    ]),
+  ]);
+  const b = session("b", "2026-10-01", "lower-a", [
+    entry(hack.id, [
+      [120, 8],
+      [125, 5],
+    ]),
+  ]);
 
   it("calcula recordes", () => {
     const r = recordsOf(historyOf([a, b], hack.id));

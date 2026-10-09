@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
-import { CyberFigure } from "../components/CyberFigure";
 import { Icon } from "../components/Icon";
 import { DAY_BY_ID, PROGRAM } from "../data/program";
 import type { Session } from "../data/types";
@@ -93,13 +92,15 @@ export function Today() {
             <span className="status-dot ok" /> Local / ativo
           </span>
           <Link to="/ajustes" className="avatar" aria-label="Ajustes e perfil">
-            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={34} height={34} />
+            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={48} height={48} />
           </Link>
         </div>
       </header>
 
       <div className="stack" style={{ gap: 8 }}>
-        <div className="eyebrow">Sistema online / {weekdayName(today)}, {shortDate(today)}</div>
+        <div className="eyebrow">
+          Sistema online / {weekdayName(today)}, {shortDate(today)}
+        </div>
         <p className="h-hero" aria-hidden="true">
           Beyond
           <br />
@@ -111,7 +112,12 @@ export function Today() {
       </div>
 
       {active && (
-        <Link to={`/treino/${active.id}`} data-augmented-ui="tl-clip br-clip border" className="card hot" style={{ textDecoration: "none" }}>
+        <Link
+          to={`/treino/${active.id}`}
+          data-augmented-ui="tl-clip br-clip border"
+          className="card hot"
+          style={{ textDecoration: "none" }}
+        >
           <div className="spread">
             <div>
               <div className="label">Missão em andamento</div>
@@ -132,7 +138,9 @@ export function Today() {
       {!active && (
         <section className="stack">
           <div data-augmented-ui="tl-clip br-clip border" className="mission">
-            <CyberFigure className="figure" />
+            <img className="figure" src={`${import.meta.env.BASE_URL}hero.webp`} alt="" width={720} height={720} decoding="async" />
+            <span className="shade" aria-hidden="true" />
+            <span className="hatch" aria-hidden="true" />
             <div className="mission-top">
               <span className="mission-tag">{missionLabel}</span>
               <span className="mission-code">EXO.PROTOCOL / {day.code}</span>
@@ -170,9 +178,7 @@ export function Today() {
             </button>
           ) : (
             <div data-augmented-ui="tl-clip br-clip border" className="card flat stack">
-              <div className="small muted">
-                A sequência não pula treino: se faltar um dia, o próximo continua de onde parou.
-              </div>
+              <div className="small muted">A sequência não pula treino: se faltar um dia, o próximo continua de onde parou.</div>
               <div className="row-wrap">
                 {PROGRAM.map((d) => (
                   <button
@@ -233,15 +239,21 @@ export function Today() {
         <div data-augmented-ui="br-clip border" className="stats">
           <div className="stat">
             <span className="label">Compostos</span>
-            <span className="small" style={{ fontWeight: 600 }}>{rule.compounds}</span>
+            <span className="small" style={{ fontWeight: 600 }}>
+              {rule.compounds}
+            </span>
           </div>
           <div className="stat">
             <span className="label">Isolados</span>
-            <span className="small" style={{ fontWeight: 600 }}>{rule.isolations}</span>
+            <span className="small" style={{ fontWeight: 600 }}>
+              {rule.isolations}
+            </span>
           </div>
           <div className="stat">
             <span className="label">Intensif.</span>
-            <span className="small" style={{ fontWeight: 600 }}>{rule.intensifierLabel}</span>
+            <span className="small" style={{ fontWeight: 600 }}>
+              {rule.intensifierLabel}
+            </span>
           </div>
         </div>
       </section>
@@ -270,7 +282,11 @@ export function Today() {
               <div key={d} className="day-cell">
                 <span>{weekdayShort(wd)}</span>
                 {done ? (
-                  <Link to={`/treino/${done.id}`} data-augmented-ui="tl-clip br-clip border" className={`day-dot ${cls}${d === today ? " today" : ""}`}>
+                  <Link
+                    to={`/treino/${done.id}`}
+                    data-augmented-ui="tl-clip br-clip border"
+                    className={`day-dot ${cls}${d === today ? " today" : ""}`}
+                  >
                     {inner}
                   </Link>
                 ) : (

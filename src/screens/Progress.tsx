@@ -71,7 +71,10 @@ export function Progress() {
         <h2 className="h-sec">Treinos por semana</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6, alignItems: "end", height: 110 }}>
           {perWeek.map((p) => (
-            <div key={p.w} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
+            <div
+              key={p.w}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}
+            >
               <span className="tiny num muted">{p.n}</span>
               <span
                 title={`${p.n} treinos na semana de ${shortDate(p.w)}`}

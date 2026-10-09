@@ -16,6 +16,7 @@ import {
   increaseStep,
   mainLoad,
   prsInSession,
+  revertBackoff,
   suggest,
   summarizeSets,
   type PR,
@@ -166,6 +167,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
   async function finish() {
     const next = (await db.sessions.get(session.id)) ?? clone(session);
+    const doneSets = next.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done && s.kind !== "warmup").length, 0);
+    if (doneSets === 0) {
+      toast("Nenhuma série de trabalho marcada. Marque pelo menos uma série ou descarte o treino.");
+      return;
+    }
     next.exercises = next.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) }));
     next.status = "done";
     next.finishedAt = Date.now();
@@ -208,7 +214,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           <>
             {longDate(session.date)}. {rule.label}
             {week < 7 ? " de 6" : ""}.{" "}
-            {isActive ? `Em andamento há ${formatDuration(Date.now() - session.startedAt)}.` : `Concluído em ${formatDuration(stats.duration)}.`}
+            {isActive
+              ? `Em andamento há ${formatDuration(Date.now() - session.startedAt)}.`
+              : `Concluído em ${formatDuration(stats.duration)}.`}
           </>
         }
       />
@@ -223,11 +231,17 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             </div>
             <div data-augmented-ui="tl-clip border" className="tile">
               <span className="label">Duração</span>
-              <span className="v">{Math.round(stats.duration / 60000)}<small> min</small></span>
+              <span className="v">
+                {Math.round(stats.duration / 60000)}
+                <small> min</small>
+              </span>
             </div>
             <div data-augmented-ui="tl-clip border" className="tile">
               <span className="label">Volume</span>
-              <span className="v">{(stats.volumeKg / 1000).toFixed(1).replace(".", ",")}<small> t</small></span>
+              <span className="v">
+                {(stats.volumeKg / 1000).toFixed(1).replace(".", ",")}
+                <small> t</small>
+              </span>
             </div>
           </div>
           {prs.length > 0 && (
@@ -308,7 +322,12 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
       {!isActive && session.exercises.some((e) => !e.sets.length) && (
         <p className="small faint">
-          Sem registro neste treino: {session.exercises.filter((e) => !e.sets.length).map((e) => shortName(EXERCISE_BY_ID[e.exId])).join(", ")}.
+          Sem registro neste treino:{" "}
+          {session.exercises
+            .filter((e) => !e.sets.length)
+            .map((e) => shortName(EXERCISE_BY_ID[e.exId]))
+            .join(", ")}
+          .
         </p>
       )}
 
@@ -346,7 +365,12 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               </div>
             </div>
           ) : (
-            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => setConfirm("discard")}>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-ghost"
+              onClick={() => setConfirm("discard")}
+            >
               Descartar treino
             </button>
           )}
@@ -378,7 +402,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
 export function shortName(ex: ProgramExercise | undefined): string {
   if (!ex) return "";
-  return ex.name.replace(/^A[12] · /, "").replace(/\s*\(.*?\)\s*/g, " ").replace(/ · .*/, "").trim();
+  return ex.name
+    .replace(/^A[12] · /, "")
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .replace(/ · .*/, "")
+    .trim();
 }
 
 // ---------- Exercício ----------
@@ -425,7 +453,9 @@ function ExerciseBlock({
   function setSet(setId: string, patch: Partial<SetEntry>) {
     mutate((e) => {
       const s = e.sets.find((x) => x.id === setId);
-      if (s) Object.assign(s, patch);
+      if (!s) return;
+      Object.assign(s, patch);
+      if ("reps" in patch && s.done) revertBackoff(e, ex.reps[0]);
     });
   }
 
@@ -444,6 +474,7 @@ function ExerciseBlock({
       } else {
         s.done = false;
         s.doneAt = undefined;
+        revertBackoff(e, ex.reps[0]);
       }
     });
     if (fresh && becameDone) onSetDone(fresh, setId);
@@ -480,9 +511,7 @@ function ExerciseBlock({
             {ex.perSide ? " por lado" : ""}, {stop.label.toLowerCase()}
           </span>
         </span>
-        <span className="ex-count">
-          {complete ? <Icon name="check" size={20} /> : `${workDone}/${workAll.length}`}
-        </span>
+        <span className="ex-count">{complete ? <Icon name="check" size={20} /> : `${workDone}/${workAll.length}`}</span>
       </button>
 
       {open && (
@@ -507,11 +536,29 @@ function ExerciseBlock({
           </div>
 
           <div className="row-wrap">
-            <span data-augmented-ui="br-clip border" className="chip">Desce 2–3 s, sobe rápido</span>
-            {ex.tempo && <span data-augmented-ui="br-clip border" className="chip">{ex.tempo}</span>}
-            {showInt && <span data-augmented-ui="br-clip border" className="chip int">{ex.intensifier}</span>}
-            {ex.superset && <span data-augmented-ui="br-clip border" className="chip">Superset {ex.superset.order === 1 ? "com A2" : "com A1"}</span>}
-            {ex.changed && <span data-augmented-ui="br-clip border" className="chip changed">Mudou na v2: {ex.changed}</span>}
+            <span data-augmented-ui="br-clip border" className="chip">
+              Desce 2–3 s, sobe rápido
+            </span>
+            {ex.tempo && (
+              <span data-augmented-ui="br-clip border" className="chip">
+                {ex.tempo}
+              </span>
+            )}
+            {showInt && (
+              <span data-augmented-ui="br-clip border" className="chip int">
+                {ex.intensifier}
+              </span>
+            )}
+            {ex.superset && (
+              <span data-augmented-ui="br-clip border" className="chip">
+                Superset {ex.superset.order === 1 ? "com A2" : "com A1"}
+              </span>
+            )}
+            {ex.changed && (
+              <span data-augmented-ui="br-clip border" className="chip changed">
+                Mudou na v2: {ex.changed}
+              </span>
+            )}
           </div>
 
           {active && (
@@ -546,7 +593,7 @@ function ExerciseBlock({
             {entry.sets.map((s) => {
               const isWork = s.kind !== "warmup";
               const n = isWork ? ++workCounter : 0;
-              const repsPh = isWork ? sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0] : 8;
+              const repsPh = isWork ? (sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0]) : 8;
               const weightPh = isWork ? sug.weight : null;
               return (
                 <SetRow
@@ -568,10 +615,20 @@ function ExerciseBlock({
               <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm" onClick={() => addSet("work")}>
                 <Icon name="plus" size={16} /> Série
               </button>
-              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost" onClick={() => addSet("warmup")}>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm btn-ghost"
+                onClick={() => addSet("warmup")}
+              >
                 <Icon name="plus" size={16} /> Aquecimento
               </button>
-              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost" onClick={() => setShowNote((v) => !v)}>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm btn-ghost"
+                onClick={() => setShowNote((v) => !v)}
+              >
                 Anotar
               </button>
             </div>
@@ -706,7 +763,14 @@ function SetRow({
           }}
         />
       </div>
-      <button type="button" data-augmented-ui="tl-clip br-clip border" className="check" aria-pressed={set.done} aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"} onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}>
+      <button
+        type="button"
+        data-augmented-ui="tl-clip br-clip border"
+        className="check"
+        aria-pressed={set.done}
+        aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"}
+        onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}
+      >
         <Icon name="check" size={22} />
       </button>
     </div>

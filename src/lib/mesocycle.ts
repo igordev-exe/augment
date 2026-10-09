@@ -12,12 +12,6 @@ export function weekFor(mesoStart: string, date: string): number {
   return (((w % MESO_LENGTH) + MESO_LENGTH) % MESO_LENGTH) + 1;
 }
 
-/** Número do mesociclo (1 = o primeiro a partir do início configurado). */
-export function cycleFor(mesoStart: string, date: string): number {
-  const diff = daysBetween(mesoStart, date);
-  return Math.floor(diff / 7 / MESO_LENGTH) + 1;
-}
-
 export interface WeekRule {
   label: string;
   summary: string;
@@ -113,11 +107,6 @@ export function setsFor(e: Pick<ProgramExercise, "sets" | "iso" | "up">, week: n
   if (week === 1 && e.iso) s -= 1;
   if (week >= 4 && week <= 6 && e.up) s += 1;
   return s;
-}
-
-/** Intensificador vale nesta semana? */
-export function intensifierActive(week: number): boolean {
-  return WEEK_RULES[week].intensifiers > 0;
 }
 
 /** Descanso padrão do timer: meio da faixa, arredondado a 15 s. */

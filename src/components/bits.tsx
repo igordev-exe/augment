@@ -7,7 +7,11 @@ import { Icon } from "./Icon";
 
 export function StopBadge({ stop, week }: { stop: StopKind; week: number }) {
   const s = stopFor(stop, week);
-  return <span data-augmented-ui="br-clip border" className={`stop-badge tone-${s.tone}`}>{s.label}</span>;
+  return (
+    <span data-augmented-ui="br-clip border" className={`stop-badge tone-${s.tone}`}>
+      {s.label}
+    </span>
+  );
 }
 
 export function PageHead({
@@ -50,11 +54,25 @@ export function WeekStrip({ week, onPick }: { week: number; onPick?: (w: number)
         const label = w === 7 ? "D" : String(w);
         const title = WEEK_RULES[w].label;
         return onPick ? (
-          <button key={w} type="button" data-augmented-ui="tl-clip br-clip border" className={cls} aria-pressed={w === week} title={title} onClick={() => onPick(w)}>
+          <button
+            key={w}
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className={cls}
+            aria-pressed={w === week}
+            title={title}
+            onClick={() => onPick(w)}
+          >
             {label}
           </button>
         ) : (
-          <div key={w} data-augmented-ui="tl-clip br-clip border" className={cls} title={title} aria-current={w === week ? "step" : undefined}>
+          <div
+            key={w}
+            data-augmented-ui="tl-clip br-clip border"
+            className={cls}
+            title={title}
+            aria-current={w === week ? "step" : undefined}
+          >
             {label}
           </div>
         );

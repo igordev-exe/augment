@@ -59,8 +59,3 @@ export function planAhead(sessions: Session[], from: string, days: number, train
   }
   return out;
 }
-
-/** Próximo treino planejado (hoje ou depois). */
-export function nextWorkout(sessions: Session[], today: string, trainingDays: number[]): PlannedDay | undefined {
-  return planAhead(sessions, today, 14, trainingDays)[0];
-}

@@ -8,8 +8,18 @@ import { weekFor } from "../lib/mesocycle";
 import { formatWeight, workSets } from "../lib/progression";
 import { shortName } from "./SessionScreen";
 
-function download(name: string, content: string, type: string) {
+/** Salva um arquivo: usa a folha de compartilhar no celular (iPhone instalado não baixa blobs) e cai para download. */
+async function download(name: string, content: string, type: string) {
   const blob = new Blob([content], { type });
+  const file = new File([blob], name, { type });
+  if (navigator.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    try {
+      await navigator.share({ files: [file], title: name });
+      return;
+    } catch (err) {
+      if ((err as DOMException)?.name === "AbortError") return;
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -32,7 +42,7 @@ export function SettingsScreen() {
 
   async function doExport() {
     const b = await exportBackup();
-    download(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), "application/json");
+    await download(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), "application/json");
     toast("Backup exportado.");
   }
 
@@ -42,12 +52,21 @@ export function SettingsScreen() {
     for (const s of done) {
       for (const e of s.exercises) {
         for (const st of workSets(e)) {
-          rows.push([s.date, s.dayId, String(s.week), shortName(EXERCISE_BY_ID[e.exId]), st.kind === "drop" ? "-15%" : "trabalho", formatWeight(st.weight), e.unit, String(st.reps)]);
+          rows.push([
+            s.date,
+            s.dayId,
+            String(s.week),
+            shortName(EXERCISE_BY_ID[e.exId]),
+            st.kind === "drop" ? "-15%" : "trabalho",
+            formatWeight(st.weight),
+            e.unit,
+            String(st.reps),
+          ]);
         }
       }
     }
     const csv = rows.map((r) => r.map((c) => (/[",;\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",")).join("\n");
-    download(`augment-series-${today}.csv`, csv, "text/csv");
+    await download(`augment-series-${today}.csv`, csv, "text/csv");
     toast(`CSV exportado com ${rows.length - 1} séries.`);
   }
 
@@ -72,7 +91,7 @@ export function SettingsScreen() {
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="row" style={{ gap: 12 }}>
           <span className="avatar" aria-hidden="true">
-            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={34} height={34} />
+            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={48} height={48} />
           </span>
           <h2 className="h-sec">Operador</h2>
         </div>
@@ -96,11 +115,13 @@ export function SettingsScreen() {
           Toque na semana em que você está. O app recalcula o início e ajusta séries, selos e intensificadores. Início atual:{" "}
           {shortDate(settings.mesoStart)}.
         </p>
-        <WeekStrip
-          week={week}
-          onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })}
-        />
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm" onClick={() => update({ mesoStart: mondayOf(today) })}>
+        <WeekStrip week={week} onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })} />
+        <button
+          type="button"
+          data-augmented-ui="tl-clip br-clip border"
+          className="btn btn-sm"
+          onClick={() => update({ mesoStart: mondayOf(today) })}
+        >
           Começar novo mesociclo nesta semana
         </button>
       </section>
@@ -113,7 +134,8 @@ export function SettingsScreen() {
             <button
               key={d}
               type="button"
-              data-augmented-ui="tl-clip br-clip border" className="toggle-chip"
+              data-augmented-ui="tl-clip br-clip border"
+              className="toggle-chip"
               aria-pressed={settings.trainingDays.includes(d)}
               onClick={() => {
                 const on = settings.trainingDays.includes(d);
@@ -130,16 +152,28 @@ export function SettingsScreen() {
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <h2 className="h-sec">Timer de descanso</h2>
         <div className="row-wrap">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="toggle-chip" aria-pressed={settings.sound} onClick={() => update({ sound: !settings.sound })}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="toggle-chip"
+            aria-pressed={settings.sound}
+            onClick={() => update({ sound: !settings.sound })}
+          >
             Som ao terminar
           </button>
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="toggle-chip" aria-pressed={settings.vibrate} onClick={() => update({ vibrate: !settings.vibrate })}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="toggle-chip"
+            aria-pressed={settings.vibrate}
+            onClick={() => update({ vibrate: !settings.vibrate })}
+          >
             Vibrar ao terminar
           </button>
         </div>
         <p className="tiny faint">
-          O alarme toca com o app aberto. A tela fica acesa durante o treino quando o celular permite. No iPhone a vibração não é suportada pelo
-          navegador.
+          O alarme toca com o app aberto. A tela fica acesa durante o treino quando o celular permite. No iPhone a vibração não é suportada
+          pelo navegador.
         </p>
       </section>
 
@@ -149,8 +183,8 @@ export function SettingsScreen() {
             Incremento de carga por exercício
           </summary>
           <p className="small muted" style={{ marginTop: 8 }}>
-            Quanto sobe quando todas as séries batem o topo da faixa. Padrão da ficha: +2,5 kg nos compostos e +1 a 2,5 kg nos isolados. Em lb,
-            o padrão é 5.
+            Quanto sobe quando todas as séries batem o topo da faixa. Padrão da ficha: +2,5 kg nos compostos e +1 a 2,5 kg nos isolados. Em
+            lb, o padrão é 5.
           </p>
           <div className="stack" style={{ marginTop: 10, gap: 8 }}>
             {PROGRAM.flatMap((d) =>
@@ -196,10 +230,22 @@ export function SettingsScreen() {
         <p className="tiny faint">O CSV abre em qualquer planilha.</p>
         <div className="divider" />
         <div className="row-wrap">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="toggle-chip" aria-pressed={mode === "merge"} onClick={() => setMode("merge")}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="toggle-chip"
+            aria-pressed={mode === "merge"}
+            onClick={() => setMode("merge")}
+          >
             Juntar com o que existe
           </button>
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="toggle-chip" aria-pressed={mode === "replace"} onClick={() => setMode("replace")}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="toggle-chip"
+            aria-pressed={mode === "replace"}
+            onClick={() => setMode("replace")}
+          >
             Substituir tudo
           </button>
         </div>
@@ -227,7 +273,8 @@ export function SettingsScreen() {
             <div className="row">
               <button
                 type="button"
-                data-augmented-ui="tl-clip br-clip border" className="btn btn-danger grow"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-danger grow"
                 onClick={async () => {
                   await db.sessions.clear();
                   await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });

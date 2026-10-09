@@ -91,11 +91,20 @@ export function LineChart({
           </g>
         ))}
         {xLabelIdx.map((i) => (
-          <text key={i} x={x(i)} y={height - 6} textAnchor={i === 0 && n > 1 ? "start" : i === n - 1 && n > 1 ? "end" : "middle"} fontSize={11} fill="var(--ink-3)">
+          <text
+            key={i}
+            x={x(i)}
+            y={height - 6}
+            textAnchor={i === 0 && n > 1 ? "start" : i === n - 1 && n > 1 ? "end" : "middle"}
+            fontSize={11}
+            fill="var(--ink-3)"
+          >
             {labels[i]}
           </text>
         ))}
-        {hover != null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t + h} stroke="var(--ink-3)" strokeWidth={1} strokeDasharray="3 3" />}
+        {hover != null && (
+          <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t + h} stroke="var(--ink-3)" strokeWidth={1} strokeDasharray="3 3" />
+        )}
         {series.map((s) => {
           const pts = s.values.map((v, i) => (v == null ? null : ([x(i), y(v)] as const)));
           const d = pts.reduce((acc, p, i) => {
@@ -103,7 +112,11 @@ export function LineChart({
             const prev = pts[i - 1];
             return acc + `${prev ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`;
           }, "");
-          const lastI = s.values.map((v, i) => (v == null ? -1 : i)).filter((i) => i >= 0).pop() ?? -1;
+          const lastI =
+            s.values
+              .map((v, i) => (v == null ? -1 : i))
+              .filter((i) => i >= 0)
+              .pop() ?? -1;
           return (
             <g key={s.name}>
               <path d={d} fill="none" stroke={`var(${s.color})`} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
@@ -141,8 +154,13 @@ export function LineChart({
           {series.map((s) =>
             s.values[hover] != null ? (
               <div key={s.name}>
-                <i style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: `var(${s.color})`, marginRight: 6 }} />
-                {s.name}: <strong>{format(s.values[hover]!)} {unit}</strong>
+                <i
+                  style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: `var(${s.color})`, marginRight: 6 }}
+                />
+                {s.name}:{" "}
+                <strong>
+                  {format(s.values[hover]!)} {unit}
+                </strong>
               </div>
             ) : null,
           )}

@@ -53,19 +53,33 @@ export function History() {
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="spread">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="icon-btn" aria-label="Mês anterior" onClick={() => shift(-1)}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="icon-btn"
+            aria-label="Mês anterior"
+            onClick={() => shift(-1)}
+          >
             <Icon name="back" size={18} />
           </button>
           <div className="h-sec" style={{ textTransform: "capitalize" }}>
             {monthName(cursor.m)} {cursor.y}
           </div>
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="icon-btn" aria-label="Próximo mês" onClick={() => shift(1)}>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="icon-btn"
+            aria-label="Próximo mês"
+            onClick={() => shift(1)}
+          >
             <Icon name="chev" size={18} />
           </button>
         </div>
 
         <div className="cal" role="grid" aria-label="Agenda de treinos">
-          <span className="hd" title="Semana do mesociclo">S</span>
+          <span className="hd" title="Semana do mesociclo">
+            S
+          </span>
           {[1, 2, 3, 4, 5, 6, 0].map((wd) => (
             <span key={wd} className="hd">
               {weekdayShort(wd)}
@@ -73,9 +87,14 @@ export function History() {
           ))}
           {weeks.map((row) => {
             const wk = weekFor(settings.mesoStart, row[0]);
+            const beforeStart = row[6] < settings.mesoStart;
             return [
-              <span key={row[0] + "w"} className={`wk${wk === 7 ? " deload" : ""}`} title={wk === 7 ? "Deload" : `Semana ${wk}`}>
-                {wk === 7 ? "D" : wk}
+              <span
+                key={row[0] + "w"}
+                className={`wk${wk === 7 && !beforeStart ? " deload" : ""}`}
+                title={beforeStart ? "Antes do mesociclo" : wk === 7 ? "Deload" : `Semana ${wk}`}
+              >
+                {beforeStart ? "·" : wk === 7 ? "D" : wk}
               </span>,
               ...row.map((d) => {
                 const daySessions = done.filter((s) => s.date === d);
@@ -126,7 +145,9 @@ export function History() {
       <section className="stack">
         <h2 className="h-sec">Treinos de {monthName(cursor.m)}</h2>
         {monthSessions.length === 0 ? (
-          <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">Nenhum treino concluído neste mês.</div>
+          <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">
+            Nenhum treino concluído neste mês.
+          </div>
         ) : (
           <ul data-augmented-ui="tl-clip br-clip border" className="list">
             {monthSessions.map((s) => {

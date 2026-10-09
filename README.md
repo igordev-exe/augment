@@ -42,12 +42,15 @@ Tudo da ficha está em `src/data/program.ts` (séries, reps, descanso, até onde
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # testes da lógica (mesociclo, progressão, recordes, agenda)
+npm test         # testes (mesociclo, progressão, recordes, agenda, backup)
+npm run check    # tipos + formatação + testes
+npm run format   # formata o código com Prettier
 npm run build    # gera dist/
 npm run icons    # regenera os PNGs do ícone a partir de public/icon.svg (precisa de Python + Playwright)
 ```
 
 Stack: React 18, TypeScript, Vite, Dexie (IndexedDB), vite-plugin-pwa. Gráficos em SVG próprio, sem biblioteca.
+A imagem do card "Missão do dia" fica em `public/hero.webp`.
 
 ## Créditos
 

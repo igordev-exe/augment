@@ -22,6 +22,7 @@ function ScrollTop() {
 }
 
 function Shell() {
+  const { pathname } = useLocation();
   const { state, configure } = useTimer();
   const [settings] = useSettings();
   useEffect(() => configure({ sound: settings.sound, vibrate: settings.vibrate }), [settings.sound, settings.vibrate, configure]);
@@ -45,7 +46,7 @@ function Shell() {
       <TimerBar />
       <nav className="nav" aria-label="Seções">
         <div className="nav-inner">
-          <NavLink to="/" end className={({ isActive }) => (isActive || location.hash.startsWith("#/treino") ? "active" : "")}>
+          <NavLink to="/" end className={({ isActive }) => (isActive || pathname.startsWith("/treino") ? "active" : "")}>
             <Icon name="barbell" />
             Treino
           </NavLink>

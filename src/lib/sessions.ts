@@ -33,11 +33,9 @@ export function buildSession(
 
     const source = repeatFrom?.exercises.find((e) => e.exId === ex.id);
     if (source && workSets(source).length) {
-      const load = mainLoad(workSets(source, false));
-      for (let k = 0; k < planned; k++) {
-        const src = workSets(source)[k];
-        sets.push(emptySet("work", src?.weight ?? load));
-      }
+      // Carga fixa: todas as séries de trabalho com a carga principal (ignora a última com −15%).
+      const load = mainLoad(workSets(source, false)) ?? workSets(source)[0].weight;
+      for (let k = 0; k < planned; k++) sets.push(emptySet("work", load));
       return { exId: ex.id, unit: source.unit, sets };
     }
 

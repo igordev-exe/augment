@@ -3,14 +3,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { Session, Settings } from "../data/types";
 import { db, DEFAULT_SETTINGS, loadSettings, saveSettings } from "./db";
 import { todayISO } from "./dates";
-import { weekFor } from "./mesocycle";
 
 export function useSessions(): Session[] | undefined {
   return useLiveQuery(() => db.sessions.toArray(), []);
 }
 
 export function useSession(id: string | undefined): Session | null | undefined {
-  return useLiveQuery(async () => (id ? (await db.sessions.get(id)) ?? null : null), [id]);
+  return useLiveQuery(async () => (id ? ((await db.sessions.get(id)) ?? null) : null), [id]);
 }
 
 export function useSettings(): [Settings, (patch: Partial<Settings>) => Promise<void>, boolean] {
@@ -33,12 +32,6 @@ export function useToday(): string {
     };
   }, []);
   return t;
-}
-
-export function useWeek(date?: string): number {
-  const [settings] = useSettings();
-  const today = useToday();
-  return weekFor(settings.mesoStart, date ?? today);
 }
 
 // ---------- Toast ----------

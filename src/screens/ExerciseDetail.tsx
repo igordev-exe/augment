@@ -53,7 +53,12 @@ export function ExerciseDetail() {
 
   return (
     <div className="stack-lg">
-      <PageHead back="/exercicios" code={`MÓDULO // ${lib.primary.split(" ")[0].toUpperCase()}`} title={lib.name} sub={`${lib.primary}${lib.secondary ? `; ajuda: ${lib.secondary}` : ""}. ${lib.equipment}.`} />
+      <PageHead
+        back="/exercicios"
+        code={`MÓDULO // ${lib.primary.split(" ")[0].toUpperCase()}`}
+        title={lib.name}
+        sub={`${lib.primary}${lib.secondary ? `; ajuda: ${lib.secondary}` : ""}. ${lib.equipment}.`}
+      />
 
       <section className="stack">
         <h2 className="h-sec">Na sua ficha</h2>
@@ -64,8 +69,8 @@ export function ExerciseDetail() {
               <StopBadge stop={ex.stop} week={week} />
             </div>
             <div className="small">
-              {setsFor(ex, week)} séries de {ex.reps[0]}–{ex.reps[1]} reps{ex.perSide ? " por lado" : ""}. Descanso: {ex.restLabel.toLowerCase()}.
-              {ex.tempo ? ` ${ex.tempo}.` : ""}
+              {setsFor(ex, week)} séries de {ex.reps[0]}–{ex.reps[1]} reps{ex.perSide ? " por lado" : ""}. Descanso:{" "}
+              {ex.restLabel.toLowerCase()}.{ex.tempo ? ` ${ex.tempo}.` : ""}
               {ex.intensifier ? ` Intensificador (semana 3+): ${ex.intensifier.toLowerCase()}.` : ""}
             </div>
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
@@ -114,7 +119,8 @@ export function ExerciseDetail() {
           />
           <button
             type="button"
-            data-augmented-ui="tl-clip br-clip border" className="btn"
+            data-augmented-ui="tl-clip br-clip border"
+            className="btn"
             disabled={draft == null || (draft.trim() !== "" && !youtubeId(draft))}
             onClick={async () => {
               await update({ videos: { ...settings.videos, [libId]: (draft ?? "").trim() } });
@@ -124,7 +130,11 @@ export function ExerciseDetail() {
             Salvar
           </button>
         </div>
-        {draft && draft.trim() !== "" && !youtubeId(draft) && <p className="tiny" style={{ color: "var(--red-hi)" }}>Esse link não parece ser do YouTube.</p>}
+        {draft && draft.trim() !== "" && !youtubeId(draft) && (
+          <p className="tiny" style={{ color: "var(--red-hi)" }}>
+            Esse link não parece ser do YouTube.
+          </p>
+        )}
       </section>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
@@ -163,10 +173,7 @@ export function ExerciseDetail() {
         ) : null}
       </section>
 
-      {sessions &&
-        uses.map((ex) => (
-          <ExerciseProgress key={ex.id} ex={ex} sessions={sessions} showDay={uses.length > 1} />
-        ))}
+      {sessions && uses.map((ex) => <ExerciseProgress key={ex.id} ex={ex} sessions={sessions} showDay={uses.length > 1} />)}
     </div>
   );
 }
@@ -179,7 +186,9 @@ function ExerciseProgress({ ex, sessions, showDay }: { ex: ProgramExercise; sess
     return (
       <section className="stack">
         <h2 className="h-sec">{title}</h2>
-        <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">Ainda sem registros. Depois do primeiro treino, aparecem aqui o gráfico, os recordes e o histórico.</div>
+        <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">
+          Ainda sem registros. Depois do primeiro treino, aparecem aqui o gráfico, os recordes e o histórico.
+        </div>
       </section>
     );
   }

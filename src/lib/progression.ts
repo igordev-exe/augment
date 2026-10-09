@@ -149,6 +149,26 @@ export function backoffWeight(load: number, step: number): number {
   return roundTo(load * 0.85, step);
 }
 
+/**
+ * Desfaz o −15% quando ele deixou de fazer sentido (série desmarcada ou reps corrigidas):
+ * se nenhuma série feita ficou abaixo do piso, a série "−15%" ainda não feita volta a ser normal,
+ * com a carga principal. Altera `entry` e diz se mudou algo.
+ */
+export function revertBackoff(entry: SessionExercise, floor: number): boolean {
+  const below = entry.sets.some((s) => s.done && s.kind !== "warmup" && s.reps != null && s.reps < floor);
+  if (below) return false;
+  const load = mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null));
+  let changed = false;
+  for (const s of entry.sets) {
+    if (s.kind === "drop" && !s.done) {
+      s.kind = "work";
+      if (load != null) s.weight = load;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 // ---------- Recordes ----------
 
 export interface Records {
@@ -171,7 +191,9 @@ export function historyOf(sessions: Session[], exId: string): ExerciseHistoryIte
     .filter((s) => s.status === "done")
     .map((s) => ({ session: s, entry: s.exercises.find((e) => e.exId === exId) }))
     .filter((x): x is ExerciseHistoryItem => !!x.entry && workSets(x.entry).length > 0)
-    .sort((a, b) => (a.session.date === b.session.date ? a.session.startedAt - b.session.startedAt : a.session.date < b.session.date ? -1 : 1));
+    .sort((a, b) =>
+      a.session.date === b.session.date ? a.session.startedAt - b.session.startedAt : a.session.date < b.session.date ? -1 : 1,
+    );
 }
 
 export function recordsOf(history: ExerciseHistoryItem[]): Records {
@@ -183,7 +205,11 @@ export function recordsOf(history: ExerciseHistoryItem[]): Records {
       const r = s.reps!;
       const kg = toKg(w, entry.unit);
       const est = e1rm(kg, r);
-      if (!rec.heaviest || kg > toKg(rec.heaviest.weight, rec.heaviest.unit) || (kg === toKg(rec.heaviest.weight, rec.heaviest.unit) && r > rec.heaviest.reps)) {
+      if (
+        !rec.heaviest ||
+        kg > toKg(rec.heaviest.weight, rec.heaviest.unit) ||
+        (kg === toKg(rec.heaviest.weight, rec.heaviest.unit) && r > rec.heaviest.reps)
+      ) {
         rec.heaviest = { weight: w, reps: r, date: session.date, unit: entry.unit };
       }
       if (!rec.bestE1rm || est > rec.bestE1rm.value) {
@@ -212,7 +238,8 @@ export interface PR {
 /** Recordes batidos em `session` comparando com tudo que veio antes. */
 export function prsInSession(session: Session, allSessions: Session[]): PR[] {
   const before = allSessions.filter(
-    (s) => s.status === "done" && s.id !== session.id && (s.date < session.date || (s.date === session.date && s.startedAt < session.startedAt)),
+    (s) =>
+      s.status === "done" && s.id !== session.id && (s.date < session.date || (s.date === session.date && s.startedAt < session.startedAt)),
   );
   const out: PR[] = [];
   for (const entry of session.exercises) {
@@ -229,12 +256,20 @@ export function prsInSession(session: Session, allSessions: Session[]): PR[] {
     const best = sets.reduce((a, b) => (e1rm(toKg(b.weight!, entry.unit), b.reps!) > e1rm(toKg(a.weight!, entry.unit), a.reps!) ? b : a));
     const bestVal = e1rm(toKg(best.weight!, entry.unit), best.reps!);
     if (prev.bestE1rm && bestVal > prev.bestE1rm.value + 1e-9) {
-      out.push({ exId: entry.exId, kind: "1rm", text: `1RM estimado: ${formatWeight(Math.round(bestVal))} kg (${formatWeight(best.weight)}${u} × ${best.reps})` });
+      out.push({
+        exId: entry.exId,
+        kind: "1rm",
+        text: `1RM estimado: ${formatWeight(Math.round(bestVal))} kg (${formatWeight(best.weight)}${u} × ${best.reps})`,
+      });
     }
     for (const s of sets) {
       const prior = prev.repRecords.find((r) => r.weight === s.weight && r.unit === entry.unit);
       if (prior && s.reps! > prior.reps && !out.some((p) => p.exId === entry.exId && p.kind === "reps")) {
-        out.push({ exId: entry.exId, kind: "reps", text: `Recorde de reps: ${s.reps} com ${formatWeight(s.weight)}${u} (antes ${prior.reps})` });
+        out.push({
+          exId: entry.exId,
+          kind: "reps",
+          text: `Recorde de reps: ${s.reps} com ${formatWeight(s.weight)}${u} (antes ${prior.reps})`,
+        });
       }
     }
   }
