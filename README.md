@@ -32,15 +32,6 @@ Os meus treinos ficam no IndexedDB do navegador do celular. Nada vai para servid
 - Exporto um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar os dados do navegador.
 - O CSV de séries abre em qualquer planilha.
 
-## Privacidade
-
-Com o repositório público, o código e a minha ficha (incluindo as metas de dieta do guia) ficam visíveis. Os meus registros de treino
-**não** vão para o repositório.
-
-Se eu quiser deixar o repositório privado: GitHub Pages em repositório privado exige GitHub Pro, que é grátis para estudantes pelo
-[GitHub Student Developer Pack](https://education.github.com/pack). Outra opção gratuita é conectar o repositório privado à Vercel, Netlify
-ou Cloudflare Pages (build: `npm run build`, pasta: `dist`).
-
 ## Como eu mudo o programa
 
 Tudo da ficha está em `src/data/program.ts` (séries, reps, descanso, até onde ir, ▲, intensificadores, dicas) e a biblioteca em
