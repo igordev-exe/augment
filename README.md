@@ -1,6 +1,6 @@
 # AUGMENT
 
-Meu app de treino. Fiz para rodar o meu **Programa de Hipertrofia v2** (Push A / Pull A / Lower A / Upper B / Lower B) no celular,
+Meu app de treino para uso domestico. Fiz para rodar o meu **Programa de Hipertrofia v2** (Push A / Pull A / Lower A / Upper B / Lower B) no celular,
 durante o treino, com estética cyberpunk. Funciona offline, fica instalado na minha tela inicial e guarda tudo no próprio aparelho.
 
 ## O que ele faz
