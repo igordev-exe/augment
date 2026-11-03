@@ -9,13 +9,19 @@ interface TimerState {
   fired: boolean;
 }
 
+interface TimerOpts {
+  sound: boolean;
+  vibrate: boolean;
+  notify?: boolean;
+}
+
 interface TimerApi {
   state: TimerState | null;
   start: (seconds: number, label: string) => void;
   add: (seconds: number) => void;
   stop: () => void;
-  /** Liga som/vibração (vem dos ajustes). */
-  configure: (opts: { sound: boolean; vibrate: boolean }) => void;
+  /** Liga som/vibração/notificação (vem dos ajustes). */
+  configure: (opts: TimerOpts) => void;
 }
 
 const KEY = "augment-timer";
@@ -66,9 +72,36 @@ function beep() {
   });
 }
 
+function notifyDone(label: string) {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  const title = "Descanso acabou";
+  const options: NotificationOptions = {
+    body: label,
+    tag: "augment-timer",
+    icon: "icon-192.png",
+  };
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.showNotification(title, options))
+      .catch(() => {
+        try {
+          new Notification(title, options);
+        } catch {
+          /* navegador bloqueou construtor direto */
+        }
+      });
+  } else {
+    try {
+      new Notification(title, options);
+    } catch {
+      /* sem suporte */
+    }
+  }
+}
+
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TimerState | null>(() => read());
-  const opts = useRef({ sound: true, vibrate: true });
+  const opts = useRef<TimerOpts>({ sound: true, vibrate: true, notify: false });
 
   const commit = useCallback((s: TimerState | null) => {
     write(s);
@@ -86,33 +119,46 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     (seconds: number) => {
       const s = read();
       if (!s) return;
+      if (seconds < 0) {
+        const nextEnd = Math.max(Date.now(), s.endAt + seconds * 1000);
+        commit({ ...s, endAt: nextEnd, total: Math.max(15, s.total + seconds) });
+        return;
+      }
       const base = Math.max(s.endAt, Date.now());
       commit({ ...s, endAt: base + seconds * 1000, total: s.total + seconds, fired: false });
     },
     [commit],
   );
   const stop = useCallback(() => commit(null), [commit]);
-  const configure = useCallback((o: { sound: boolean; vibrate: boolean }) => {
+  const configure = useCallback((o: TimerOpts) => {
     opts.current = o;
   }, []);
 
-  // Dispara o alarme uma vez quando o tempo acaba.
+  // Dispara o alarme uma vez quando o tempo acaba (ou ao retornar à aba se o SO congelou o timer).
   useEffect(() => {
     if (!state || state.fired) return;
-    const ms = state.endAt - Date.now();
     const fire = () => {
       const cur = read();
-      if (!cur || cur.fired) return;
+      if (!cur || cur.fired || cur.endAt > Date.now() + 50) return;
       if (opts.current.vibrate && "vibrate" in navigator) navigator.vibrate?.([220, 120, 220, 120, 400]);
       if (opts.current.sound) beep();
+      if (opts.current.notify && document.visibilityState === "hidden") notifyDone(cur.label);
       commit({ ...cur, fired: true });
     };
+    const ms = state.endAt - Date.now();
     if (ms <= 0) {
       fire();
       return;
     }
     const id = window.setTimeout(fire, ms);
-    return () => window.clearTimeout(id);
+    const onVis = () => {
+      if (document.visibilityState === "visible" && state.endAt <= Date.now()) fire();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [state, commit]);
 
   const api = useMemo(() => ({ state, start, add, stop, configure }), [state, start, add, stop, configure]);

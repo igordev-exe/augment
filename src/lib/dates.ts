@@ -88,3 +88,13 @@ export function formatClock(totalSec: number): string {
   const s = Math.max(0, Math.round(totalSec));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/** Ordena sessões da mais antiga para a mais recente (data, depois startedAt). */
+export function bySessionAsc<T extends { date: string; startedAt: number }>(a: T, b: T): number {
+  return a.date === b.date ? a.startedAt - b.startedAt : a.date.localeCompare(b.date);
+}
+
+/** Ordena sessões da mais recente para a mais antiga (data, depois startedAt). */
+export function bySessionDesc<T extends { date: string; startedAt: number }>(a: T, b: T): number {
+  return b.date === a.date ? b.startedAt - a.startedAt : b.date.localeCompare(a.date);
+}

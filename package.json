@@ -9,9 +9,10 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "lint": "vite-node scripts/lint.ts",
     "icons": "python3 scripts/make-icons.py .",
     "format": "prettier --write .",
-    "check": "tsc -b && prettier --check . && vitest run",
+    "check": "tsc -b && vite-node scripts/lint.ts && prettier --check . && vitest run",
     "coach": "vite-node scripts/coach.ts"
   },
   "dependencies": {

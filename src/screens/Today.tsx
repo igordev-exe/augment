@@ -4,10 +4,11 @@ import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
 import { Icon } from "../components/Icon";
 import { DAY_BY_ID, PROGRAM } from "../data/program";
 import type { Session } from "../data/types";
-import { addDays, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
-import { db } from "../lib/db";
-import { useSessions, useSettings, useToday } from "../lib/hooks";
-import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
+import { db, exportBackup } from "../lib/db";
+import { shareOrDownload } from "../lib/files";
+import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { defaultRest, fatigueDeloadFor, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import { weeklyReport } from "../lib/report";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
@@ -38,6 +39,7 @@ export function Today() {
   const sessions = useSessions();
   const [settings, updateSettings] = useSettings();
   const today = useToday();
+  const toast = useToast();
   const navigate = useNavigate();
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
@@ -53,10 +55,9 @@ export function Today() {
   const day = DAY_BY_ID[dayId];
   const dayIdx = PROGRAM.findIndex((d) => d.id === dayId) + 1;
   const isToday = next?.date === today;
-  const doneToday = sessions.filter((s) => s.status === "done" && s.date === today);
-  const lastDone = [...sessions]
-    .filter((s) => s.status === "done")
-    .sort((a, b) => (a.date === b.date ? b.startedAt - a.startedAt : a.date < b.date ? 1 : -1))[0];
+  const doneAll = sessions.filter((s) => s.status === "done");
+  const doneToday = doneAll.filter((s) => s.date === today);
+  const lastDone = [...doneAll].sort(bySessionDesc)[0];
 
   async function start(from?: Session) {
     if (active) {
@@ -71,16 +72,20 @@ export function Today() {
   const monday = mondayOf(today);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const reentry = reentryFor(
-    sessions.filter((s) => s.status === "done").map((s) => s.date),
+    doneAll.map((s) => s.date),
     settings.mesoStart,
     today,
     settings.trainingDays,
     settings.reentryDismissed,
   );
+  const fatigue = !reentry ? fatigueDeloadFor(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
   const lastWeek = addDays(monday, -7);
   const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays);
   const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);
-  const doneThisWeek = sessions.filter((s) => s.status === "done" && s.date >= monday && s.date < addDays(monday, 7)).length;
+  const doneThisWeek = doneAll.filter((s) => s.date >= monday && s.date < addDays(monday, 7)).length;
+  const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;
+  const showBackupReminder =
+    !active && doneAll.length >= 5 && settings.backupDismissed !== monday && (backupAge == null || backupAge >= 14);
   const missionLabel = doneToday.length
     ? `Hoje já foi ${dayName(doneToday[0].dayId)}. Próxima missão`
     : picked
@@ -88,6 +93,13 @@ export function Today() {
       : isToday
         ? "Missão do dia"
         : `Descanso hoje. Próxima: ${next ? `${weekdayName(next.date)}, ${shortDate(next.date)}` : "—"}`;
+
+  async function quickBackup() {
+    await updateSettings({ lastBackupAt: today, backupDismissed: monday });
+    const b = await exportBackup();
+    await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
+    toast("Backup exportado.");
+  }
 
   return (
     <div className="stack-lg">
@@ -179,6 +191,40 @@ export function Today() {
         </section>
       )}
 
+      {/* F3: Deload antecipado por fadiga */}
+      {!active && fatigue && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 10 }}>
+          <div className="callout warn">
+            <strong>Fadiga acumulada na Semana {fatigue.week}:</strong> {fatigue.reasons.join(", ")}. Você pode antecipar a semana de Deload
+            para recuperar articulações e sistema nervoso antes do próximo bloco.
+          </div>
+          <div className="row">
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-primary btn-sm grow"
+              onClick={() => {
+                updateSettings({
+                  mesoStart: fatigue.targetMesoStart,
+                  reentryDismissed: monday,
+                });
+                toast("Semana de Deload ativada.");
+              }}
+            >
+              Antecipar Deload agora
+            </button>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-sm btn-ghost"
+              onClick={() => updateSettings({ reentryDismissed: monday })}
+            >
+              Seguir na semana {fatigue.week}
+            </button>
+          </div>
+        </section>
+      )}
+
       {!active && showReport && (
         <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
           <div className="spread">
@@ -203,6 +249,30 @@ export function Today() {
               onClick={() => updateSettings({ reportSeen: monday })}
             >
               Entendido
+            </button>
+          </div>
+        </section>
+      )}
+
+      {showBackupReminder && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
+          <span className="label">Segurança local // Backup</span>
+          <p className="small muted" style={{ margin: 0 }}>
+            {backupAge == null
+              ? `Você já tem ${doneAll.length} treinos salvos no aparelho e ainda não exportou um backup.`
+              : `Faz ${backupAge} dias desde o último backup (${shortDate(settings.lastBackupAt!)}). Guarde uma cópia.`}
+          </p>
+          <div className="row">
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow" onClick={quickBackup}>
+              Exportar backup (.json)
+            </button>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-sm btn-ghost"
+              onClick={() => updateSettings({ backupDismissed: monday })}
+            >
+              Depois
             </button>
           </div>
         </section>
@@ -280,22 +350,26 @@ export function Today() {
             <span className="label">Sys.0{dayIdx} // no excuses</span>
           </div>
           <ol data-augmented-ui="tl-clip br-clip border" className="list">
-            {day.exercises.map((ex, i) => (
-              <li key={ex.id} className="list-item" style={{ paddingBlock: 11 }}>
-                <span className="idx">{ex.superset ? (ex.superset.order === 1 ? "A1" : "A2") : String(i + 1).padStart(2, "0")}</span>
-                <span className="grow">
-                  <span style={{ fontWeight: 600, display: "block", lineHeight: 1.25 }}>
-                    {ex.name.replace(/^A[12] · /, "")}
-                    {ex.up && week >= 4 && week <= 6 && <span className="plus">▲</span>}
+            {day.exercises.map((ex, i) => {
+              const swapped = settings.swaps?.[ex.id];
+              return (
+                <li key={ex.id} className="list-item" style={{ paddingBlock: 11 }}>
+                  <span className="idx">{ex.superset ? (ex.superset.order === 1 ? "A1" : "A2") : String(i + 1).padStart(2, "0")}</span>
+                  <span className="grow">
+                    <span style={{ fontWeight: 600, display: "block", lineHeight: 1.25 }}>
+                      {swapped ?? ex.name.replace(/^A[12] · /, "")}
+                      {ex.up && week >= 4 && week <= 6 && <span className="plus">▲</span>}
+                    </span>
+                    <span className="mono faint" style={{ fontSize: 12 }}>
+                      {swapped ? `Troca do ciclo (${ex.name.replace(/^A[12] · /, "")}) · ` : ""}
+                      {setsFor(ex, week)}×{ex.reps[0]}–{ex.reps[1]}
+                      {ex.perSide ? " por lado" : ""}, {ex.restLabel.toLowerCase()}
+                    </span>
                   </span>
-                  <span className="mono faint" style={{ fontSize: 12 }}>
-                    {setsFor(ex, week)}×{ex.reps[0]}–{ex.reps[1]}
-                    {ex.perSide ? " por lado" : ""}, {ex.restLabel.toLowerCase()}
-                  </span>
-                </span>
-                <StopBadge stop={ex.stop} week={week} />
-              </li>
-            ))}
+                  <StopBadge stop={ex.stop} week={week} />
+                </li>
+              );
+            })}
           </ol>
         </section>
       )}
@@ -333,6 +407,9 @@ export function Today() {
             </span>
           </div>
         </div>
+        <Link to="/relatorio?tab=meso" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost">
+          Resumo do mesociclo e rotação de acessórios <span className="arrow">&gt;</span>
+        </Link>
       </section>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
@@ -344,7 +421,7 @@ export function Today() {
         </div>
         <div className="days">
           {weekDates.map((d) => {
-            const done = sessions.find((s) => s.status === "done" && s.date === d);
+            const done = doneAll.find((s) => s.date === d);
             const planned = plan.find((p) => p.date === d);
             const cls = done ? "done" : planned ? "planned" : "rest";
             const content = done ? dayCode(done.dayId) : planned ? dayCode(planned.dayId) : "—";

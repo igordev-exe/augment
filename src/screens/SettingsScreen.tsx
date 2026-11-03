@@ -1,35 +1,14 @@
-import { Link } from "react-router-dom";
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
-import { EXERCISE_BY_ID, PROGRAM } from "../data/program";
-import { addDays, mondayOf, shortDate, weekdayShort } from "../lib/dates";
+import { LIB_BY_ID } from "../data/library";
+import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
+import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../lib/db";
+import { shareOrDownload } from "../lib/files";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, workSets } from "../lib/progression";
-import { shortName } from "../data/program";
-
-/** Salva um arquivo: usa a folha de compartilhar no celular (iPhone instalado não baixa blobs) e cai para download. */
-async function download(name: string, content: string, type: string) {
-  const blob = new Blob([content], { type });
-  const file = new File([blob], name, { type });
-  if (navigator.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-    try {
-      await navigator.share({ files: [file], title: name });
-      return;
-    } catch (err) {
-      if ((err as DOMException)?.name === "AbortError") return;
-    }
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
 
 export function SettingsScreen() {
   const [settings, update, loaded] = useSettings();
@@ -42,14 +21,15 @@ export function SettingsScreen() {
   const week = weekFor(settings.mesoStart, today);
 
   async function doExport() {
+    await update({ lastBackupAt: today, backupDismissed: mondayOf(today) });
     const b = await exportBackup();
-    await download(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), "application/json");
+    await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
     toast("Backup exportado.");
   }
 
   async function doCsv() {
     const rows = [["data", "treino", "semana", "exercicio", "tipo", "peso", "unidade", "reps", "sobra"]];
-    const done = (sessions ?? []).filter((s) => s.status === "done").sort((a, b) => (a.date < b.date ? -1 : 1));
+    const done = (sessions ?? []).filter((s) => s.status === "done").sort(bySessionAsc);
     for (const s of done) {
       for (const e of s.exercises) {
         for (const st of workSets(e)) {
@@ -57,7 +37,7 @@ export function SettingsScreen() {
             s.date,
             s.dayId,
             String(s.week),
-            shortName(EXERCISE_BY_ID[e.exId]),
+            e.alt ? `${shortName(EXERCISE_BY_ID[e.exId])} (${e.alt})` : shortName(EXERCISE_BY_ID[e.exId]),
             st.kind === "drop" ? "-15%" : "trabalho",
             formatWeight(st.weight),
             e.unit,
@@ -68,7 +48,7 @@ export function SettingsScreen() {
       }
     }
     const csv = rows.map((r) => r.map((c) => (/[",;\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",")).join("\n");
-    await download(`augment-series-${today}.csv`, csv, "text/csv");
+    await shareOrDownload(`augment-series-${today}.csv`, csv, `AUGMENT Séries (${today})`, "text/csv");
     toast(`CSV exportado com ${rows.length - 1} séries.`);
   }
 
@@ -83,6 +63,24 @@ export function SettingsScreen() {
       toast(`${n} treinos importados.`);
     } catch {
       toast("Não consegui ler o arquivo. Use o .json exportado pelo próprio app.");
+    }
+  }
+
+  async function toggleNotify() {
+    if (settings.notify) {
+      await update({ notify: false });
+      return;
+    }
+    if (typeof Notification === "undefined") {
+      toast("Este navegador não suporta notificações.");
+      return;
+    }
+    const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (perm === "granted") {
+      await update({ notify: true });
+      toast("Aviso ativado ao trocar de aba/janela.");
+    } else {
+      toast("Permissão de notificação negada nas configurações do navegador.");
     }
   }
 
@@ -180,44 +178,138 @@ export function SettingsScreen() {
           >
             Vibrar ao terminar
           </button>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="toggle-chip"
+            aria-pressed={!!settings.notify}
+            onClick={toggleNotify}
+          >
+            Aviso em outra aba
+          </button>
         </div>
         <p className="tiny faint">
-          O alarme toca com o app aberto. A tela fica acesa durante o treino quando o celular permite. No iPhone a vibração não é suportada
-          pelo navegador.
+          O alarme toca com o app aberto. O aviso em outra aba dispara quando o navegador permite em segundo plano (com a tela bloqueada, o
+          sistema do celular pode congelar ou silenciar timers web). Mantenha a tela acesa durante o treino.
         </p>
       </section>
 
+      {/* F1: Rotação de acessórios do mesociclo */}
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <details key={String(loaded)}>
+        <details key={`swaps-${loaded}`}>
           <summary className="h-sec" style={{ cursor: "pointer" }}>
-            Incremento de carga por exercício
+            Rotação de acessórios no mesociclo
           </summary>
           <p className="small muted" style={{ marginTop: 8 }}>
-            Quanto sobe quando todas as séries batem o topo da faixa. Padrão da ficha: +2,5 kg nos compostos e +1 a 2,5 kg nos isolados. Em
-            lb, o padrão é 5.
+            Ao fim do deload, troque 2–3 acessórios por alternativas da biblioteca. Os treinos novos já abrem com a variação escolhida,
+            mantendo o histórico separado.
           </p>
-          <div className="stack" style={{ marginTop: 10, gap: 8 }}>
+          <div className="stack" style={{ marginTop: 10, gap: 10 }}>
+            {PROGRAM.flatMap((d) =>
+              d.exercises
+                .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
+                .map((ex) => {
+                  const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
+                  const cur = settings.swaps?.[ex.id] ?? "";
+                  return (
+                    <label key={ex.id} className="stack" style={{ gap: 4 }}>
+                      <span className="small">
+                        <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
+                      </span>
+                      <select
+                        className="input"
+                        value={cur}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const next = { ...settings.swaps };
+                          if (!v) delete next[ex.id];
+                          else next[ex.id] = v;
+                          update({ swaps: next });
+                        }}
+                      >
+                        <option value="">Titular: {shortName(ex)}</option>
+                        {alts.map((a) => (
+                          <option key={a} value={a}>
+                            Alternativa: {a}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                }),
+            )}
+          </div>
+        </details>
+      </section>
+
+      {/* F5: Incremento e pesos específicos do aparelho por exercício */}
+      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
+        <details key={`inc-${loaded}`}>
+          <summary className="h-sec" style={{ cursor: "pointer" }}>
+            Incrementos e pesos do aparelho por exercício
+          </summary>
+          <p className="small muted" style={{ marginTop: 8 }}>
+            Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
+            vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
+          </p>
+          <div className="stack" style={{ marginTop: 10, gap: 12 }}>
             {PROGRAM.flatMap((d) =>
               d.exercises.map((ex) => (
-                <label key={ex.id} className="spread small">
-                  <span className="grow">
-                    {shortName(ex)} <span className="faint">({d.name})</span>
-                  </span>
+                <div key={ex.id} className="stack" style={{ gap: 4 }}>
+                  <div className="spread small">
+                    <span className="grow">
+                      <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
+                    </span>
+                    <input
+                      className="input"
+                      style={{ width: 84, minHeight: 36, textAlign: "center" }}
+                      inputMode="decimal"
+                      aria-label={`Incremento de ${shortName(ex)}`}
+                      defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
+                      placeholder={formatWeight(ex.increment)}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value.replace(",", "."));
+                        const next = { ...settings.increments };
+                        if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
+                        else next[ex.id] = v;
+                        update({ increments: next });
+                      }}
+                    />
+                  </div>
                   <input
                     className="input"
-                    style={{ width: 84, minHeight: 36, textAlign: "center" }}
-                    inputMode="decimal"
-                    defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
-                    placeholder={formatWeight(ex.increment)}
+                    style={{ minHeight: 34, fontSize: 13 }}
+                    aria-label={`Pesos disponíveis para ${shortName(ex)}`}
+                    placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
+                    defaultValue={
+                      settings.machineWeights?.[ex.id]?.length ? settings.machineWeights[ex.id].map((w) => formatWeight(w)).join(", ") : ""
+                    }
                     onBlur={(e) => {
-                      const v = Number(e.target.value.replace(",", "."));
-                      const next = { ...settings.increments };
-                      if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
-                      else next[ex.id] = v;
-                      update({ increments: next });
+                      const raw = e.target.value.trim();
+                      const next = { ...settings.machineWeights };
+                      if (!raw) {
+                        delete next[ex.id];
+                      } else {
+                        const nums = Array.from(
+                          new Set(
+                            raw
+                              .split(/[;\s]+|,\s+(?=\d)/)
+                              .flatMap((tok) =>
+                                tok.includes(",") && tok.split(",").every((p) => Number.isInteger(Number(p))) && tok.split(",").length > 2
+                                  ? tok.split(",")
+                                  : [tok],
+                              )
+                              .map((s) => Number(s.replace(",", ".").trim()))
+                              .filter((n) => Number.isFinite(n) && n > 0 && n <= 1000),
+                          ),
+                        ).sort((a, b) => a - b);
+                        if (nums.length > 0) next[ex.id] = nums;
+                        else delete next[ex.id];
+                      }
+                      update({ machineWeights: next });
                     }}
                   />
-                </label>
+                </div>
               )),
             )}
           </div>
@@ -228,6 +320,7 @@ export function SettingsScreen() {
         <h2 className="h-sec">Backup</h2>
         <p className="small muted">
           Seus treinos ficam só neste aparelho. Exporte um backup de vez em quando e antes de trocar de celular ou limpar o navegador.
+          {settings.lastBackupAt ? ` Último backup: ${shortDate(settings.lastBackupAt)}.` : ""}
         </p>
         <div className="row-wrap">
           <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={doExport}>
@@ -288,6 +381,7 @@ export function SettingsScreen() {
                 onClick={async () => {
                   await db.sessions.clear();
                   await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
+                  await db.kv.delete("body-log");
                   setWipe(false);
                   toast("Dados apagados.");
                 }}

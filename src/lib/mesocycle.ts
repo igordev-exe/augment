@@ -1,5 +1,6 @@
-import type { ProgramExercise, StopKind } from "../data/types";
-import { addDays, daysBetween, mondayOf } from "./dates";
+import { EXERCISE_BY_ID } from "../data/program";
+import type { Checkin, ProgramExercise, Session, StopKind } from "../data/types";
+import { addDays, bySessionDesc, daysBetween, mondayOf } from "./dates";
 
 // Regras do mesociclo de 6 semanas + deload (ficha, página 6).
 
@@ -109,6 +110,26 @@ export function rirRange(stop: StopKind, week: number): [number, number] {
   return week === 1 ? [1, 2] : week === 2 ? [1, 1] : [0, 1];
 }
 
+export function isLowDay(c: Checkin | undefined): boolean {
+  return !!c && !c.skipped && (c.sleep === "ruim" || c.energy === "baixa");
+}
+
+/** O que o check-in muda no treino de hoje. */
+export function checkinAdvice(c: Checkin | undefined): string[] {
+  if (!c || c.skipped) return [];
+  const out: string[] = [];
+  if (c.sleep === "ruim" || c.energy === "baixa") {
+    out.push(
+      "Dia de baixa: mantenha as cargas sugeridas, sem intensificadores, e pare 1 rep antes da meta. Hoje o objetivo é cumprir, não bater recorde.",
+    );
+  }
+  if (c.pain === "leve") out.push("Dor leve: aqueça mais o que incomoda e corte o exercício que piorar a dor.");
+  if (c.pain === "forte") {
+    out.push("Dor forte: pule o que dói ou use a alternativa em Como fazer. Se continuar nos próximos dias, procure avaliação.");
+  }
+  return out;
+}
+
 export type Reentry = { kind: "restart"; gapDays: number; week: number } | { kind: "repeat"; week: number; done: number; planned: number };
 
 /**
@@ -135,6 +156,78 @@ export function reentryFor(
   const planned = trainingDays.length;
   if (done < Math.ceil(planned / 2)) return { kind: "repeat", week, done, planned };
   return null;
+}
+
+/** Calcula o mesoStart para transformar a semana atual imediatamente em Semana 7 (Deload). */
+export function earlyDeloadMesoStart(today: string): string {
+  return addDays(mondayOf(today), -42);
+}
+
+export interface FatigueDeloadAlert {
+  week: number;
+  lowCheckins: number;
+  jointComplaints: number;
+  underTargetExs: number;
+  reasons: string[];
+  targetMesoStart: string;
+}
+
+/**
+ * Detecta fadiga acumulada nas semanas 3–6 (check-ins seguidos de sono ruim / energia baixa,
+ * dores articulares ou múltiplas quedas abaixo do piso de repetições) e sugere antecipar o Deload.
+ */
+export function fatigueDeloadFor(sessions: Session[], mesoStart: string, today: string, dismissed?: string): FatigueDeloadAlert | null {
+  const monday = mondayOf(today);
+  if (dismissed === monday) return null;
+  const week = weekFor(mesoStart, today);
+  if (week < 3 || week > 6) return null;
+
+  const since = addDays(today, -10);
+  const recent = sessions
+    .filter((s) => s.status === "done" && s.date >= since && s.date <= today)
+    .sort(bySessionDesc)
+    .slice(0, 6);
+  if (recent.length < 2) return null;
+
+  let lowCheckins = 0;
+  let jointComplaints = 0;
+  let underTargetExs = 0;
+
+  for (const s of recent) {
+    if (s.checkin && !s.checkin.skipped) {
+      if (s.checkin.sleep === "ruim" || s.checkin.energy === "baixa" || s.checkin.pain === "forte") {
+        lowCheckins += 1;
+      }
+    }
+    for (const entry of s.exercises) {
+      if (entry.feedback?.joint === "incomodou") jointComplaints += 1;
+      const ex = EXERCISE_BY_ID[entry.exId];
+      if (!ex) continue;
+      const work = entry.sets.filter((st) => st.done && st.kind === "work" && (st.reps ?? 0) > 0);
+      if (work.length >= 2 && work.every((st) => (st.reps ?? 0) < ex.reps[0])) {
+        underTargetExs += 1;
+      }
+    }
+  }
+
+  const totalSignals = lowCheckins + jointComplaints + underTargetExs;
+  const shouldAlert =
+    (lowCheckins >= 2 && (jointComplaints >= 1 || underTargetExs >= 1)) || jointComplaints >= 3 || underTargetExs >= 3 || totalSignals >= 4;
+  if (!shouldAlert) return null;
+
+  const reasons: string[] = [];
+  if (lowCheckins > 0) reasons.push(`${lowCheckins} check-in(s) de sono ruim/energia baixa ou dor`);
+  if (underTargetExs > 0) reasons.push(`${underTargetExs} exercício(s) abaixo do mínimo de reps`);
+  if (jointComplaints > 0) reasons.push(`${jointComplaints} queixa(s) de incômodo articular`);
+
+  return {
+    week,
+    lowCheckins,
+    jointComplaints,
+    underTargetExs,
+    reasons,
+    targetMesoStart: earlyDeloadMesoStart(today),
+  };
 }
 
 export function setsFor(e: Pick<ProgramExercise, "sets" | "iso" | "up">, week: number): number {

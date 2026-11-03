@@ -14,11 +14,16 @@ export interface CoachConfig {
   effort: Effort;
 }
 
-export const MODELS: { id: string; label: string }[] = [
-  { id: "claude-opus-5-5", label: "Opus 5.5 · melhor análise" },
-  { id: "claude-sonnet-5-5", label: "Sonnet 5.5 · mais barato" },
-  { id: "claude-haiku-5-5", label: "Haiku 5.5 · o mais barato" },
+/** US$ por milhão de tokens: [entrada, leitura de cache, saída]. */
+export const MODELS: { id: string; label: string; price: [number, number, number] }[] = [
+  { id: "claude-opus-5-5", label: "Opus 5.5 · melhor análise", price: [4, 0.2, 20] },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5 · mais barato", price: [2, 0.2, 10] },
+  { id: "claude-haiku-5-5", label: "Haiku 5.5 · o mais barato", price: [0.1, 0.01, 0.5] },
 ];
+
+export function modelPrice(modelId: string): [number, number, number] {
+  return MODELS.find((m) => m.id === modelId)?.price ?? MODELS[0].price;
+}
 
 export const DEFAULT_CONFIG: CoachConfig = { apiKey: "", model: "claude-opus-5-5", effort: "medium" };
 
@@ -30,9 +35,42 @@ export interface CoachChat {
   proposals: Record<string, "aplicada" | "recusada">;
   /** Decisões sobre propostas ainda não contadas ao treinador (vão na próxima mensagem). */
   notes?: string[];
+  /** Timestamp do último turno (para podar tool_results antigos após o cache de 5 min expirar). */
+  lastTurnAt?: number;
 }
 
 export const EMPTY_CHAT: CoachChat = { messages: [], usage: { input: 0, cacheRead: 0, output: 0 }, proposals: {} };
+
+/** Tempo de vida do cache efêmero na API (5 min). */
+export const CACHE_TTL_MS = 5 * 60_000;
+
+const PRUNED_TOOL_RESULT = JSON.stringify({
+  resumido: "Dados da consulta anterior omitidos após expirar o cache. Consulte a ferramenta de novo se precisar de números atualizados.",
+});
+
+/**
+ * Compacta `tool_result` volumosos de turnos anteriores quando o cache efêmero de 5 minutos já expirou.
+ * Enquanto o cache estiver ativo (`now - lastTurnAt <= 5 min`), não toca no histórico para não invalidar o prefixo.
+ */
+export function pruneExpiredToolResults(chat: CoachChat, now = Date.now()): CoachChat {
+  if (!chat.lastTurnAt || now - chat.lastTurnAt <= CACHE_TTL_MS || chat.messages.length <= 2) return chat;
+  let anyChanged = false;
+  const keepFrom = chat.messages.length - 2;
+  const messages = chat.messages.map((m, idx) => {
+    if (idx >= keepFrom || m.role !== "user" || !Array.isArray(m.content)) return m;
+    let msgChanged = false;
+    const nextContent = m.content.map((b) => {
+      if (b.type === "tool_result" && !b.is_error && typeof b.content === "string" && b.content.length > 200) {
+        msgChanged = true;
+        anyChanged = true;
+        return { ...b, content: PRUNED_TOOL_RESULT };
+      }
+      return b;
+    });
+    return msgChanged ? { ...m, content: nextContent } : m;
+  });
+  return anyChanged ? { ...chat, messages } : chat;
+}
 
 export async function loadCoachConfig(): Promise<CoachConfig> {
   const row = await db.kv.get("coach-config");
@@ -79,7 +117,7 @@ export type TurnEnd = "fim" | "recusa" | "limite";
 
 /**
  * Roda um turno do treinador: manda o histórico, executa as ferramentas pedidas e repete até ele terminar.
- * O histórico só cresce (nunca reescreve mensagens antigas): mantém o cache e os blocos de raciocínio válidos.
+ * O histórico só cresce enquanto o cache está quente; se o cache expirou (>5 min), poda os JSONs antigos.
  */
 export async function coachTurn(
   config: CoachConfig,
@@ -94,7 +132,7 @@ export async function coachTurn(
     ? {}
     : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
   const system = coachSystem(data.settings.operator || "Igor");
-  let cur = chat;
+  let cur = pruneExpiredToolResults(chat);
 
   for (let step = 0; step < MAX_STEPS; step++) {
     const stream = client.beta.messages.stream(
@@ -117,6 +155,7 @@ export async function coachTurn(
 
     cur = {
       ...cur,
+      lastTurnAt: Date.now(),
       messages: [...cur.messages, { role: "assistant", content: msg.content as Anthropic.Beta.BetaContentBlockParam[] }],
       usage: {
         input: cur.usage.input + (msg.usage.input_tokens ?? 0) + (msg.usage.cache_creation_input_tokens ?? 0),
@@ -146,7 +185,7 @@ export async function coachTurn(
         return { type: "tool_result", tool_use_id: u.id, is_error: true, content: text };
       }
     });
-    cur = { ...cur, messages: [...cur.messages, { role: "user", content: results }] };
+    cur = { ...cur, lastTurnAt: Date.now(), messages: [...cur.messages, { role: "user", content: results }] };
     h.onChat(cur);
   }
   return "limite";

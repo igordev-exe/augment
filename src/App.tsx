@@ -29,7 +29,10 @@ function Shell() {
   const { pathname } = useLocation();
   const { state, configure } = useTimer();
   const [settings] = useSettings();
-  useEffect(() => configure({ sound: settings.sound, vibrate: settings.vibrate }), [settings.sound, settings.vibrate, configure]);
+  useEffect(
+    () => configure({ sound: settings.sound, vibrate: settings.vibrate, notify: settings.notify }),
+    [settings.sound, settings.vibrate, settings.notify, configure],
+  );
 
   return (
     <>

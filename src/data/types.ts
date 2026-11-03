@@ -112,6 +112,8 @@ export interface SessionExercise {
   exId: string;
   unit: Unit;
   notes?: string;
+  /** Alternativa da biblioteca usada neste treino (máquina ocupada ou dor). */
+  alt?: string;
   sets: SetEntry[];
   feedback?: ExerciseFeedback;
 }
@@ -122,6 +124,27 @@ export interface Checkin {
   energy?: "baixa" | "ok" | "alta";
   pain?: "nenhuma" | "leve" | "forte";
   skipped?: boolean;
+}
+
+/** Registro rápido de cardio e passos da sessão/dia (F10). */
+export interface CardioEntry {
+  kind?: string;
+  minutes?: number;
+  intensity?: "leve" | "moderada" | "alta";
+  steps?: number;
+}
+
+/** Registro de peso corporal, medidas e foto opcional (F4). */
+export interface BodyEntry {
+  id: string;
+  /** Data local AAAA-MM-DD. */
+  date: string;
+  weightKg?: number;
+  waistCm?: number;
+  armCm?: number;
+  notes?: string;
+  /** Foto redimensionada em Data URL (JPEG). */
+  photoDataUrl?: string;
 }
 
 export interface Session {
@@ -135,6 +158,7 @@ export interface Session {
   status: "active" | "done";
   notes?: string;
   checkin?: Checkin;
+  cardio?: CardioEntry;
   exercises: SessionExercise[];
   /** Sessão criada a partir de "repetir treino". */
   repeatedFrom?: string;
@@ -149,12 +173,24 @@ export interface Settings {
   trainingDays: number[];
   sound: boolean;
   vibrate: boolean;
+  /** Notificar em segundo plano quando o timer de descanso acabar. */
+  notify?: boolean;
   /** Unidade escolhida por exercício (id do programa). */
   units: Record<string, Unit>;
   /** Incremento personalizado por exercício (id do programa). */
   increments: Record<string, number>;
+  /** Pesos específicos disponíveis na polia/máquina por exercício (id do programa → lista em kg/lb). */
+  machineWeights: Record<string, number[]>;
+  /** Rotação de acessórios ativa no mesociclo (id do programa → nome da alternativa). */
+  swaps: Record<string, string>;
   /** Vídeo de referência escolhido (id da biblioteca → URL). */
   videos: Record<string, string>;
+  /** Lembretes técnicos fixados por exercício (id do programa → texto). */
+  exerciseNotes: Record<string, string>;
+  /** Data local (AAAA-MM-DD) do último backup exportado. */
+  lastBackupAt?: string;
+  /** Segunda-feira em que o lembrete de backup foi dispensado. */
+  backupDismissed?: string;
   /** Segunda-feira em que o aviso de retomada foi respondido (não pergunta de novo na mesma semana). */
   reentryDismissed?: string;
   /** Segunda-feira em que o cartão do relatório da semana passada foi fechado. */

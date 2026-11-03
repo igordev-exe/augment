@@ -1,35 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
+import { ExerciseBlock } from "../components/ExerciseBlock";
 import { Icon } from "../components/Icon";
-import { LIB_BY_ID } from "../data/library";
+import { Choice } from "../components/SetRow";
 import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
-import type { Checkin, ExerciseFeedback, ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
-import { formatDuration, longDate, shortDate, todayISO } from "../lib/dates";
-import { db } from "../lib/db";
+import type { CardioEntry, Checkin, Session, SessionExercise } from "../data/types";
+import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
+import { db, exportBackup } from "../lib/db";
+import { shareOrDownload } from "../lib/files";
 import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
-import { defaultRest, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
-import {
-  backoffWeight,
-  formatWeight,
-  historyOf,
-  increaseStep,
-  mainLoad,
-  prsInSession,
-  revertBackoff,
-  suggest,
-  summarizeSets,
-  type PR,
-} from "../lib/progression";
-import { buildSession, newSet, sessionStats } from "../lib/sessions";
+import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { backoffWeight, formatWeight, historyOf, increaseStep, mainLoad, prsInSession, suggest, type PR } from "../lib/progression";
+import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
-function parseNum(s: string): number | null {
-  const t = s.replace(",", ".").trim();
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) && n >= 0 ? n : null;
-}
+export { checkinAdvice };
 
 function clone<T>(x: T): T {
   return JSON.parse(JSON.stringify(x));
@@ -85,6 +71,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const [open, setOpen] = useState<number>(isActive ? Math.max(0, firstOpen) : -1);
   const [confirm, setConfirm] = useState<"discard" | "delete" | null>(null);
   const [summary, setSummary] = useState<PR[] | null>(null);
+  const [backupPromptDismissed, setBackupPromptDismissed] = useState(false);
   const [, tick] = useState(0);
 
   useEffect(() => {
@@ -97,14 +84,16 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     await db.sessions.put(next);
   }
 
-  /** Lê o treino fresco do banco, aplica a mudança e salva (evita perder digitação rápida). */
-  async function mutateEntry(index: number, fn: (e: SessionExercise) => void): Promise<SessionExercise | undefined> {
+  /** Lê o treino fresco do banco, localiza o exercício pelo `exId`, aplica a mudança e salva. */
+  async function mutateEntry(exId: string, fn: (e: SessionExercise) => void): Promise<SessionExercise | undefined> {
     let out: SessionExercise | undefined;
     await db.transaction("rw", db.sessions, async () => {
       const cur = await db.sessions.get(session.id);
       if (!cur) return;
-      fn(cur.exercises[index]);
-      out = cur.exercises[index];
+      const target = cur.exercises.find((e) => e.exId === exId);
+      if (!target) return;
+      fn(target);
+      out = target;
       await db.sessions.put(cur);
     });
     return out;
@@ -112,12 +101,22 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
   const checkin = session.checkin;
   const askCheckin = !checkin?.skipped && !(checkin?.sleep && checkin?.energy && checkin?.pain);
+  const lowDay = isLowDay(checkin);
 
   async function setCheckin(patch: Checkin) {
     await db.transaction("rw", db.sessions, async () => {
       const cur = await db.sessions.get(session.id);
       if (!cur) return;
       cur.checkin = { ...cur.checkin, ...patch };
+      await db.sessions.put(cur);
+    });
+  }
+
+  async function setCardio(patch: Partial<CardioEntry>) {
+    await db.transaction("rw", db.sessions, async () => {
+      const cur = await db.sessions.get(session.id);
+      if (!cur) return;
+      cur.cardio = { ...cur.cardio, ...patch };
       await db.sessions.put(cur);
     });
   }
@@ -135,9 +134,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       if (lastPending) {
         const load = mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null)) ?? set.weight ?? 0;
         const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
-        const w = backoffWeight(load, step);
+        const w = backoffWeight(load, step, settings.machineWeights?.[ex.id]);
         fresh =
-          (await mutateEntry(index, (e) => {
+          (await mutateEntry(entry.exId, (e) => {
             const t = e.sets.find((x) => x.id === lastPending.id);
             if (t) {
               t.kind = "drop";
@@ -154,7 +153,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     if (set.kind === "warmup") {
       timer.start(60, `${shortName(ex)}: aquecimento`);
     } else if (ex.superset?.order === 1) {
-      toast("Superset: vá direto para A2, a rosca.");
+      const partner = EXERCISE_BY_ID[ex.superset.with];
+      toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
     } else {
       const rest = ex.superset?.order === 2 ? 60 : defaultRest(ex.rest);
       timer.start(rest, remaining ? `${shortName(ex)}: próxima série` : "Próximo exercício");
@@ -184,11 +184,13 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       toast("Nenhuma série de trabalho marcada. Marque pelo menos uma série ou descarte o treino.");
       return;
     }
+    const { finishedAt, capped } = effectiveEndAt(next);
     next.exercises = next.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) }));
     next.status = "done";
-    next.finishedAt = Date.now();
+    next.finishedAt = finishedAt;
     await save(next);
     timer.stop();
+    if (capped) toast("Treino ficou aberto por horas: duração ajustada pelo horário da última série.");
     setSummary(prsInSession(next, [...before, next]));
     setOpen(-1);
     window.scrollTo(0, 0);
@@ -213,8 +215,29 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     navigate(`/treino/${s.id}`);
   }
 
+  async function quickBackup() {
+    const b = await exportBackup();
+    const today = todayISO();
+    const mode = await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
+    await updateSettings({ lastBackupAt: today });
+    setBackupPromptDismissed(true);
+    toast(mode === "shared" ? "Backup compartilhado." : "Backup baixado.");
+  }
+
   const stats = sessionStats(session);
   const prs = summary ?? (isActive ? [] : prsInSession(session, [...before, session]));
+
+  // F11: Sugerir backup automático ao concluir treino a cada 5 sessões ou se o último backup tem 7+ dias
+  const totalDoneCount = sessions.filter((s) => s.status === "done").length;
+  const today = todayISO();
+  const backupDueAfterFinish =
+    !isActive &&
+    summary !== null &&
+    !backupPromptDismissed &&
+    (!settings.lastBackupAt || daysBetween(settings.lastBackupAt, today) >= 7 || totalDoneCount % 5 === 0);
+
+  // F8: Debrief automático pós-treino
+  const debriefQuery = `Acabei de concluir o treino ${day.name} de ${session.date} (${rule.label}). Faça um debrief direto em 3 pontos: o que evoluiu bem, o que saiu da meta de reps/sobra e o principal ajuste para a próxima sessão.`;
 
   return (
     <div className="stack-lg">
@@ -272,9 +295,46 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               ))}
             </ul>
           )}
-          <div className="row">
+
+          {backupDueAfterFinish && (
+            <div data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
+              <span className="label">Backup rápido pós-treino</span>
+              <p className="small muted" style={{ margin: 0 }}>
+                {!settings.lastBackupAt
+                  ? `Você já tem ${totalDoneCount} treino(s) salvo(s) neste aparelho e ainda não exportou uma cópia.`
+                  : `Treino #${totalDoneCount} concluído — aproveite para salvar uma cópia atualizada em 1 toque.`}
+              </p>
+              <div className="row">
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn btn-sm btn-primary grow"
+                  onClick={quickBackup}
+                >
+                  <Icon name="check" size={16} /> Salvar backup agora
+                </button>
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setBackupPromptDismissed(true)}
+                >
+                  Depois
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="row-wrap">
+            <Link
+              to={`/treinador?auto=1&q=${encodeURIComponent(debriefQuery)}`}
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-primary grow"
+            >
+              Debrief do treinador <span className="arrow">&gt;</span>
+            </Link>
             <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={repeat}>
-              <Icon name="repeat" size={18} /> Repetir este treino
+              <Icon name="repeat" size={18} /> Repetir treino
             </button>
             {summary && (
               <Link to="/" data-augmented-ui="tl-clip br-clip border" className="btn btn-dark">
@@ -312,7 +372,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             <strong>{rule.label}:</strong> compostos {rule.compounds.toLowerCase()}; isolados {rule.isolations.toLowerCase()}.
           </div>
           <div className="small muted">
-            Intensificadores hoje: {rule.intensifierLabel.toLowerCase()}, só na última série de máquina ou cabo.
+            Intensificadores hoje:{" "}
+            {lowDay
+              ? "desativados pelo check-in (dia de baixa)"
+              : `${rule.intensifierLabel.toLowerCase()}, só na última série de máquina ou cabo`}
+            .
           </div>
           {day.notes.map((n) => (
             <div key={n} className="small muted">
@@ -327,7 +391,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           const ex = EXERCISE_BY_ID[entry.exId];
           if (!ex) return null;
           if (!isActive && !entry.sets.length) return null;
-          const hist = historyOf(before, ex.id);
+          const hist = historyOf(before, ex.id, entry.alt);
+          const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
+          const available = settings.machineWeights?.[ex.id];
           return (
             <ExerciseBlock
               key={entry.exId}
@@ -336,14 +402,33 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               entry={entry}
               week={week}
               active={isActive}
+              lowDay={lowDay}
+              reminder={settings.exerciseNotes?.[ex.id]}
               open={open === i}
-              last={hist[hist.length - 1]}
-              step={increaseStep(ex, entry.unit, settings.increments[ex.id])}
+              recentHistory={hist}
+              step={step}
+              availableWeights={available}
               onToggle={() => setOpen(open === i ? -1 : i)}
-              mutate={(fn) => mutateEntry(i, fn)}
+              mutate={(fn) => mutateEntry(entry.exId, fn)}
               onSetDone={(e, setId) => onSetDone(i, e, setId)}
+              onAlt={(alt) => {
+                const altHist = historyOf(before, ex.id, alt);
+                const altLast = altHist[altHist.length - 1];
+                const altSug = suggest(ex, altLast?.entry, setsFor(ex, week), week, step, altLast?.session.week, available);
+                mutateEntry(entry.exId, (e) => {
+                  e.alt = alt;
+                  for (const s of e.sets) {
+                    if (s.kind === "work" && !s.done) s.weight = altSug.weight;
+                  }
+                });
+              }}
+              onClearReminder={() => {
+                const next = { ...settings.exerciseNotes };
+                delete next[ex.id];
+                updateSettings({ exerciseNotes: next });
+              }}
               onUnit={(u) => {
-                mutateEntry(i, (e) => {
+                mutateEntry(entry.exId, (e) => {
                   e.unit = u;
                 });
                 updateSettings({ units: { ...settings.units, [ex.id]: u } });
@@ -363,6 +448,63 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           .
         </p>
       )}
+
+      {/* F10: Cardio e Passos do dia */}
+      <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
+        <h2 className="h-sec">Cardio e passos (opcional)</h2>
+        <div className="row-wrap">
+          <div className="grow">
+            <label className="label" htmlFor="cardio-min">
+              Cardio (min)
+            </label>
+            <input
+              id="cardio-min"
+              className="input"
+              inputMode="numeric"
+              placeholder="ex.: 25"
+              defaultValue={session.cardio?.minutes ?? ""}
+              onBlur={(e) => {
+                const v = e.target.value.replace(/\D/g, "");
+                setCardio({ minutes: v ? Number(v) : undefined });
+              }}
+            />
+          </div>
+          <div className="grow">
+            <label className="label" htmlFor="cardio-kind">
+              Modalidade
+            </label>
+            <input
+              id="cardio-kind"
+              className="input"
+              placeholder="Esteira inclinada, bike…"
+              defaultValue={session.cardio?.kind ?? ""}
+              onBlur={(e) => setCardio({ kind: e.target.value.trim() || undefined })}
+            />
+          </div>
+          <div className="grow">
+            <label className="label" htmlFor="cardio-steps">
+              Passos no dia
+            </label>
+            <input
+              id="cardio-steps"
+              className="input"
+              inputMode="numeric"
+              placeholder="ex.: 8500"
+              defaultValue={session.cardio?.steps ?? ""}
+              onBlur={(e) => {
+                const v = e.target.value.replace(/\D/g, "");
+                setCardio({ steps: v ? Number(v) : undefined });
+              }}
+            />
+          </div>
+        </div>
+        <Choice
+          label="Intensidade"
+          options={["leve", "moderada", "alta"]}
+          value={session.cardio?.intensity}
+          onPick={(v) => setCardio({ intensity: v })}
+        />
+      </section>
 
       <section className="stack">
         <label className="label" htmlFor="session-notes">
@@ -429,499 +571,6 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           )}
         </section>
       )}
-    </div>
-  );
-}
-
-/** O que o check-in muda no treino de hoje. */
-export function checkinAdvice(c: Checkin | undefined): string[] {
-  if (!c || c.skipped) return [];
-  const out: string[] = [];
-  if (c.sleep === "ruim" || c.energy === "baixa") {
-    out.push(
-      "Dia de baixa: mantenha as cargas sugeridas, sem intensificadores, e pare 1 rep antes da meta. Hoje o objetivo é cumprir, não bater recorde.",
-    );
-  }
-  if (c.pain === "leve") out.push("Dor leve: aqueça mais o que incomoda e corte o exercício que piorar a dor.");
-  if (c.pain === "forte") {
-    out.push("Dor forte: pule o que dói ou use a alternativa em Como fazer. Se continuar nos próximos dias, procure avaliação.");
-  }
-  return out;
-}
-
-// ---------- Exercício ----------
-
-function ExerciseBlock({
-  index,
-  ex,
-  entry,
-  week,
-  active,
-  open,
-  last,
-  step,
-  onToggle,
-  mutate,
-  onSetDone,
-  onUnit,
-}: {
-  index: number;
-  ex: ProgramExercise;
-  entry: SessionExercise;
-  week: number;
-  active: boolean;
-  open: boolean;
-  last?: { session: Session; entry: SessionExercise };
-  step: number;
-  onToggle: () => void;
-  mutate: (fn: (e: SessionExercise) => void) => Promise<SessionExercise | undefined>;
-  onSetDone: (e: SessionExercise, setId: string) => void;
-  onUnit: (u: Unit) => void;
-}) {
-  const lib = LIB_BY_ID[ex.lib];
-  const planned = setsFor(ex, week);
-  const workAll = entry.sets.filter((s) => s.kind !== "warmup");
-  const workDone = workAll.filter((s) => s.done).length;
-  const complete = workAll.length > 0 && workDone >= workAll.length;
-  const sug = suggest(ex, last?.entry, planned, week, step, last?.session.week);
-  const stop = stopFor(ex.stop, week);
-  const showInt = !!ex.intensifier && WEEK_RULES[week].intensifiers > 0;
-  const [showNote, setShowNote] = useState(!!entry.notes);
-  const rirTarget = rirRange(ex.stop, week);
-  // Pergunta o RIR da série feita mais recente que ainda não tem resposta.
-  const askRirId = active
-    ? entry.sets.filter((s) => s.done && s.kind !== "warmup" && s.rir == null).sort((a, b) => (b.doneAt ?? 0) - (a.doneAt ?? 0))[0]?.id
-    : undefined;
-  const fb = entry.feedback;
-  const askFeedback = active && complete && !fb?.skipped && !(fb?.pump && fb?.volume && fb?.joint);
-  // Com o exercício fechado (fecha sozinho na última série), o RIR que falta vai para o cartão de baixo.
-  const askRirClosed = active && complete && !open && !!askRirId;
-  const RIR_OPTS = ["0", "1", "2", "3", "4+"];
-
-  function setFeedback(patch: ExerciseFeedback) {
-    mutate((e) => {
-      e.feedback = { ...e.feedback, ...patch };
-    });
-  }
-
-  let workCounter = 0;
-
-  function setSet(setId: string, patch: Partial<SetEntry>) {
-    mutate((e) => {
-      const s = e.sets.find((x) => x.id === setId);
-      if (!s) return;
-      Object.assign(s, patch);
-      if ("reps" in patch && s.done) revertBackoff(e, ex.reps[0]);
-    });
-  }
-
-  async function toggleDone(setId: string, wVal: number | null, rVal: number | null, weightPh: number | null, repsPh: number | null) {
-    let becameDone = false;
-    const fresh = await mutate((e) => {
-      const s = e.sets.find((x) => x.id === setId);
-      if (!s) return;
-      if (!s.done) {
-        s.weight = wVal ?? s.weight ?? weightPh;
-        s.reps = rVal ?? s.reps ?? repsPh;
-        if (s.reps == null) return;
-        s.done = true;
-        s.doneAt = Date.now();
-        becameDone = true;
-      } else {
-        s.done = false;
-        s.doneAt = undefined;
-        s.rir = undefined;
-        revertBackoff(e, ex.reps[0]);
-      }
-    });
-    if (fresh && becameDone) onSetDone(fresh, setId);
-  }
-
-  function addSet(kind: SetEntry["kind"]) {
-    mutate((e) => {
-      const lastW = [...e.sets].reverse().find((s) => s.kind !== "warmup")?.weight ?? sug.weight;
-      const set = newSet(kind, kind === "warmup" ? null : lastW);
-      if (kind === "warmup") {
-        const firstWork = e.sets.findIndex((s) => s.kind !== "warmup");
-        e.sets.splice(firstWork < 0 ? e.sets.length : firstWork, 0, set);
-      } else e.sets.push(set);
-    });
-  }
-
-  function removeSet(setId: string) {
-    mutate((e) => {
-      e.sets = e.sets.filter((x) => x.id !== setId);
-    });
-  }
-
-  return (
-    <article data-augmented-ui="tl-clip br-clip border" className={`ex${complete ? " complete" : ""}${open ? " open" : ""}`}>
-      <button type="button" className="ex-head" onClick={onToggle} aria-expanded={open}>
-        <span className="ex-num">{ex.superset ? (ex.superset.order === 1 ? "A1" : "A2") : String(index + 1).padStart(2, "0")}</span>
-        <span className="grow">
-          <span className="ex-name">
-            {ex.name.replace(/^A[12] · /, "")}
-            {ex.up && week >= 4 && week <= 6 && <span className="plus">▲ +1 série</span>}
-          </span>
-          <span className="ex-sub" style={{ display: "block" }}>
-            {ex.muscleLabel}. {planned}×{ex.reps[0]}–{ex.reps[1]}
-            {ex.perSide ? " por lado" : ""}, {stop.label.toLowerCase()}
-          </span>
-        </span>
-        <span className="ex-count">{complete ? <Icon name="check" size={20} /> : `${workDone}/${workAll.length}`}</span>
-      </button>
-
-      {(askFeedback || askRirClosed) && (
-        <div className="ask stack" style={{ gap: 8 }}>
-          <div className="spread">
-            <span className="label">Como bateu?</span>
-            {askFeedback && (
-              <button type="button" className="link-btn" onClick={() => setFeedback({ skipped: true })}>
-                Pular
-              </button>
-            )}
-          </div>
-          {askRirClosed && (
-            <Choice label="Sobraram" options={RIR_OPTS} value={undefined} onPick={(v) => setSet(askRirId!, { rir: RIR_OPTS.indexOf(v) })} />
-          )}
-          {askFeedback && (
-            <>
-              <Choice label="Pump" options={["fraco", "bom", "forte"]} value={fb?.pump} onPick={(v) => setFeedback({ pump: v })} />
-              <Choice label="Volume" options={["leve", "ok", "pesado"]} value={fb?.volume} onPick={(v) => setFeedback({ volume: v })} />
-              <Choice label="Articulação" options={["ok", "incomodou"]} value={fb?.joint} onPick={(v) => setFeedback({ joint: v })} />
-            </>
-          )}
-        </div>
-      )}
-
-      {open && (
-        <div className="ex-body">
-          <div data-augmented-ui="br-clip border" className={`stats`}>
-            <div className="stat">
-              <span className="label">Séries × reps</span>
-              <span className="v">
-                {planned} × {ex.reps[0]}–{ex.reps[1]}
-              </span>
-            </div>
-            <div className="stat">
-              <span className="label">Descanso</span>
-              <span className="v" style={{ fontSize: ex.rest[0] === 0 ? 15 : undefined }}>
-                {ex.restLabel}
-              </span>
-            </div>
-            <div className={`stat toned tone-${stop.tone}`}>
-              <span className="label">Até onde</span>
-              <span className="v">{stop.label}</span>
-            </div>
-          </div>
-
-          <div className="row-wrap">
-            <span data-augmented-ui="br-clip border" className="chip">
-              Desce 2–3 s, sobe rápido
-            </span>
-            {ex.tempo && (
-              <span data-augmented-ui="br-clip border" className="chip">
-                {ex.tempo}
-              </span>
-            )}
-            {showInt && (
-              <span data-augmented-ui="br-clip border" className="chip int">
-                {ex.intensifier}
-              </span>
-            )}
-            {ex.superset && (
-              <span data-augmented-ui="br-clip border" className="chip">
-                Superset {ex.superset.order === 1 ? "com A2" : "com A1"}
-              </span>
-            )}
-            {ex.changed && (
-              <span data-augmented-ui="br-clip border" className="chip changed">
-                Mudou na v2: {ex.changed}
-              </span>
-            )}
-          </div>
-
-          {active && (
-            <div data-augmented-ui="tl-clip border" className={`suggest ${sug.kind === "up" ? "up" : sug.kind === "down" ? "down" : ""}`}>
-              <strong>{sug.title}</strong>
-              <span className="small muted">{sug.detail}</span>
-              {sug.notes.map((n) => (
-                <span key={n} className="small sug-note">
-                  {n}
-                </span>
-              ))}
-              {last && (
-                <span className="small faint">
-                  Última vez ({shortDate(last.session.date)}): {summarizeSets(last.entry)} {last.entry.unit}
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="sets">
-            <div className="spread">
-              <span className="label">Peso em</span>
-              <span className="unit-toggle" role="group" aria-label="Unidade de peso">
-                {(["kg", "lb"] as Unit[]).map((u) => (
-                  <button key={u} type="button" aria-pressed={entry.unit === u} onClick={() => onUnit(u)}>
-                    {u}
-                  </button>
-                ))}
-              </span>
-            </div>
-            <div className="sets-head">
-              <span>Série</span>
-              <span className="center">Peso</span>
-              <span className="center">Reps</span>
-              <span className="center">Feita</span>
-            </div>
-            {entry.sets.map((s) => {
-              const isWork = s.kind !== "warmup";
-              const n = isWork ? ++workCounter : 0;
-              const repsPh = isWork ? (sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0]) : 8;
-              const weightPh = isWork ? sug.weight : null;
-              return (
-                <SetRow
-                  key={s.id}
-                  set={s}
-                  label={s.kind === "warmup" ? "Aquec." : s.kind === "drop" ? "−15%" : String(n)}
-                  unit={entry.unit}
-                  weightPh={weightPh}
-                  repsPh={repsPh}
-                  canRemove={!s.done}
-                  askRir={s.id === askRirId}
-                  rirTarget={rirTarget}
-                  onRir={(v) => setSet(s.id, { rir: v })}
-                  onWeight={(w) => setSet(s.id, { weight: w })}
-                  onReps={(r) => setSet(s.id, { reps: r })}
-                  onToggle={(wv, rv) => toggleDone(s.id, wv, rv, weightPh, repsPh)}
-                  onRemove={() => removeSet(s.id)}
-                />
-              );
-            })}
-            <div className="row" style={{ marginTop: 2 }}>
-              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm" onClick={() => addSet("work")}>
-                <Icon name="plus" size={16} /> Série
-              </button>
-              <button
-                type="button"
-                data-augmented-ui="tl-clip br-clip border"
-                className="btn btn-sm btn-ghost"
-                onClick={() => addSet("warmup")}
-              >
-                <Icon name="plus" size={16} /> Aquecimento
-              </button>
-              <button
-                type="button"
-                data-augmented-ui="tl-clip br-clip border"
-                className="btn btn-sm btn-ghost"
-                onClick={() => setShowNote((v) => !v)}
-              >
-                Anotar
-              </button>
-            </div>
-          </div>
-
-          {showNote && (
-            <textarea
-              className="note"
-              placeholder="Ajuste do banco, pegada, dor, máquina usada…"
-              defaultValue={entry.notes ?? ""}
-              onBlur={(ev) => {
-                const v = ev.target.value;
-                mutate((e) => {
-                  e.notes = v;
-                });
-              }}
-            />
-          )}
-
-          <details className="how">
-            <summary>Como fazer</summary>
-            <div className="prose">
-              <p>
-                <strong>Da ficha:</strong>
-              </p>
-              <ul>
-                {ex.cues.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-              {lib && (
-                <>
-                  <p style={{ marginTop: 10 }}>
-                    <strong>Execução:</strong>
-                  </p>
-                  <ol>
-                    {lib.execution.map((c) => (
-                      <li key={c}>{c}</li>
-                    ))}
-                  </ol>
-                  <p style={{ marginTop: 10 }}>
-                    <strong>Evite:</strong> {lib.errors.join(" ")}
-                  </p>
-                  <p style={{ marginTop: 10 }}>
-                    <Link to={`/exercicios/${lib.id}`}>Vídeo, progresso e recordes deste exercício</Link>
-                  </p>
-                </>
-              )}
-            </div>
-          </details>
-        </div>
-      )}
-    </article>
-  );
-}
-
-function SetRow({
-  set,
-  label,
-  unit,
-  weightPh,
-  repsPh,
-  canRemove,
-  askRir,
-  rirTarget,
-  onRir,
-  onWeight,
-  onReps,
-  onToggle,
-  onRemove,
-}: {
-  set: SetEntry;
-  label: string;
-  unit: Unit;
-  weightPh: number | null;
-  repsPh: number | null;
-  canRemove: boolean;
-  askRir: boolean;
-  rirTarget: [number, number];
-  onRir: (v: number) => void;
-  onWeight: (w: number | null) => void;
-  onReps: (r: number | null) => void;
-  onToggle: (w: number | null, r: number | null) => void;
-  onRemove: () => void;
-}) {
-  const [w, setW] = useState(set.weight == null ? "" : formatWeight(set.weight));
-  const [r, setR] = useState(set.reps == null ? "" : String(set.reps));
-  const [editRir, setEditRir] = useState(false);
-  const showRir = set.done && set.kind !== "warmup" && (askRir || editRir);
-
-  // Sincroniza quando o valor muda por fora (ex.: −15% automático, marcar como feito).
-  useEffect(() => {
-    const parsed = parseNum(w);
-    if (parsed !== set.weight) setW(set.weight == null ? "" : formatWeight(set.weight));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set.weight]);
-  useEffect(() => {
-    const parsed = parseNum(r);
-    if (parsed !== set.reps) setR(set.reps == null ? "" : String(set.reps));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set.reps]);
-
-  const kindCls = set.kind === "warmup" ? "warmup" : set.kind === "drop" ? "drop" : "";
-  return (
-    <div className={`set ${set.kind}${set.done ? " done" : ""}`}>
-      <div className={`set-kind ${kindCls}`}>
-        {label}
-        {set.done && set.rir != null && (
-          <button
-            type="button"
-            className="rir-tag"
-            aria-label={`Sobraram ${set.rir} reps. Tocar para mudar.`}
-            onClick={() => setEditRir((v) => !v)}
-          >
-            sobra {set.rir >= 4 ? "4+" : set.rir}
-          </button>
-        )}
-        {canRemove && (
-          <button type="button" className="x" aria-label="Remover série" onClick={onRemove}>
-            ×
-          </button>
-        )}
-      </div>
-      <div className="field">
-        <input
-          inputMode="decimal"
-          enterKeyHint="next"
-          aria-label={`Peso da série ${label}`}
-          placeholder={weightPh != null ? formatWeight(weightPh) : "–"}
-          value={w}
-          onChange={(e) => {
-            setW(e.target.value);
-            const n = parseNum(e.target.value);
-            if (n !== null || e.target.value.trim() === "") onWeight(n);
-          }}
-        />
-        <span className="suffix">{unit}</span>
-      </div>
-      <div className="field">
-        <input
-          inputMode="numeric"
-          enterKeyHint="done"
-          aria-label={`Repetições da série ${label}`}
-          placeholder={repsPh != null ? String(repsPh) : "–"}
-          value={r}
-          onChange={(e) => {
-            const v = e.target.value.replace(/\D/g, "");
-            setR(v);
-            onReps(v === "" ? null : Number(v));
-          }}
-        />
-      </div>
-      <button
-        type="button"
-        data-augmented-ui="tl-clip br-clip border"
-        className="check"
-        aria-pressed={set.done}
-        aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"}
-        onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}
-      >
-        <Icon name="check" size={22} />
-      </button>
-      {showRir && (
-        <div className="rir-ask" role="group" aria-label={`Quantas reps sobraram na série ${label}?`}>
-          <span className="label">Sobraram</span>
-          {[0, 1, 2, 3, 4].map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={v >= rirTarget[0] && v <= rirTarget[1] ? "target" : undefined}
-              aria-pressed={set.rir === v}
-              onClick={() => {
-                onRir(v);
-                setEditRir(false);
-              }}
-            >
-              {v === 4 ? "4+" : v}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Linha de opções de um toque (check-in, feedback). Tocar de novo na escolhida mantém. */
-function Choice<T extends string>({
-  label,
-  options,
-  value,
-  onPick,
-}: {
-  label: string;
-  options: T[];
-  value: T | undefined;
-  onPick: (v: T) => void;
-}) {
-  return (
-    <div className="choice" role="group" aria-label={label}>
-      <span className="choice-label">{label}</span>
-      {options.map((o) => (
-        <button key={o} type="button" aria-pressed={value === o} onClick={() => onPick(o)}>
-          {o}
-        </button>
-      ))}
     </div>
   );
 }

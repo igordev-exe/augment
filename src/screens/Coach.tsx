@@ -9,6 +9,7 @@ import {
   errorText,
   loadCoachChat,
   loadCoachConfig,
+  modelPrice,
   MODELS,
   saveCoachChat,
   saveCoachConfig,
@@ -18,12 +19,12 @@ import {
 } from "../lib/coach/chat";
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
-import { useSessions, useSettings, useToday } from "../lib/hooks";
+import { useBodyLog, useSessions, useSettings, useToday } from "../lib/hooks";
 
 const QUICK = [
   "Analise minha semana passada",
   "Me prepare para o treino de hoje",
-  "Perdi treinos. Como reorganizo a semana?",
+  "Resumo do meu mesociclo e quais acessórios trocar",
   "Quais exercícios estão travando?",
 ];
 
@@ -32,13 +33,6 @@ const EFFORTS: { id: Effort; label: string }[] = [
   { id: "medium", label: "Normal" },
   { id: "high", label: "Profundo" },
 ];
-
-/** US$ por milhão de tokens: entrada, leitura de cache, saída. Aproximado (gravação de cache conta como entrada). */
-const PRICE: Record<string, [number, number, number]> = {
-  "claude-opus-5-5": [4, 0.2, 20],
-  "claude-sonnet-5-5": [2, 0.2, 10],
-  "claude-haiku-5-5": [0.1, 0.01, 0.5],
-};
 
 /** Negrito com **texto**. */
 function inline(text: string): ReactNode {
@@ -96,11 +90,13 @@ function userText(m: Anthropic.Beta.BetaMessageParam): string | null {
 
 export function Coach() {
   const sessions = useSessions();
+  const bodyLog = useBodyLog();
   const [settings, updateSettings] = useSettings();
   const today = useToday();
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<CoachConfig | null>(null);
   const [chat, setChat] = useState<CoachChat>(EMPTY_CHAT);
+  const [chatLoaded, setChatLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [live, setLive] = useState("");
@@ -109,24 +105,40 @@ export function Coach() {
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const autoSent = useRef(false);
 
   useEffect(() => {
     loadCoachConfig().then((c) => {
       setConfig(c);
       if (!c.apiKey || params.get("config")) setEditing(true);
     });
-    loadCoachChat().then(setChat);
+    loadCoachChat().then((ch) => {
+      setChat(ch);
+      setChatLoaded(true);
+    });
     const q = params.get("q");
     if (q) setDraft(q);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [params]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [chat.messages.length, live, tool]);
 
+  // Disparo automático quando vem de "Debrief do treinador" (?auto=1&q=...)
+  useEffect(() => {
+    if (autoSent.current || !chatLoaded || !sessions || !config?.apiKey || editing || busy) return;
+    const q = params.get("q");
+    const auto = params.get("auto");
+    if (q && auto === "1") {
+      autoSent.current = true;
+      void send(q);
+    }
+    // send é acionado uma única vez quando os dados iniciais carregam
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatLoaded, sessions, config, editing, busy, params]);
+
   if (!sessions || !config) return null;
-  const data: CoachData = { sessions, settings, today };
+  const data: CoachData = { sessions, settings, today, bodyLog };
 
   function updateChat(next: CoachChat) {
     setChat(next);
@@ -138,7 +150,7 @@ export function Coach() {
     if (!t || busy || !config?.apiKey) return;
     setError(null);
     setDraft("");
-    if (params.get("q")) setParams({}, { replace: true });
+    if (params.get("q") || params.get("auto")) setParams({}, { replace: true });
     const notes = chat.notes?.length ? `\n[${chat.notes.join(" ")}]` : "";
     let cur: CoachChat = {
       ...chat,
@@ -190,7 +202,7 @@ export function Coach() {
     });
   }
 
-  const [pin, pcache, pout] = PRICE[config.model] ?? PRICE["claude-opus-5-5"];
+  const [pin, pcache, pout] = modelPrice(config.model);
   const cost = (chat.usage.input * pin + chat.usage.cacheRead * pcache + chat.usage.output * pout) / 1e6;
   const tokens = chat.usage.input + chat.usage.cacheRead + chat.usage.output;
 

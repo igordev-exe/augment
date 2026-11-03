@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { EXERCISE_BY_ID, PROGRAM } from "../data/program";
 import type { Session, SessionExercise } from "../data/types";
-import { reentryFor, rirRange, setsFor, stopFor, weekFor } from "./mesocycle";
-import { backoffWeight, e1rm, historyOf, predictReps, prsInSession, recordsOf, suggest } from "./progression";
+import { computeAchievements } from "./achievements";
+import { DEFAULT_SETTINGS } from "./db";
+import { checkinAdvice, earlyDeloadMesoStart, fatigueDeloadFor, reentryFor, rirRange, setsFor, stopFor, weekFor } from "./mesocycle";
+import {
+  backoffWeight,
+  e1rm,
+  historyOf,
+  platesForBarbell,
+  predictReps,
+  prsBySession,
+  prsInSession,
+  recordsOf,
+  snapWeight,
+  suggest,
+  warmupSpec,
+} from "./progression";
 import { planAhead } from "./schedule";
 import { plannedVolume } from "./sessions";
 
@@ -10,10 +24,11 @@ const hack = EXERCISE_BY_ID["lower-a.hack"];
 const extensora = EXERCISE_BY_ID["lower-a.extensora"];
 const martelo = EXERCISE_BY_ID["pull-a.martelo-corda"];
 
-function entry(exId: string, sets: [number, number][], kinds?: ("work" | "drop")[]): SessionExercise {
+function entry(exId: string, sets: [number, number][], kinds?: ("work" | "drop")[], alt?: string): SessionExercise {
   return {
     exId,
     unit: "kg",
+    alt,
     sets: sets.map(([w, r], i) => ({ id: `${i}`, kind: kinds?.[i] ?? "work", weight: w, reps: r, done: true })),
   };
 }
@@ -22,7 +37,7 @@ function session(id: string, date: string, dayId: string, exercises: SessionExer
   return { id, date, dayId, week: 3, startedAt: Date.parse(date), finishedAt: Date.parse(date) + 1, status: "done", exercises };
 }
 
-describe("mesociclo", () => {
+describe("mesociclo e fadiga", () => {
   it("calcula a semana e repete depois do deload", () => {
     expect(weekFor("2026-09-21", "2026-09-21")).toBe(1);
     expect(weekFor("2026-09-21", "2026-10-09")).toBe(3);
@@ -58,11 +73,45 @@ describe("mesociclo", () => {
     expect(v.panturrilha).toBe(8);
     expect(v.trapezio).toBe(3);
   });
+
+  it("gera conselhos de check-in e detecta fadiga acumulada para deload antecipado", () => {
+    expect(checkinAdvice({ sleep: "ruim", energy: "ok", pain: "leve" })).toHaveLength(2);
+    expect(checkinAdvice({ skipped: true })).toEqual([]);
+
+    const s1: Session = {
+      ...session("f1", "2026-10-12", "lower-a", [
+        {
+          ...entry(hack.id, [
+            [120, 4],
+            [120, 4],
+          ]),
+          feedback: { joint: "incomodou" },
+        },
+      ]),
+      week: 4,
+      checkin: { sleep: "ruim", energy: "baixa", pain: "nenhuma" },
+    };
+    const s2: Session = {
+      ...session("f2", "2026-10-14", "push-a", [
+        {
+          ...entry("push-a.supino-maq", [
+            [80, 4],
+            [80, 4],
+          ]),
+        },
+      ]),
+      week: 4,
+      checkin: { sleep: "ruim", energy: "ok", pain: "nenhuma" },
+    };
+    const alert = fatigueDeloadFor([s1, s2], "2026-09-21", "2026-10-15");
+    expect(alert).not.toBeNull();
+    expect(alert!.week).toBe(4);
+    expect(weekFor(earlyDeloadMesoStart("2026-10-15"), "2026-10-15")).toBe(7);
+  });
 });
 
 describe("retomada", () => {
   const days = [1, 2, 3, 4, 5];
-  // Seus treinos reais: 14/10, 19/10 e 21/10, mesociclo desde 12/10.
   const done = ["2026-10-14", "2026-10-19", "2026-10-21"];
 
   it("10+ dias parado → recomeçar na semana 1", () => {
@@ -92,12 +141,12 @@ describe("retomada", () => {
   });
 });
 
-describe("dupla progressão", () => {
+describe("dupla progressão, pinos do aparelho e anilhas", () => {
   it("sem histórico pede para escolher carga", () => {
     expect(suggest(hack, undefined, 4, 3, 5).kind).toBe("first");
   });
 
-  it("todas no topo → sobe", () => {
+  it("todas no topo → sobe (e respeita pinos personalizados da máquina se configurados)", () => {
     const s = suggest(
       hack,
       entry(hack.id, [
@@ -112,6 +161,32 @@ describe("dupla progressão", () => {
     );
     expect(s.kind).toBe("up");
     expect(s.weight).toBe(125);
+
+    const customStack = [110, 120, 127.5, 135];
+    const sPin = suggest(
+      hack,
+      entry(hack.id, [
+        [120, 10],
+        [120, 10],
+        [120, 10],
+        [120, 10],
+      ]),
+      4,
+      3,
+      5,
+      undefined,
+      customStack,
+    );
+    expect(sPin.kind).toBe("up");
+    expect(sPin.weight).toBe(127.5);
+    expect(snapWeight(68, 2.5, [60, 67, 74])).toBe(67);
+  });
+
+  it("calcula anilhas por lado para exercícios com barra olímpica", () => {
+    expect(platesForBarbell(20, "kg")).toBe("só a barra (20 kg)");
+    expect(platesForBarbell(80, "kg")).toBe("barra 20kg + [25 + 5] / lado");
+    expect(platesForBarbell(102.5, "kg")).toBe("barra 20kg + [25 + 15 + 1,25] / lado");
+    expect(platesForBarbell(15, "kg")).toBeNull();
   });
 
   it("dentro da faixa → mantém e busca +1 rep", () => {
@@ -168,7 +243,6 @@ describe("dupla progressão", () => {
   });
 
   it("salto grande demais para a faixa → acumula reps antes de subir", () => {
-    // Cabo: 17,5 → 20 kg é +14%; com 15 reps a previsão em 20 kg fica abaixo de 10.
     const s = suggest(
       martelo,
       entry(martelo.id, [
@@ -199,7 +273,6 @@ describe("dupla progressão", () => {
   });
 
   it("cargas misturadas (rampa como trabalho) → referência é a mais pesada", () => {
-    // Registro real de 19/10: 60×8, 20×10, 40×8, 40×6.
     const s = suggest(
       hack,
       entry(hack.id, [
@@ -229,12 +302,16 @@ describe("dupla progressão", () => {
     expect(suggest(hack, e, 4, 4, 2.5, 3).notes).toEqual([]);
   });
 
-  it("back-off de 15%", () => {
+  it("back-off de 15% e cálculo de aquecimento", () => {
     expect(backoffWeight(80, 2.5)).toBe(67.5);
+    expect(warmupSpec(100, 0, 2, 2.5)).toEqual({ weight: 50, reps: 8 });
+    expect(warmupSpec(100, 1, 2, 2.5)).toEqual({ weight: 75, reps: 4 });
+    expect(warmupSpec(100, 0, 1, 2.5)).toEqual({ weight: 65, reps: 6 });
+    expect(warmupSpec(null, 0, 2, 2.5)).toEqual({ weight: null, reps: 8 });
   });
 });
 
-describe("recordes", () => {
+describe("recordes, alternativas e conquistas", () => {
   const a = session("a", "2026-09-24", "lower-a", [
     entry(hack.id, [
       [120, 6],
@@ -247,18 +324,49 @@ describe("recordes", () => {
       [125, 5],
     ]),
   ]);
+  const cAlt = session("c", "2026-10-08", "lower-a", [
+    entry(
+      hack.id,
+      [
+        [200, 10],
+        [200, 10],
+      ],
+      undefined,
+      "Pendulum squat",
+    ),
+  ]);
 
-  it("calcula recordes", () => {
-    const r = recordsOf(historyOf([a, b], hack.id));
+  it("calcula recordes e isola alternativas do exercício principal", () => {
+    const r = recordsOf(historyOf([a, b, cAlt], hack.id));
     expect(r.heaviest?.weight).toBe(125);
     expect(r.repRecords.find((x) => x.weight === 120)?.reps).toBe(8);
     expect(Math.round(r.bestE1rm!.value)).toBe(Math.round(e1rm(120, 8)));
+
+    const altHist = historyOf([a, b, cAlt], hack.id, "Pendulum squat");
+    expect(altHist).toHaveLength(1);
+    expect(recordsOf(altHist).heaviest?.weight).toBe(200);
   });
 
-  it("detecta recordes batidos na sessão", () => {
-    const prs = prsInSession(b, [a, b]);
+  it("detecta recordes batidos na sessão e bate com prsBySession O(N)", () => {
+    const prs = prsInSession(b, [a, b, cAlt]);
     expect(prs.map((p) => p.kind).sort()).toEqual(["1rm", "carga", "reps"]);
-    expect(prsInSession(a, [a, b])).toEqual([]); // primeira vez = linha de base
+    expect(prsInSession(a, [a, b])).toEqual([]);
+    expect(prsInSession(cAlt, [a, b, cAlt])).toEqual([]);
+
+    const map = prsBySession([cAlt, b, a]);
+    expect(map.get("a")).toEqual([]);
+    expect(map.get("b")).toEqual(prs);
+    expect(map.get("c")).toEqual([]);
+  });
+
+  it("computa módulos de conquista determinísticos", () => {
+    const mods = computeAchievements([a, b, cAlt], DEFAULT_SETTINGS, [
+      { id: "1", date: "2026-09-24", weightKg: 80 },
+      { id: "2", date: "2026-10-01", weightKg: 80.5 },
+      { id: "3", date: "2026-10-08", weightKg: 81 },
+    ]);
+    expect(mods.find((m) => m.id === "first-protocol")?.unlocked).toBe(true);
+    expect(mods.find((m) => m.id === "body-tracker")?.unlocked).toBe(true);
   });
 });
 
@@ -269,7 +377,6 @@ describe("agenda", () => {
   });
 
   it("dia perdido empurra a sequência", () => {
-    // Fez Push A na segunda e faltou na terça: quarta vira Pull A.
     const s = session("x", "2026-10-12", "push-a", []);
     const plan = planAhead([s], "2026-10-14", 3, [1, 2, 3, 4, 5]);
     expect(plan[0]).toEqual({ date: "2026-10-14", dayId: "pull-a" });

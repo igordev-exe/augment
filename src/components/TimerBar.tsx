@@ -27,9 +27,14 @@ export function TimerBar() {
           <span>{state.label}</span>
         </div>
         {!over && (
-          <button type="button" onClick={() => add(15)} aria-label="Mais 15 segundos">
-            +15
-          </button>
+          <>
+            <button type="button" onClick={() => add(-15)} aria-label="Menos 15 segundos">
+              −15
+            </button>
+            <button type="button" onClick={() => add(15)} aria-label="Mais 15 segundos">
+              +15
+            </button>
+          </>
         )}
         <button type="button" onClick={stop}>
           {over ? "Ok" : "Pular"}

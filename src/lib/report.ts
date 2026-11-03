@@ -1,12 +1,12 @@
 import { LIB_BY_ID } from "../data/library";
 import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
-import type { MuscleId, Session } from "../data/types";
-import { addDays, shortDate } from "./dates";
+import type { MuscleId, Session, Unit } from "../data/types";
+import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
-import { e1rm, formatWeight, historyOf, prsInSession, toKg, workSets, type PR } from "./progression";
-import { plannedVolume, weeklyVolume } from "./sessions";
+import { e1rm, formatWeight, historyOf, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
+import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
-// Relatório da semana (seg–dom): o que saiu do plano e um foco só para a próxima. Regras fixas, sem IA.
+// Relatório da semana (seg–dom) e do mesociclo (6 semanas + deload): regras fixas, sem IA.
 
 export interface Shortfall {
   date: string;
@@ -52,11 +52,10 @@ export interface WeekReport {
   prs: (PR & { date: string })[];
   signals: string[];
   joints: JointIssue[];
+  cardioMinutes: number;
+  cardioSessions: number;
+  avgSteps: number | null;
   focus: { title: string; detail: string };
-}
-
-function byDate(a: Session, b: Session): number {
-  return a.date === b.date ? a.startedAt - b.startedAt : a.date < b.date ? -1 : 1;
 }
 
 /** Melhor 1RM estimado da entrada, contando as reps que sobraram (normaliza semanas com RIR diferente). */
@@ -72,7 +71,7 @@ function list(names: string[]): string {
 export function weeklyReport(all: Session[], weekStart: string, mesoStart: string, trainingDays: number[]): WeekReport {
   const weekEnd = addDays(weekStart, 7);
   const done = all.filter((s) => s.status === "done");
-  const sessions = done.filter((s) => s.date >= weekStart && s.date < weekEnd).sort(byDate);
+  const sessions = done.filter((s) => s.date >= weekStart && s.date < weekEnd).sort(bySessionAsc);
   const upToEnd = done.filter((s) => s.date < weekEnd);
   const mesoWeek = sessions[0]?.week ?? (weekStart >= mesoStart ? weekFor(mesoStart, weekStart) : null);
   const planned = trainingDays.length;
@@ -138,8 +137,9 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
     }
   }
 
-  // Recordes batidos na semana
-  const prs = sessions.flatMap((s) => prsInSession(s, done).map((p) => ({ ...p, date: s.date })));
+  // Recordes batidos na semana (em O(N) via prsBySession)
+  const prMap = prsBySession(done);
+  const prs = sessions.flatMap((s) => (prMap.get(s.id) ?? []).map((p) => ({ ...p, date: s.date })));
 
   // Sinais do corpo: check-in e articulação
   const signals: string[] = [];
@@ -159,6 +159,21 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
     joints.push({ exId, times, alternatives: LIB_BY_ID[EXERCISE_BY_ID[exId]?.lib]?.alternatives ?? [] });
   }
 
+  // Cardio e passos na semana (F10)
+  let cardioMinutes = 0;
+  let cardioSessions = 0;
+  const stepValues: number[] = [];
+  for (const s of sessions) {
+    if (s.cardio?.minutes && s.cardio.minutes > 0) {
+      cardioMinutes += s.cardio.minutes;
+      cardioSessions += 1;
+    }
+    if (s.cardio?.steps && s.cardio.steps > 0) {
+      stepValues.push(s.cardio.steps);
+    }
+  }
+  const avgSteps = stepValues.length > 0 ? Math.round(stepValues.reduce((a, b) => a + b, 0) / stepValues.length) : null;
+
   const report: WeekReport = {
     weekStart,
     mesoWeek,
@@ -173,6 +188,9 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
     prs,
     signals,
     joints,
+    cardioMinutes,
+    cardioSessions,
+    avgSteps,
     focus: { title: "", detail: "" },
   };
   report.focus = focusOf(report);
@@ -226,4 +244,196 @@ export function focusOf(r: WeekReport): { title: string; detail: string } {
   }
   if (r.done === 0) return { title: "Sem treinos", detail: "Nenhum treino registrado nesta semana." };
   return { title: "Semana limpa", detail: "Nada importante fora do plano. Siga as sugestões de carga." };
+}
+
+// ---------- Relatório de Mesociclo (F2) + Rotação de Acessórios (F1) ----------
+
+export interface MesoExerciseProgress {
+  exId: string;
+  name: string;
+  compound: boolean;
+  unit: Unit;
+  alt?: string;
+  sessions: number;
+  firstDate: string;
+  firstLoad: number;
+  firstReps: number;
+  firstE1rm: number;
+  lastDate: string;
+  lastLoad: number;
+  lastReps: number;
+  lastE1rm: number;
+  deltaLoad: number;
+  deltaE1rmPct: number;
+  jointComplaints: number;
+}
+
+export interface AccessorySwapCandidate {
+  exId: string;
+  name: string;
+  currentAlt?: string;
+  reason: "articular" | "estagnado" | "variacao";
+  detail: string;
+  alternatives: string[];
+}
+
+export interface MesoReport {
+  cycleStart: string;
+  cycleEnd: string;
+  currentWeek: number;
+  weeksElapsed: number;
+  sessionsDone: number;
+  sessionsPlanned: number;
+  totalSets: number;
+  totalVolumeKg: number;
+  cardioMinutes: number;
+  prsCount: number;
+  exercises: MesoExerciseProgress[];
+  swapCandidates: AccessorySwapCandidate[];
+}
+
+/**
+ * Resume o ciclo atual de 7 semanas (a partir do início do ciclo que contém `today`),
+ * comparando a 1ª sessão registrada de cada exercício com a última sessão pré-deload,
+ * e sugere 2–3 acessórios candidatos a rotação para o próximo mesociclo (F1 + F2).
+ */
+export function mesoReport(all: Session[], mesoStart: string, trainingDays: number[], today = todayISO()): MesoReport {
+  const diffDays = Math.max(0, daysBetween(mesoStart, today));
+  const cycleIndex = Math.floor(diffDays / 49);
+  const cycleStart = addDays(mesoStart, cycleIndex * 49);
+  const cycleEnd = addDays(cycleStart, 49);
+  const currentWeek = weekFor(mesoStart, today);
+  const weeksElapsed = Math.min(7, Math.max(1, Math.floor(daysBetween(cycleStart, today) / 7) + 1));
+
+  const done = all.filter((s) => s.status === "done");
+  const prMap = prsBySession(done);
+  const inCycle = done.filter((s) => s.date >= cycleStart && s.date < cycleEnd).sort(bySessionAsc);
+
+  let totalSets = 0;
+  let totalVolumeKg = 0;
+  let cardioMinutes = 0;
+  let prsCount = 0;
+
+  for (const s of inCycle) {
+    const st = sessionStats(s);
+    totalSets += st.sets;
+    totalVolumeKg += st.volumeKg;
+    cardioMinutes += s.cardio?.minutes ?? 0;
+    prsCount += (prMap.get(s.id) ?? []).length;
+  }
+
+  const exercises: MesoExerciseProgress[] = [];
+  const allProgramEx = PROGRAM.flatMap((d) => d.exercises);
+
+  for (const ex of allProgramEx) {
+    // Considera sessões do ciclo; para comparar o pico, prefere última sessão fora do deload quando disponível.
+    const hits = inCycle
+      .map((s) => ({ session: s, entry: s.exercises.find((e) => e.exId === ex.id) }))
+      .filter((x): x is { session: Session; entry: Session["exercises"][number] } => !!x.entry && workSets(x.entry).length > 0);
+    if (!hits.length) continue;
+
+    const first = hits[0];
+    const nonDeloadHits = hits.filter((h) => h.session.week !== 7);
+    const last = nonDeloadHits.length > 0 ? nonDeloadHits[nonDeloadHits.length - 1] : hits[hits.length - 1];
+
+    const fWork = workSets(first.entry, false);
+    const lWork = workSets(last.entry, false);
+    if (!fWork.length || !lWork.length) continue;
+
+    const firstLoad = mainLoad(fWork) ?? fWork[0].weight!;
+    const firstReps = Math.max(...fWork.filter((s) => s.weight === firstLoad).map((s) => s.reps!));
+    const firstE1rm = Math.max(...fWork.map((s) => e1rm(toKg(s.weight!, first.entry.unit), s.reps!)));
+
+    const lastLoad = mainLoad(lWork) ?? lWork[0].weight!;
+    const lastReps = Math.max(...lWork.filter((s) => s.weight === lastLoad).map((s) => s.reps!));
+    const lastE1rm = Math.max(...lWork.map((s) => e1rm(toKg(s.weight!, last.entry.unit), s.reps!)));
+
+    const deltaLoad = Number((lastLoad - firstLoad).toFixed(2));
+    const deltaE1rmPct = firstE1rm > 0 ? Math.round(((lastE1rm - firstE1rm) / firstE1rm) * 100) : 0;
+    const jointComplaints = hits.filter((h) => h.entry.feedback?.joint === "incomodou").length;
+
+    exercises.push({
+      exId: ex.id,
+      name: shortName(ex),
+      compound: ex.compound,
+      unit: last.entry.unit,
+      alt: last.entry.alt,
+      sessions: hits.length,
+      firstDate: first.session.date,
+      firstLoad,
+      firstReps,
+      firstE1rm: Math.round(firstE1rm),
+      lastDate: last.session.date,
+      lastLoad,
+      lastReps,
+      lastE1rm: Math.round(lastE1rm),
+      deltaLoad,
+      deltaE1rmPct,
+      jointComplaints,
+    });
+  }
+
+  // Candidatos a rotação de acessórios (F1):
+  // Prioridade: 1) incomodou articulação, 2) isolado/acessório estagnado (sessions >= 2 e deltaE1rmPct <= 0), 3) isolados para variar estímulo.
+  const swapCandidates: AccessorySwapCandidate[] = [];
+  for (const ep of exercises) {
+    const ex = EXERCISE_BY_ID[ep.exId];
+    const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
+    if (!alts.length) continue;
+
+    if (ep.jointComplaints > 0) {
+      swapCandidates.push({
+        exId: ep.exId,
+        name: ep.name,
+        currentAlt: ep.alt,
+        reason: "articular",
+        detail: `Incomodou a articulação em ${ep.jointComplaints} sessão(ões) neste ciclo.`,
+        alternatives: alts,
+      });
+    } else if (!ep.compound && ep.sessions >= 2 && ep.deltaE1rmPct <= 0) {
+      swapCandidates.push({
+        exId: ep.exId,
+        name: ep.name,
+        currentAlt: ep.alt,
+        reason: "estagnado",
+        detail: `Sem ganho de 1RM estimado após ${ep.sessions} sessões (${formatWeight(ep.lastLoad)}×${ep.lastReps}).`,
+        alternatives: alts,
+      });
+    }
+  }
+
+  // Se ainda faltam sugestões até 3 acessórios, sugere isolados com menor evolução percentual para variar no próximo ciclo
+  if (swapCandidates.length < 3) {
+    const already = new Set(swapCandidates.map((c) => c.exId));
+    const more = exercises
+      .filter((ep) => !ep.compound && !already.has(ep.exId) && (LIB_BY_ID[EXERCISE_BY_ID[ep.exId].lib]?.alternatives?.length ?? 0) > 0)
+      .sort((a, b) => a.deltaE1rmPct - b.deltaE1rmPct);
+    for (const ep of more) {
+      if (swapCandidates.length >= 3) break;
+      const alts = LIB_BY_ID[EXERCISE_BY_ID[ep.exId].lib]?.alternatives ?? [];
+      swapCandidates.push({
+        exId: ep.exId,
+        name: ep.name,
+        currentAlt: ep.alt,
+        reason: "variacao",
+        detail: `Acessório com ${ep.sessions} sessão(ões) no ciclo (${ep.deltaE1rmPct >= 0 ? `+${ep.deltaE1rmPct}%` : `${ep.deltaE1rmPct}%`}) — bom candidato para variar o estímulo.`,
+        alternatives: alts,
+      });
+    }
+  }
+
+  return {
+    cycleStart,
+    cycleEnd: addDays(cycleEnd, -1),
+    currentWeek,
+    weeksElapsed,
+    sessionsDone: inCycle.length,
+    sessionsPlanned: weeksElapsed * trainingDays.length,
+    totalSets,
+    totalVolumeKg: Math.round(totalVolumeKg),
+    cardioMinutes,
+    prsCount,
+    exercises,
+    swapCandidates,
+  };
 }

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { dayCode, dayName, PageHead } from "../components/bits";
 import { Icon } from "../components/Icon";
-import { addDays, formatDuration, fromISO, monthName, mondayOf, shortDate, toISO, weekdayShort } from "../lib/dates";
+import { addDays, bySessionDesc, formatDuration, fromISO, monthName, mondayOf, shortDate, toISO, weekdayShort } from "../lib/dates";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
-import { prsInSession } from "../lib/progression";
+import { prsBySession, type PR } from "../lib/progression";
 import { planAhead } from "../lib/schedule";
 import { sessionStats } from "../lib/sessions";
 
@@ -18,11 +18,11 @@ export function History() {
     return { y: d.getFullYear(), m: d.getMonth() };
   });
 
+  const prMap = useMemo(() => (sessions ? prsBySession(sessions) : new Map<string, PR[]>()), [sessions]);
+
   if (!sessions) return null;
 
-  const done = sessions
-    .filter((s) => s.status === "done")
-    .sort((a, b) => (a.date === b.date ? b.startedAt - a.startedAt : a.date < b.date ? 1 : -1));
+  const done = sessions.filter((s) => s.status === "done").sort(bySessionDesc);
   const plan = planAhead(sessions, today, 70, settings.trainingDays);
 
   // Grade do mês (semanas começando na segunda).
@@ -152,7 +152,7 @@ export function History() {
           <ul data-augmented-ui="tl-clip br-clip border" className="list">
             {monthSessions.map((s) => {
               const st = sessionStats(s);
-              const prs = prsInSession(s, sessions);
+              const prs = prMap.get(s.id) ?? [];
               return (
                 <li key={s.id}>
                   <Link to={`/treino/${s.id}`} className="list-item">

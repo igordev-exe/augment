@@ -1,4 +1,5 @@
 import type { ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
+import { bySessionAsc } from "./dates";
 import { rirRange } from "./mesocycle";
 
 // Dupla progressão com carga fixa (ficha, página 6) + recordes pessoais.
@@ -25,6 +26,71 @@ export function roundTo(x: number, step: number): number {
 export function formatWeight(w: number | null | undefined): string {
   if (w == null) return "–";
   return Number.isInteger(w) ? String(w) : w.toFixed(w * 10 === Math.round(w * 10) ? 1 : 2).replace(".", ",");
+}
+
+/** Arredonda `target` para o peso real mais próximo da pilha/aparelho, se configurado. */
+export function snapWeight(target: number, step: number, available?: number[]): number {
+  if (available && available.length > 0) {
+    let best = available[0];
+    let bestDiff = Math.abs(target - best);
+    for (const w of available) {
+      const d = Math.abs(target - w);
+      if (d < bestDiff - 1e-9) {
+        best = w;
+        bestDiff = d;
+      }
+    }
+    return best;
+  }
+  return roundTo(target, step);
+}
+
+/** Próximo pino/peso acima de `load` quando o aparelho tem pesos específicos cadastrados. */
+export function nextAvailableWeight(load: number, step: number, available?: number[]): number {
+  if (available && available.length > 0) {
+    const sorted = [...available].sort((a, b) => a - b);
+    const higher = sorted.find((w) => w > load + 1e-6);
+    if (higher != null) return higher;
+  }
+  return roundTo(load + step, step >= 1 ? 0.5 : 0.25);
+}
+
+/** Calculadora de anilhas por lado para exercícios com barra olímpica (20 kg ou 45 lb). */
+export function platesForBarbell(total: number | null | undefined, unit: Unit = "kg", barWeight = unit === "lb" ? 45 : 20): string | null {
+  if (total == null || !Number.isFinite(total) || total < barWeight) return null;
+  const u = unit === "lb" ? "lb" : "kg";
+  const remTotal = total - barWeight;
+  if (remTotal < 0.01) return `só a barra (${barWeight} ${u})`;
+  let side = remTotal / 2;
+  const plates = unit === "lb" ? [45, 35, 25, 10, 5, 2.5] : [25, 20, 15, 10, 5, 2.5, 1.25];
+  const picked: string[] = [];
+  for (const p of plates) {
+    while (side >= p - 1e-4) {
+      picked.push(formatWeight(p));
+      side -= p;
+    }
+  }
+  if (!picked.length) return null;
+  const remNote = side >= 0.1 ? ` (+${formatWeight(Number(side.toFixed(2)))} ${u})` : "";
+  return `barra ${barWeight}${u} + [${picked.join(" + ")}] / lado${remNote}`;
+}
+
+/** Sugestão de peso e reps para série de aquecimento a partir da carga de trabalho. */
+export function warmupSpec(
+  load: number | null | undefined,
+  warmupIdx: number,
+  totalWarmups: number,
+  step: number,
+  available?: number[],
+): { weight: number | null; reps: number } {
+  if (load == null || load <= 0) return { weight: null, reps: 8 };
+  const s = step >= 1 ? 0.5 : 0.25;
+  if (totalWarmups >= 2) {
+    return warmupIdx === 0
+      ? { weight: snapWeight(load * 0.5, s, available), reps: 8 }
+      : { weight: snapWeight(load * 0.75, s, available), reps: 4 };
+  }
+  return { weight: snapWeight(load * 0.65, s, available), reps: 6 };
 }
 
 /** Séries válidas (feitas, com peso e reps) que contam como trabalho. */
@@ -125,6 +191,8 @@ export function suggest(
   step: number,
   /** Semana do mesociclo da última vez (para comparar o RIR marcado com a meta dela). */
   lastWeek?: number,
+  /** Pesos específicos disponíveis na polia/máquina para este exercício (F5). */
+  availableWeights?: number[],
 ): Suggestion {
   const [lo, hi] = ex.reps;
   const work = workSets(last, false);
@@ -165,7 +233,7 @@ export function suggest(
   const bestAtLoad = Math.max(...atLoad.map((s) => e1rm(load, s.reps! + (s.rir ?? 0))));
   const allTop = atLoad.length >= Math.min(plannedSets, work.length) && atLoad.every((s) => (s.reps ?? 0) >= hi) && !usedDrop;
   if (allTop) {
-    const next = roundTo(load + step, step >= 1 ? 0.5 : 0.25);
+    const next = nextAvailableWeight(load, step, availableWeights);
     const predicted = predictReps(bestAtLoad, next);
     const jump = (next - load) / load;
     if (jump > BIG_JUMP && predicted < lo) {
@@ -196,7 +264,7 @@ export function suggest(
 
   const first = atLoad[0]?.reps ?? work[0].reps!;
   if (first < lo) {
-    const lower = roundTo(load * 0.9, step);
+    const lower = snapWeight(load * 0.9, step, availableWeights);
     return {
       kind: "down",
       weight: lower,
@@ -222,8 +290,8 @@ export function suggest(
 }
 
 /** Peso da última série quando as reps caíram abaixo do piso (−15%). */
-export function backoffWeight(load: number, step: number): number {
-  return roundTo(load * 0.85, step);
+export function backoffWeight(load: number, step: number, available?: number[]): number {
+  return snapWeight(load * 0.85, step, available);
 }
 
 /**
@@ -262,15 +330,17 @@ export interface ExerciseHistoryItem {
   entry: SessionExercise;
 }
 
-/** Histórico (mais antigo → mais novo) de sessões concluídas que têm o exercício com séries feitas. */
-export function historyOf(sessions: Session[], exId: string): ExerciseHistoryItem[] {
+/**
+ * Histórico (mais antigo → mais novo) de sessões concluídas que têm o exercício com séries feitas.
+ * Por padrão (`alt` omitido), traz apenas sessões feitas no exercício titular (sem alternativa).
+ */
+export function historyOf(sessions: Session[], exId: string, alt?: string): ExerciseHistoryItem[] {
+  const targetAlt = alt || undefined;
   return sessions
     .filter((s) => s.status === "done")
     .map((s) => ({ session: s, entry: s.exercises.find((e) => e.exId === exId) }))
-    .filter((x): x is ExerciseHistoryItem => !!x.entry && workSets(x.entry).length > 0)
-    .sort((a, b) =>
-      a.session.date === b.session.date ? a.session.startedAt - b.session.startedAt : a.session.date < b.session.date ? -1 : 1,
-    );
+    .filter((x): x is ExerciseHistoryItem => !!x.entry && (x.entry.alt || undefined) === targetAlt && workSets(x.entry).length > 0)
+    .sort((a, b) => bySessionAsc(a.session, b.session));
 }
 
 export function recordsOf(history: ExerciseHistoryItem[]): Records {
@@ -312,45 +382,105 @@ export interface PR {
   text: string;
 }
 
-/** Recordes batidos em `session` comparando com tudo que veio antes. */
-export function prsInSession(session: Session, allSessions: Session[]): PR[] {
-  const before = allSessions.filter(
-    (s) =>
-      s.status === "done" && s.id !== session.id && (s.date < session.date || (s.date === session.date && s.startedAt < session.startedAt)),
-  );
+interface RunningExerciseRecord {
+  sessions: number;
+  maxKg: number;
+  maxE1rm: number;
+  repsByWeight: Map<string, number>;
+}
+
+function evaluateSessionPRs(session: Session, tracker: Map<string, RunningExerciseRecord>, mutateTracker: boolean): PR[] {
   const out: PR[] = [];
   for (const entry of session.exercises) {
     const sets = workSets(entry);
     if (!sets.length) continue;
-    const prev = recordsOf(historyOf(before, entry.exId));
-    if (prev.sessions === 0) continue; // primeira vez: só linha de base
-    const u = entry.unit === "lb" ? " lb" : " kg";
+    const key = `${entry.exId}::${entry.alt || ""}`;
+    let state = tracker.get(key);
+    if (!state) {
+      state = { sessions: 0, maxKg: 0, maxE1rm: 0, repsByWeight: new Map() };
+      if (mutateTracker) tracker.set(key, state);
+    }
 
-    const heaviest = sets.reduce((a, b) => (toKg(b.weight!, entry.unit) > toKg(a.weight!, entry.unit) ? b : a));
-    if (prev.heaviest && toKg(heaviest.weight!, entry.unit) > toKg(prev.heaviest.weight, prev.heaviest.unit) + 1e-9) {
-      out.push({ exId: entry.exId, kind: "carga", text: `Carga máxima: ${formatWeight(heaviest.weight)}${u} × ${heaviest.reps}` });
-    }
-    const best = sets.reduce((a, b) => (e1rm(toKg(b.weight!, entry.unit), b.reps!) > e1rm(toKg(a.weight!, entry.unit), a.reps!) ? b : a));
-    const bestVal = e1rm(toKg(best.weight!, entry.unit), best.reps!);
-    if (prev.bestE1rm && bestVal > prev.bestE1rm.value + 1e-9) {
-      out.push({
-        exId: entry.exId,
-        kind: "1rm",
-        text: `1RM estimado: ${formatWeight(Math.round(bestVal))} kg (${formatWeight(best.weight)}${u} × ${best.reps})`,
-      });
-    }
-    for (const s of sets) {
-      const prior = prev.repRecords.find((r) => r.weight === s.weight && r.unit === entry.unit);
-      if (prior && s.reps! > prior.reps && !out.some((p) => p.exId === entry.exId && p.kind === "reps")) {
+    if (state.sessions > 0) {
+      const u = entry.unit === "lb" ? " lb" : " kg";
+      const prefix = entry.alt ? `[${entry.alt}] ` : "";
+
+      const heaviest = sets.reduce((a, b) => (toKg(b.weight!, entry.unit) > toKg(a.weight!, entry.unit) ? b : a));
+      if (toKg(heaviest.weight!, entry.unit) > state.maxKg + 1e-9) {
         out.push({
           exId: entry.exId,
-          kind: "reps",
-          text: `Recorde de reps: ${s.reps} com ${formatWeight(s.weight)}${u} (antes ${prior.reps})`,
+          kind: "carga",
+          text: `${prefix}Carga máxima: ${formatWeight(heaviest.weight)}${u} × ${heaviest.reps}`,
         });
+      }
+
+      const best = sets.reduce((a, b) => (e1rm(toKg(b.weight!, entry.unit), b.reps!) > e1rm(toKg(a.weight!, entry.unit), a.reps!) ? b : a));
+      const bestVal = e1rm(toKg(best.weight!, entry.unit), best.reps!);
+      if (bestVal > state.maxE1rm + 1e-9) {
+        out.push({
+          exId: entry.exId,
+          kind: "1rm",
+          text: `${prefix}1RM estimado: ${formatWeight(Math.round(bestVal))} kg (${formatWeight(best.weight)}${u} × ${best.reps})`,
+        });
+      }
+
+      for (const s of sets) {
+        const wKey = `${s.weight}${entry.unit}`;
+        const prior = state.repsByWeight.get(wKey);
+        if (prior != null && s.reps! > prior && !out.some((p) => p.exId === entry.exId && p.kind === "reps")) {
+          out.push({
+            exId: entry.exId,
+            kind: "reps",
+            text: `${prefix}Recorde de reps: ${s.reps} com ${formatWeight(s.weight)}${u} (antes ${prior})`,
+          });
+        }
+      }
+    }
+
+    if (mutateTracker) {
+      state.sessions += 1;
+      for (const s of sets) {
+        const kg = toKg(s.weight!, entry.unit);
+        const est = e1rm(kg, s.reps!);
+        if (kg > state.maxKg) state.maxKg = kg;
+        if (est > state.maxE1rm) state.maxE1rm = est;
+        const wKey = `${s.weight}${entry.unit}`;
+        const cur = state.repsByWeight.get(wKey);
+        if (cur == null || s.reps! > cur) state.repsByWeight.set(wKey, s.reps!);
       }
     }
   }
   return out;
+}
+
+/**
+ * Calcula os PRs de todas as sessões concluídas em uma única passagem cronológica O(N).
+ */
+export function prsBySession(allSessions: Session[]): Map<string, PR[]> {
+  const ordered = allSessions.filter((s) => s.status === "done").sort(bySessionAsc);
+  const tracker = new Map<string, RunningExerciseRecord>();
+  const result = new Map<string, PR[]>();
+  for (const s of ordered) {
+    result.set(s.id, evaluateSessionPRs(s, tracker, true));
+  }
+  return result;
+}
+
+/** Recordes batidos em `session` comparando com tudo que veio antes (respeitando a variante/alternativa). */
+export function prsInSession(session: Session, allSessions: Session[]): PR[] {
+  const before = allSessions
+    .filter(
+      (s) =>
+        s.status === "done" &&
+        s.id !== session.id &&
+        (s.date < session.date || (s.date === session.date && s.startedAt < session.startedAt)),
+    )
+    .sort(bySessionAsc);
+  const tracker = new Map<string, RunningExerciseRecord>();
+  for (const s of before) {
+    evaluateSessionPRs(s, tracker, true);
+  }
+  return evaluateSessionPRs(session, tracker, false);
 }
 
 /** Resumo de uma entrada: "80×10, 80×9, 68×9". */

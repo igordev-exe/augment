@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { Session, Settings } from "../data/types";
-import { db, DEFAULT_SETTINGS, loadSettings, saveSettings } from "./db";
+import type { BodyEntry, Session, Settings } from "../data/types";
+import { db, DEFAULT_SETTINGS, loadBodyLog, loadSettings, saveSettings } from "./db";
 import { todayISO } from "./dates";
 
 export function useSessions(): Session[] | undefined {
@@ -18,6 +18,10 @@ export function useSettings(): [Settings, (patch: Partial<Settings>) => Promise<
     await saveSettings(patch);
   }, []);
   return [s ?? DEFAULT_SETTINGS, update, s !== undefined];
+}
+
+export function useBodyLog(): BodyEntry[] | undefined {
+  return useLiveQuery(() => loadBodyLog(), []);
 }
 
 export function useToday(): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Session, SessionExercise, SetEntry } from "../data/types";
-import { weeklyReport } from "./report";
+import { mesoReport, weeklyReport } from "./report";
 
 // Os três primeiros treinos reais (backup de 02/11/2026), só séries de trabalho e −15%.
 type S = [number, number, ("work" | "drop")?];
@@ -84,44 +84,47 @@ const lower19 = session("l19", "2026-10-19", "lower-a", 2, [
   ]),
 ]);
 
-const pull21 = session("p21", "2026-10-21", "pull-a", 2, [
-  ex("pull-a.puxada-aberta", [
-    [50, 9],
-    [50, 9],
-    [50, 10],
-    [50, 9],
+const pull21: Session = {
+  ...session("p21", "2026-10-21", "pull-a", 2, [
+    ex("pull-a.puxada-aberta", [
+      [50, 9],
+      [50, 9],
+      [50, 10],
+      [50, 9],
+    ]),
+    ex("pull-a.remada-apoio", [
+      [50, 9],
+      [50, 9],
+      [50, 9],
+    ]),
+    ex("pull-a.pullover", [
+      [30, 12],
+      [40, 12],
+      [40, 12],
+    ]),
+    ex("pull-a.crucifixo-inv", [
+      [17.5, 15],
+      [17.5, 15],
+      [17.5, 15],
+    ]),
+    ex("pull-a.encolhimento", [
+      [36, 10],
+      [36, 10],
+      [36, 10],
+    ]),
+    ex("pull-a.rosca-incl", [
+      [12, 9],
+      [12, 8],
+      [12, 9],
+    ]),
+    ex("pull-a.martelo-corda", [
+      [17.5, 10],
+      [17.5, 10],
+      [17.5, 10],
+    ]),
   ]),
-  ex("pull-a.remada-apoio", [
-    [50, 9],
-    [50, 9],
-    [50, 9],
-  ]),
-  ex("pull-a.pullover", [
-    [30, 12],
-    [40, 12],
-    [40, 12],
-  ]),
-  ex("pull-a.crucifixo-inv", [
-    [17.5, 15],
-    [17.5, 15],
-    [17.5, 15],
-  ]),
-  ex("pull-a.encolhimento", [
-    [36, 10],
-    [36, 10],
-    [36, 10],
-  ]),
-  ex("pull-a.rosca-incl", [
-    [12, 9],
-    [12, 8],
-    [12, 9],
-  ]),
-  ex("pull-a.martelo-corda", [
-    [17.5, 10],
-    [17.5, 10],
-    [17.5, 10],
-  ]),
-]);
+  cardio: { kind: "Esteira inclinada", minutes: 25, intensity: "moderada", steps: 9000 },
+};
 
 const all = [pull14, lower19, pull21];
 const days = [1, 2, 3, 4, 5];
@@ -137,12 +140,14 @@ describe("relatório semanal (dados reais)", () => {
     expect(r.focus.detail).toContain("1 de 5");
   });
 
-  it("semana 2 (19–25/10): recordes do Pull A e panturrilha com série a menos", () => {
+  it("semana 2 (19–25/10): recordes do Pull A, panturrilha e cardio/passos contabilizados", () => {
     const r = weeklyReport(all, "2026-10-19", "2026-10-12", days);
     expect(r.done).toBe(2);
     expect(r.prs.some((p) => p.exId === "pull-a.martelo-corda" || p.exId === "pull-a.puxada-aberta")).toBe(true);
     expect(r.shortfalls.map((s) => s.exId)).toContain("lower-a.panturrilha-pe");
     expect(r.volume.find((v) => v.muscle === "costas")!.done).toBeGreaterThan(0);
+    expect(r.cardioMinutes).toBe(25);
+    expect(r.avgSteps).toBe(9000);
     expect(r.focus.title).toBe("Frequência");
   });
 
@@ -151,6 +156,16 @@ describe("relatório semanal (dados reais)", () => {
     expect(r.done).toBe(0);
     expect(r.mesoWeek).toBeNull();
     expect(r.focus.title).toBe("Frequência");
+  });
+});
+
+describe("relatório do mesociclo e rotação de acessórios", () => {
+  it("compara início e fim do ciclo e sugere acessórios candidatos à rotação", () => {
+    const m = mesoReport(all, "2026-10-12", days, "2026-10-22");
+    expect(m.sessionsDone).toBe(3);
+    expect(m.cardioMinutes).toBe(25);
+    expect(m.exercises.some((e) => e.exId === "pull-a.puxada-aberta")).toBe(true);
+    expect(m.swapCandidates.length).toBeGreaterThan(0);
   });
 });
 

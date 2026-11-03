@@ -2,7 +2,7 @@ import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER } from "../data/program";
 import type { MuscleId, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
-import { historyOf, increaseStep, mainLoad, suggest, workSets } from "./progression";
+import { historyOf, increaseStep, mainLoad, suggest, toKg, workSets } from "./progression";
 import { uid } from "./db";
 
 function emptySet(kind: SetEntry["kind"], weight: number | null = null): SetEntry {
@@ -24,7 +24,8 @@ export function buildSession(
 ): Session {
   const day = DAY_BY_ID[dayId];
   const exercises: SessionExercise[] = day.exercises.map((ex, i) => {
-    const hist = historyOf(allSessions, ex.id);
+    const defaultAlt = settings.swaps?.[ex.id] || undefined;
+    const hist = historyOf(allSessions, ex.id, defaultAlt);
     const lastItem = hist[hist.length - 1];
     const last = lastItem?.entry;
     const unit = unitFor(ex.id, settings, last);
@@ -37,13 +38,14 @@ export function buildSession(
       // Carga fixa: todas as séries de trabalho com a carga principal (ignora a última com −15%).
       const load = mainLoad(workSets(source, false)) ?? workSets(source)[0].weight;
       for (let k = 0; k < planned; k++) sets.push(emptySet("work", load));
-      return { exId: ex.id, unit: source.unit, sets };
+      return { exId: ex.id, unit: source.unit, alt: source.alt ?? defaultAlt, sets };
     }
 
     const step = increaseStep(ex, unit, settings.increments[ex.id]);
-    const s = suggest(ex, last, planned, week, step, lastItem?.session.week);
+    const available = settings.machineWeights?.[ex.id];
+    const s = suggest(ex, last, planned, week, step, lastItem?.session.week, available);
     for (let k = 0; k < planned; k++) sets.push(emptySet("work", s.weight));
-    return { exId: ex.id, unit, sets };
+    return { exId: ex.id, unit, alt: defaultAlt, sets };
   });
 
   return {
@@ -62,16 +64,33 @@ export function newSet(kind: SetEntry["kind"], weight: number | null): SetEntry 
   return emptySet(kind, weight);
 }
 
+/**
+ * Calcula o horário final real ao concluir o treino: se ficou aberto por mais de 2h30
+ * após o início e a última série foi marcada há mais de 30 min (esqueceu de concluir),
+ * usa o horário da última série marcada (+3 min). Se ainda estava marcando séries nos
+ * últimos 30 min, preserva a duração real.
+ */
+export function effectiveEndAt(s: Session, now = Date.now()): { finishedAt: number; capped: boolean } {
+  const maxIdleMs = 2.5 * 3600_000;
+  if (now - s.startedAt <= maxIdleMs) return { finishedAt: now, capped: false };
+  const lastDoneAt = Math.max(0, ...s.exercises.flatMap((e) => e.sets.filter((x) => x.done && x.doneAt != null).map((x) => x.doneAt!)));
+  if (lastDoneAt > s.startedAt) {
+    if (now - lastDoneAt <= 30 * 60_000) return { finishedAt: now, capped: false };
+    return { finishedAt: lastDoneAt + 3 * 60_000, capped: true };
+  }
+  return { finishedAt: s.startedAt + 90 * 60_000, capped: true };
+}
+
 export function sessionStats(s: Session) {
   let sets = 0;
   let volumeKg = 0;
   for (const e of s.exercises) {
     for (const st of workSets(e)) {
       sets++;
-      volumeKg += (e.unit === "lb" ? st.weight! * 0.45359237 : st.weight!) * st.reps!;
+      volumeKg += toKg(st.weight!, e.unit) * st.reps!;
     }
   }
-  const duration = s.finishedAt ? s.finishedAt - s.startedAt : Date.now() - s.startedAt;
+  const duration = Math.max(0, (s.finishedAt ?? Date.now()) - s.startedAt);
   return { sets, volumeKg, duration };
 }
 
