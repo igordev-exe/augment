@@ -21,15 +21,20 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
   repetir semana) chegam como cartão para eu aplicar ou recusar. Uso minha chave da API da Anthropic, guardada só no aparelho e
   fora do backup. Configuro em **Ajustes → Treinador**.
 - **Retomada**: depois de 10+ dias parado, ou de uma semana com menos da metade dos treinos, o app propõe recomeçar ou repetir a semana.
+- **Destravar estagnação**: 3 treinos seguidos na mesma carga sem 1RM estimado novo, a sugestão baixa ~10% para voltar a subir.
+  Se as séries estavam sobrando 3+ reps, em vez de baixar ela avisa que falta esforço.
 - **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.
 - **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga e aviso quando eu bato um recorde ao concluir o treino.
 - **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta da ficha e treinos por semana.
-- **Biblioteca** dos 34 exercícios da ficha: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.
+- **Mapa muscular** (volume, recuperação e o que ficou sem treino), **mapa de atividade do ano**, **meta de peso** com ritmo semanal,
+  **fotos antes/depois** e **força relativa** ao peso corporal.
+- **Biblioteca** dos 34 exercícios da ficha, com fotos de início e fim do movimento: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.
 - **Guia** com as regras da ficha e as fontes científicas.
 - **Backup** em JSON (exportar/importar) e exportação das séries em CSV.
+- **Pontos de restauração** no próprio aparelho: um por semana e antes de importar, restaurar ou apagar tudo (ficam os 6 mais recentes).
 
 ## Como eu instalo no celular
 
@@ -81,6 +86,8 @@ A imagem do card "Missão do dia" fica em `public/hero.webp`.
 - Cantos chanfrados com borda: [augmented-ui](https://github.com/propjockey/augmented-ui) (BSD-2-Clause), via o atributo
   `data-augmented-ui="tl-clip br-clip border"`. O tamanho do corte e a cor da borda ficam em `src/styles.css`
   (`--aug-tl`, `--aug-br`, `--aug-border-bg`). Todas as cores são tokens no topo do mesmo arquivo.
+- Fotos dos exercícios: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (domínio público). Para regerar:
+  `python scripts/exercise-images.py <pasta do free-exercise-db> .` (o mapa fica em `src/data/exercise-images.json`).
 - Fontes (SIL Open Font License): Orbitron, Share Tech Mono e Exo 2, via Fontsource.
 - Avatar e referências visuais: [Sci-fi UI Kit (Free)](https://www.figma.com/community/file/1595778560755863610/sci-fi-ui-kit-free)
   e [CyberPunk 5000 UI Mega Kit](https://www.figma.com/community/file/1400413315812878567/cyberpunk-5000-ui-mega-kit-by-econev),

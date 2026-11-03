@@ -3,7 +3,7 @@ import { DAY_BY_ID, EXERCISE_BY_ID, PROGRAM, shortName } from "../../data/progra
 import type { BodyEntry, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, bySessionDesc, daysBetween, mondayOf, weekdayName, weekdayShort } from "../dates";
 import { earlyDeloadMesoStart, fatigueDeloadFor, reentryFor, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
-import { formatWeight, historyOf, increaseStep, recordsOf, suggest, workSets } from "../progression";
+import { formatWeight, historyOf, increaseStep, recordsOf, suggestNext, workSets } from "../progression";
 import { mesoReport, weeklyReport } from "../report";
 import { planAhead } from "../schedule";
 import { goalStatus, weightTrend } from "../visual";
@@ -171,13 +171,12 @@ export function toolPlan(data: CoachData) {
             const h = historyOf(all, ex.id, activeAlt);
             const lastItem = h[h.length - 1];
             const unit = unitFor(ex.id, settings, lastItem?.entry);
-            const sug = suggest(
+            const sug = suggestNext(
               ex,
-              lastItem?.entry,
+              h,
               setsFor(ex, week),
               week,
               increaseStep(ex, unit, settings.increments[ex.id]),
-              lastItem?.session.week,
               settings.machineWeights?.[ex.id],
             );
             const reminder = settings.exerciseNotes?.[ex.id];
@@ -301,13 +300,12 @@ export function toolExerciseHistory(data: CoachData, input: { exercicio?: unknow
   const week = weekFor(data.settings.mesoStart, data.today);
   const lastItem = h[h.length - 1];
   const unit = unitFor(ex.id, data.settings, lastItem?.entry);
-  const sug = suggest(
+  const sug = suggestNext(
     ex,
-    lastItem?.entry,
+    h,
     setsFor(ex, week),
     week,
     increaseStep(ex, unit, data.settings.increments[ex.id]),
-    lastItem?.session.week,
     data.settings.machineWeights?.[ex.id],
   );
   return {

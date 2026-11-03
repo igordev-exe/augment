@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { dayName, PageHead, StopBadge } from "../components/bits";
+import { ExerciseDemo } from "../components/ExerciseDemo";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
 import { LIB_BY_ID } from "../data/library";
@@ -59,6 +60,8 @@ export function ExerciseDetail() {
         title={lib.name}
         sub={`${lib.primary}${lib.secondary ? `; ajuda: ${lib.secondary}` : ""}. ${lib.equipment}.`}
       />
+
+      <ExerciseDemo libId={lib.id} />
 
       <section className="stack">
         <h2 className="h-sec">Na sua ficha</h2>

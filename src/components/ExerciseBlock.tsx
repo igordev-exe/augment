@@ -11,7 +11,7 @@ import {
   mainLoad,
   platesForBarbell,
   revertBackoff,
-  suggest,
+  suggestNext,
   summarizeSets,
   toKg,
   warmupSpec,
@@ -19,6 +19,7 @@ import {
   type ExerciseHistoryItem,
 } from "../lib/progression";
 import { newSet } from "../lib/sessions";
+import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
 import { Choice, SetRow } from "./SetRow";
 
@@ -66,7 +67,7 @@ export function ExerciseBlock({
   const workDone = workAll.filter((s) => s.done).length;
   const complete = workAll.length > 0 && workDone >= workAll.length;
   const last = recentHistory[recentHistory.length - 1];
-  const sug = suggest(ex, last?.entry, planned, week, step, last?.session.week, availableWeights);
+  const sug = suggestNext(ex, recentHistory, planned, week, step, availableWeights);
   const stop = stopFor(ex.stop, week);
   const showInt = !!ex.intensifier && WEEK_RULES[week].intensifiers > 0 && !lowDay;
   const [showNote, setShowNote] = useState(!!entry.notes);
@@ -469,6 +470,7 @@ export function ExerciseBlock({
           <details className="how">
             <summary>Como fazer</summary>
             <div className="prose">
+              <ExerciseDemo libId={ex.lib} />
               <p>
                 <strong>Da ficha:</strong>
               </p>

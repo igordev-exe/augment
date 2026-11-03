@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type { BodyEntry, BodyGoal, Session, Settings, Unit } from "../data/types";
+import { createRestorePoint } from "./restore";
 
 // Tudo fica no IndexedDB do próprio celular. Faça backup em Ajustes → Exportar.
 
@@ -227,7 +228,9 @@ function isSession(x: unknown): x is Session {
 }
 
 /** mode "merge": mantém o que já existe e adiciona/atualiza pelo id (mesclando ajustes). "replace": apaga tudo antes. */
-export async function importBackup(b: Backup, mode: "merge" | "replace"): Promise<number> {
+export async function importBackup(b: Backup, mode: "merge" | "replace", opts: { snapshot?: boolean } = {}): Promise<number> {
+  // Guarda o estado atual antes de mexer.
+  if (opts.snapshot !== false) await createRestorePoint("antes-importar");
   const sessions = b.sessions.filter(isSession);
   const incomingBody = Array.isArray(b.bodyLog) ? b.bodyLog.filter(isBodyEntry) : [];
   await db.transaction("rw", db.sessions, db.kv, async () => {

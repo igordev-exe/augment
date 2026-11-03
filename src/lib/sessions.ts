@@ -2,7 +2,7 @@ import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER } from "../data/program";
 import type { MuscleId, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
-import { historyOf, increaseStep, mainLoad, suggest, toKg, workSets } from "./progression";
+import { historyOf, increaseStep, mainLoad, suggestNext, toKg, workSets } from "./progression";
 import { uid } from "./db";
 
 function emptySet(kind: SetEntry["kind"], weight: number | null = null): SetEntry {
@@ -43,7 +43,7 @@ export function buildSession(
 
     const step = increaseStep(ex, unit, settings.increments[ex.id]);
     const available = settings.machineWeights?.[ex.id];
-    const s = suggest(ex, last, planned, week, step, lastItem?.session.week, available);
+    const s = suggestNext(ex, hist, planned, week, step, available);
     for (let k = 0; k < planned; k++) sets.push(emptySet("work", s.weight));
     return { exId: ex.id, unit, alt: defaultAlt, sets };
   });

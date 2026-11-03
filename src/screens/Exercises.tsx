@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ExerciseDemo } from "../components/ExerciseDemo";
 import { PageHead } from "../components/bits";
 import { Icon } from "../components/Icon";
 import { LIB_BY_ID } from "../data/library";
@@ -42,6 +43,7 @@ export function Exercises() {
               {items.map((ex) => (
                 <li key={ex.id}>
                   <Link to={`/exercicios/${ex.lib}`} className="list-item">
+                    <ExerciseDemo libId={ex.lib} variant="thumb" />
                     <span className="grow">
                       <span className="h-card" style={{ fontSize: 15 }}>
                         {ex.name.replace(/^A[12] · /, "")}

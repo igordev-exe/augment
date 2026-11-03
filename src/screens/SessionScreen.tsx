@@ -11,7 +11,7 @@ import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
 import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
-import { backoffWeight, formatWeight, historyOf, increaseStep, mainLoad, prsInSession, suggest, type PR } from "../lib/progression";
+import { backoffWeight, formatWeight, historyOf, increaseStep, mainLoad, prsInSession, suggestNext, type PR } from "../lib/progression";
 import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
@@ -413,8 +413,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               onSetDone={(e, setId) => onSetDone(i, e, setId)}
               onAlt={(alt) => {
                 const altHist = historyOf(before, ex.id, alt);
-                const altLast = altHist[altHist.length - 1];
-                const altSug = suggest(ex, altLast?.entry, setsFor(ex, week), week, step, altLast?.session.week, available);
+                const altSug = suggestNext(ex, altHist, setsFor(ex, week), week, step, available);
                 mutateEntry(entry.exId, (e) => {
                   e.alt = alt;
                   for (const s of e.sets) {

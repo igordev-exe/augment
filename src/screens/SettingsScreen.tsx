@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
+import { RestorePoints } from "../components/RestorePoints";
 import { LIB_BY_ID } from "../data/library";
 import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
@@ -8,6 +9,7 @@ import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../l
 import { shareOrDownload } from "../lib/files";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
+import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
 
 export function SettingsScreen() {
@@ -368,17 +370,23 @@ export function SettingsScreen() {
         />
       </section>
 
+      <RestorePoints />
+
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <h2 className="h-sec">Apagar dados</h2>
         {wipe ? (
           <>
-            <p className="small">Isso apaga todos os treinos e ajustes deste aparelho. Exporte um backup antes se quiser guardar.</p>
+            <p className="small">
+              Isso apaga todos os treinos e ajustes deste aparelho. Por segurança, um ponto de restauração com tudo fica guardado: exclua-o
+              em Pontos de restauração se quiser limpar de vez.
+            </p>
             <div className="row">
               <button
                 type="button"
                 data-augmented-ui="tl-clip br-clip border"
                 className="btn btn-danger grow"
                 onClick={async () => {
+                  await createRestorePoint("antes-apagar");
                   await db.sessions.clear();
                   await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
                   await db.kv.delete("body-log");

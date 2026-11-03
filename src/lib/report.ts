@@ -3,7 +3,7 @@ import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER, PROGRAM, shortName } from "../
 import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
-import { e1rm, formatWeight, historyOf, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
+import { bestE1rm, e1rm, formatWeight, historyOf, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
 // Relatório da semana (seg–dom) e do mesociclo (6 semanas + deload): regras fixas, sem IA.
@@ -59,10 +59,6 @@ export interface WeekReport {
 }
 
 /** Melhor 1RM estimado da entrada, contando as reps que sobraram (normaliza semanas com RIR diferente). */
-function bestE1rm(entry: Session["exercises"][number]): number {
-  return Math.max(0, ...workSets(entry, false).map((s) => e1rm(toKg(s.weight!, entry.unit), s.reps! + (s.rir ?? 0))));
-}
-
 function list(names: string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;

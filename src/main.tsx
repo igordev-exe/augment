@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { todayISO } from "./lib/dates";
+import { ensureWeeklyRestorePoint } from "./lib/restore";
 // Fontes empacotadas com o app: funcionam offline na academia.
 import "@fontsource/orbitron/latin-600.css";
 import "@fontsource/orbitron/latin-800.css";
@@ -31,3 +33,6 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 
 // Pede ao navegador para não apagar os dados do IndexedDB por falta de espaço.
 navigator.storage?.persist?.().catch(() => {});
+
+// Ponto de restauração semanal (fica no aparelho; o backup exportado continua sendo o seguro de verdade).
+ensureWeeklyRestorePoint(todayISO()).catch(() => {});

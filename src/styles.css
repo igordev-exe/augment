@@ -2194,3 +2194,50 @@ table.t a {
   gap: 10px;
   align-items: baseline;
 }
+
+/* ---------- Fotos de execução (free-exercise-db) ---------- */
+.ex-demo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ex-demo button {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.ex-demo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.25s;
+  filter: saturate(0.85) contrast(1.05);
+}
+.ex-demo-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  background: #0c0e11d9;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.ex-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  filter: saturate(0.8);
+}

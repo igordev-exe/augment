@@ -489,3 +489,91 @@ export function summarizeSets(entry: SessionExercise | undefined): string {
   if (!sets.length) return "";
   return sets.map((s) => `${formatWeight(s.weight)}×${s.reps}`).join(", ");
 }
+
+// ---------- Estagnação: destravar com −10% ----------
+
+/** Treinos seguidos (fora do deload) na mesma carga sem 1RM estimado novo antes de baixar para destravar. */
+export const STALL_SESSIONS = 3;
+
+export interface ExerciseStall {
+  /** Carga em que travou, na unidade do último treino. */
+  load: number;
+  /** "80×8,8,7" por treino, do mais antigo para o mais novo. */
+  trail: string[];
+  /** Sobrou 3+ reps em todas as séries marcadas do último treino: falta esforço, não é fadiga. */
+  easyRir: boolean;
+}
+
+/** 1RM estimado do treino, contando as reps que sobraram quando foram marcadas. */
+export function bestE1rm(entry: SessionExercise): number {
+  return Math.max(0, ...workSets(entry, false).map((s) => e1rm(toKg(s.weight!, entry.unit), s.reps! + (s.rir ?? 0))));
+}
+
+export function stallOf(hist: ExerciseHistoryItem[]): ExerciseStall | null {
+  const h = hist.filter((x) => x.session.week !== 7).slice(-STALL_SESSIONS);
+  if (h.length < STALL_SESSIONS) return null;
+  const loads = h.map(({ entry }) => {
+    const ws = workSets(entry, false);
+    const l = mainLoad(ws) ?? ws[0]?.weight;
+    return l == null ? null : toKg(l, entry.unit);
+  });
+  // Mudou a carga no meio (subiu, baixou ou já destravou): a contagem recomeça.
+  if (loads.some((l) => l == null || Math.abs(l - loads[0]!) > 1e-6)) return null;
+  const best = h.map((x) => bestE1rm(x.entry));
+  if (best.slice(1).some((b) => b > best[0] + 1e-6)) return null;
+
+  const last = h[h.length - 1].entry;
+  const lastWork = workSets(last, false);
+  const marked = lastWork.filter((s) => s.rir != null);
+  return {
+    load: mainLoad(lastWork) ?? lastWork[0].weight!,
+    trail: h.map(({ entry }) => {
+      const ws = workSets(entry, false);
+      const l = mainLoad(ws) ?? ws[0].weight!;
+      return `${formatWeight(l)}×${ws
+        .filter((s) => s.weight === l)
+        .map((s) => s.reps)
+        .join(",")}`;
+    }),
+    easyRir: marked.length > 0 && marked.every((s) => s.rir! >= 3),
+  };
+}
+
+/**
+ * Sugestão da próxima sessão a partir do histórico (mais antigo → mais novo): a dupla progressão de `suggest`
+ * e, quando travou {@link STALL_SESSIONS} treinos na mesma carga, baixa ~10% para destravar.
+ */
+export function suggestNext(
+  ex: ProgramExercise,
+  hist: ExerciseHistoryItem[],
+  plannedSets: number,
+  week: number,
+  step: number,
+  availableWeights?: number[],
+): Suggestion {
+  const lastItem = hist[hist.length - 1];
+  const s = suggest(ex, lastItem?.entry, plannedSets, week, step, lastItem?.session.week, availableWeights);
+  if (s.kind !== "same" || week === 7) return s;
+  const stall = stallOf(hist);
+  if (!stall) return s;
+  if (stall.easyRir) {
+    return {
+      ...s,
+      notes: [
+        ...s.notes,
+        `${STALL_SESSIONS} treinos sem progresso (${stall.trail.join(" → ")}), mas sobrando 3+ reps: falta esforço, não é fadiga. Vá mais perto da falha antes de baixar a carga.`,
+      ],
+    };
+  }
+  const [lo, hi] = ex.reps;
+  const u = lastItem.entry.unit === "lb" ? " lb" : " kg";
+  const lower = snapWeight(stall.load * 0.9, step, availableWeights);
+  return {
+    kind: "down",
+    weight: lower,
+    targets: Array(plannedSets).fill(Math.min(hi, lo + 2)),
+    title: `Destravar: baixar para ${formatWeight(lower)}${u}`,
+    detail: `${STALL_SESSIONS} treinos seguidos com ${formatWeight(stall.load)}${u} sem 1RM estimado novo (${stall.trail.join(" → ")}). Baixe ~10% e volte a subir daqui: costuma passar do ponto travado em 2–3 semanas.`,
+    notes: s.notes,
+  };
+}
