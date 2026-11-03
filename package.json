@@ -19,6 +19,7 @@
     "@anthropic-ai/sdk": "^1.4.0",
     "@fontsource/exo-2": "5.2.5",
     "@fontsource/orbitron": "5.2.5",
+    "@fontsource/rajdhani": "5.2.5",
     "@fontsource/share-tech-mono": "5.2.5",
     "augmented-ui": "2.0.0",
     "dexie": "4.0.10",

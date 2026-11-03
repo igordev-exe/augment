@@ -5,7 +5,7 @@ import { dayName, PageHead } from "../components/bits";
 import { BodyGoalCard } from "../components/BodyGoalCard";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
-import { MuscleMap } from "../components/MuscleMap";
+import { FatigueMap } from "../components/FatigueMap";
 import { PhotoCompare } from "../components/PhotoCompare";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
 import type { Unit } from "../data/types";
@@ -16,8 +16,9 @@ import { resizeImageFile } from "../lib/files";
 import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "../lib/progression";
+import { planAhead } from "../lib/schedule";
 import { plannedVolume, weeklyVolume } from "../lib/sessions";
-import { activityGrid, muscleStatus, relativeStrength } from "../lib/visual";
+import { activityGrid, dailySets, muscleStatus, readiness, relativeStrength } from "../lib/visual";
 
 export function Progress() {
   const sessions = useSessions();
@@ -49,6 +50,14 @@ export function Progress() {
     [sessions, today, settings.trainingDays.length],
   );
   const relative = useMemo(() => relativeStrength(sessions ?? [], bodyLog ?? []), [sessions, bodyLog]);
+  const daily = useMemo(() => dailySets(sessions ?? [], today), [sessions, today]);
+  const nextWorkout = useMemo(() => {
+    const p = planAhead(sessions ?? [], today, 14, settings.trainingDays)[0];
+    const day = p && PROGRAM.find((d) => d.id === p.dayId);
+    if (!day) return undefined;
+    const ms = [...new Set(day.exercises.flatMap((e) => e.muscles))];
+    return { name: day.name, date: p.date, muscles: ms, readiness: readiness(muscles, ms) };
+  }, [sessions, today, settings.trainingDays, muscles]);
 
   if (!sessions) return null;
 
@@ -128,15 +137,7 @@ export function Progress() {
         </Link>
       </div>
 
-      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
-        <div>
-          <h2 className="h-sec">Mapa muscular</h2>
-          <p className="small muted" style={{ marginTop: 4 }}>
-            Volume da semana contra a ficha, o que ainda está recuperando e o que ficou sem estímulo.
-          </p>
-        </div>
-        <MuscleMap status={muscles} />
-      </section>
+      <FatigueMap status={muscles} daily={daily} next={nextWorkout} today={today} />
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div>

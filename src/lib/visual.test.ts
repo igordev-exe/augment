@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { BodyEntry, Session, SessionExercise } from "../data/types";
-import { activityGrid, bodyweightAt, goalStatus, muscleStatus, recoveryHours, relativeStrength, weekStreaks, weightTrend } from "./visual";
+import {
+  activityGrid,
+  bodyweightAt,
+  dailySets,
+  fatigueLevel,
+  fatiguePct,
+  goalStatus,
+  hoursToReady,
+  muscleStatus,
+  readiness,
+  recoveryHours,
+  relativeStrength,
+  weekStreaks,
+  weightTrend,
+} from "./visual";
 
 function entry(exId: string, sets: [number, number][]): SessionExercise {
   return { exId, unit: "kg", sets: sets.map(([w, r], i) => ({ id: `${i}`, kind: "work", weight: w, reps: r, done: true })) };
@@ -41,6 +55,29 @@ describe("mapa muscular", () => {
     expect(muchLater.quadriceps.state).toBe("sem-treino");
     const ready = muscleStatus([s], 3, "2026-11-05", Date.parse("2026-11-05T12:00:00"));
     expect(ready.quadriceps.state).toBe("pronto");
+  });
+});
+
+describe("mapa de fadiga", () => {
+  it("fadiga é o que falta recuperar, com faixas 50/75", () => {
+    const s = hack("2026-11-02"); // 4 séries → 48 h, termina 19h do dia 2
+    const st = muscleStatus([s], 3, "2026-11-03", Date.parse("2026-11-02T23:00:00")); // 4 h depois
+    expect(fatiguePct(st.quadriceps)).toBe(92);
+    expect(fatigueLevel(fatiguePct(st.quadriceps))).toBe("critico");
+    expect(hoursToReady(st.quadriceps)).toBe(44);
+    expect(fatiguePct(st.peito)).toBe(0); // nunca treinado não conta como cansado
+    expect(fatigueLevel(74)).toBe("atencao");
+    expect(fatigueLevel(49)).toBe("estavel");
+    expect(readiness(st, ["quadriceps", "peito"])).toBe(54);
+    expect(readiness(st, [])).toBe(100);
+  });
+
+  it("séries por dia nos últimos 7 dias", () => {
+    const days = dailySets([hack("2026-11-03", 5), hack("2026-11-01", 3), hack("2026-10-20", 4)], "2026-11-03");
+    expect(days).toHaveLength(7);
+    expect(days[6]).toEqual({ date: "2026-11-03", sets: 5 });
+    expect(days[4]).toEqual({ date: "2026-11-01", sets: 3 });
+    expect(days.reduce((a, d) => a + d.sets, 0)).toBe(8);
   });
 });
 

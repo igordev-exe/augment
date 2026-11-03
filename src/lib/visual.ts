@@ -74,6 +74,43 @@ export function muscleStatus(sessions: Session[], week: number, today: string, n
   return out;
 }
 
+// ---------- Mapa de fadiga ----------
+
+/** Faixas do mapa de fadiga: 0–49 estável, 50–74 atenção, 75+ crítico. */
+export type FatigueLevel = "estavel" | "atencao" | "critico";
+
+/** 0–100: quanto ainda falta recuperar desde o último treino. Pronto, atrasado ou sem treino = 0. */
+export function fatiguePct(s: MuscleStatus): number {
+  return s.state === "recuperando" ? Math.round((1 - s.recovery) * 100) : 0;
+}
+
+export function fatigueLevel(pct: number): FatigueLevel {
+  return pct >= 75 ? "critico" : pct >= 50 ? "atencao" : "estavel";
+}
+
+/** Horas até 100% recuperado (0 se já está). */
+export function hoursToReady(s: MuscleStatus): number {
+  return s.state === "recuperando" ? Math.ceil((1 - s.recovery) * recoveryHours(s.lastSets)) : 0;
+}
+
+/** Prontidão (0–100) de um conjunto de músculos: média do quanto cada um já recuperou. */
+export function readiness(status: Record<MuscleId, MuscleStatus>, muscles: MuscleId[]): number {
+  if (!muscles.length) return 100;
+  return Math.round(muscles.reduce((a, m) => a + (100 - fatiguePct(status[m])), 0) / muscles.length);
+}
+
+/** Séries de trabalho por dia nos últimos `days` dias (o último é hoje). */
+export function dailySets(sessions: Session[], today: string, days = 7): { date: string; sets: number }[] {
+  const out = Array.from({ length: days }, (_, i) => ({ date: addDays(today, i - days + 1), sets: 0 }));
+  const byDate = new Map(out.map((d) => [d.date, d]));
+  for (const s of sessions) {
+    if (s.status !== "done") continue;
+    const d = byDate.get(s.date);
+    if (d) d.sets += sessionStats(s).sets;
+  }
+  return out;
+}
+
 // ---------- Mapa de atividade do ano ----------
 
 export interface DayActivity {

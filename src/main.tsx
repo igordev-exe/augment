@@ -12,6 +12,9 @@ import "@fontsource/exo-2/latin-400.css";
 import "@fontsource/exo-2/latin-500.css";
 import "@fontsource/exo-2/latin-600.css";
 import "@fontsource/exo-2/latin-700.css";
+import "@fontsource/rajdhani/latin-500.css";
+import "@fontsource/rajdhani/latin-600.css";
+import "@fontsource/rajdhani/latin-700.css";
 // augmented-ui: cantos chanfrados com borda (biblioteca cyberpunk de CSS, BSD-2).
 import "augmented-ui/augmented-ui.min.css";
 import "./styles.css";
