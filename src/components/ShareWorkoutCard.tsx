@@ -76,6 +76,30 @@ function drawClippedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w:
   ctx.closePath();
 }
 
+function dataUrlToFile(dataUrl: string, fileName: string, fallbackMime = "image/jpeg"): File | null {
+  if (!dataUrl || !dataUrl.includes(",")) return null;
+  const [head, b64] = dataUrl.split(",");
+  const mime = head.match(/:(.*?);/)?.[1] ?? fallbackMime;
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i);
+  }
+  return new File([bytes], fileName, { type: mime, lastModified: Date.now() });
+}
+
+function triggerDownload(dataUrl: string, fileName: string) {
+  const file = dataUrlToFile(dataUrl, fileName);
+  const url = file ? URL.createObjectURL(file) : dataUrl;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if (file) setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
 export function ShareWorkoutCard({
   session,
   prs,
@@ -89,8 +113,22 @@ export function ShareWorkoutCard({
 }) {
   const toast = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [dataUrl, setDataUrl] = useState<string>("");
+  const [bgPhoto, setBgPhoto] = useState<HTMLImageElement | null>(null);
   const summary = useMemo(() => buildWorkoutSummary(session, prs, operator), [session, prs, operator]);
+
+  const fileName = `augment-${session.dayId}-${session.date}.jpg`;
+
+  const textSummary = useMemo(() => {
+    const textLines = [
+      `${summary.dayName} — AUGMENT (${summary.dateStr})`,
+      `${summary.sets} séries · ${summary.durationMin} min · ${summary.volumeStr}${summary.prsCount ? ` · ${summary.prsCount} PR(s)` : ""}`,
+      "",
+      ...summary.lines.map((l) => `• ${l.setsCount}× ${l.name} — ${l.bestSet}${l.hasPr ? " ★ PR" : ""}`),
+    ];
+    return textLines.join("\n");
+  }, [summary]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -100,50 +138,77 @@ export function ShareWorkoutCard({
 
     const W = 1080;
     const maxLines = Math.min(summary.lines.length, 9);
-    const H = Math.max(1280, 680 + maxLines * 74);
+    const H = Math.max(1350, 690 + maxLines * 74);
     canvas.width = W;
     canvas.height = H;
 
-    // Fundo escuro cyberpunk com grade sutil
-    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, "#0b0d11");
-    bgGrad.addColorStop(0.55, "#11151c");
-    bgGrad.addColorStop(1, "#090b0e");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
+    if (bgPhoto) {
+      // Desenha a foto do usuário preenchendo em modo "cover" (estilo Liftoff / GymRats)
+      const imgRatio = bgPhoto.width / bgPhoto.height;
+      const canvasRatio = W / H;
+      let drawW = W;
+      let drawH = H;
+      let offsetX = 0;
+      let offsetY = 0;
+      if (imgRatio > canvasRatio) {
+        drawW = H * imgRatio;
+        offsetX = (W - drawW) / 2;
+      } else {
+        drawH = W / imgRatio;
+        offsetY = (H - drawH) / 2;
+      }
+      ctx.drawImage(bgPhoto, offsetX, offsetY, drawW, drawH);
 
-    // Grade tática
-    ctx.strokeStyle = "rgba(63, 216, 224, 0.045)";
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 48) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
+      // Vinheta escura semi-transparente para leitura perfeita do HUD por cima da foto
+      const overlayGrad = ctx.createLinearGradient(0, 0, 0, H);
+      overlayGrad.addColorStop(0, "rgba(9, 11, 15, 0.78)");
+      overlayGrad.addColorStop(0.35, "rgba(9, 11, 15, 0.45)");
+      overlayGrad.addColorStop(0.65, "rgba(9, 11, 15, 0.72)");
+      overlayGrad.addColorStop(1, "rgba(9, 11, 15, 0.92)");
+      ctx.fillStyle = overlayGrad;
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      // Fundo escuro cyberpunk com grade sutil
+      const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+      bgGrad.addColorStop(0, "#0b0d11");
+      bgGrad.addColorStop(0.55, "#11151c");
+      bgGrad.addColorStop(1, "#090b0e");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Grade tática
+      ctx.strokeStyle = "rgba(63, 216, 224, 0.045)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 48) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y < H; y += 48) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Brilho superior vermelho e inferior ciano
+      const topGlow = ctx.createRadialGradient(W * 0.82, 140, 20, W * 0.82, 140, 520);
+      topGlow.addColorStop(0, "rgba(239, 48, 44, 0.24)");
+      topGlow.addColorStop(1, "rgba(239, 48, 44, 0)");
+      ctx.fillStyle = topGlow;
+      ctx.fillRect(0, 0, W, 640);
+
+      const botGlow = ctx.createRadialGradient(W * 0.18, H - 140, 20, W * 0.18, H - 140, 520);
+      botGlow.addColorStop(0, "rgba(63, 216, 224, 0.16)");
+      botGlow.addColorStop(1, "rgba(63, 216, 224, 0)");
+      ctx.fillStyle = botGlow;
+      ctx.fillRect(0, H - 640, W, 640);
     }
-    for (let y = 0; y < H; y += 48) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
-    }
-
-    // Brilho superior vermelho e inferior ciano
-    const topGlow = ctx.createRadialGradient(W * 0.82, 140, 20, W * 0.82, 140, 520);
-    topGlow.addColorStop(0, "rgba(239, 48, 44, 0.24)");
-    topGlow.addColorStop(1, "rgba(239, 48, 44, 0)");
-    ctx.fillStyle = topGlow;
-    ctx.fillRect(0, 0, W, 640);
-
-    const botGlow = ctx.createRadialGradient(W * 0.18, H - 140, 20, W * 0.18, H - 140, 520);
-    botGlow.addColorStop(0, "rgba(63, 216, 224, 0.16)");
-    botGlow.addColorStop(1, "rgba(63, 216, 224, 0)");
-    ctx.fillStyle = botGlow;
-    ctx.fillRect(0, H - 640, W, 640);
 
     // Moldura externa HUD
     drawClippedRect(ctx, 44, 44, W - 88, H - 88, 28, 28);
-    ctx.strokeStyle = "#2b313b";
+    ctx.strokeStyle = bgPhoto ? "rgba(255, 255, 255, 0.24)" : "#2b313b";
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -171,7 +236,7 @@ export function ShareWorkoutCard({
     ctx.fillStyle = "#3fd8e0";
     ctx.font = "600 21px 'Share Tech Mono', monospace";
     ctx.fillText(`PROTOCOLO ${summary.code} // ${summary.dateStr.toUpperCase()}`, W - 84, 108);
-    ctx.fillStyle = "#8e96a4";
+    ctx.fillStyle = "#c3cad5";
     ctx.font = "400 19px 'Share Tech Mono', monospace";
     ctx.fillText(`${summary.operator.toUpperCase()} · ${summary.weekLabel.toUpperCase()}`, W - 84, 136);
     ctx.textAlign = "left";
@@ -201,13 +266,13 @@ export function ShareWorkoutCard({
     metrics.forEach((m, i) => {
       const tx = 84 + i * (tileW + 12);
       drawClippedRect(ctx, tx, tileY, tileW, tileH, 14, 14);
-      ctx.fillStyle = "#141820";
+      ctx.fillStyle = bgPhoto ? "rgba(15, 19, 26, 0.78)" : "#141820";
       ctx.fill();
-      ctx.strokeStyle = "#2c333f";
+      ctx.strokeStyle = bgPhoto ? "rgba(255, 255, 255, 0.2)" : "#2c333f";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      ctx.fillStyle = "#8e96a4";
+      ctx.fillStyle = "#abb3bf";
       ctx.font = "400 18px 'Share Tech Mono', monospace";
       ctx.fillText(m.label, tx + 20, tileY + 38);
 
@@ -225,9 +290,9 @@ export function ShareWorkoutCard({
       const tw = ctx.measureText(text).width + 28;
       if (chipX + tw > W - 84) break;
       drawClippedRect(ctx, chipX, chipY, tw, 40, 6, 8);
-      ctx.fillStyle = "rgba(63, 216, 224, 0.1)";
+      ctx.fillStyle = bgPhoto ? "rgba(12, 16, 22, 0.78)" : "rgba(63, 216, 224, 0.1)";
       ctx.fill();
-      ctx.strokeStyle = "rgba(63, 216, 224, 0.45)";
+      ctx.strokeStyle = "rgba(63, 216, 224, 0.55)";
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.fillStyle = "#3fd8e0";
@@ -237,14 +302,14 @@ export function ShareWorkoutCard({
 
     // Cabeçalho da lista de exercícios
     const listStartY = 556;
-    ctx.fillStyle = "#8e96a4";
+    ctx.fillStyle = "#b5bdc9";
     ctx.font = "600 19px 'Share Tech Mono', monospace";
     ctx.fillText("EXERCÍCIOS EXECUTADOS", 84, listStartY);
     ctx.textAlign = "right";
     ctx.fillText("MELHOR SÉRIE", W - 84, listStartY);
     ctx.textAlign = "left";
 
-    ctx.strokeStyle = "#252b35";
+    ctx.strokeStyle = bgPhoto ? "rgba(255, 255, 255, 0.22)" : "#252b35";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(84, listStartY + 16);
@@ -256,9 +321,9 @@ export function ShareWorkoutCard({
     visibleLines.forEach((line, idx) => {
       const rowY = listStartY + 34 + idx * 72;
       drawClippedRect(ctx, 84, rowY, W - 168, 60, 10, 10);
-      ctx.fillStyle = idx % 2 === 0 ? "#13171f" : "#10131a";
+      ctx.fillStyle = bgPhoto ? "rgba(14, 18, 25, 0.8)" : idx % 2 === 0 ? "#13171f" : "#10131a";
       ctx.fill();
-      ctx.strokeStyle = line.hasPr ? "rgba(245, 184, 61, 0.55)" : "#202630";
+      ctx.strokeStyle = line.hasPr ? "rgba(245, 184, 61, 0.65)" : bgPhoto ? "rgba(255, 255, 255, 0.16)" : "#202630";
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
@@ -287,7 +352,7 @@ export function ShareWorkoutCard({
     });
 
     // Rodapé
-    ctx.fillStyle = "#5c6470";
+    ctx.fillStyle = "#8e96a4";
     ctx.font = "400 18px 'Share Tech Mono', monospace";
     ctx.fillText("AUGMENT // TELEMETRIA DE FORÇA E HIPERTROFIA", 84, H - 72);
     ctx.textAlign = "right";
@@ -295,51 +360,80 @@ export function ShareWorkoutCard({
     ctx.fillText("BEYOND LIMITS.", W - 84, H - 72);
     ctx.textAlign = "left";
 
-    setDataUrl(canvas.toDataURL("image/png"));
-  }, [summary]);
+    setDataUrl(canvas.toDataURL("image/jpeg", 0.95));
+  }, [summary, bgPhoto]);
+
+  function onSelectPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => setBgPhoto(img);
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(f);
+    e.target.value = "";
+  }
 
   async function shareImage() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const blob: Blob | null = await new Promise((res) => canvas.toBlob((b) => res(b), "image/png"));
-    if (!blob) {
+    const file = dataUrlToFile(dataUrl, fileName);
+    if (!file) {
       toast("Não foi possível gerar a imagem.");
       return;
     }
-    const fileName = `augment-${session.dayId}-${session.date}.png`;
     try {
-      if (typeof navigator !== "undefined" && "share" in navigator && "canShare" in navigator) {
-        const file = new File([blob], fileName, { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `AUGMENT · ${summary.dayName} (${summary.dateStr})`,
-            files: [file],
-          });
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        const canShareFiles = typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : true;
+        if (canShareFiles) {
+          // Envia somente { files } sem title/text para máxima compatibilidade com apps de imagem no Android/iOS
+          await navigator.share({ files: [file] });
           toast("Card de treino compartilhado.");
           return;
         }
       }
-    } catch {
-      // Usuário cancelou ou Web Share indisponível; faz fallback para download
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
     }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    toast("Card de treino salvo (.png).");
+    triggerDownload(dataUrl, fileName);
+    toast("Foto do treino salva (.jpg).");
+  }
+
+  function downloadImage() {
+    if (!dataUrl) return;
+    triggerDownload(dataUrl, fileName);
+    toast("Foto salva na galeria/downloads (.jpg).");
+  }
+
+  async function shareToGymRats() {
+    if (!dataUrl) return;
+    // 1. Copia o título + resumo para o usuário colar no check-in do GymRats
+    try {
+      await navigator.clipboard.writeText(textSummary);
+    } catch {
+      // ignora se o navegador bloquear clipboard
+    }
+    // 2. Baixa a foto em .jpg para aparecer no topo da Galeria quando o GymRats pedir a foto
+    triggerDownload(dataUrl, fileName);
+    toast("Foto (.jpg) salva e resumo copiado! Abrindo GymRats…");
+
+    // 3. Abre o app do GymRats diretamente no Android ou iOS
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    if (/Android/i.test(ua)) {
+      window.setTimeout(() => {
+        window.location.href =
+          "intent://#Intent;package=com.gymrats.app;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gymrats.app;end";
+      }, 350);
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+      window.setTimeout(() => {
+        window.location.href = "gymrats://";
+      }, 350);
+    }
   }
 
   async function copyText() {
-    const textLines = [
-      `AUGMENT // ${summary.dayName.toUpperCase()} (${summary.dateStr})`,
-      `${summary.sets} séries · ${summary.durationMin} min · ${summary.volumeStr}${summary.prsCount ? ` · ${summary.prsCount} PR(s)` : ""}`,
-      "",
-      ...summary.lines.map((l) => `• ${l.setsCount}× ${l.name} — ${l.bestSet}${l.hasPr ? " ★ PR" : ""}`),
-    ];
     try {
-      await navigator.clipboard.writeText(textLines.join("\n"));
+      await navigator.clipboard.writeText(textSummary);
       toast("Resumo do treino copiado.");
     } catch {
       toast("Não foi possível copiar automaticamente.");
@@ -350,13 +444,34 @@ export function ShareWorkoutCard({
     <div data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 12 }}>
       <div className="spread">
         <div>
-          <span className="label">Card de treino // Estilo Liftoff</span>
+          <span className="label">Card de treino // Estilo Liftoff &amp; GymRats</span>
           <h3 className="h-sec" style={{ marginTop: 2 }}>
             Compartilhar protocolo
           </h3>
         </div>
         <button type="button" className="link-btn" onClick={onClose}>
           Fechar
+        </button>
+      </div>
+
+      <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={onSelectPhoto} />
+
+      <div className="row-wrap">
+        <button
+          type="button"
+          data-augmented-ui="tl-clip br-clip border"
+          className={`btn btn-sm grow ${!bgPhoto ? "btn-primary" : ""}`}
+          onClick={() => setBgPhoto(null)}
+        >
+          Fundo Cyberpunk
+        </button>
+        <button
+          type="button"
+          data-augmented-ui="tl-clip br-clip border"
+          className={`btn btn-sm grow ${bgPhoto ? "btn-primary" : ""}`}
+          onClick={() => photoInputRef.current?.click()}
+        >
+          {bgPhoto ? "Trocar foto de fundo" : "Usar foto da academia + Overlay"}
         </button>
       </div>
 
@@ -377,12 +492,25 @@ export function ShareWorkoutCard({
         />
       )}
 
+      <div className="stack" style={{ gap: 8 }}>
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary" onClick={shareToGymRats}>
+          <Icon name="trophy" size={18} /> Postar no GymRats (baixa foto + copia resumo + abre app)
+        </button>
+        <p className="tiny muted" style={{ margin: 0 }}>
+          O app do GymRats não aparece no menu "Compartilhar" do Android/iOS porque exige criar o check-in por dentro: o botão acima já
+          salva a imagem <strong>.jpg</strong> na galeria, copia as séries e abre o GymRats para você tocar em <strong>+</strong>.
+        </p>
+      </div>
+
       <div className="row-wrap">
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary grow" onClick={shareImage}>
-          <Icon name="share" size={18} /> Compartilhar imagem
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={downloadImage}>
+          Salvar foto (.jpg)
+        </button>
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={shareImage}>
+          <Icon name="share" size={18} /> Outros apps
         </button>
         <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={copyText}>
-          Copiar resumo
+          Copiar texto
         </button>
       </div>
     </div>

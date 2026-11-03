@@ -211,6 +211,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     timer.stop();
     if (capped) toast("Treino ficou aberto por horas: duração ajustada pelo horário da última série.");
     setSummary(prsInSession(next, [...before, next]));
+    setShowShare(true);
     setOpen(-1);
     window.scrollTo(0, 0);
   }
