@@ -56,6 +56,46 @@ describe("mapa muscular", () => {
     const ready = muscleStatus([s], 3, "2026-11-05", Date.parse("2026-11-05T12:00:00"));
     expect(ready.quadriceps.state).toBe("pronto");
   });
+
+  it("contabiliza sinergistas dos compostos na fadiga dos deltoides e braços", () => {
+    const pushA: Session = {
+      id: "pa",
+      date: "2026-11-03",
+      dayId: "push-a",
+      week: 3,
+      startedAt: Date.parse("2026-11-03T09:00:00"),
+      finishedAt: Date.parse("2026-11-03T10:00:00"),
+      status: "done",
+      exercises: [
+        entry("push-a.supino-incl-halt", [
+          [30, 8],
+          [30, 8],
+          [30, 8],
+          [30, 8],
+        ]),
+        entry("push-a.supino-maq", [
+          [70, 10],
+          [70, 10],
+          [70, 10],
+        ]),
+        entry("push-a.desenv-maq", [
+          [50, 10],
+          [50, 10],
+          [50, 10],
+        ]),
+        entry("push-a.lateral-cabo", [
+          [10, 15],
+          [10, 15],
+          [10, 15],
+          [10, 15],
+        ]),
+      ],
+    };
+    const st = muscleStatus([pushA], 3, "2026-11-03", Date.parse("2026-11-03T18:00:00"));
+    expect(fatigueLevel(fatiguePct(st.deltAnterior))).toBe("critico");
+    expect(fatigueLevel(fatiguePct(st.deltLateral))).toBe("critico");
+    expect(fatigueLevel(fatiguePct(st.triceps))).toBe("critico");
+  });
 });
 
 describe("mapa de fadiga", () => {

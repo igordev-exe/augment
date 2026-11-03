@@ -407,8 +407,6 @@ export function SettingsScreen() {
           </button>
         )}
       </section>
-
-      <p className="tiny faint center">AUGMENT 1.0 // feito para o Programa de Hipertrofia v2 (set/2026)</p>
     </div>
   );
 }

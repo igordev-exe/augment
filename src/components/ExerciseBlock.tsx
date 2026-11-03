@@ -120,7 +120,9 @@ export function ExerciseBlock({
       const s = e.sets.find((x) => x.id === setId);
       if (!s) return;
       Object.assign(s, patch);
-      if ("reps" in patch && s.done) revertBackoff(e, ex.reps[0]);
+      if (("reps" in patch || "weight" in patch) && s.done) {
+        revertBackoff(e, ex.reps[0], step, availableWeights);
+      }
     });
   }
 
@@ -140,7 +142,7 @@ export function ExerciseBlock({
         s.done = false;
         s.doneAt = undefined;
         s.rir = undefined;
-        revertBackoff(e, ex.reps[0]);
+        revertBackoff(e, ex.reps[0], step, availableWeights);
       }
     });
     if (fresh && becameDone) onSetDone(fresh, setId);
@@ -246,7 +248,7 @@ export function ExerciseBlock({
             )}
             {ex.changed && (
               <span data-augmented-ui="br-clip border" className="chip changed">
-                Mudou na v2: {ex.changed}
+                {ex.changed}
               </span>
             )}
           </div>

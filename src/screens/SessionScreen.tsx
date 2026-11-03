@@ -4,6 +4,7 @@ import { PageHead } from "../components/bits";
 import { ExerciseBlock } from "../components/ExerciseBlock";
 import { Icon } from "../components/Icon";
 import { Choice } from "../components/SetRow";
+import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
 import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
 import type { CardioEntry, Checkin, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
@@ -11,7 +12,17 @@ import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
 import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
-import { backoffWeight, formatWeight, historyOf, increaseStep, mainLoad, prsInSession, suggestNext, type PR } from "../lib/progression";
+import {
+  backoffWeight,
+  formatWeight,
+  historyOf,
+  increaseStep,
+  mainLoad,
+  prsInSession,
+  revertBackoff,
+  suggestNext,
+  type PR,
+} from "../lib/progression";
 import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
@@ -72,6 +83,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const [confirm, setConfirm] = useState<"discard" | "delete" | null>(null);
   const [summary, setSummary] = useState<PR[] | null>(null);
   const [backupPromptDismissed, setBackupPromptDismissed] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [, tick] = useState(0);
 
   useEffect(() => {
@@ -127,14 +139,16 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     const set = entry.sets[setIdx];
     if (!isActive || !set?.done) return;
     let fresh = entry;
-    // Reps abaixo do piso → a última série de trabalho vai com −15%.
+    const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
+    const avail = settings.machineWeights?.[ex.id];
+    // Reps abaixo do piso → a última série pendente vai com −15% sobre a carga da série atual.
     if ((set.kind === "work" || set.kind === "drop") && set.reps != null && set.reps < ex.reps[0]) {
-      const pending = entry.sets.filter((s, i) => i > setIdx && !s.done && s.kind === "work");
+      const pending = entry.sets.filter((s, i) => i > setIdx && !s.done && (s.kind === "work" || s.kind === "drop"));
       const lastPending = pending[pending.length - 1];
       if (lastPending) {
-        const load = mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null)) ?? set.weight ?? 0;
-        const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
-        const w = backoffWeight(load, step, settings.machineWeights?.[ex.id]);
+        const fallbackLoad = mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null)) ?? 0;
+        const baseLoad = set.weight != null && set.weight > 0 ? set.weight : fallbackLoad;
+        const w = backoffWeight(baseLoad, step, avail);
         fresh =
           (await mutateEntry(entry.exId, (e) => {
             const t = e.sets.find((x) => x.id === lastPending.id);
@@ -145,6 +159,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           })) ?? entry;
         toast(`${set.reps} reps, abaixo de ${ex.reps[0]}: a última série vai com −15% (${formatWeight(w)} ${entry.unit}).`);
       }
+    } else if ((set.kind === "work" || set.kind === "drop") && set.reps != null && set.reps >= ex.reps[0]) {
+      fresh =
+        (await mutateEntry(entry.exId, (e) => {
+          revertBackoff(e, ex.reps[0], step, avail);
+        })) ?? entry;
     }
     const next = fresh;
 
@@ -326,10 +345,18 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           )}
 
           <div className="row-wrap">
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-primary grow"
+              onClick={() => setShowShare((v) => !v)}
+            >
+              <Icon name="share" size={18} /> {showShare ? "Ocultar card" : "Compartilhar treino"}
+            </button>
             <Link
               to={`/treinador?auto=1&q=${encodeURIComponent(debriefQuery)}`}
               data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-primary grow"
+              className="btn grow"
             >
               Debrief do treinador <span className="arrow">&gt;</span>
             </Link>
@@ -342,6 +369,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               </Link>
             )}
           </div>
+
+          {showShare && <ShareWorkoutCard session={session} prs={prs} operator={settings.operator} onClose={() => setShowShare(false)} />}
         </section>
       )}
 

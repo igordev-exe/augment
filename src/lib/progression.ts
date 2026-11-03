@@ -289,29 +289,55 @@ export function suggest(
   };
 }
 
-/** Peso da última série quando as reps caíram abaixo do piso (−15%). */
+/** Peso da última série quando as reps caíram abaixo do piso (−15%). Nunca retorna valor >= `load`. */
 export function backoffWeight(load: number, step: number, available?: number[]): number {
-  return snapWeight(load * 0.85, step, available);
+  const raw = snapWeight(load * 0.85, step, available);
+  if (raw < load - 1e-6) return raw;
+  if (available && available.length > 0) {
+    const lower = [...available].sort((a, b) => b - a).find((w) => w < load - 1e-6);
+    if (lower != null) return lower;
+  }
+  const s = step > 0 ? step : 1;
+  return Math.max(s, Number((load - s).toFixed(2)));
 }
 
 /**
- * Desfaz o −15% quando ele deixou de fazer sentido (série desmarcada ou reps corrigidas):
- * se nenhuma série feita ficou abaixo do piso, a série "−15%" ainda não feita volta a ser normal,
- * com a carga principal. Altera `entry` e diz se mudou algo.
+ * Desfaz ou corrige o −15% quando ele deixou de fazer sentido (série desmarcada, reps corrigidas ou carga já reduzida):
+ * - se a última série feita já bateu o piso (ex.: o usuário já diminuiu o peso na 2ª série e entrou na faixa),
+ *   ou se nenhuma série feita ficou abaixo do piso, a série "−15%" pendente volta a ser normal com a carga atual;
+ * - se a última série feita continuou abaixo do piso com um peso menor, recalcula o −15% sobre esse novo peso.
  */
-export function revertBackoff(entry: SessionExercise, floor: number): boolean {
-  const below = entry.sets.some((s) => s.done && s.kind !== "warmup" && s.reps != null && s.reps < floor);
-  if (below) return false;
-  const load = mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null));
-  let changed = false;
-  for (const s of entry.sets) {
-    if (s.kind === "drop" && !s.done) {
-      s.kind = "work";
-      if (load != null) s.weight = load;
-      changed = true;
+export function revertBackoff(entry: SessionExercise, floor: number, step = 2.5, available?: number[]): boolean {
+  const doneWork = entry.sets.filter((s) => s.done && s.kind !== "warmup");
+  const lastDone = doneWork[doneWork.length - 1];
+  const below = doneWork.some((s) => s.reps != null && s.reps < floor);
+  const recoveredOnLast = lastDone != null && lastDone.reps != null && lastDone.reps >= floor;
+
+  if (!below || recoveredOnLast) {
+    const refWeight = lastDone?.weight ?? mainLoad(entry.sets.filter((s) => s.kind === "work" && s.weight != null));
+    let changed = false;
+    for (const s of entry.sets) {
+      if (s.kind === "drop" && !s.done) {
+        s.kind = "work";
+        if (refWeight != null) s.weight = refWeight;
+        changed = true;
+      }
     }
+    return changed;
   }
-  return changed;
+
+  if (lastDone?.weight != null) {
+    let changed = false;
+    const targetDrop = backoffWeight(lastDone.weight, step, available);
+    for (const s of entry.sets) {
+      if (s.kind === "drop" && !s.done && (s.weight == null || s.weight >= lastDone.weight - 1e-6)) {
+        s.weight = targetDrop;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+  return false;
 }
 
 // ---------- Recordes ----------

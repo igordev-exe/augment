@@ -114,7 +114,8 @@ const posteriorShapes: Partial<Record<Group, string[]>> = {
 };
 
 // Músculo da ficha dono de cada região em cada vista. Na frente o deltoide se divide em
-// anterior (porção clavicular) e lateral (acromial); null fica neutro (antebraço não está na ficha).
+// anterior (porção clavicular) e lateral (acromial); atrás, na calota lateral (acromial) e
+// na porção escapular (posterior). null fica neutro (antebraço não está na ficha).
 const OWNERS: Record<View, Partial<Record<Group, MuscleId | null | MuscleId[]>>> = {
   front: {
     chest: "peito",
@@ -127,7 +128,7 @@ const OWNERS: Record<View, Partial<Record<Group, MuscleId | null | MuscleId[]>>>
   },
   back: {
     traps: "trapezio",
-    shoulders: "deltPosterior",
+    shoulders: ["deltLateral", "deltPosterior"],
     lats: "costas",
     triceps: "triceps",
     forearms: null,
@@ -257,7 +258,8 @@ const CALLOUTS: Record<View, Partial<Record<MuscleId, [number, number, "left" | 
   },
   back: {
     trapezio: [226, 169, "right"],
-    deltPosterior: [116, 154, "left"],
+    deltLateral: [116, 152, "left"],
+    deltPosterior: [135, 162, "left"],
     costas: [166, 244, "left"],
     triceps: [310, 215, "right"],
     gluteo: [178, 365, "left"],
@@ -644,7 +646,9 @@ export function Anatomy({
               {zone.name} — {zone.fatigue}% de fadiga
             </title>
             <Pair>
-              {id === "deltPosterior" && <path d={SHOULDER_HIT_AREA} fill="transparent" stroke="none" pointerEvents="all" />}
+              {id === "deltLateral" && view === "back" && (
+                <path d={SHOULDER_HIT_AREA} fill="transparent" stroke="none" pointerEvents="all" />
+              )}
               {own.map(({ d }, i) => (
                 <path key={i} className="sculpted-muscle" d={d} fill={paint(zone.level)} fillOpacity=".9" strokeWidth=".8" />
               ))}

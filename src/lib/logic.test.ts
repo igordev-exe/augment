@@ -13,6 +13,7 @@ import {
   prsBySession,
   prsInSession,
   recordsOf,
+  revertBackoff,
   snapWeight,
   suggest,
   warmupSpec,
@@ -304,10 +305,34 @@ describe("dupla progressão, pinos do aparelho e anilhas", () => {
 
   it("back-off de 15% e cálculo de aquecimento", () => {
     expect(backoffWeight(80, 2.5)).toBe(67.5);
+    expect(backoffWeight(27, 2.5)).toBe(22.5);
     expect(warmupSpec(100, 0, 2, 2.5)).toEqual({ weight: 50, reps: 8 });
     expect(warmupSpec(100, 1, 2, 2.5)).toEqual({ weight: 75, reps: 4 });
     expect(warmupSpec(100, 0, 1, 2.5)).toEqual({ weight: 65, reps: 6 });
     expect(warmupSpec(null, 0, 2, 2.5)).toEqual({ weight: null, reps: 8 });
+  });
+
+  it("recalcula ou reverte back-off de -15% quando a série anterior muda de peso/reps", () => {
+    const e: SessionExercise = {
+      exId: "push-a.elevacao-lat-maq",
+      unit: "kg",
+      sets: [
+        { id: "w", kind: "warmup", weight: 18, reps: 10, done: true },
+        { id: "1", kind: "work", weight: 32, reps: 8, done: true },
+        { id: "2", kind: "work", weight: 27, reps: 8, done: true },
+        { id: "3", kind: "drop", weight: 27.5, reps: 12, done: false },
+      ],
+    };
+    // Série 2 ainda ficou abaixo do piso (8 < 12) com 27 kg → Série 3 (-15%) cai para 22,5 kg (nunca fica em 27,5 kg)
+    revertBackoff(e, 12, 2.5);
+    expect(e.sets[3].kind).toBe("drop");
+    expect(e.sets[3].weight).toBe(22.5);
+
+    // Se na Série 2 atingiu o piso (12 reps com 27 kg), reverte a Série 3 para work com 27 kg
+    e.sets[2].reps = 12;
+    revertBackoff(e, 12, 2.5);
+    expect(e.sets[3].kind).toBe("work");
+    expect(e.sets[3].weight).toBe(27);
   });
 });
 

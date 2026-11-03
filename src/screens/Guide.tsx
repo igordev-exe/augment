@@ -34,7 +34,7 @@ export function Guide() {
   const vol = plannedVolume(3);
   return (
     <div className="stack-lg">
-      <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="As regras da ficha v2 e o porquê de cada uma." />
+      <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="Protocolos de execução, progressão de carga e referências." />
 
       <nav className="toc" aria-label="Seções do guia">
         {SECTIONS.map((s) => (

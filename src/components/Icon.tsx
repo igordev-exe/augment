@@ -14,7 +14,8 @@ type Name =
   | "trophy"
   | "video"
   | "trash"
-  | "clock";
+  | "clock"
+  | "share";
 
 export function Icon({ name, size = 22 }: { name: Name; size?: number }) {
   const p = {
@@ -125,6 +126,15 @@ export function Icon({ name, size = 22 }: { name: Name; size?: number }) {
         <svg {...p}>
           <circle cx="12" cy="12" r="8.5" />
           <path d="M12 7.5V12l3 2" />
+        </svg>
+      );
+    case "share":
+      return (
+        <svg {...p}>
+          <circle cx="18" cy="5" r="2.5" />
+          <circle cx="6" cy="12" r="2.5" />
+          <circle cx="18" cy="19" r="2.5" />
+          <path d="M8.3 10.8l7.4-4.6M8.3 13.2l7.4 4.6" />
         </svg>
       );
   }

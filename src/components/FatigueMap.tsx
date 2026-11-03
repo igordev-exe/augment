@@ -11,10 +11,10 @@ import { Icon } from "./Icon";
 // grupos, diagnóstico do músculo selecionado e três cartões de rodapé. Tudo vem do histórico:
 // fadiga = quanto falta recuperar desde o último treino do músculo (ver muscleStatus).
 
-/** Músculos de cada vista, de cima para baixo. Panturrilha aparece nas duas. */
+/** Músculos de cada vista, de cima para baixo. Deltoide lateral e panturrilha aparecem nas duas. */
 const VIEW_MUSCLES: Record<View, MuscleId[]> = {
   front: ["peito", "deltAnterior", "deltLateral", "biceps", "abdomen", "quadriceps", "panturrilha"],
-  back: ["trapezio", "deltPosterior", "costas", "triceps", "gluteo", "posterior", "panturrilha"],
+  back: ["trapezio", "deltLateral", "deltPosterior", "costas", "triceps", "gluteo", "posterior", "panturrilha"],
 };
 
 const LEVEL_TAG: Record<FatigueLevel, string> = { critico: "CRÍTICO", atencao: "ATENÇÃO", estavel: "ESTÁVEL" };
