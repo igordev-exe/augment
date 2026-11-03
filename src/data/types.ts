@@ -157,4 +157,6 @@ export interface Settings {
   videos: Record<string, string>;
   /** Segunda-feira em que o aviso de retomada foi respondido (não pergunta de novo na mesma semana). */
   reentryDismissed?: string;
+  /** Segunda-feira em que o cartão do relatório da semana passada foi fechado. */
+  reportSeen?: string;
 }

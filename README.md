@@ -13,6 +13,9 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Check-in** antes do treino (sono, energia, dor) e **"como bateu?"** depois de cada exercício (pump, volume, articulação).
 - **Sugestão mais esperta**: cargas misturadas (rampa registrada como trabalho) usam a mais pesada; salto grande demais para a faixa
   (ex.: cabo de 17,5 → 20 kg) acumula reps antes de subir, com previsão de reps pela carga nova.
+- **Relatório da semana** (seg–dom), com um cartão na tela inicial na segunda: treinos feitos e os que ficaram de fora, séries que
+  faltaram, volume por músculo contra a meta, reps que sobraram contra a meta, exercícios estagnados, sinais do corpo, recordes e
+  **um foco só** para a semana seguinte. Dá para navegar pelas semanas anteriores em Progresso.
 - **Retomada**: depois de 10+ dias parado, ou de uma semana com menos da metade dos treinos, o app propõe recomeçar ou repetir a semana.
 - **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.

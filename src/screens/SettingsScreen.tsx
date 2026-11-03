@@ -6,7 +6,7 @@ import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../l
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, workSets } from "../lib/progression";
-import { shortName } from "./SessionScreen";
+import { shortName } from "../data/program";
 
 /** Salva um arquivo: usa a folha de compartilhar no celular (iPhone instalado não baixa blobs) e cai para download. */
 async function download(name: string, content: string, type: string) {

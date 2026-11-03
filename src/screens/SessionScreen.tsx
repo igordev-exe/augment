@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { Icon } from "../components/Icon";
 import { LIB_BY_ID } from "../data/library";
-import { DAY_BY_ID, EXERCISE_BY_ID } from "../data/program";
+import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
 import type { Checkin, ExerciseFeedback, ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
 import { formatDuration, longDate, shortDate, todayISO } from "../lib/dates";
 import { db } from "../lib/db";
@@ -447,15 +447,6 @@ export function checkinAdvice(c: Checkin | undefined): string[] {
     out.push("Dor forte: pule o que dói ou use a alternativa em Como fazer. Se continuar nos próximos dias, procure avaliação.");
   }
   return out;
-}
-
-export function shortName(ex: ProgramExercise | undefined): string {
-  if (!ex) return "";
-  return ex.name
-    .replace(/^A[12] · /, "")
-    .replace(/\s*\(.*?\)\s*/g, " ")
-    .replace(/ · .*/, "")
-    .trim();
 }
 
 // ---------- Exercício ----------

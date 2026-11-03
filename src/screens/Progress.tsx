@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { dayName, PageHead } from "../components/bits";
 import { Icon } from "../components/Icon";
-import { EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM } from "../data/program";
+import { EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, historyOf, mainLoad, prsInSession, workSets } from "../lib/progression";
 import { plannedVolume, weeklyVolume } from "../lib/sessions";
-import { shortName } from "./SessionScreen";
 
 export function Progress() {
   const sessions = useSessions();
@@ -39,6 +38,10 @@ export function Progress() {
   return (
     <div className="stack-lg">
       <PageHead code="AUG.OS // TELEMETRIA" title="Progresso" sub="Volume da semana, recordes e evolução por exercício." />
+
+      <Link to="/relatorio" data-augmented-ui="tl-clip br-clip border" className="btn">
+        Relatório da semana passada <span className="arrow">&gt;</span>
+      </Link>
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div>

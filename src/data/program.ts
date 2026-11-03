@@ -616,3 +616,13 @@ export function usesOfLibrary(libId: string): ProgramExercise[] {
 export function dayOfExercise(exId: string): ProgramDay | undefined {
   return PROGRAM.find((d) => d.exercises.some((e) => e.id === exId));
 }
+
+/** Nome curto do exercício: sem prefixo de superset, parênteses e variações depois de " · ". */
+export function shortName(ex: ProgramExercise | undefined): string {
+  if (!ex) return "";
+  return ex.name
+    .replace(/^A[12] · /, "")
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .replace(/ · .*/, "")
+    .trim();
+}

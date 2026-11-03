@@ -9,6 +9,7 @@ import { Exercises } from "./screens/Exercises";
 import { Guide } from "./screens/Guide";
 import { History } from "./screens/History";
 import { Progress } from "./screens/Progress";
+import { Report } from "./screens/Report";
 import { SessionScreen } from "./screens/SessionScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { Today } from "./screens/Today";
@@ -36,6 +37,8 @@ function Shell() {
           <Route path="/treino/:id" element={<SessionScreen />} />
           <Route path="/historico" element={<History />} />
           <Route path="/progresso" element={<Progress />} />
+          <Route path="/relatorio" element={<Report />} />
+          <Route path="/relatorio/:week" element={<Report />} />
           <Route path="/exercicios" element={<Exercises />} />
           <Route path="/exercicios/:libId" element={<ExerciseDetail />} />
           <Route path="/guia" element={<Guide />} />

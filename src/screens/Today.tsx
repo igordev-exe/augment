@@ -8,6 +8,7 @@ import { addDays, formatDuration, fromISO, mondayOf, shortDate, weekdayName, wee
 import { db } from "../lib/db";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
 import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { weeklyReport } from "../lib/report";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
 
@@ -76,6 +77,9 @@ export function Today() {
     settings.trainingDays,
     settings.reentryDismissed,
   );
+  const lastWeek = addDays(monday, -7);
+  const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays);
+  const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);
   const doneThisWeek = sessions.filter((s) => s.status === "done" && s.date >= monday && s.date < addDays(monday, 7)).length;
   const missionLabel = doneToday.length
     ? `Hoje já foi ${dayName(doneToday[0].dayId)}. Próxima missão`
@@ -170,6 +174,35 @@ export function Today() {
               onClick={() => updateSettings({ reentryDismissed: monday })}
             >
               Manter semana {reentry.week === 7 ? "D" : reentry.week}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!active && showReport && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
+          <div className="spread">
+            <span className="label">
+              Relatório da semana passada · {report!.done}/{report!.planned} treinos
+            </span>
+          </div>
+          <div className="display" style={{ fontSize: 20 }}>
+            {report!.focus.title}
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>
+            {report!.focus.detail}
+          </p>
+          <div className="row">
+            <Link to={`/relatorio/${lastWeek}`} data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow">
+              Ver relatório <span className="arrow">&gt;</span>
+            </Link>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-sm btn-ghost"
+              onClick={() => updateSettings({ reportSeen: monday })}
+            >
+              Entendido
             </button>
           </div>
         </section>
