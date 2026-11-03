@@ -57,7 +57,8 @@ export const COACH_TOOLS: Anthropic.Beta.BetaTool[] = [
   },
   {
     name: "corpo",
-    description: "Histórico de peso corporal e medidas (cintura, braço e observações) registrados pelo usuário.",
+    description:
+      "Histórico de peso corporal e medidas (cintura, braço e observações), a meta de peso dele e o ritmo semanal contra a faixa recomendada.",
     input_schema: { type: "object", properties: {}, additionalProperties: false },
     eager_input_streaming: true,
   },

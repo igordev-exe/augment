@@ -1,8 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { dayName, PageHead } from "../components/bits";
+import { BodyGoalCard } from "../components/BodyGoalCard";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
+import { MuscleMap } from "../components/MuscleMap";
+import { PhotoCompare } from "../components/PhotoCompare";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
 import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
@@ -13,11 +17,12 @@ import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "../lib/progression";
 import { plannedVolume, weeklyVolume } from "../lib/sessions";
+import { activityGrid, muscleStatus, relativeStrength } from "../lib/visual";
 
 export function Progress() {
   const sessions = useSessions();
   const bodyLog = useBodyLog();
-  const [settings] = useSettings();
+  const [settings, updateSettings] = useSettings();
   const today = useToday();
   const toast = useToast();
 
@@ -37,10 +42,16 @@ export function Progress() {
     () => (sessions ? computeAchievements(sessions, settings, bodyLog ?? []) : []),
     [sessions, settings, bodyLog],
   );
+  const week = weekFor(settings.mesoStart, today);
+  const muscles = useMemo(() => muscleStatus(sessions ?? [], week, today), [sessions, week, today]);
+  const grid = useMemo(
+    () => activityGrid(sessions ?? [], today, settings.trainingDays.length),
+    [sessions, today, settings.trainingDays.length],
+  );
+  const relative = useMemo(() => relativeStrength(sessions ?? [], bodyLog ?? []), [sessions, bodyLog]);
 
   if (!sessions) return null;
 
-  const week = weekFor(settings.mesoStart, today);
   const done = sessions.filter((s) => s.status === "done");
   const vol = weeklyVolume(done, today);
   const plan = plannedVolume(week);
@@ -104,13 +115,28 @@ export function Progress() {
       <PageHead code="AUG.OS // TELEMETRIA" title="Progresso" sub="Volume da semana, biometria, conquistas e evolução por exercício." />
 
       <div className="row-wrap">
-        <Link to="/relatorio" data-augmented-ui="tl-clip br-clip border" className="btn grow">
+        <Link to="/relatorio" data-augmented-ui="tl-clip br-clip border" className="btn grow" style={{ flexBasis: "auto" }}>
           Relatório da semana <span className="arrow">&gt;</span>
         </Link>
-        <Link to="/relatorio?tab=meso" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost grow">
+        <Link
+          to="/relatorio?tab=meso"
+          data-augmented-ui="tl-clip br-clip border"
+          className="btn btn-ghost grow"
+          style={{ flexBasis: "auto" }}
+        >
           Resumo do mesociclo <span className="arrow">&gt;</span>
         </Link>
       </div>
+
+      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
+        <div>
+          <h2 className="h-sec">Mapa muscular</h2>
+          <p className="small muted" style={{ marginTop: 4 }}>
+            Volume da semana contra a ficha, o que ainda está recuperando e o que ficou sem estímulo.
+          </p>
+        </div>
+        <MuscleMap status={muscles} />
+      </section>
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div>
@@ -163,6 +189,32 @@ export function Progress() {
           ))}
         </div>
         <p className="tiny faint">Semanas começando na segunda. A ficha pede 5 treinos por semana.</p>
+      </section>
+
+      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
+        <h2 className="h-sec">Atividade do ano</h2>
+        <div className="stats-grid">
+          <div>
+            <span className="label">Treinos</span>
+            <strong className="num">{grid.totalSessions}</strong>
+            <span className="tiny faint">53 semanas</span>
+          </div>
+          <div>
+            <span className="label">Sequência</span>
+            <strong className="num">
+              {grid.streak} {grid.streak === 1 ? "semana" : "semanas"}
+            </strong>
+            <span className="tiny faint">com {settings.trainingDays.length}+ treinos</span>
+          </div>
+          <div>
+            <span className="label">Recorde</span>
+            <strong className="num">
+              {grid.longestStreak} {grid.longestStreak === 1 ? "semana" : "semanas"}
+            </strong>
+            <span className="tiny faint">seguidas na meta</span>
+          </div>
+        </div>
+        <ActivityHeatmap grid={grid} today={today} />
       </section>
 
       {/* F4: Peso corporal, medidas e fotos */}
@@ -286,13 +338,22 @@ export function Progress() {
           </div>
         )}
 
+        <BodyGoalCard entries={bodyLog ?? []} goal={settings.bodyGoal} onGoal={updateSettings} />
+
         {weightPoints.length >= 2 && (
           <LineChart
             labels={weightPoints.map((p) => shortDate(p.date))}
-            series={[{ name: "Peso corporal", color: "var(--cyan)", values: weightPoints.map((p) => p.value) }]}
+            series={[
+              { name: "Peso corporal", color: "var(--cyan)", values: weightPoints.map((p) => p.value) },
+              ...(settings.bodyGoal?.targetKg != null
+                ? [{ name: "Meta", color: "var(--amber)", values: weightPoints.map(() => settings.bodyGoal!.targetKg!) }]
+                : []),
+            ]}
             unit="kg"
           />
         )}
+
+        <PhotoCompare entries={bodyLog ?? []} />
 
         {(bodyLog ?? []).length === 0 ? (
           <p className="small faint" style={{ margin: 0 }}>
@@ -331,6 +392,47 @@ export function Progress() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
+        <div>
+          <h2 className="h-sec">Força relativa</h2>
+          <p className="small muted" style={{ marginTop: 4 }}>
+            1RM estimado ÷ peso corporal da época, nos compostos. Se a carga sobe junto com o peso, o número fica parado: é o que separa
+            ganho de força de ganho de peso.
+          </p>
+        </div>
+        {relative.length === 0 ? (
+          <p className="small faint" style={{ margin: 0 }}>
+            {weightPoints.length === 0
+              ? "Registre o peso corporal em Biometria para calcular."
+              : "Aparece depois do primeiro treino com séries registradas."}
+          </p>
+        ) : (
+          <div className="stack" style={{ gap: 7 }}>
+            {relative.map((r) => (
+              <div key={r.exId} className="rel">
+                <span className="small">{shortName(EXERCISE_BY_ID[r.exId])}</span>
+                <span className="small num" style={{ textAlign: "right" }}>
+                  <strong>{r.ratio.toFixed(2).replace(".", ",")}×</strong>
+                  <span className="faint"> PC</span>
+                </span>
+                <span
+                  className="tiny num"
+                  style={{
+                    textAlign: "right",
+                    color: r.sessions < 2 || Math.abs(r.deltaPct) < 0.5 ? "var(--ink-3)" : r.deltaPct > 0 ? "var(--cyan)" : "var(--amber)",
+                  }}
+                >
+                  {r.sessions < 2 ? "base" : `${r.deltaPct > 0 ? "+" : ""}${r.deltaPct.toFixed(1).replace(".", ",")}%`}
+                </span>
+              </div>
+            ))}
+            <p className="tiny faint" style={{ margin: 0 }}>
+              A porcentagem compara com o primeiro treino registrado de cada exercício.
+            </p>
+          </div>
         )}
       </section>
 

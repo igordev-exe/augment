@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { BodyEntry, Session, Settings, Unit } from "../data/types";
+import type { BodyEntry, BodyGoal, Session, Settings, Unit } from "../data/types";
 
 // Tudo fica no IndexedDB do próprio celular. Faça backup em Ajustes → Exportar.
 
@@ -90,6 +90,14 @@ function sanitizeTrainingDays(raw: unknown): number[] {
   return valid.length > 0 ? valid : [...DEFAULT_SETTINGS.trainingDays];
 }
 
+function sanitizeBodyGoal(raw: unknown): BodyGoal | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const g = raw as Partial<BodyGoal>;
+  if (g.mode !== "perder" && g.mode !== "ganhar" && g.mode !== "manter") return undefined;
+  const t = Number(g.targetKg);
+  return { mode: g.mode, targetKg: Number.isFinite(t) && t >= 30 && t <= 250 ? Number(t.toFixed(1)) : undefined };
+}
+
 export function sanitizeSettings(raw: unknown): Settings {
   const s = (raw && typeof raw === "object" ? raw : {}) as Partial<Settings>;
   const operator = typeof s.operator === "string" && s.operator.trim() ? s.operator.trim().slice(0, 60) : DEFAULT_SETTINGS.operator;
@@ -107,6 +115,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     swaps: sanitizeRecordString(s.swaps),
     videos: sanitizeRecordString(s.videos),
     exerciseNotes: sanitizeRecordString(s.exerciseNotes),
+    bodyGoal: sanitizeBodyGoal(s.bodyGoal),
     lastBackupAt: typeof s.lastBackupAt === "string" && ISO_DATE_RE.test(s.lastBackupAt) ? s.lastBackupAt : undefined,
     backupDismissed: typeof s.backupDismissed === "string" && ISO_DATE_RE.test(s.backupDismissed) ? s.backupDismissed : undefined,
     reentryDismissed: typeof s.reentryDismissed === "string" && ISO_DATE_RE.test(s.reentryDismissed) ? s.reentryDismissed : undefined,
@@ -254,6 +263,7 @@ export async function importBackup(b: Backup, mode: "merge" | "replace"): Promis
         swaps: { ...incoming.swaps, ...cur.swaps },
         videos: { ...incoming.videos, ...cur.videos },
         exerciseNotes: { ...incoming.exerciseNotes, ...cur.exerciseNotes },
+        bodyGoal: cur.bodyGoal ?? incoming.bodyGoal,
       });
       await db.kv.put({ key: "settings", value: merged });
       if (incomingBody.length > 0) {

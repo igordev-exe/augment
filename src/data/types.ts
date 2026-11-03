@@ -147,6 +147,12 @@ export interface BodyEntry {
   photoDataUrl?: string;
 }
 
+/** Meta de peso corporal: direção e, se quiser, o peso alvo. */
+export interface BodyGoal {
+  mode: "perder" | "ganhar" | "manter";
+  targetKg?: number;
+}
+
 export interface Session {
   id: string;
   dayId: string;
@@ -187,6 +193,8 @@ export interface Settings {
   videos: Record<string, string>;
   /** Lembretes técnicos fixados por exercício (id do programa → texto). */
   exerciseNotes: Record<string, string>;
+  /** Meta de peso corporal (Progresso → Biometria). */
+  bodyGoal?: BodyGoal;
   /** Data local (AAAA-MM-DD) do último backup exportado. */
   lastBackupAt?: string;
   /** Segunda-feira em que o lembrete de backup foi dispensado. */

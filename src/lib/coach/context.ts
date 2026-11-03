@@ -6,6 +6,7 @@ import { earlyDeloadMesoStart, fatigueDeloadFor, reentryFor, rirRange, setsFor, 
 import { formatWeight, historyOf, increaseStep, recordsOf, suggest, workSets } from "../progression";
 import { mesoReport, weeklyReport } from "../report";
 import { planAhead } from "../schedule";
+import { goalStatus, weightTrend } from "../visual";
 import { unitFor } from "../sessions";
 
 // Contexto do treinador (LLM): o prompt fixo e as ferramentas que leem os registros.
@@ -271,8 +272,22 @@ export function toolBodyLog(data: CoachData) {
     notas: e.notes || undefined,
     tem_foto: !!e.photoDataUrl,
   }));
+  const trend = weightTrend(data.bodyLog ?? []);
+  const goal = data.settings.bodyGoal;
+  const status = goalStatus(trend, goal);
   return {
     total_registros: (data.bodyLog ?? []).length,
+    meta: goal ? { direcao: goal.mode, peso_alvo_kg: goal.targetKg ?? null, faixa_pct_semana: status?.range } : null,
+    ritmo:
+      trend && trend.spanDays >= 6
+        ? {
+            kg_semana: Number(trend.kgPerWeek.toFixed(2)),
+            pct_semana: Number(trend.pctPerWeek.toFixed(2)),
+            dias_analisados: trend.spanDays,
+            status: status?.pace,
+            semanas_ate_meta: status?.etaWeeks,
+          }
+        : null,
     registros: entries,
   };
 }
