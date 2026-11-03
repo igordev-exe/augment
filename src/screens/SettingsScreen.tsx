@@ -47,7 +47,7 @@ export function SettingsScreen() {
   }
 
   async function doCsv() {
-    const rows = [["data", "treino", "semana", "exercicio", "tipo", "peso", "unidade", "reps"]];
+    const rows = [["data", "treino", "semana", "exercicio", "tipo", "peso", "unidade", "reps", "sobra"]];
     const done = (sessions ?? []).filter((s) => s.status === "done").sort((a, b) => (a.date < b.date ? -1 : 1));
     for (const s of done) {
       for (const e of s.exercises) {
@@ -61,6 +61,7 @@ export function SettingsScreen() {
             formatWeight(st.weight),
             e.unit,
             String(st.reps),
+            st.rir == null ? "" : String(st.rir),
           ]);
         }
       }

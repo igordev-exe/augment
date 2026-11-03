@@ -7,7 +7,7 @@ import type { Session } from "../data/types";
 import { addDays, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
 import { db } from "../lib/db";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
-import { defaultRest, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
 
@@ -35,7 +35,7 @@ function estimateMinutes(dayId: string, week: number): number {
 
 export function Today() {
   const sessions = useSessions();
-  const [settings] = useSettings();
+  const [settings, updateSettings] = useSettings();
   const today = useToday();
   const navigate = useNavigate();
   const [picking, setPicking] = useState(false);
@@ -69,6 +69,13 @@ export function Today() {
 
   const monday = mondayOf(today);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const reentry = reentryFor(
+    sessions.filter((s) => s.status === "done").map((s) => s.date),
+    settings.mesoStart,
+    today,
+    settings.trainingDays,
+    settings.reentryDismissed,
+  );
   const doneThisWeek = sessions.filter((s) => s.status === "done" && s.date >= monday && s.date < addDays(monday, 7)).length;
   const missionLabel = doneToday.length
     ? `Hoje já foi ${dayName(doneToday[0].dayId)}. Próxima missão`
@@ -133,6 +140,39 @@ export function Today() {
             </span>
           </div>
         </Link>
+      )}
+
+      {!active && reentry && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 10 }}>
+          <div className="callout warn">
+            {reentry.kind === "restart"
+              ? `${reentry.gapDays} dias sem treinar. O calendário te põe na ${WEEK_RULES[reentry.week].label.toLowerCase()}, mas voltar direto para falha e séries extras é arriscado. Recomece o mesociclo na semana 1: histórico e recordes ficam.`
+              : `Semana passada: ${reentry.done} de ${reentry.planned} treinos. Em vez de avançar para a semana ${reentry.week}, repita a semana ${reentry.week - 1}.`}
+          </div>
+          <div className="row">
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-primary btn-sm grow"
+              onClick={() =>
+                updateSettings({
+                  mesoStart: reentry.kind === "restart" ? monday : addDays(settings.mesoStart, 7),
+                  reentryDismissed: monday,
+                })
+              }
+            >
+              {reentry.kind === "restart" ? "Recomeçar na semana 1" : `Repetir a semana ${reentry.week - 1}`}
+            </button>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-sm btn-ghost"
+              onClick={() => updateSettings({ reentryDismissed: monday })}
+            >
+              Manter semana {reentry.week === 7 ? "D" : reentry.week}
+            </button>
+          </div>
+        </section>
       )}
 
       {!active && (

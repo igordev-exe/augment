@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { EXERCISE_BY_ID, PROGRAM } from "../data/program";
 import type { Session, SessionExercise } from "../data/types";
-import { setsFor, stopFor, weekFor } from "./mesocycle";
-import { backoffWeight, e1rm, historyOf, prsInSession, recordsOf, suggest } from "./progression";
+import { reentryFor, rirRange, setsFor, stopFor, weekFor } from "./mesocycle";
+import { backoffWeight, e1rm, historyOf, predictReps, prsInSession, recordsOf, suggest } from "./progression";
 import { planAhead } from "./schedule";
 import { plannedVolume } from "./sessions";
 
 const hack = EXERCISE_BY_ID["lower-a.hack"];
 const extensora = EXERCISE_BY_ID["lower-a.extensora"];
+const martelo = EXERCISE_BY_ID["pull-a.martelo-corda"];
 
 function entry(exId: string, sets: [number, number][], kinds?: ("work" | "drop")[]): SessionExercise {
   return {
@@ -56,6 +57,38 @@ describe("mesociclo", () => {
     expect(v.triceps).toBe(9);
     expect(v.panturrilha).toBe(8);
     expect(v.trapezio).toBe(3);
+  });
+});
+
+describe("retomada", () => {
+  const days = [1, 2, 3, 4, 5];
+  // Seus treinos reais: 14/10, 19/10 e 21/10, mesociclo desde 12/10.
+  const done = ["2026-10-14", "2026-10-19", "2026-10-21"];
+
+  it("10+ dias parado → recomeçar na semana 1", () => {
+    expect(reentryFor(done, "2026-10-12", "2026-11-02", days)).toEqual({ kind: "restart", gapDays: 12, week: 4 });
+  });
+
+  it("semana passada fraca → repetir a semana", () => {
+    expect(reentryFor(["2026-10-21", "2026-10-27"], "2026-10-12", "2026-11-02", days)).toEqual({
+      kind: "repeat",
+      week: 4,
+      done: 1,
+      planned: 5,
+    });
+  });
+
+  it("não pergunta de novo na mesma semana, nem na semana 1, nem com a semana passada cumprida", () => {
+    expect(reentryFor(done, "2026-10-12", "2026-11-04", days, "2026-11-02")).toBeNull();
+    expect(reentryFor(done, "2026-11-02", "2026-11-02", days)).toBeNull();
+    const full = ["2026-10-26", "2026-10-27", "2026-10-28"];
+    expect(reentryFor(full, "2026-10-12", "2026-11-02", days)).toBeNull();
+  });
+
+  it("faixa de RIR segue a semana", () => {
+    expect(rirRange("T", 1)).toEqual([2, 3]);
+    expect(rirRange("F", 4)).toEqual([0, 1]);
+    expect(rirRange("R", 5)).toEqual([2, 3]);
   });
 });
 
@@ -132,6 +165,68 @@ describe("dupla progressão", () => {
       5,
     );
     expect(s.kind).toBe("same");
+  });
+
+  it("salto grande demais para a faixa → acumula reps antes de subir", () => {
+    // Cabo: 17,5 → 20 kg é +14%; com 15 reps a previsão em 20 kg fica abaixo de 10.
+    const s = suggest(
+      martelo,
+      entry(martelo.id, [
+        [17.5, 15],
+        [17.5, 15],
+        [17.5, 15],
+      ]),
+      3,
+      3,
+      2.5,
+    );
+    expect(s.kind).toBe("same");
+    expect(s.weight).toBe(17.5);
+    expect(s.targets).toEqual([16, 16, 16]);
+    expect(predictReps(e1rm(17.5, 17), 20)).toBeGreaterThanOrEqual(10);
+  });
+
+  it("reps que sobraram contam na previsão do salto", () => {
+    const top = entry(martelo.id, [
+      [17.5, 15],
+      [17.5, 15],
+      [17.5, 15],
+    ]);
+    top.sets.forEach((x) => (x.rir = 2));
+    const s = suggest(martelo, top, 3, 3, 2.5);
+    expect(s.kind).toBe("up");
+    expect(s.weight).toBe(20);
+  });
+
+  it("cargas misturadas (rampa como trabalho) → referência é a mais pesada", () => {
+    // Registro real de 19/10: 60×8, 20×10, 40×8, 40×6.
+    const s = suggest(
+      hack,
+      entry(hack.id, [
+        [60, 8],
+        [20, 10],
+        [40, 8],
+        [40, 6],
+      ]),
+      4,
+      3,
+      2.5,
+    );
+    expect(s.weight).toBe(60);
+    expect(s.notes.some((n) => n.includes("variaram"))).toBe(true);
+  });
+
+  it("compara o RIR marcado com a meta da semana", () => {
+    const e = entry(hack.id, [
+      [100, 8],
+      [100, 8],
+    ]);
+    e.sets.forEach((x) => (x.rir = 0));
+    expect(suggest(hack, e, 4, 2, 2.5, 1).notes.join(" ")).toContain("falha");
+    e.sets.forEach((x) => (x.rir = 4));
+    expect(suggest(hack, e, 4, 4, 2.5, 3).notes.join(" ")).toContain("4+");
+    e.sets.forEach((x) => (x.rir = 1));
+    expect(suggest(hack, e, 4, 4, 2.5, 3).notes).toEqual([]);
   });
 
   it("back-off de 15%", () => {

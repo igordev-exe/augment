@@ -1290,6 +1290,111 @@ p {
   box-shadow: none;
 }
 
+/* RIR: quantas reps sobraram, perguntado logo depois da série (durante o descanso). */
+.set .rir-tag {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  color: var(--cyan);
+}
+.set-kind:has(.rir-tag) {
+  padding-bottom: 12px;
+}
+.rir-ask {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--cyan-soft);
+  border-left: 3px solid var(--cyan);
+}
+.rir-ask .label {
+  margin-right: auto;
+  color: var(--cyan);
+}
+.rir-ask button {
+  min-width: 38px;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: 14px;
+}
+.rir-ask button.target {
+  border-color: #3fd8e088;
+  color: var(--ink);
+}
+.rir-ask button[aria-pressed="true"] {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: var(--bg);
+}
+
+/* Perguntas de um toque: check-in e "como bateu?". */
+.ask {
+  margin: 0 14px 14px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--purple);
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.choice-label {
+  flex: 0 0 84px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.choice button {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.choice button[aria-pressed="true"] {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: underline;
+}
+.sug-note {
+  color: var(--ink);
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+}
+
 .unit-toggle {
   display: inline-flex;
   border: 1px solid var(--line);

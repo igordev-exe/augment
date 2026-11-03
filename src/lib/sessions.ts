@@ -25,7 +25,8 @@ export function buildSession(
   const day = DAY_BY_ID[dayId];
   const exercises: SessionExercise[] = day.exercises.map((ex, i) => {
     const hist = historyOf(allSessions, ex.id);
-    const last = hist[hist.length - 1]?.entry;
+    const lastItem = hist[hist.length - 1];
+    const last = lastItem?.entry;
     const unit = unitFor(ex.id, settings, last);
     const planned = setsFor(ex, week);
     const sets: SetEntry[] = [];
@@ -40,7 +41,7 @@ export function buildSession(
     }
 
     const step = increaseStep(ex, unit, settings.increments[ex.id]);
-    const s = suggest(ex, last, planned, week, step);
+    const s = suggest(ex, last, planned, week, step, lastItem?.session.week);
     for (let k = 0; k < planned; k++) sets.push(emptySet("work", s.weight));
     return { exId: ex.id, unit, sets };
   });

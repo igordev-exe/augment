@@ -4,11 +4,11 @@ import { PageHead } from "../components/bits";
 import { Icon } from "../components/Icon";
 import { LIB_BY_ID } from "../data/library";
 import { DAY_BY_ID, EXERCISE_BY_ID } from "../data/program";
-import type { ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
+import type { Checkin, ExerciseFeedback, ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
 import { formatDuration, longDate, shortDate, todayISO } from "../lib/dates";
 import { db } from "../lib/db";
 import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
-import { defaultRest, setsFor, stopFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { defaultRest, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import {
   backoffWeight,
   formatWeight,
@@ -108,6 +108,18 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       await db.sessions.put(cur);
     });
     return out;
+  }
+
+  const checkin = session.checkin;
+  const askCheckin = !checkin?.skipped && !(checkin?.sleep && checkin?.energy && checkin?.pain);
+
+  async function setCheckin(patch: Checkin) {
+    await db.transaction("rw", db.sessions, async () => {
+      const cur = await db.sessions.get(session.id);
+      if (!cur) return;
+      cur.checkin = { ...cur.checkin, ...patch };
+      await db.sessions.put(cur);
+    });
   }
 
   async function onSetDone(index: number, entry: SessionExercise, setId: string) {
@@ -273,6 +285,27 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         </section>
       )}
 
+      {isActive && askCheckin && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
+          <div className="spread">
+            <h2 className="h-sec">Check-in</h2>
+            <button type="button" className="link-btn" onClick={() => setCheckin({ skipped: true })}>
+              Pular
+            </button>
+          </div>
+          <Choice label="Sono" options={["ruim", "ok", "bom"]} value={checkin?.sleep} onPick={(v) => setCheckin({ sleep: v })} />
+          <Choice label="Energia" options={["baixa", "ok", "alta"]} value={checkin?.energy} onPick={(v) => setCheckin({ energy: v })} />
+          <Choice label="Dor" options={["nenhuma", "leve", "forte"]} value={checkin?.pain} onPick={(v) => setCheckin({ pain: v })} />
+        </section>
+      )}
+
+      {isActive &&
+        checkinAdvice(checkin).map((a) => (
+          <div key={a} className="callout warn">
+            {a}
+          </div>
+        ))}
+
       {isActive && (
         <div data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 6 }}>
           <div className="small">
@@ -338,7 +371,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         <textarea
           id="session-notes"
           className="note"
-          placeholder="Como você estava? Sono, energia, dor, máquina ocupada…"
+          placeholder="Horário, cardio, máquina ocupada, o que chamou atenção…"
           defaultValue={session.notes ?? ""}
           onBlur={(e) => {
             const v = e.target.value;
@@ -400,6 +433,22 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   );
 }
 
+/** O que o check-in muda no treino de hoje. */
+export function checkinAdvice(c: Checkin | undefined): string[] {
+  if (!c || c.skipped) return [];
+  const out: string[] = [];
+  if (c.sleep === "ruim" || c.energy === "baixa") {
+    out.push(
+      "Dia de baixa: mantenha as cargas sugeridas, sem intensificadores, e pare 1 rep antes da meta. Hoje o objetivo é cumprir, não bater recorde.",
+    );
+  }
+  if (c.pain === "leve") out.push("Dor leve: aqueça mais o que incomoda e corte o exercício que piorar a dor.");
+  if (c.pain === "forte") {
+    out.push("Dor forte: pule o que dói ou use a alternativa em Como fazer. Se continuar nos próximos dias, procure avaliação.");
+  }
+  return out;
+}
+
 export function shortName(ex: ProgramExercise | undefined): string {
   if (!ex) return "";
   return ex.name
@@ -443,10 +492,26 @@ function ExerciseBlock({
   const workAll = entry.sets.filter((s) => s.kind !== "warmup");
   const workDone = workAll.filter((s) => s.done).length;
   const complete = workAll.length > 0 && workDone >= workAll.length;
-  const sug = suggest(ex, last?.entry, planned, week, step);
+  const sug = suggest(ex, last?.entry, planned, week, step, last?.session.week);
   const stop = stopFor(ex.stop, week);
   const showInt = !!ex.intensifier && WEEK_RULES[week].intensifiers > 0;
   const [showNote, setShowNote] = useState(!!entry.notes);
+  const rirTarget = rirRange(ex.stop, week);
+  // Pergunta o RIR da série feita mais recente que ainda não tem resposta.
+  const askRirId = active
+    ? entry.sets.filter((s) => s.done && s.kind !== "warmup" && s.rir == null).sort((a, b) => (b.doneAt ?? 0) - (a.doneAt ?? 0))[0]?.id
+    : undefined;
+  const fb = entry.feedback;
+  const askFeedback = active && complete && !fb?.skipped && !(fb?.pump && fb?.volume && fb?.joint);
+  // Com o exercício fechado (fecha sozinho na última série), o RIR que falta vai para o cartão de baixo.
+  const askRirClosed = active && complete && !open && !!askRirId;
+  const RIR_OPTS = ["0", "1", "2", "3", "4+"];
+
+  function setFeedback(patch: ExerciseFeedback) {
+    mutate((e) => {
+      e.feedback = { ...e.feedback, ...patch };
+    });
+  }
 
   let workCounter = 0;
 
@@ -474,6 +539,7 @@ function ExerciseBlock({
       } else {
         s.done = false;
         s.doneAt = undefined;
+        s.rir = undefined;
         revertBackoff(e, ex.reps[0]);
       }
     });
@@ -513,6 +579,29 @@ function ExerciseBlock({
         </span>
         <span className="ex-count">{complete ? <Icon name="check" size={20} /> : `${workDone}/${workAll.length}`}</span>
       </button>
+
+      {(askFeedback || askRirClosed) && (
+        <div className="ask stack" style={{ gap: 8 }}>
+          <div className="spread">
+            <span className="label">Como bateu?</span>
+            {askFeedback && (
+              <button type="button" className="link-btn" onClick={() => setFeedback({ skipped: true })}>
+                Pular
+              </button>
+            )}
+          </div>
+          {askRirClosed && (
+            <Choice label="Sobraram" options={RIR_OPTS} value={undefined} onPick={(v) => setSet(askRirId!, { rir: RIR_OPTS.indexOf(v) })} />
+          )}
+          {askFeedback && (
+            <>
+              <Choice label="Pump" options={["fraco", "bom", "forte"]} value={fb?.pump} onPick={(v) => setFeedback({ pump: v })} />
+              <Choice label="Volume" options={["leve", "ok", "pesado"]} value={fb?.volume} onPick={(v) => setFeedback({ volume: v })} />
+              <Choice label="Articulação" options={["ok", "incomodou"]} value={fb?.joint} onPick={(v) => setFeedback({ joint: v })} />
+            </>
+          )}
+        </div>
+      )}
 
       {open && (
         <div className="ex-body">
@@ -565,6 +654,11 @@ function ExerciseBlock({
             <div data-augmented-ui="tl-clip border" className={`suggest ${sug.kind === "up" ? "up" : sug.kind === "down" ? "down" : ""}`}>
               <strong>{sug.title}</strong>
               <span className="small muted">{sug.detail}</span>
+              {sug.notes.map((n) => (
+                <span key={n} className="small sug-note">
+                  {n}
+                </span>
+              ))}
               {last && (
                 <span className="small faint">
                   Última vez ({shortDate(last.session.date)}): {summarizeSets(last.entry)} {last.entry.unit}
@@ -604,6 +698,9 @@ function ExerciseBlock({
                   weightPh={weightPh}
                   repsPh={repsPh}
                   canRemove={!s.done}
+                  askRir={s.id === askRirId}
+                  rirTarget={rirTarget}
+                  onRir={(v) => setSet(s.id, { rir: v })}
                   onWeight={(w) => setSet(s.id, { weight: w })}
                   onReps={(r) => setSet(s.id, { reps: r })}
                   onToggle={(wv, rv) => toggleDone(s.id, wv, rv, weightPh, repsPh)}
@@ -692,6 +789,9 @@ function SetRow({
   weightPh,
   repsPh,
   canRemove,
+  askRir,
+  rirTarget,
+  onRir,
   onWeight,
   onReps,
   onToggle,
@@ -703,6 +803,9 @@ function SetRow({
   weightPh: number | null;
   repsPh: number | null;
   canRemove: boolean;
+  askRir: boolean;
+  rirTarget: [number, number];
+  onRir: (v: number) => void;
   onWeight: (w: number | null) => void;
   onReps: (r: number | null) => void;
   onToggle: (w: number | null, r: number | null) => void;
@@ -710,6 +813,8 @@ function SetRow({
 }) {
   const [w, setW] = useState(set.weight == null ? "" : formatWeight(set.weight));
   const [r, setR] = useState(set.reps == null ? "" : String(set.reps));
+  const [editRir, setEditRir] = useState(false);
+  const showRir = set.done && set.kind !== "warmup" && (askRir || editRir);
 
   // Sincroniza quando o valor muda por fora (ex.: −15% automático, marcar como feito).
   useEffect(() => {
@@ -728,6 +833,16 @@ function SetRow({
     <div className={`set ${set.kind}${set.done ? " done" : ""}`}>
       <div className={`set-kind ${kindCls}`}>
         {label}
+        {set.done && set.rir != null && (
+          <button
+            type="button"
+            className="rir-tag"
+            aria-label={`Sobraram ${set.rir} reps. Tocar para mudar.`}
+            onClick={() => setEditRir((v) => !v)}
+          >
+            sobra {set.rir >= 4 ? "4+" : set.rir}
+          </button>
+        )}
         {canRemove && (
           <button type="button" className="x" aria-label="Remover série" onClick={onRemove}>
             ×
@@ -773,6 +888,49 @@ function SetRow({
       >
         <Icon name="check" size={22} />
       </button>
+      {showRir && (
+        <div className="rir-ask" role="group" aria-label={`Quantas reps sobraram na série ${label}?`}>
+          <span className="label">Sobraram</span>
+          {[0, 1, 2, 3, 4].map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={v >= rirTarget[0] && v <= rirTarget[1] ? "target" : undefined}
+              aria-pressed={set.rir === v}
+              onClick={() => {
+                onRir(v);
+                setEditRir(false);
+              }}
+            >
+              {v === 4 ? "4+" : v}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Linha de opções de um toque (check-in, feedback). Tocar de novo na escolhida mantém. */
+function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onPick,
+}: {
+  label: string;
+  options: T[];
+  value: T | undefined;
+  onPick: (v: T) => void;
+}) {
+  return (
+    <div className="choice" role="group" aria-label={label}>
+      <span className="choice-label">{label}</span>
+      {options.map((o) => (
+        <button key={o} type="button" aria-pressed={value === o} onClick={() => onPick(o)}>
+          {o}
+        </button>
+      ))}
     </div>
   );
 }

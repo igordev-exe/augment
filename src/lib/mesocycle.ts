@@ -1,5 +1,5 @@
 import type { ProgramExercise, StopKind } from "../data/types";
-import { daysBetween } from "./dates";
+import { addDays, daysBetween, mondayOf } from "./dates";
 
 // Regras do mesociclo de 6 semanas + deload (ficha, página 6).
 
@@ -99,6 +99,42 @@ export function stopFor(stop: StopKind, week: number): StopInfo {
   if (week === 1) return { tone: "rir", label: "Sobra 1–2", detail: "Semana 1: pare com 1–2 reps sobrando." };
   if (week === 2) return { tone: "rir", label: "Sobra 1", detail: "Semana 2: pare com ~1 rep sobrando." };
   return { tone: "fail", label: "Falha", detail: "Pelo menos a última série até a carga travar." };
+}
+
+/** Faixa de reps sobrando (RIR) que a semana pede, para comparar com o que foi marcado. */
+export function rirRange(stop: StopKind, week: number): [number, number] {
+  if (week === 7) return [3, 5];
+  if (stop === "R") return [2, 3];
+  if (stop === "T") return week === 1 ? [2, 3] : week === 2 ? [2, 2] : [1, 2];
+  return week === 1 ? [1, 2] : week === 2 ? [1, 1] : [0, 1];
+}
+
+export type Reentry = { kind: "restart"; gapDays: number; week: number } | { kind: "repeat"; week: number; done: number; planned: number };
+
+/**
+ * A semana do mesociclo anda pelo calendário. Quando o treino parou, avisa antes de mandar para uma semana pesada:
+ * 10+ dias sem treinar → recomeçar na semana 1; semana passada com menos da metade dos treinos → repetir a semana.
+ */
+export function reentryFor(
+  doneDates: string[],
+  mesoStart: string,
+  today: string,
+  trainingDays: number[],
+  dismissed?: string,
+): Reentry | null {
+  const monday = mondayOf(today);
+  if (dismissed === monday || !doneDates.length) return null;
+  const week = weekFor(mesoStart, today);
+  if (week === 1) return null;
+  const last = doneDates.reduce((a, b) => (a > b ? a : b));
+  const gapDays = daysBetween(last, today);
+  if (gapDays >= 10) return { kind: "restart", gapDays, week };
+  if (week > 6) return null;
+  const prevMonday = addDays(monday, -7);
+  const done = doneDates.filter((d) => d >= prevMonday && d < monday).length;
+  const planned = trainingDays.length;
+  if (done < Math.ceil(planned / 2)) return { kind: "repeat", week, done, planned };
+  return null;
 }
 
 export function setsFor(e: Pick<ProgramExercise, "sets" | "iso" | "up">, week: number): number {

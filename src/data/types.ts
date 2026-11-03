@@ -95,7 +95,17 @@ export interface SetEntry {
   done: boolean;
   /** Chegou na falha real nessa série. */
   failure?: boolean;
+  /** Reps que sobraram (RIR), marcado depois da série. 4 = "4 ou mais". */
+  rir?: number;
   doneAt?: number;
+}
+
+/** Como o exercício bateu, respondido ao terminar as séries (estilo RP). */
+export interface ExerciseFeedback {
+  pump?: "fraco" | "bom" | "forte";
+  volume?: "leve" | "ok" | "pesado";
+  joint?: "ok" | "incomodou";
+  skipped?: boolean;
 }
 
 export interface SessionExercise {
@@ -103,6 +113,15 @@ export interface SessionExercise {
   unit: Unit;
   notes?: string;
   sets: SetEntry[];
+  feedback?: ExerciseFeedback;
+}
+
+/** Check-in rápido antes do treino. `skipped` = respondeu "pular". */
+export interface Checkin {
+  sleep?: "ruim" | "ok" | "bom";
+  energy?: "baixa" | "ok" | "alta";
+  pain?: "nenhuma" | "leve" | "forte";
+  skipped?: boolean;
 }
 
 export interface Session {
@@ -115,6 +134,7 @@ export interface Session {
   finishedAt?: number;
   status: "active" | "done";
   notes?: string;
+  checkin?: Checkin;
   exercises: SessionExercise[];
   /** Sessão criada a partir de "repetir treino". */
   repeatedFrom?: string;
@@ -135,4 +155,6 @@ export interface Settings {
   increments: Record<string, number>;
   /** Vídeo de referência escolhido (id da biblioteca → URL). */
   videos: Record<string, string>;
+  /** Segunda-feira em que o aviso de retomada foi respondido (não pergunta de novo na mesma semana). */
+  reentryDismissed?: string;
 }

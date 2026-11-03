@@ -1,4 +1,5 @@
 import type { ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
+import { rirRange } from "./mesocycle";
 
 // Dupla progressão com carga fixa (ficha, página 6) + recordes pessoais.
 
@@ -60,6 +61,51 @@ export interface Suggestion {
   targets: number[];
   title: string;
   detail: string;
+  /** Observações sobre a última vez: o que fugiu do plano. */
+  notes: string[];
+}
+
+/** Reps que você faria com `weight`, a partir de um 1RM estimado (Epley invertido). */
+export function predictReps(oneRm: number, weight: number): number {
+  if (weight <= 0) return 0;
+  return Math.max(0, Math.floor(30 * (oneRm / weight - 1)));
+}
+
+/** Salto acima disso (fração da carga) é checado contra a previsão de reps antes de subir. */
+const BIG_JUMP = 0.075;
+
+/** O que a última vez mostrou fora do plano: cargas misturadas, RIR fora da meta, articulação. */
+function lastTimeNotes(ex: ProgramExercise, last: SessionExercise, work: SetEntry[], lastWeek?: number): string[] {
+  const notes: string[] = [];
+  const u = last.unit === "lb" ? " lb" : " kg";
+  const ws = work.map((s) => s.weight!);
+  const lo = Math.min(...ws);
+  const hi = Math.max(...ws);
+  if (lo > 0 && hi / lo > 1.2) {
+    notes.push(
+      `As cargas variaram (${formatWeight(lo)}–${formatWeight(hi)}${u}). Usei a mais pesada como referência. Séries de rampa entram como aquecimento.`,
+    );
+  }
+  const rirs = work.filter((s) => s.rir != null).map((s) => s.rir!);
+  if (rirs.length && lastWeek) {
+    const [min, max] = rirRange(ex.stop, lastWeek);
+    const target = min === max ? `${min}` : `${min}–${max}`;
+    const least = Math.min(...rirs);
+    const most = Math.max(...rirs);
+    if (least < min) {
+      notes.push(
+        least === 0
+          ? `Na última vez você foi à falha, e a meta da semana ${lastWeek} era sobrar ${target}.`
+          : `Na última vez sobrou ${least}, menos que a meta de ${target}.`,
+      );
+    } else if (most > max + 1) {
+      notes.push(`Na última vez sobraram ${most >= 4 ? "4+" : most} reps, e a meta era ${target}: dava para ir mais perto.`);
+    }
+  }
+  if (last.feedback?.joint === "incomodou") {
+    notes.push("Na última vez incomodou a articulação. Reduza a amplitude ou troque pela alternativa em Como fazer.");
+  }
+  return notes;
 }
 
 export function increaseStep(ex: ProgramExercise, unit: Unit, custom?: number): number {
@@ -77,6 +123,8 @@ export function suggest(
   plannedSets: number,
   week: number,
   step: number,
+  /** Semana do mesociclo da última vez (para comparar o RIR marcado com a meta dela). */
+  lastWeek?: number,
 ): Suggestion {
   const [lo, hi] = ex.reps;
   const work = workSets(last, false);
@@ -90,10 +138,15 @@ export function suggest(
       targets: Array(plannedSets).fill(lo),
       title: "Primeira vez",
       detail: `Escolha uma carga em que a 1ª série caia entre ${lo} e ${hi} reps.`,
+      notes: [],
     };
   }
 
-  const load = mainLoad(work) ?? work[0].weight!;
+  const notes = lastTimeNotes(ex, last, work, lastWeek);
+  // Cargas muito diferentes entre si (rampa registrada como trabalho): a referência é a mais pesada.
+  const weights = work.map((s) => s.weight!);
+  const mixed = Math.max(...weights) / Math.max(1e-9, Math.min(...weights)) > 1.2;
+  const load = mixed ? Math.max(...weights) : (mainLoad(work) ?? work[0].weight!);
   const atLoad = work.filter((s) => s.weight === load);
   const usedDrop = workSets(last, true).some((s) => s.kind === "drop");
 
@@ -104,18 +157,40 @@ export function suggest(
       targets: Array(plannedSets).fill(Math.max(lo, (atLoad[0]?.reps ?? lo) - 4)),
       title: `Deload: ${formatWeight(load)}${u}`,
       detail: "Mesma carga, metade das séries, parando com ~4 reps sobrando.",
+      notes,
     };
   }
 
+  // 1RM estimado na carga atual, contando as reps que sobraram quando foram marcadas.
+  const bestAtLoad = Math.max(...atLoad.map((s) => e1rm(load, s.reps! + (s.rir ?? 0))));
   const allTop = atLoad.length >= Math.min(plannedSets, work.length) && atLoad.every((s) => (s.reps ?? 0) >= hi) && !usedDrop;
   if (allTop) {
     const next = roundTo(load + step, step >= 1 ? 0.5 : 0.25);
+    const predicted = predictReps(bestAtLoad, next);
+    const jump = (next - load) / load;
+    if (jump > BIG_JUMP && predicted < lo) {
+      // Salto grande demais para a faixa (ex.: cabo de 17,5 → 20 kg = +14%): acumula reps antes de subir.
+      const cap = hi + 3;
+      const targets = Array.from({ length: plannedSets }, (_, i) => {
+        const prev = atLoad[i]?.reps ?? atLoad[atLoad.length - 1]?.reps ?? hi;
+        return Math.min(cap, prev + 1);
+      });
+      return {
+        kind: "same",
+        weight: load,
+        targets,
+        title: `Manter ${formatWeight(load)}${u}, salto grande`,
+        detail: `Subir para ${formatWeight(next)}${u} é +${Math.round(jump * 100)}% e daria ~${predicted} reps, abaixo de ${lo}. Passe de ${hi} reps (${targets.join(", ")}) antes de subir.`,
+        notes,
+      };
+    }
     return {
       kind: "up",
       weight: next,
       targets: Array(plannedSets).fill(lo),
       title: `Subir para ${formatWeight(next)}${u}`,
-      detail: `Todas as séries bateram ${hi} reps com ${formatWeight(load)}${u}. Volte a buscar ${lo}+ reps.`,
+      detail: `Todas as séries bateram ${hi} reps com ${formatWeight(load)}${u}. Previsão: ~${predicted} reps. Volte a buscar ${lo}+.`,
+      notes,
     };
   }
 
@@ -128,6 +203,7 @@ export function suggest(
       targets: Array(plannedSets).fill(lo),
       title: `Baixar para ~${formatWeight(lower)}${u}`,
       detail: `Na última vez a 1ª série deu ${first} reps, abaixo da faixa de ${lo}–${hi}.`,
+      notes,
     };
   }
 
@@ -141,6 +217,7 @@ export function suggest(
     targets,
     title: `Manter ${formatWeight(load)}${u}`,
     detail: `Meta: +1 rep por série (${targets.join(", ")}). Sobe quando todas baterem ${hi}.`,
+    notes,
   };
 }
 

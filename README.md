@@ -8,6 +8,12 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Treino do dia** pela agenda da minha ficha. Se eu perder um dia, a sequência é empurrada, não pulada.
 - **Registro de carga** série por série: peso, reps, aquecimento e unidade kg/lb por exercício.
 - **Sugestão de progressão** (dupla progressão com carga fixa): manter com meta de reps, subir ou baixar, com a minha última vez ao lado.
+- **Reps que sobraram (RIR)** com um toque depois de cada série, comparadas com a meta da semana. A sugestão seguinte avisa quando eu fui
+  à falha cedo demais ou deixei reps demais na mesa.
+- **Check-in** antes do treino (sono, energia, dor) e **"como bateu?"** depois de cada exercício (pump, volume, articulação).
+- **Sugestão mais esperta**: cargas misturadas (rampa registrada como trabalho) usam a mais pesada; salto grande demais para a faixa
+  (ex.: cabo de 17,5 → 20 kg) acumula reps antes de subir, com previsão de reps pela carga nova.
+- **Retomada**: depois de 10+ dias parado, ou de uma semana com menos da metade dos treinos, o app propõe recomeçar ou repetir a semana.
 - **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
