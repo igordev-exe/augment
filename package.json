@@ -11,9 +11,11 @@
     "test": "vitest run",
     "icons": "python3 scripts/make-icons.py .",
     "format": "prettier --write .",
-    "check": "tsc -b && prettier --check . && vitest run"
+    "check": "tsc -b && prettier --check . && vitest run",
+    "coach": "vite-node scripts/coach.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
     "@fontsource/exo-2": "5.2.5",
     "@fontsource/orbitron": "5.2.5",
     "@fontsource/share-tech-mono": "5.2.5",

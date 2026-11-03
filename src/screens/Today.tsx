@@ -208,6 +208,10 @@ export function Today() {
         </section>
       )}
 
+      <Link to="/treinador" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost coach-link">
+        <span className="status-dot ok" /> Falar com o treinador <span className="arrow">&gt;</span>
+      </Link>
+
       {!active && (
         <section className="stack">
           <div data-augmented-ui="tl-clip br-clip border" className="mission">

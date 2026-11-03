@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
 import { TimerBar } from "./components/TimerBar";
@@ -13,6 +13,9 @@ import { Report } from "./screens/Report";
 import { SessionScreen } from "./screens/SessionScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { Today } from "./screens/Today";
+
+// O treinador carrega o SDK da Anthropic: só baixa quando a tela abre.
+const Coach = lazy(() => import("./screens/Coach").then((m) => ({ default: m.Coach })));
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -43,6 +46,14 @@ function Shell() {
           <Route path="/exercicios/:libId" element={<ExerciseDetail />} />
           <Route path="/guia" element={<Guide />} />
           <Route path="/ajustes" element={<SettingsScreen />} />
+          <Route
+            path="/treinador"
+            element={
+              <Suspense fallback={null}>
+                <Coach />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<Today />} />
         </Routes>
       </main>

@@ -16,6 +16,10 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Relatório da semana** (seg–dom), com um cartão na tela inicial na segunda: treinos feitos e os que ficaram de fora, séries que
   faltaram, volume por músculo contra a meta, reps que sobraram contra a meta, exercícios estagnados, sinais do corpo, recordes e
   **um foco só** para a semana seguinte. Dá para navegar pelas semanas anteriores em Progresso.
+- **Treinador (IA)**: um chat com o Claude que consulta meus treinos, relatórios e agenda antes de responder (ferramentas que leem
+  os registros do app). As cargas continuam vindo do motor de regras: ele explica, e mudanças no app (incremento, recomeçar ou
+  repetir semana) chegam como cartão para eu aplicar ou recusar. Uso minha chave da API da Anthropic, guardada só no aparelho e
+  fora do backup. Configuro em **Ajustes → Treinador**.
 - **Retomada**: depois de 10+ dias parado, ou de uma semana com menos da metade dos treinos, o app propõe recomeçar ou repetir a semana.
 - **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
@@ -40,6 +44,17 @@ Os meus treinos ficam no IndexedDB do navegador do celular. Nada vai para servid
 
 - Exporto um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar os dados do navegador.
 - O CSV de séries abre em qualquer planilha.
+
+## Treinador pelo computador (sem chave no app)
+
+Com um backup exportado, gero um arquivo com as instruções do treinador e os dados já calculados pelo app:
+
+```bash
+npm run coach -- caminho/do/augment-backup.json
+```
+
+O arquivo sai em `coach/saida/` (fora do git). Colo numa conversa do claude.ai, ou uso `/treinador` no Claude Code, que roda o
+script e faz o debrief.
 
 ## Como eu mudo o programa
 

@@ -79,6 +79,13 @@ export function Report() {
         <p className="small" style={{ margin: 0 }}>
           {r.focus.detail}
         </p>
+        <Link
+          to={`/treinador?q=${encodeURIComponent(`Analise o relatório da semana de ${shortDate(weekStart)} a ${shortDate(addDays(weekStart, 6))} (${weekStart}).`)}`}
+          className="link-btn"
+          style={{ alignSelf: "flex-start" }}
+        >
+          Discutir com o treinador
+        </Link>
       </section>
 
       <div className="tiles">

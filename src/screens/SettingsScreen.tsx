@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useRef, useState } from "react";
 import { PageHead, WeekStrip } from "../components/bits";
 import { EXERCISE_BY_ID, PROGRAM } from "../data/program";
@@ -125,6 +126,14 @@ export function SettingsScreen() {
         >
           Começar novo mesociclo nesta semana
         </button>
+      </section>
+
+      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
+        <h2 className="h-sec">Treinador (IA)</h2>
+        <p className="small muted">Chave da API da Anthropic, modelo e profundidade. A chave fica só neste aparelho e não vai no backup.</p>
+        <Link to="/treinador?config=1" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm">
+          Configurar treinador
+        </Link>
       </section>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
