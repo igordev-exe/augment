@@ -1,5 +1,6 @@
 import { LIB_BY_ID } from "../data/library";
-import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
+import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
+import { SCIENCE } from "../data/science";
 import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
@@ -46,7 +47,10 @@ export interface WeekReport {
   /** Treinos da sequência que ficaram de fora (só quando a semana comporta todos). */
   missingDays: string[];
   shortfalls: Shortfall[];
-  volume: { muscle: MuscleId; done: number; planned: number }[];
+  /** Séries diretas (done/planned) e fracionadas (diretas + 0,5 por série indireta, Pelland 2026). */
+  volume: { muscle: MuscleId; done: number; planned: number; fractional: number; fractionalPlanned: number }[];
+  /** Músculos abaixo da dose mínima efetiva (séries fracionadas) numa semana já fechada. */
+  belowMinimum: MuscleId[];
   rir: { logged: number; inTarget: number; harder: RirMiss[]; easier: RirMiss[] };
   stalls: Stall[];
   prs: (PR & { date: string })[];
@@ -64,7 +68,7 @@ function list(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
 }
 
-export function weeklyReport(all: Session[], weekStart: string, mesoStart: string, trainingDays: number[]): WeekReport {
+export function weeklyReport(all: Session[], weekStart: string, mesoStart: string, trainingDays: number[], today = todayISO()): WeekReport {
   const weekEnd = addDays(weekStart, 7);
   const done = all.filter((s) => s.status === "done");
   const sessions = done.filter((s) => s.date >= weekStart && s.date < weekEnd).sort(bySessionAsc);
@@ -92,7 +96,23 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
   // Volume por músculo contra a meta da semana
   const vol = weeklyVolume(sessions, weekStart);
   const plan = plannedVolume(mesoWeek ?? 2);
-  const volume = MUSCLE_ORDER.filter((m) => plan[m] > 0).map((m) => ({ muscle: m, done: vol[m], planned: plan[m] }));
+  const frac = weeklyVolume(sessions, weekStart, true);
+  const fracPlan = plannedVolume(mesoWeek ?? 2, true);
+  const volume = MUSCLE_ORDER.filter((m) => plan[m] > 0).map((m) => ({
+    muscle: m,
+    done: vol[m],
+    planned: plan[m],
+    fractional: frac[m],
+    fractionalPlanned: fracPlan[m],
+  }));
+  // Dose mínima efetiva só faz sentido com a semana fechada e fora do deload (que corta o volume de propósito).
+  const weekOver = today >= weekEnd;
+  const belowMinimum =
+    weekOver && sessions.length > 0 && mesoWeek !== 7
+      ? volume
+          .filter((v) => v.fractionalPlanned >= SCIENCE.volume.minEffective && v.fractional < SCIENCE.volume.minEffective)
+          .map((v) => v.muscle)
+      : [];
 
   // Reps que sobraram contra a meta da semana de cada sessão
   const rir = { logged: 0, inTarget: 0, harder: [] as RirMiss[], easier: [] as RirMiss[] };
@@ -145,6 +165,12 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
   if (badSleep >= 2) signals.push(`Sono ruim em ${badSleep} de ${checked.length} treinos.`);
   if (lowEnergy >= 2) signals.push(`Energia baixa em ${lowEnergy} de ${checked.length} treinos.`);
   for (const s of checked.filter((x) => x.checkin!.pain === "forte")) signals.push(`Dor forte no check-in de ${shortDate(s.date)}.`);
+  if (belowMinimum.length) {
+    signals.push(
+      `${list(belowMinimum.map((m) => MUSCLE_LABEL[m]))} abaixo de ${SCIENCE.volume.minEffective} séries fracionadas: ` +
+        "dose mínima para manter o estímulo de hipertrofia (Pelland 2026).",
+    );
+  }
 
   const recent = done.filter((s) => s.date >= addDays(weekStart, -14) && s.date < weekEnd);
   const joints: JointIssue[] = [];
@@ -179,6 +205,7 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
     missingDays,
     shortfalls,
     volume,
+    belowMinimum,
     rir,
     stalls,
     prs,

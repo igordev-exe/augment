@@ -32,7 +32,7 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Mapa muscular** (volume, recuperação e o que ficou sem treino), **mapa de atividade do ano**, **meta de peso** com ritmo semanal,
   **fotos antes/depois** e **força relativa** ao peso corporal.
 - **Biblioteca** dos 34 exercícios da ficha, com fotos de início e fim do movimento: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.
-- **Guia** com as regras da ficha e as fontes científicas.
+- **Guia** com as regras da ficha, a **base de evidências** (cada princípio com nível: evidência, consenso, prática de campo ou hipótese) e as fontes. A mesma base (`src/data/science.ts`) entra no prompt do treinador e no motor: o relatório conta o **volume fracionado** (0,5 por série indireta, Pelland 2026) e avisa músculo abaixo da dose mínima efetiva.
 - **Backup** em JSON (exportar/importar) e exportação das séries em CSV.
 - **Pontos de restauração** no próprio aparelho: um por semana e antes de importar, restaurar ou apagar tudo (ficam os 6 mais recentes).
 

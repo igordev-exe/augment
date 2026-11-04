@@ -80,7 +80,7 @@ export function Today() {
   );
   const fatigue = !reentry ? fatigueDeloadFor(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
   const lastWeek = addDays(monday, -7);
-  const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays);
+  const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today);
   const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);
   const doneThisWeek = doneAll.filter((s) => s.date >= monday && s.date < addDays(monday, 7)).length;
   const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;

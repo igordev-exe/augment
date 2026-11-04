@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { PageHead } from "../components/bits";
 import { MUSCLE_LABEL, MUSCLE_ORDER } from "../data/program";
+import { AUDITS, LEVEL_LABEL, PRINCIPLES, SCIENCE, type EvidenceLevel } from "../data/science";
 import { plannedVolume } from "../lib/sessions";
 
 // Guia: regras da ficha v2 (carga fixa, até onde ir, −15% na última série) e fontes.
@@ -18,8 +19,11 @@ const SECTIONS = [
   { id: "dieta", t: "Recomposição" },
   { id: "recuperacao", t: "Recuperação" },
   { id: "erros", t: "Erros" },
+  { id: "ciencia", t: "Evidências" },
   { id: "fontes", t: "Fontes" },
 ];
+
+const LEVEL_TONE: Record<EvidenceLevel, string> = { evidencia: "go", consenso: "int", campo: "warn", hipotese: "changed" };
 
 function Sec({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
@@ -32,6 +36,8 @@ function Sec({ id, title, children }: { id: string; title: string; children: Rea
 
 export function Guide() {
   const vol = plannedVolume(3);
+  const frac = plannedVolume(3, true);
+  const temas = [...new Set(PRINCIPLES.map((p) => p.tema))];
   return (
     <div className="stack-lg">
       <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="Protocolos de execução, progressão de carga e referências." />
@@ -299,7 +305,8 @@ export function Guide() {
             <thead>
               <tr>
                 <th>Músculo</th>
-                <th className="r">Séries diretas/semana</th>
+                <th className="r">Diretas</th>
+                <th className="r">Fracionadas</th>
               </tr>
             </thead>
             <tbody>
@@ -307,11 +314,17 @@ export function Guide() {
                 <tr key={m}>
                   <td>{MUSCLE_LABEL[m]}</td>
                   <td className="r">{vol[m]}</td>
+                  <td className="r">{frac[m].toLocaleString("pt-BR")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <p className="small muted">
+          Fracionadas: cada série indireta (tríceps no supino, bíceps na puxada, glúteo no leg press) vale{" "}
+          {SCIENCE.indirectSetWeight.toLocaleString("pt-BR")} série, o método que melhor previu os ganhos em Pelland 2026. Abaixo de{" "}
+          {SCIENCE.volume.minEffective} fracionadas na semana o relatório avisa.
+        </p>
         <p className="small muted">
           Deltoide lateral e dorsal ficam no topo de propósito. Bíceps e tríceps recebem muito volume indireto (~16–17 séries efetivas
           contando puxadas e supinos), por isso o braço não ganha séries nas semanas 4–6.
@@ -408,6 +421,49 @@ export function Guide() {
         </ol>
       </Sec>
 
+      <Sec id="ciencia" title="Base de evidências">
+        <p>
+          O que guia as regras do app e o treinador. Cada item diz o nível: <strong>Evidência</strong> (meta-análises e ensaios),{" "}
+          <strong>Consenso</strong> (posicionamentos), <strong>Prática de campo</strong> (sem teste formal) ou <strong>Hipótese</strong>{" "}
+          (mecanismo proposto).
+        </p>
+        {temas.map((t) => (
+          <div key={t} className="stack" style={{ gap: 8 }}>
+            <h3 className="small" style={{ margin: "8px 0 0" }}>
+              {t}
+            </h3>
+            {PRINCIPLES.filter((p) => p.tema === t).map((p) => (
+              <div key={p.id} className="stack" style={{ gap: 4 }}>
+                <span>
+                  <span data-augmented-ui="br-clip border" className={`chip ${LEVEL_TONE[p.nivel]}`}>
+                    {LEVEL_LABEL[p.nivel]}
+                  </span>
+                </span>
+                <p style={{ margin: 0 }}>{p.texto}</p>
+                {p.app && (
+                  <p className="small muted" style={{ margin: 0 }}>
+                    No app: {p.app}
+                  </p>
+                )}
+                <p className="small muted" style={{ margin: 0 }}>
+                  {p.fontes.join(" · ")}
+                </p>
+              </div>
+            ))}
+          </div>
+        ))}
+        <h3 className="small" style={{ margin: "8px 0 0" }}>
+          Alegações auditadas
+        </h3>
+        <ul className="small">
+          {AUDITS.map((a) => (
+            <li key={a.crenca}>
+              <strong>"{a.crenca}"</strong> {a.veredito}
+            </li>
+          ))}
+        </ul>
+      </Sec>
+
       <Sec id="fontes" title="Fontes">
         <ul className="small">
           <li>Pelland, Remmert, Robinson, Hinson e Zourdos. The Resistance Training Dose Response. Sports Medicine, 2025/2026.</li>
@@ -433,6 +489,18 @@ export function Guide() {
             Rogerson et al. Sports Med Open, 2024. Vargas-Molina et al. Eur J Appl Physiol, 2026. Aragon e Schoenfeld, Strength Cond J,
             2020.
           </li>
+          <li>
+            Lopez et al. MSSE, 2021. Currier et al. Br J Sports Med, 2023. Grgic et al. J Sport Health Sci, 2022. Lasevicius et al. Eur J
+            Sport Sci, 2018/2022.
+          </li>
+          <li>
+            Kinoshita, Maeo et al. MSSE, 2026 (leg press vs. extensora). Kinoshita et al. 2023 (panturrilha). Plotkin et al. Front Physiol,
+            2023 (agachamento vs. hip thrust).
+          </li>
+          <li>Nunes et al. Eur J Sport Sci, 2021 (ordem). Moesgaard et al. Sports Med, 2022 (periodização).</li>
+          <li>Tsartsapakis et al. J Funct Morphol Kinesiol, 2026. Havers et al. Sports Med Open, 2026. Enes et al. 2021.</li>
+          <li>Androulakis-Korakakis et al. Optimizing resistance training technique. Sports Med, 2024. Scarpelli et al. 2022/2025.</li>
+          <li>Roberts et al. Sarcoplasmic hypertrophy: a scientific "unicorn"? Front Physiol, 2020. Damas et al. 2016/2018.</li>
           <li>Haun et al. PLoS One, 2019. Krieger (Weightology). Nuckols (Stronger by Science).</li>
         </ul>
       </Sec>

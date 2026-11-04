@@ -36,7 +36,7 @@ export function Report() {
 
   const current = mondayOf(today);
   const weekStart = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? mondayOf(param) : addDays(current, -7);
-  const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays);
+  const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays, today);
   const m = mesoReport(sessions, settings.mesoStart, settings.trainingDays, today);
   const fatigue = fatigueDeloadFor(sessions, settings.mesoStart, today, settings.reentryDismissed);
   const open = weekStart === current;

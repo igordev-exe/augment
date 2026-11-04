@@ -1,5 +1,6 @@
 import { LIB_BY_ID } from "../../data/library";
 import { DAY_BY_ID, EXERCISE_BY_ID, PROGRAM, shortName } from "../../data/program";
+import { SCIENCE, scienceText } from "../../data/science";
 import type { BodyEntry, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, bySessionDesc, daysBetween, mondayOf, weekdayName, weekdayShort } from "../dates";
 import { earlyDeloadMesoStart, fatigueDeloadFor, reentryFor, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
@@ -71,6 +72,13 @@ export function coachSystem(name = "Igor"): string {
 - Leia as anotações, cardio/passos e o check-in dele: sono, energia, cardio, academia cheia explicam muita coisa.
 - Priorize: um foco claro vale mais que dez observações.
 
+## Como usar a ciência
+- O objetivo dele é hipertrofia (ficar maior), não força máxima. Recomendações que só servem à força (cargas ≥80% 1RM, mais frequência no gesto, parar longe da falha) são secundárias.
+- Ao justificar uma decisão com ciência, use a base científica abaixo e diga o nível: Evidência (meta-análises/ECRs), Consenso, Prática de campo ou Hipótese. Não venda prática de campo ou hipótese como fato, e cite autor e ano quando ajudar.
+- Se a pergunta sai da base, responda com conhecimento geral deixando claro que não está na base do app e pode estar desatualizado. Nunca invente estudo, número ou PMID.
+- Se ele trouxer uma alegação da lista de "Alegações auditadas", corrija com o veredito.
+- Volume: o relatório traz séries diretas e fracionadas (diretas + ${SCIENCE.indirectSetWeight} por série indireta). Julgue pelo fracionado: abaixo de ${SCIENCE.volume.minEffective} é estímulo mínimo; ${SCIENCE.volume.efficient[0]}–${SCIENCE.volume.efficient[1]} é a faixa eficiente; mais ainda rende, com retorno decrescente.
+
 ## Regras do programa
 - Dupla progressão com carga fixa: todas as séries de trabalho com a mesma carga. Quando TODAS baterem o topo da faixa, sobe o incremento. Se a 1ª série ficar abaixo do piso, baixa ~10%. Dentro da faixa, mantém e busca +1 rep por série.
 - Se o salto de carga for maior que 7,5% e a previsão de reps (Epley invertido) na carga nova ficar abaixo do piso, o app mantém a carga e pede reps acima do topo antes de subir.
@@ -83,6 +91,9 @@ export function coachSystem(name = "Igor"): string {
 
 ## Semanas do mesociclo
 ${weekRulesText()}
+
+## Base científica (fonte das decisões do app)
+${scienceText()}
 
 ## Programa (ids entre parênteses e antes dos dois-pontos são os aceitos pelas ferramentas)
 ${programText()}`;
@@ -201,7 +212,7 @@ export function toolPlan(data: CoachData) {
 export function toolWeekReport(data: CoachData, input: { semana?: unknown }) {
   const start = input.semana == null ? addDays(mondayOf(data.today), -7) : isISO(input.semana) ? mondayOf(input.semana) : null;
   if (!start) throw new ToolInputError("semana deve ser uma data AAAA-MM-DD.");
-  const r = weeklyReport(data.sessions, start, data.settings.mesoStart, data.settings.trainingDays);
+  const r = weeklyReport(data.sessions, start, data.settings.mesoStart, data.settings.trainingDays, data.today);
   const name = (id: string) => shortName(EXERCISE_BY_ID[id]);
   return {
     semana: `${start} a ${addDays(start, 6)}`,
@@ -212,7 +223,14 @@ export function toolWeekReport(data: CoachData, input: { semana?: unknown }) {
     treinos: r.sessions.map((s) => `${s.date} ${DAY_BY_ID[s.dayId]?.name}`),
     nao_feitos: r.missingDays.map((d) => DAY_BY_ID[d].name),
     series_faltando: r.shortfalls.map((s) => ({ data: s.date, exercicio: name(s.exId), feitas: s.done, planejadas: s.planned })),
-    volume_por_musculo: r.volume.map((v) => ({ musculo: v.muscle, feitas: v.done, meta: v.planned })),
+    volume_por_musculo: r.volume.map((v) => ({
+      musculo: v.muscle,
+      feitas: v.done,
+      meta: v.planned,
+      fracionadas: v.fractional,
+      fracionadas_meta: v.fractionalPlanned,
+    })),
+    abaixo_dose_minima: r.belowMinimum.length ? r.belowMinimum : undefined,
     sobra: {
       series_marcadas: r.rir.logged,
       na_meta: r.rir.inTarget,

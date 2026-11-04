@@ -1,5 +1,6 @@
 import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER } from "../data/program";
-import type { MuscleId, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
+import { SCIENCE, SYNERGISTS } from "../data/science";
+import type { MuscleId, ProgramExercise, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
 import { historyOf, increaseStep, mainLoad, suggestNext, toKg, workSets } from "./progression";
@@ -94,31 +95,40 @@ export function sessionStats(s: Session) {
   return { sets, volumeKg, duration };
 }
 
-/** Séries de trabalho feitas por músculo na semana (seg–dom) que contém `date`. */
-export function weeklyVolume(sessions: Session[], date: string): Record<MuscleId, number> {
+function emptyVolume(): Record<MuscleId, number> {
+  return Object.fromEntries(MUSCLE_ORDER.map((m) => [m, 0])) as Record<MuscleId, number>;
+}
+
+/** Soma `n` séries do exercício: 1,0 nos músculos diretos e, no modo fracionado, 0,5 nos sinergistas (Pelland 2026). */
+function addSets(out: Record<MuscleId, number>, ex: ProgramExercise, n: number, fractional: boolean) {
+  for (const m of ex.muscles) out[m] += n;
+  if (!fractional) return;
+  for (const m of SYNERGISTS[ex.lib] ?? []) if (!ex.muscles.includes(m)) out[m] += n * SCIENCE.indirectSetWeight;
+}
+
+/**
+ * Séries de trabalho feitas por músculo na semana (seg–dom) que contém `date`.
+ * `fractional`: soma também 0,5 por série indireta (supino → tríceps etc.).
+ */
+export function weeklyVolume(sessions: Session[], date: string, fractional = false): Record<MuscleId, number> {
   const start = mondayOf(date);
   const end = addDays(start, 7);
-  const out = Object.fromEntries(MUSCLE_ORDER.map((m) => [m, 0])) as Record<MuscleId, number>;
+  const out = emptyVolume();
   for (const s of sessions) {
     if (s.date < start || s.date >= end) continue;
     for (const e of s.exercises) {
       const ex = EXERCISE_BY_ID[e.exId];
-      if (!ex) continue;
-      const n = workSets(e).length;
-      for (const m of ex.muscles) out[m] += n;
+      if (ex) addSets(out, ex, workSets(e).length, fractional);
     }
   }
   return out;
 }
 
-/** Séries planejadas por músculo para uma semana do mesociclo. */
-export function plannedVolume(week: number): Record<MuscleId, number> {
-  const out = Object.fromEntries(MUSCLE_ORDER.map((m) => [m, 0])) as Record<MuscleId, number>;
+/** Séries planejadas por músculo para uma semana do mesociclo (diretas, ou fracionadas com `fractional`). */
+export function plannedVolume(week: number, fractional = false): Record<MuscleId, number> {
+  const out = emptyVolume();
   for (const d of Object.values(DAY_BY_ID)) {
-    for (const ex of d.exercises) {
-      const n = setsFor(ex, week);
-      for (const m of ex.muscles) out[m] += n;
-    }
+    for (const ex of d.exercises) addSets(out, ex, setsFor(ex, week), fractional);
   }
   return out;
 }
