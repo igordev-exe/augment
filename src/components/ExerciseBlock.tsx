@@ -22,7 +22,7 @@ import { newSet } from "../lib/sessions";
 import { liveNudges } from "../lib/engine";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
-import { NextSet, type SetPlan } from "./NextSet";
+import { PlanCard, type SetPlan } from "./PlanCard";
 import { NudgeList } from "./NudgeList";
 import { RadialMenu, type RadialAction } from "./RadialMenu";
 import { Choice, SetRow } from "./SetRow";
@@ -166,8 +166,8 @@ export function ExerciseBlock({
   const nextReason = nextPlan?.drop
     ? "Uma série caiu abaixo do piso: esta vai com −15% para fechar dentro da faixa."
     : lowDay
-      ? `${sug.title}. Dia de baixa no check-in: pare com +1 rep de sobra.`
-      : `${sug.title} · ${stop.label.toLowerCase()}.`;
+      ? "Dia de baixa no check-in: pare com +1 rep de sobra."
+      : `Até ${stop.label.toLowerCase()}.`;
 
   let workCounter = 0;
   let warmupCounter = 0;
@@ -365,11 +365,15 @@ export function ExerciseBlock({
           )}
 
           {active && (
-            <div
-              data-augmented-ui="tl-clip border"
-              className={`suggest scan ${sug.kind === "up" && !lowDay ? "up" : sug.kind === "down" ? "down" : ""}`}
+            <PlanCard
+              kind={sug.kind}
+              title={sug.title}
+              plans={plans}
+              unit={entry.unit}
+              rir={rirLabel}
+              reason={nextReason}
+              alerts={sug.notes.length + (lowDay ? 1 : 0)}
             >
-              <strong>{sug.title}</strong>
               <span className="small muted">{sug.detail}</span>
               {plateBreakdown && (
                 <span className="tiny" style={{ color: "var(--cyan)" }}>
@@ -429,7 +433,7 @@ export function ExerciseBlock({
                   })}
                 </div>
               )}
-            </div>
+            </PlanCard>
           )}
 
           {active && nudges.length > 0 && (
@@ -483,8 +487,6 @@ export function ExerciseBlock({
               </span>
             </div>
           )}
-
-          {active && <NextSet plans={plans} unit={entry.unit} rir={rirLabel} reason={nextReason} />}
 
           <div className="sets">
             <div className="spread">

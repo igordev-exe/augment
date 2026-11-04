@@ -59,9 +59,12 @@ export function Exercises() {
   }, []);
 
   const done = (sessions ?? []).filter((s) => s.status === "done");
+  const inGroup = (g: Group, exs: ProgramExercise[]) =>
+    g === "todos" || exs.some((e) => e.muscles.some((m) => GROUPS.find((x) => x.id === g)!.muscles.includes(m)));
+  const countGroup = (g: Group) => items.filter(({ exs }) => inGroup(g, exs)).length;
   const shown = items.filter(({ lib, exs }) => {
     const l = LIB_BY_ID[lib];
-    if (group !== "todos" && !exs.some((e) => e.muscles.some((m) => GROUPS.find((g) => g.id === group)!.muscles.includes(m)))) return false;
+    if (!inGroup(group, exs)) return false;
     if (equip !== "todos" && equipOf(l?.equipment ?? "") !== equip) return false;
     if (query && !norm(`${exs[0].name} ${exs[0].muscleLabel} ${l?.primary ?? ""} ${l?.secondary ?? ""}`).includes(query)) return false;
     return true;
@@ -83,31 +86,18 @@ export function Exercises() {
         aria-label="Buscar exercício"
       />
 
-      <div className="stack" style={{ gap: 6 }}>
-        <div className="ws-filters" role="group" aria-label="Filtrar por músculo">
+      <div className="stack" style={{ gap: 8 }}>
+        <div className="ws-brackets" role="group" aria-label="Filtrar por músculo">
           {GROUPS.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="ws-filter"
-              aria-pressed={group === g.id}
-              onClick={() => setGroup(g.id)}
-            >
+            <button key={g.id} type="button" className="ws-bracket" aria-pressed={group === g.id} onClick={() => setGroup(g.id)}>
               {g.label}
+              <small>{countGroup(g.id)}</small>
             </button>
           ))}
         </div>
-        <div className="ws-filters" role="group" aria-label="Filtrar por equipamento">
+        <div className="ws-switch" role="group" aria-label="Filtrar por equipamento">
           {EQUIPS.map((e) => (
-            <button
-              key={e.id}
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="ws-filter small"
-              aria-pressed={equip === e.id}
-              onClick={() => setEquip(e.id)}
-            >
+            <button key={e.id} type="button" aria-pressed={equip === e.id} onClick={() => setEquip(e.id)}>
               {e.label}
             </button>
           ))}

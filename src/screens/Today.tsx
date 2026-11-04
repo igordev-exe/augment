@@ -313,12 +313,17 @@ export function Today() {
                 </span>
               </div>
             </div>
-            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-light" onClick={() => start()}>
-              Iniciar protocolo <span className="arrow">&gt;</span>
-              <span className="code-tag" aria-hidden="true">
-                {day.code}-{String(dayIdx).padStart(2, "0")}
+            <div className="btn-dock">
+              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-light" onClick={() => start()}>
+                Iniciar protocolo <span className="arrow">&gt;</span>
+              </button>
+              <span className="dock-row" aria-hidden="true">
+                <i className="dock-rail" />
+                <span className="dock-tag">
+                  {day.code}-{String(dayIdx).padStart(2, "0")}
+                </span>
               </span>
-            </button>
+            </div>
             <span className="sticker">
               Bio / mod {String(dayIdx).padStart(2, "0")}
               <br />

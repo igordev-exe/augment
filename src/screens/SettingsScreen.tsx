@@ -373,37 +373,47 @@ export function SettingsScreen() {
 
       <RestorePoints />
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Apagar dados</h2>
+      <section className="danger-zone" aria-labelledby="danger-title">
+        <div className="dz-head">
+          <svg className="dz-icon" viewBox="0 0 64 56" aria-hidden="true">
+            <path className="dz-tri" d="M32 3 L61 53 H3 Z" />
+            <path className="dz-tri-in" d="M32 17 L49 46 H15 Z" />
+            <rect x="29.5" y="23" width="5" height="13" />
+            <rect x="29.5" y="39" width="5" height="5" />
+          </svg>
+          <div>
+            <span className="dz-code">[ PERIGO ]</span>
+            <h2 id="danger-title">Apagar dados</h2>
+            <span className="dz-sub">Ação irreversível · aparelho local</span>
+          </div>
+        </div>
+        <p className="dz-text">
+          Apaga todos os treinos, medidas e ajustes deste aparelho. Um ponto de restauração com tudo fica guardado antes: exclua-o em Pontos
+          de restauração se quiser limpar de vez.
+        </p>
         {wipe ? (
-          <>
-            <p className="small">
-              Isso apaga todos os treinos e ajustes deste aparelho. Por segurança, um ponto de restauração com tudo fica guardado: exclua-o
-              em Pontos de restauração se quiser limpar de vez.
-            </p>
-            <div className="row">
-              <HoldButton
-                className="btn-danger grow"
-                label="Apagar tudo"
-                ms={1400}
-                onConfirm={async () => {
-                  await createRestorePoint("antes-apagar");
-                  await db.sessions.clear();
-                  await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
-                  await db.kv.delete("body-log");
-                  setWipe(false);
-                  toast("Dados apagados.", "danger");
-                }}
-              >
-                Apagar tudo
-              </HoldButton>
-              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setWipe(false)}>
-                Cancelar
-              </button>
-            </div>
-          </>
+          <div className="row">
+            <HoldButton
+              className="btn-danger dz-btn grow"
+              label="Apagar tudo"
+              ms={1400}
+              onConfirm={async () => {
+                await createRestorePoint("antes-apagar");
+                await db.sessions.clear();
+                await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
+                await db.kv.delete("body-log");
+                setWipe(false);
+                toast("Dados apagados.", "danger");
+              }}
+            >
+              Apagar tudo
+            </HoldButton>
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setWipe(false)}>
+              Cancelar
+            </button>
+          </div>
         ) : (
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => setWipe(true)}>
+          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-danger dz-btn" onClick={() => setWipe(true)}>
             Apagar todos os treinos
           </button>
         )}

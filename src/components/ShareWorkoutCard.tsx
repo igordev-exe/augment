@@ -100,27 +100,6 @@ function triggerDownload(dataUrl: string, fileName: string) {
   if (file) setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function getGymRatsHref(): { href: string; external: boolean } {
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  if (/Android/i.test(ua)) {
-    // Deep link verificado via assetlinks.json do pacote com.gymrats.app (CATEGORY_BROWSABLE em https://share.gymrats.app)
-    return {
-      href: "intent://share.gymrats.app/#Intent;scheme=https;package=com.gymrats.app;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gymrats.app;end",
-      external: false,
-    };
-  }
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    return {
-      href: "https://share.gymrats.app/",
-      external: false,
-    };
-  }
-  return {
-    href: "https://www.gymrats.app/",
-    external: true,
-  };
-}
-
 export function ShareWorkoutCard({
   session,
   prs,
@@ -138,7 +117,6 @@ export function ShareWorkoutCard({
   const [dataUrl, setDataUrl] = useState<string>("");
   const [bgPhoto, setBgPhoto] = useState<HTMLImageElement | null>(null);
   const summary = useMemo(() => buildWorkoutSummary(session, prs, operator), [session, prs, operator]);
-  const gymRatsLink = useMemo(() => getGymRatsHref(), []);
 
   const fileName = `augment-${session.dayId}-${session.date}.jpg`;
 
@@ -431,26 +409,11 @@ export function ShareWorkoutCard({
     }
   }
 
-  function onOpenGymRats() {
-    // Copia o resumo sem disparar download concorrente para o navegador permitir abrir o intent:// do app
-    navigator.clipboard?.writeText?.(textSummary).catch(() => {});
-    toast("Resumo copiado! Abrindo GymRats…", "ok");
-  }
-
-  async function copyText() {
-    try {
-      await navigator.clipboard.writeText(textSummary);
-      toast("Resumo do treino copiado.", "ok");
-    } catch {
-      toast("Não foi possível copiar automaticamente.", "warn");
-    }
-  }
-
   return (
     <div data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 12 }}>
       <div className="spread">
         <div>
-          <span className="label">Card de treino // Liftoff &amp; GymRats</span>
+          <span className="label">Card de treino</span>
           <h3 className="h-sec" style={{ marginTop: 2 }}>
             Compartilhar protocolo
           </h3>
@@ -502,31 +465,10 @@ export function ShareWorkoutCard({
         <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary grow" onClick={downloadImage}>
           Salvar foto (.jpg)
         </button>
-        <a
-          href={gymRatsLink.href}
-          target={gymRatsLink.external ? "_blank" : undefined}
-          rel={gymRatsLink.external ? "noopener noreferrer" : undefined}
-          data-augmented-ui="tl-clip br-clip border"
-          className="btn btn-primary grow"
-          onClick={onOpenGymRats}
-        >
-          <Icon name="trophy" size={18} /> Abrir GymRats
-        </a>
-      </div>
-
-      <div className="row-wrap">
         <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={shareImage}>
-          <Icon name="share" size={18} /> Outros apps
-        </button>
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={copyText}>
-          Copiar texto
+          <Icon name="share" size={18} /> Compartilhar
         </button>
       </div>
-
-      <p className="tiny muted" style={{ margin: 0 }}>
-        Para o GymRats: toque em <strong>1. Salvar foto (.jpg)</strong> e depois em <strong>2. Abrir GymRats</strong> (o resumo já vai
-        copiado para colar no check-in).
-      </p>
     </div>
   );
 }

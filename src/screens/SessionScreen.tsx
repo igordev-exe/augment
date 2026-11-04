@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { ExerciseBlock } from "../components/ExerciseBlock";
 import { HoldButton } from "../components/HoldButton";
+import { RecordList } from "../components/RecordList";
 import { SessionHud } from "../components/SessionHud";
 import { TerminalLog } from "../components/TerminalLog";
 import { Icon } from "../components/Icon";
@@ -353,7 +354,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
       {!isActive && (
         <section className="stack">
-          {logLines && <TerminalLog title="Protocolo concluído" lines={logLines} />}
+          {logLines && (
+            <TerminalLog title="Protocolo concluído" command={`augment finalize --protocolo ${day.code.toLowerCase()}`} lines={logLines} />
+          )}
           <div className="tiles">
             <div data-augmented-ui="tl-clip border" className="tile">
               <span className="label">Séries</span>
@@ -374,22 +377,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               </span>
             </div>
           </div>
-          {prs.length > 0 && (
-            <ul data-augmented-ui="tl-clip br-clip border" className="list">
-              {prs.map((p, i) => (
-                <li key={i} className="list-item">
-                  <span style={{ color: "var(--ok)" }}>
-                    <Icon name="trophy" size={20} />
-                  </span>
-                  <span className="grow small">
-                    <strong>{shortName(EXERCISE_BY_ID[p.exId])}</strong>
-                    <br />
-                    {p.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {prs.length > 0 && <RecordList items={prs} />}
 
           {backupDueAfterFinish && (
             <div data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>

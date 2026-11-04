@@ -10,6 +10,7 @@ import { AttributeTree } from "../components/AttributeTree";
 import { FatigueMap } from "../components/FatigueMap";
 import { VolumeSlots } from "../components/VolumeSlots";
 import { PhotoCompare } from "../components/PhotoCompare";
+import { RecordList } from "../components/RecordList";
 import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
 import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
@@ -464,22 +465,7 @@ export function Progress() {
             Recordes aparecem a partir da segunda vez que você faz cada exercício: a primeira vira a linha de base.
           </div>
         ) : (
-          <ul data-augmented-ui="tl-clip br-clip border" className="list">
-            {recent.map((p, i) => (
-              <li key={i}>
-                <Link to={`/exercicios/${EXERCISE_BY_ID[p.exId]?.lib}`} className="list-item">
-                  <span style={{ color: "var(--ok)" }}>
-                    <Icon name="trophy" size={20} />
-                  </span>
-                  <span className="grow small">
-                    <strong>{shortName(EXERCISE_BY_ID[p.exId])}</strong> <span className="faint">{shortDate(p.date)}</span>
-                    <br />
-                    {p.text}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <RecordList items={recent} linkToExercise />
         )}
       </section>
 

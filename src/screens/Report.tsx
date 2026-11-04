@@ -4,6 +4,7 @@ import { dayCode, dayName, PageHead } from "../components/bits";
 import { BodyLab } from "../components/BodyLab";
 import { EngineLab } from "../components/EngineLab";
 import { HoldButton } from "../components/HoldButton";
+import { RecordList } from "../components/RecordList";
 import { Icon } from "../components/Icon";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
@@ -439,20 +440,7 @@ export function Report() {
 
           {r.prs.length > 0 && (
             <Section title="Recordes">
-              <ul data-augmented-ui="tl-clip br-clip border" className="list">
-                {r.prs.map((p, i) => (
-                  <li key={i} className="list-item">
-                    <span style={{ color: "var(--ok)" }}>
-                      <Icon name="trophy" size={20} />
-                    </span>
-                    <span className="grow small">
-                      <strong>{shortName(EXERCISE_BY_ID[p.exId])}</strong> <span className="faint">{shortDate(p.date)}</span>
-                      <br />
-                      {p.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <RecordList items={r.prs} linkToExercise />
             </Section>
           )}
 
