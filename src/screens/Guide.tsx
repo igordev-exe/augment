@@ -31,7 +31,7 @@ const LEVEL_TONE: Record<EvidenceLevel, string> = { evidencia: "go", consenso: "
 function Sec({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section id={id} className="guide-sec card stack">
-      <h2 className="h-sec">{title}</h2>
+      <h2 className="h-sec h-cut">{title}</h2>
       <div className="prose">{children}</div>
     </section>
   );

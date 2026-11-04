@@ -401,7 +401,7 @@ export function ShareWorkoutCard({
   async function shareImage() {
     const file = dataUrlToFile(dataUrl, fileName);
     if (!file) {
-      toast("Não foi possível gerar a imagem.");
+      toast("Não foi possível gerar a imagem.", "warn");
       return;
     }
     try {
@@ -409,7 +409,7 @@ export function ShareWorkoutCard({
         const canShareFiles = typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : true;
         if (canShareFiles) {
           await navigator.share({ files: [file] });
-          toast("Card de treino compartilhado.");
+          toast("Card de treino compartilhado.", "ok");
           return;
         }
       }
@@ -417,7 +417,7 @@ export function ShareWorkoutCard({
       if (err instanceof DOMException && err.name === "AbortError") return;
     }
     triggerDownload(dataUrl, fileName);
-    toast("Foto do treino salva (.jpg).");
+    toast("Foto do treino salva (.jpg).", "ok");
   }
 
   async function downloadImage() {
@@ -425,24 +425,24 @@ export function ShareWorkoutCard({
     triggerDownload(dataUrl, fileName);
     try {
       await navigator.clipboard.writeText(textSummary);
-      toast("Foto (.jpg) salva e resumo copiado!");
+      toast("Foto (.jpg) salva e resumo copiado!", "ok");
     } catch {
-      toast("Foto salva na galeria/downloads (.jpg).");
+      toast("Foto salva na galeria/downloads (.jpg).", "ok");
     }
   }
 
   function onOpenGymRats() {
     // Copia o resumo sem disparar download concorrente para o navegador permitir abrir o intent:// do app
     navigator.clipboard?.writeText?.(textSummary).catch(() => {});
-    toast("Resumo copiado! Abrindo GymRats…");
+    toast("Resumo copiado! Abrindo GymRats…", "ok");
   }
 
   async function copyText() {
     try {
       await navigator.clipboard.writeText(textSummary);
-      toast("Resumo do treino copiado.");
+      toast("Resumo do treino copiado.", "ok");
     } catch {
-      toast("Não foi possível copiar automaticamente.");
+      toast("Não foi possível copiar automaticamente.", "warn");
     }
   }
 

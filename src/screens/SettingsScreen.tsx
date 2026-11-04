@@ -26,7 +26,7 @@ export function SettingsScreen() {
     await update({ lastBackupAt: today, backupDismissed: mondayOf(today) });
     const b = await exportBackup();
     await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
-    toast("Backup exportado.");
+    toast("Backup exportado.", "ok");
   }
 
   async function doCsv() {
@@ -51,20 +51,20 @@ export function SettingsScreen() {
     }
     const csv = rows.map((r) => r.map((c) => (/[",;\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",")).join("\n");
     await shareOrDownload(`augment-series-${today}.csv`, csv, `AUGMENT Séries (${today})`, "text/csv");
-    toast(`CSV exportado com ${rows.length - 1} séries.`);
+    toast(`CSV exportado com ${rows.length - 1} séries.`, "ok");
   }
 
   async function doImport(file: File) {
     try {
       const data = JSON.parse(await file.text());
       if (!isBackup(data)) {
-        toast("Esse arquivo não é um backup do AUGMENT.");
+        toast("Esse arquivo não é um backup do AUGMENT.", "warn");
         return;
       }
       const n = await importBackup(data, mode);
-      toast(`${n} treinos importados.`);
+      toast(`${n} treinos importados.`, "ok");
     } catch {
-      toast("Não consegui ler o arquivo. Use o .json exportado pelo próprio app.");
+      toast("Não consegui ler o arquivo. Use o .json exportado pelo próprio app.", "warn");
     }
   }
 
@@ -74,15 +74,15 @@ export function SettingsScreen() {
       return;
     }
     if (typeof Notification === "undefined") {
-      toast("Este navegador não suporta notificações.");
+      toast("Este navegador não suporta notificações.", "warn");
       return;
     }
     const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
     if (perm === "granted") {
       await update({ notify: true });
-      toast("Aviso ativado ao trocar de aba/janela.");
+      toast("Aviso ativado ao trocar de aba/janela.", "ok");
     } else {
-      toast("Permissão de notificação negada nas configurações do navegador.");
+      toast("Permissão de notificação negada nas configurações do navegador.", "warn");
     }
   }
 
@@ -391,7 +391,7 @@ export function SettingsScreen() {
                   await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
                   await db.kv.delete("body-log");
                   setWipe(false);
-                  toast("Dados apagados.");
+                  toast("Dados apagados.", "danger");
                 }}
               >
                 Apagar tudo

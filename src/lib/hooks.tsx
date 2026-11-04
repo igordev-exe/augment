@@ -40,23 +40,35 @@ export function useToday(): string {
 
 // ---------- Toast ----------
 
-const ToastCtx = createContext<(msg: string) => void>(() => {});
+/** Tom do aviso: info = sistema (ciano), ok = feito/recorde (verde), warn = atenção (âmbar), danger = perigo (vermelho). */
+export type ToastTone = "info" | "ok" | "warn" | "danger";
+
+const TOAST_LABEL: Record<ToastTone, string> = {
+  info: "SYS // INFO",
+  ok: "SYS // OK",
+  warn: "SYS // ATENÇÃO",
+  danger: "SYS // ALERTA",
+};
+
+const ToastCtx = createContext<(msg: string, tone?: ToastTone) => void>(() => {});
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [msg, setMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; tone: ToastTone } | null>(null);
   const timer = useRef<number>();
-  const show = useCallback((m: string) => {
-    setMsg(m);
+  const show = useCallback((msg: string, tone: ToastTone = "info") => {
+    setToast({ msg, tone });
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setMsg(null), 3600);
+    timer.current = window.setTimeout(() => setToast(null), 3600);
   }, []);
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      {msg && (
-        <div data-augmented-ui="tl-clip br-clip border" className="toast" role="status" onClick={() => setMsg(null)}>
-          <b>SYS // AVISO</b>
-          {msg}
+      {toast && (
+        <div className={`toast-wrap tone-${toast.tone}`} role="status" onClick={() => setToast(null)}>
+          <div data-augmented-ui="tl-clip br-clip border" className="toast">
+            <b>{TOAST_LABEL[toast.tone]}</b>
+            {toast.msg}
+          </div>
         </div>
       )}
     </ToastCtx.Provider>

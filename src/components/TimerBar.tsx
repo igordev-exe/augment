@@ -19,7 +19,7 @@ export function TimerBar() {
 
   return (
     <div className="timer" role="timer" aria-live="off">
-      <div data-augmented-ui="tl-clip br-clip border" className={`timer-inner${over ? " over" : ""}`}>
+      <div data-augmented-ui="tl-clip br-clip border" className={`timer-inner scan${over ? " over" : ""}`}>
         <div className="timer-clock">{over ? `+${formatClock(-left)}` : formatClock(left)}</div>
         <div className="grow timer-label">
           {over ? "Descanso acabou. Próxima série." : "Descanso"}

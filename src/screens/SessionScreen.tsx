@@ -23,7 +23,7 @@ import {
   suggestNext,
   type PR,
 } from "../lib/progression";
-import { intensifierPlan, liveNudges } from "../lib/engine";
+import { intensifierPlan, liveNudges, NUDGE_TONE, type Nudge } from "../lib/engine";
 import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
@@ -118,7 +118,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const intensifiers = intensifierPlan(day.exercises, week, lowDay);
 
   /** Recado do motor que vale um aviso na hora para este exercício (`only`: restringe às regras listadas). */
-  function liveToast(entry: SessionExercise, only?: string[]): string | null {
+  function liveToast(entry: SessionExercise, only?: string[]): Nudge | null {
     const ex = EXERCISE_BY_ID[entry.exId];
     if (!ex) return null;
     const n = liveNudges({
@@ -132,7 +132,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       availableWeights: settings.machineWeights?.[ex.id],
       intensifier: intensifiers.has(ex.id),
     }).find((x) => x.toast && (!only || only.includes(x.id)));
-    return n?.text ?? null;
+    return n ?? null;
   }
 
   async function setCheckin(patch: Checkin) {
@@ -178,7 +178,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               t.weight = w;
             }
           })) ?? entry;
-        toast(`${set.reps} reps, abaixo de ${ex.reps[0]}: a última série vai com −15% (${formatWeight(w)} ${entry.unit}).`);
+        toast(`${set.reps} reps, abaixo de ${ex.reps[0]}: a última série vai com −15% (${formatWeight(w)} ${entry.unit}).`, "warn");
         warned = true;
       }
     } else if ((set.kind === "work" || set.kind === "drop") && set.reps != null && set.reps >= ex.reps[0]) {
@@ -192,7 +192,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     // As regras de RIR esperam a marcação de "sobraram" (onRirMarked).
     const live =
       set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps", "descanso-curto", "intensificador", "meta-batida"]);
-    if (live) toast(live);
+    if (live) toast(live.text, NUDGE_TONE[live.tone]);
 
     // Timer de descanso.
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
@@ -227,7 +227,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     const next = (await db.sessions.get(session.id)) ?? clone(session);
     const doneSets = next.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done && s.kind !== "warmup").length, 0);
     if (doneSets === 0) {
-      toast("Nenhuma série de trabalho marcada. Marque pelo menos uma série ou descarte o treino.");
+      toast("Nenhuma série de trabalho marcada. Marque pelo menos uma série ou descarte o treino.", "warn");
       return;
     }
     const { finishedAt, capped } = effectiveEndAt(next);
@@ -236,7 +236,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     next.finishedAt = finishedAt;
     await save(next);
     timer.stop();
-    if (capped) toast("Treino ficou aberto por horas: duração ajustada pelo horário da última série.");
+    if (capped) toast("Treino ficou aberto por horas: duração ajustada pelo horário da última série.", "warn");
     setSummary(prsInSession(next, [...before, next]));
     setShowShare(true);
     setOpen(-1);
@@ -252,7 +252,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   async function repeat() {
     const active = sessions.find((s) => s.status === "active");
     if (active) {
-      toast("Já existe um treino em andamento. Conclua ou descarte antes.");
+      toast("Já existe um treino em andamento. Conclua ou descarte antes.", "warn");
       navigate(`/treino/${active.id}`);
       return;
     }
@@ -268,7 +268,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     const mode = await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
     await updateSettings({ lastBackupAt: today });
     setBackupPromptDismissed(true);
-    toast(mode === "shared" ? "Backup compartilhado." : "Backup baixado.");
+    toast(mode === "shared" ? "Backup compartilhado." : "Backup baixado.", "ok");
   }
 
   const stats = sessionStats(session);
@@ -330,7 +330,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             <ul data-augmented-ui="tl-clip br-clip border" className="list">
               {prs.map((p, i) => (
                 <li key={i} className="list-item">
-                  <span style={{ color: "var(--cyan)" }}>
+                  <span style={{ color: "var(--ok)" }}>
                     <Icon name="trophy" size={20} />
                   </span>
                   <span className="grow small">
@@ -470,8 +470,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               intensifierToday={intensifiers.has(ex.id)}
               setAdjust={settings.setAdjust?.[ex.id] ?? 0}
               onRirMarked={(e) => {
-                const msg = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
-                if (msg) toast(msg);
+                const n = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
+                if (n) toast(n.text, NUDGE_TONE[n.tone]);
               }}
               onToggle={() => setOpen(open === i ? -1 : i)}
               mutate={(fn) => mutateEntry(entry.exId, fn)}

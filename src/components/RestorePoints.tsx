@@ -28,7 +28,7 @@ export function RestorePoints() {
     try {
       await fn();
     } catch {
-      toast("Não deu certo. Tente de novo.");
+      toast("Não deu certo. Tente de novo.", "warn");
     } finally {
       setBusy(false);
     }
@@ -71,7 +71,7 @@ export function RestorePoints() {
                       run(async () => {
                         const n = await restoreFrom(p.id);
                         setConfirm(null);
-                        toast(`Restaurado: ${n} treinos.`);
+                        toast(`Restaurado: ${n} treinos.`, "ok");
                       })
                     }
                   >
@@ -118,7 +118,7 @@ export function RestorePoints() {
         onClick={() =>
           run(async () => {
             const p = await createRestorePoint("manual");
-            toast(p ? "Ponto de restauração criado." : "Nada para guardar ainda.");
+            toast(p ? "Ponto de restauração criado." : "Nada para guardar ainda.", "ok");
           })
         }
       >

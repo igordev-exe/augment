@@ -20,6 +20,9 @@ export interface Nudge {
   toast?: boolean;
 }
 
+/** Tom do aviso na hora para cada tom de recado (good vira o verde de "ok"). */
+export const NUDGE_TONE = { warn: "warn", info: "info", good: "ok" } as const;
+
 /** Regras do motor, para o Guia e para o prompt do treinador. */
 export const ENGINE_RULES: { id: string; quando: string; recado: string; why: string }[] = [
   {

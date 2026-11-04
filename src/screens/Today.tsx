@@ -102,7 +102,7 @@ export function Today() {
     await updateSettings({ lastBackupAt: today, backupDismissed: monday });
     const b = await exportBackup();
     await shareOrDownload(`augment-backup-${today}.json`, JSON.stringify(b, null, 2), `AUGMENT Backup (${today})`);
-    toast("Backup exportado.");
+    toast("Backup exportado.", "ok");
   }
 
   return (
@@ -212,7 +212,7 @@ export function Today() {
                   mesoStart: fatigue.targetMesoStart,
                   reentryDismissed: monday,
                 });
-                toast("Semana de Deload ativada.");
+                toast("Semana de Deload ativada.", "ok");
               }}
             >
               Antecipar Deload agora
@@ -315,6 +315,9 @@ export function Today() {
             </div>
             <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-light" onClick={() => start()}>
               Iniciar protocolo <span className="arrow">&gt;</span>
+              <span className="code-tag" aria-hidden="true">
+                {day.code}-{String(dayIdx).padStart(2, "0")}
+              </span>
             </button>
             <span className="sticker">
               Bio / mod {String(dayIdx).padStart(2, "0")}

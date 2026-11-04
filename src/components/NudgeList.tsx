@@ -4,7 +4,7 @@ import type { Nudge } from "../lib/engine";
 // Recados do motor de decisões, cada um com o nível de evidência e a fonte principal do porquê.
 
 const BY_ID = Object.fromEntries(PRINCIPLES.map((p) => [p.id, p]));
-const COLOR = { warn: "var(--amber)", info: "var(--ink-2)", good: "var(--cyan)" } as const;
+const COLOR = { warn: "var(--warn)", info: "var(--ink-2)", good: "var(--ok)" } as const;
 
 /** Nível + 1ª fonte do princípio, ex.: "Evidência · Singer et al. 2024". */
 export function whyLabel(id: string): string | null {

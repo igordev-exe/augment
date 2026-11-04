@@ -299,7 +299,7 @@ export function ExerciseBlock({
           {active && (
             <div
               data-augmented-ui="tl-clip border"
-              className={`suggest ${sug.kind === "up" && !lowDay ? "up" : sug.kind === "down" ? "down" : ""}`}
+              className={`suggest scan ${sug.kind === "up" && !lowDay ? "up" : sug.kind === "down" ? "down" : ""}`}
             >
               <strong>{sug.title}</strong>
               <span className="small muted">{sug.detail}</span>

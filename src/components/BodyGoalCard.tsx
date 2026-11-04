@@ -9,10 +9,10 @@ import { NudgeList } from "./NudgeList";
 // Meta de peso corporal: direção, peso alvo, ritmo semanal contra a faixa recomendada e previsão.
 
 const PACE: Record<GoalPace, { text: string; color: string }> = {
-  "no-ritmo": { text: "No ritmo", color: "var(--cyan)" },
-  rapido: { text: "Rápido demais", color: "var(--amber)" },
-  devagar: { text: "Devagar", color: "var(--amber)" },
-  contrario: { text: "Sentido contrário", color: "var(--red-hi)" },
+  "no-ritmo": { text: "No ritmo", color: "var(--ok)" },
+  rapido: { text: "Rápido demais", color: "var(--warn)" },
+  devagar: { text: "Devagar", color: "var(--warn)" },
+  contrario: { text: "Sentido contrário", color: "var(--danger)" },
   "sem-dados": { text: "Poucos dados", color: "var(--ink-3)" },
 };
 
@@ -119,7 +119,7 @@ export function BodyGoalCard({
           {status && (
             <div>
               <span className="label">Status</span>
-              <strong style={{ color: status.reached ? "var(--cyan)" : PACE[status.pace].color }}>
+              <strong style={{ color: status.reached ? "var(--ok)" : PACE[status.pace].color }}>
                 {status.reached ? "Meta alcançada" : PACE[status.pace].text}
               </strong>
               <span className="tiny faint">

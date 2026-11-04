@@ -18,7 +18,7 @@ function rirLabel([a, b]: [number, number]): string {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="stack">
-      <h2 className="h-sec">{title}</h2>
+      <h2 className="h-sec h-cut">{title}</h2>
       {children}
     </section>
   );
@@ -64,6 +64,7 @@ export function Report() {
     const ex = EXERCISE_BY_ID[exId];
     toast(
       valor ? `${name}: ${ex.sets + valor} séries por treino a partir do próximo.` : `${name}: de volta às ${ex.sets} séries da ficha.`,
+      "ok",
     );
   }
 
@@ -129,7 +130,7 @@ export function Report() {
               className="btn btn-sm btn-primary grow"
               onClick={() => {
                 updateSettings({ mesoStart: fatigue.targetMesoStart, reentryDismissed: current });
-                toast("Semana de Deload ativada.");
+                toast("Semana de Deload ativada.", "ok");
               }}
             >
               Antecipar Deload agora
@@ -233,7 +234,7 @@ export function Report() {
                   className="btn btn-sm btn-primary"
                   onClick={() => {
                     updateSettings({ mesoStart: current });
-                    toast("Novo mesociclo iniciado na Semana 1.");
+                    toast("Novo mesociclo iniciado na Semana 1.", "ok");
                   }}
                 >
                   Iniciar novo mesociclo (Semana 1)
@@ -262,7 +263,11 @@ export function Report() {
                         type="button"
                         data-augmented-ui="tl-clip br-clip border"
                         className="toggle-chip"
-                        style={{ fontSize: 12, textTransform: "none", color: v.change > 0 ? "var(--cyan)" : "var(--amber)" }}
+                        style={{
+                          fontSize: 12,
+                          textTransform: "none",
+                          color: applied ? "var(--ok)" : v.change > 0 ? "var(--sel)" : "var(--warn)",
+                        }}
                         aria-pressed={applied}
                         onClick={() => setAdjustFor(v.exId, applied ? 0 : v.change, v.name)}
                       >
@@ -322,7 +327,7 @@ export function Report() {
                     <span
                       className="num"
                       style={{
-                        color: e.deltaE1rmPct > 0 ? "var(--cyan)" : e.deltaE1rmPct < 0 ? "var(--amber)" : "var(--muted)",
+                        color: e.deltaE1rmPct > 0 ? "var(--ok)" : e.deltaE1rmPct < 0 ? "var(--warn)" : "var(--muted)",
                         textAlign: "right",
                       }}
                     >
@@ -431,7 +436,7 @@ export function Report() {
               <ul data-augmented-ui="tl-clip br-clip border" className="list">
                 {r.prs.map((p, i) => (
                   <li key={i} className="list-item">
-                    <span style={{ color: "var(--cyan)" }}>
+                    <span style={{ color: "var(--ok)" }}>
                       <Icon name="trophy" size={20} />
                     </span>
                     <span className="grow small">

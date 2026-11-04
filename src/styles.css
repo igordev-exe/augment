@@ -33,6 +33,34 @@
   --cyan-soft: #0e2a2e;
   --info-bg: #111f2d;
   --violet: #d580ff;
+  /* Verde de sinal (Fase 0): concluído, aplicado, recorde. */
+  --green: #4ff08f;
+  --green-soft: #0d2a1a;
+  /* Aliases que as telas já usavam (antes indefinidos). */
+  --fg: var(--ink);
+  --muted: var(--ink-3);
+  /*
+    Papéis das cores (Fase 0). Uma cor, um significado:
+    vermelho = ação e marca · ciano = sistema e seleção · verde = ok (feito, aplicado, recorde)
+    âmbar = atenção · vermelho-alto = perigo. Roxo, azul e violeta ficam para gráficos e dados.
+  */
+  --ok: var(--green);
+  --ok-soft: var(--green-soft);
+  --warn: var(--amber);
+  --warn-soft: var(--amber-soft);
+  --danger: var(--red-hi);
+  --danger-soft: var(--red-soft);
+  --sel: var(--cyan);
+  --sel-soft: var(--cyan-soft);
+  /*
+    Brilho em camadas (núcleo forte + halo largo), só nos pontos focais.
+    É filter: drop-shadow porque o recorte dos cantos (clip-path do augmented-ui) apaga box-shadow:
+    aplique num wrapper (.glow) em volta do elemento recortado.
+  */
+  --glow-red: drop-shadow(0 0 3px #ef302cb3) drop-shadow(0 0 12px #ef302c59) drop-shadow(0 0 28px #ef302c26);
+  --glow-cyan: drop-shadow(0 0 3px #3fd8e0a6) drop-shadow(0 0 12px #3fd8e04d) drop-shadow(0 0 28px #3fd8e01f);
+  --glow-green: drop-shadow(0 0 3px #4ff08fa6) drop-shadow(0 0 12px #4ff08f4d) drop-shadow(0 0 28px #4ff08f1f);
+  --glow-amber: drop-shadow(0 0 3px #f5b83da6) drop-shadow(0 0 12px #f5b83d40);
   --chart-1: #ef302c;
   --chart-2: #1f9fab;
   --grid: #2a2e34;
@@ -577,6 +605,11 @@ p {
   background: var(--cyan-soft);
   color: var(--cyan);
 }
+.chip.ok {
+  --aug-border-bg: #4ff08f88;
+  background: var(--ok-soft);
+  color: var(--ok);
+}
 .chip.warn {
   --aug-border-bg: #f5b83d88;
   background: var(--amber-soft);
@@ -1035,8 +1068,8 @@ p {
   --aug-border-bg: #6a6f78;
 }
 .ex.complete {
-  --aug-border-bg: #ef302c77;
-  background: linear-gradient(90deg, #ef302c14, transparent 60%), var(--surface);
+  --aug-border-bg: #4ff08f66;
+  background: linear-gradient(90deg, #4ff08f12, transparent 60%), var(--surface);
 }
 .ex-head {
   display: grid;
@@ -1057,9 +1090,11 @@ p {
   color: var(--ink-3);
   min-width: 30px;
 }
-.ex.open .ex-num,
-.ex.complete .ex-num {
+.ex.open .ex-num {
   color: var(--red-hi);
+}
+.ex.complete .ex-num {
+  color: var(--ok);
 }
 .ex-name {
   font-weight: 600;
@@ -1081,7 +1116,7 @@ p {
   font-variant-numeric: tabular-nums;
 }
 .ex.complete .ex-count {
-  color: var(--red-hi);
+  color: var(--ok);
 }
 .ex-body {
   padding: 0 14px 16px;
@@ -1141,9 +1176,9 @@ p {
   border-left: 3px solid var(--ink-3);
 }
 .suggest.up {
-  --aug-border-bg: #3fd8e066;
-  border-left-color: var(--cyan);
-  background: var(--cyan-soft);
+  --aug-border-bg: #4ff08f66;
+  border-left-color: var(--ok);
+  background: var(--ok-soft);
 }
 .suggest.down {
   --aug-border-bg: #f5b83d66;
@@ -1158,7 +1193,7 @@ p {
   letter-spacing: 0.01em;
 }
 .suggest.up strong {
-  color: var(--cyan);
+  color: var(--ok);
 }
 .suggest.down strong {
   color: var(--amber);
@@ -1297,13 +1332,21 @@ p {
   --aug-border-bg: var(--red-hi);
   background: var(--red);
   color: #fff;
-  box-shadow: 0 0 14px #ef302c55;
 }
 .set.warmup .check[aria-pressed="true"] {
   --aug-border-bg: #8b919a;
   background: #3a3e45;
   color: #fff;
-  box-shadow: none;
+}
+.check-wrap {
+  display: grid;
+}
+.check-wrap > .check {
+  width: 100%;
+}
+.set.work.done .check-wrap,
+.set.drop.done .check-wrap {
+  filter: var(--glow-red);
 }
 
 /* RIR: quantas reps sobraram, perguntado logo depois da série (durante o descanso). */
@@ -1475,24 +1518,57 @@ textarea.note:focus {
   border-color: var(--red);
 }
 
-/* ---------- Toast (aviso com trilho lateral) ---------- */
-.toast {
-  --aug-tl: 10px;
-  --aug-br: 10px;
-  --aug-border-all: 1px;
-  --aug-border-bg: var(--red);
+/* ---------- Toast (aviso com trilho lateral, colchete e tom) ---------- */
+.toast-wrap {
+  --tc: var(--sel);
+  --tc-bg: #0f1d22f0;
+  --tc-label: #9ef1f5;
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
   top: calc(env(safe-area-inset-top, 0px) + 12px);
   width: min(520px, calc(100vw - 32px));
-  background: #1a0f0fee;
+  padding-left: 9px;
+  filter: drop-shadow(0 10px 22px #000c);
+  cursor: pointer;
+}
+/* Colchete do lado de fora, como nos avisos do kit. */
+.toast-wrap::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -6px;
+  bottom: -6px;
+  width: 7px;
+  border: 1px solid #8b919a;
+  border-right: 0;
+}
+.toast-wrap.tone-ok {
+  --tc: var(--ok);
+  --tc-bg: #0e1d15f0;
+  --tc-label: #a9f7c6;
+}
+.toast-wrap.tone-warn {
+  --tc: var(--warn);
+  --tc-bg: #211a0bf0;
+  --tc-label: #ffd98a;
+}
+.toast-wrap.tone-danger {
+  --tc: var(--red);
+  --tc-bg: #1a0f0ff0;
+  --tc-label: #ff8a80;
+}
+.toast {
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--tc);
+  background: var(--tc-bg);
   color: #fff;
   padding: 11px 14px 11px 18px;
   font-size: 14.5px;
-  border-left: 4px solid var(--red);
-  box-shadow: 0 10px 30px #000a;
+  border-left: 4px solid var(--tc);
 }
 .toast b {
   display: block;
@@ -1500,9 +1576,11 @@ textarea.note:focus {
   font-weight: 400;
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: #ff8a80;
+  color: var(--tc-label);
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
 }
 
 /* ---------- Calendar ---------- */
@@ -1832,6 +1910,14 @@ table.t a {
 .callout.warn::before {
   content: "SYS // ATENÇÃO";
   color: var(--amber);
+}
+.callout.ok {
+  border-left-color: var(--ok);
+  background: var(--ok-soft);
+}
+.callout.ok::before {
+  content: "SYS // OK";
+  color: var(--ok);
 }
 
 .empty {
@@ -3093,4 +3179,109 @@ table.t a {
   flex: 0 0 auto;
   border: 1px solid var(--line);
   filter: saturate(0.8);
+}
+
+/* ==========================================================================
+   Fase 0 — primitivas de forma e efeitos HUD
+   ========================================================================== */
+
+/* Brilho num wrapper (o elemento de dentro pode ter canto recortado). */
+.glow {
+  filter: var(--glow, var(--glow-red));
+}
+.glow.cyan {
+  --glow: var(--glow-cyan);
+}
+.glow.green {
+  --glow: var(--glow-green);
+}
+.glow.amber {
+  --glow: var(--glow-amber);
+}
+.glow-block {
+  display: grid;
+}
+
+/* Título com sublinhado cortado: trilho fino + segmento grosso com chanfro na ponta. */
+.h-cut {
+  position: relative;
+  padding-bottom: 9px;
+}
+.h-cut::before,
+.h-cut::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+.h-cut::after {
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+.h-cut::before {
+  width: 64px;
+  height: 4px;
+  background: var(--cut, var(--red));
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 100%, 0 100%);
+}
+
+/* Etiqueta de código no canto de um botão ou painel (ex.: "LA-03"). Decorativa: aria-hidden. */
+.code-tag {
+  position: absolute;
+  right: 12px;
+  bottom: 3px;
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  padding: 2px 4px;
+  background: var(--tag-bg, var(--amber));
+  color: #0c0e11;
+  pointer-events: none;
+}
+.btn .code-tag {
+  font-weight: 400;
+}
+.btn:has(.code-tag) {
+  position: relative;
+  padding-bottom: 12px;
+}
+
+/*
+  Linhas de varredura discretas em painéis HUD (timer, sugestão de carga).
+  Como camada de fundo, não ::after: o augmented-ui usa ::before/::after para desenhar a borda.
+  Seletores duplos para vencer o "background:" das variantes (.suggest.up, .timer-inner.over).
+*/
+.scan,
+.suggest.scan,
+.timer-inner.scan {
+  background-image: repeating-linear-gradient(0deg, transparent 0 2px, #ffffff07 2px 3px);
+}
+.timer {
+  filter: drop-shadow(0 6px 18px #000b);
+}
+.timer:has(.timer-inner.over) {
+  filter: var(--glow-red);
+}
+
+/* Celular: menos efeito, mais bateria e leitura sob luz forte da academia. */
+@media (max-width: 600px) {
+  .scan,
+  .suggest.scan,
+  .timer-inner.scan {
+    background-image: repeating-linear-gradient(0deg, transparent 0 3px, #ffffff05 3px 4px);
+  }
+  .set.work.done .check-wrap,
+  .set.drop.done .check-wrap {
+    filter: drop-shadow(0 0 3px #ef302cb3) drop-shadow(0 0 10px #ef302c40);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .scan,
+  .suggest.scan,
+  .timer-inner.scan {
+    background-image: none;
+  }
 }

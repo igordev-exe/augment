@@ -124,16 +124,19 @@ export function SetRow({
           }}
         />
       </div>
-      <button
-        type="button"
-        data-augmented-ui="tl-clip br-clip border"
-        className="check"
-        aria-pressed={set.done}
-        aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"}
-        onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}
-      >
-        <Icon name="check" size={22} />
-      </button>
+      {/* Wrapper: o brilho (drop-shadow) fica fora do recorte do canto. */}
+      <span className="check-wrap">
+        <button
+          type="button"
+          data-augmented-ui="tl-clip br-clip border"
+          className="check"
+          aria-pressed={set.done}
+          aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"}
+          onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}
+        >
+          <Icon name="check" size={22} />
+        </button>
+      </span>
       {showRir && (
         <div className="rir-ask" role="group" aria-label={`Quantas reps sobraram na série ${label}?`}>
           <span className="label">Sobraram</span>

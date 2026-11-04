@@ -97,7 +97,7 @@ export function Progress() {
     const waistCm = parseOpt(bWaist);
     const armCm = parseOpt(bArm);
     if (!weightKg && !waistCm && !armCm && !bPhoto && !bNotes.trim()) {
-      toast("Preencha pelo menos peso, medida ou foto.");
+      toast("Preencha pelo menos peso, medida ou foto.", "warn");
       return;
     }
     await upsertBodyEntry({
@@ -115,7 +115,7 @@ export function Progress() {
     setBNotes("");
     setBPhoto(undefined);
     setShowBodyForm(false);
-    toast("Medição corporal registrada.");
+    toast("Medição corporal registrada.", "ok");
   }
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
@@ -322,7 +322,7 @@ export function Progress() {
                     const dataUrl = await resizeImageFile(file, 720, 0.78);
                     setBPhoto(dataUrl);
                   } catch {
-                    toast("Não foi possível carregar a imagem.");
+                    toast("Não foi possível carregar a imagem.", "warn");
                   }
                 }}
               />
@@ -429,7 +429,7 @@ export function Progress() {
                   className="tiny num"
                   style={{
                     textAlign: "right",
-                    color: r.sessions < 2 || Math.abs(r.deltaPct) < 0.5 ? "var(--ink-3)" : r.deltaPct > 0 ? "var(--cyan)" : "var(--amber)",
+                    color: r.sessions < 2 || Math.abs(r.deltaPct) < 0.5 ? "var(--ink-3)" : r.deltaPct > 0 ? "var(--ok)" : "var(--warn)",
                   }}
                 >
                   {r.sessions < 2 ? "base" : `${r.deltaPct > 0 ? "+" : ""}${r.deltaPct.toFixed(1).replace(".", ",")}%`}
@@ -447,7 +447,7 @@ export function Progress() {
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div className="spread">
           <h2 className="h-sec">Módulos desbloqueados</h2>
-          <span className="mono small" style={{ color: "var(--cyan)" }}>
+          <span className="mono small" style={{ color: "var(--ok)" }}>
             {unlockedCount}/{achievements.length}
           </span>
         </div>
@@ -461,11 +461,11 @@ export function Progress() {
                 gap: 4,
                 padding: 10,
                 opacity: a.unlocked ? 1 : 0.55,
-                borderColor: a.unlocked ? "var(--cyan)" : undefined,
+                borderColor: a.unlocked ? "var(--ok)" : undefined,
               }}
             >
               <div className="spread">
-                <span className="tiny mono" style={{ color: a.unlocked ? "var(--cyan)" : "var(--muted)" }}>
+                <span className="tiny mono" style={{ color: a.unlocked ? "var(--ok)" : "var(--muted)" }}>
                   {a.code}
                 </span>
                 <span className="tiny mono">{a.unlocked ? "ATIVO" : a.progress}</span>
@@ -488,7 +488,7 @@ export function Progress() {
             {recent.map((p, i) => (
               <li key={i}>
                 <Link to={`/exercicios/${EXERCISE_BY_ID[p.exId]?.lib}`} className="list-item">
-                  <span style={{ color: "var(--cyan)" }}>
+                  <span style={{ color: "var(--ok)" }}>
                     <Icon name="trophy" size={20} />
                   </span>
                   <span className="grow small">
@@ -532,7 +532,7 @@ export function Progress() {
                             {formatWeight(load)} {unit}
                           </strong>
                           {delta != null && delta !== 0 && (
-                            <span style={{ color: delta > 0 ? "var(--cyan)" : "var(--amber)", marginLeft: 6 }}>
+                            <span style={{ color: delta > 0 ? "var(--ok)" : "var(--warn)", marginLeft: 6 }}>
                               {delta > 0 ? "+" : ""}
                               {formatWeight(delta)}
                             </span>
