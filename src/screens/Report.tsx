@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { dayCode, dayName, PageHead } from "../components/bits";
+import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
@@ -124,17 +125,16 @@ export function Report() {
             <strong>Fadiga acumulada (Semana {fatigue.week}):</strong> {fatigue.reasons.join(", ")}.
           </div>
           <div className="row">
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-sm btn-primary grow"
-              onClick={() => {
+            <HoldButton
+              className="btn-sm btn-primary grow"
+              label="Antecipar Deload agora"
+              onConfirm={() => {
                 updateSettings({ mesoStart: fatigue.targetMesoStart, reentryDismissed: current });
                 toast("Semana de Deload ativada.", "ok");
               }}
             >
               Antecipar Deload agora
-            </button>
+            </HoldButton>
             <button
               type="button"
               data-augmented-ui="tl-clip br-clip border"
@@ -228,17 +228,16 @@ export function Report() {
                 Analisar ciclo com o treinador <span className="arrow">&gt;</span>
               </Link>
               {m.currentWeek === 7 && (
-                <button
-                  type="button"
-                  data-augmented-ui="tl-clip br-clip border"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => {
+                <HoldButton
+                  className="btn-sm btn-primary"
+                  label="Iniciar novo mesociclo"
+                  onConfirm={() => {
                     updateSettings({ mesoStart: current });
                     toast("Novo mesociclo iniciado na Semana 1.", "ok");
                   }}
                 >
                   Iniciar novo mesociclo (Semana 1)
-                </button>
+                </HoldButton>
               )}
             </div>
           </Section>

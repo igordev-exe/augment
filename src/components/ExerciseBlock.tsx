@@ -22,7 +22,9 @@ import { newSet } from "../lib/sessions";
 import { liveNudges } from "../lib/engine";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
+import { NextSet, type SetPlan } from "./NextSet";
 import { NudgeList } from "./NudgeList";
+import { RadialMenu, type RadialAction } from "./RadialMenu";
 import { Choice, SetRow } from "./SetRow";
 
 export function ExerciseBlock({
@@ -96,6 +98,8 @@ export function ExerciseBlock({
     : [];
   const [showNote, setShowNote] = useState(!!entry.notes);
   const [pickAlt, setPickAlt] = useState(false);
+  /** Série com o menu circular aberto (segurar o número da série). */
+  const [radial, setRadial] = useState<string | null>(null);
   const baseRir = rirRange(ex.stop, week);
   const rirTarget: [number, number] = lowDay ? [Math.min(4, baseRir[0] + 1), Math.min(4, baseRir[1] + 1)] : baseRir;
   // Pergunta o RIR da série feita mais recente que ainda não tem resposta.
@@ -134,6 +138,36 @@ export function ExerciseBlock({
       e.feedback = { ...e.feedback, ...patch };
     });
   }
+
+  /** Peso da última série de trabalho feita hoje: vale como sugestão quando o motor ainda não tem uma (1ª vez). */
+  const lastDoneWeight = [...entry.sets].reverse().find((s) => s.done && s.kind !== "warmup" && s.weight != null)?.weight ?? null;
+  /** Peso e reps sugeridos para a série de trabalho n (1, 2, 3…), como placeholder. */
+  function workPlaceholder(n: number): { weightPh: number | null; repsPh: number } {
+    const baseTarget = sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0];
+    return {
+      weightPh: (n > 1 && sug.volumeWeight != null ? sug.volumeWeight : sug.weight) ?? lastDoneWeight,
+      repsPh: lowDay ? Math.max(ex.reps[0], baseTarget - 1) : baseTarget,
+    };
+  }
+  const workSetsAll = entry.sets.filter((s) => s.kind !== "warmup");
+  const plans: SetPlan[] = workSetsAll.map((s, i) => {
+    const ph = workPlaceholder(i + 1);
+    return {
+      id: s.id,
+      n: i + 1,
+      done: s.done,
+      drop: s.kind === "drop",
+      weight: s.done ? s.weight : (s.weight ?? ph.weightPh),
+      reps: s.done ? s.reps : (s.reps ?? ph.repsPh),
+    };
+  });
+  const nextPlan = plans.find((p) => !p.done);
+  const rirLabel = rirTarget[0] === rirTarget[1] ? `${rirTarget[0]}` : `${rirTarget[0]}–${rirTarget[1]}`;
+  const nextReason = nextPlan?.drop
+    ? "Uma série caiu abaixo do piso: esta vai com −15% para fechar dentro da faixa."
+    : lowDay
+      ? `${sug.title}. Dia de baixa no check-in: pare com +1 rep de sobra.`
+      : `${sug.title} · ${stop.label.toLowerCase()}.`;
 
   let workCounter = 0;
   let warmupCounter = 0;
@@ -189,6 +223,40 @@ export function ExerciseBlock({
       e.sets = e.sets.filter((x) => x.id !== setId);
     });
   }
+
+  const radialSet = radial ? entry.sets.find((x) => x.id === radial) : undefined;
+  const radialN = radialSet && radialSet.kind !== "warmup" ? workSetsAll.indexOf(radialSet) + 1 : 0;
+  const radialActions: RadialAction[] = radialSet
+    ? [
+        { id: "serie", label: "+ Série", tone: "action", onPick: () => addSet("work") },
+        { id: "drop", label: "+ −15%", onPick: () => addSet("drop") },
+        {
+          id: "falhou",
+          label: "Falhou aqui",
+          tone: "warn",
+          disabled: !radialSet.done || radialSet.kind === "warmup",
+          onPick: () => setSet(radialSet.id, { failure: true, rir: 0 }),
+        },
+        ...(ex.intensifier && intensifierToday
+          ? [
+              {
+                id: "int",
+                label: "Intensificador feito",
+                tone: "ok" as const,
+                disabled: !radialSet.done,
+                onPick: () =>
+                  mutate((e) => {
+                    const tag = `[S${radialN}] ${ex.intensifier}`;
+                    e.notes = e.notes ? `${e.notes}\n${tag}` : tag;
+                  }).then(() => setShowNote(true)),
+              },
+            ]
+          : []),
+        { id: "remover", label: "Remover série", tone: "warn", disabled: radialSet.done, onPick: () => removeSet(radialSet.id) },
+        ...(alts.length > 0 ? [{ id: "trocar", label: "Trocar hoje", onPick: () => setPickAlt(true) }] : []),
+        { id: "anotar", label: "Anotar", onPick: () => setShowNote(true) },
+      ]
+    : [];
 
   return (
     <article data-augmented-ui="tl-clip br-clip border" className={`ex${complete ? " complete" : ""}${open ? " open" : ""}`}>
@@ -416,6 +484,8 @@ export function ExerciseBlock({
             </div>
           )}
 
+          {active && <NextSet plans={plans} unit={entry.unit} rir={rirLabel} reason={nextReason} />}
+
           <div className="sets">
             <div className="spread">
               <span className="label">Peso em</span>
@@ -427,6 +497,7 @@ export function ExerciseBlock({
                 ))}
               </span>
             </div>
+            {active && <span className="tiny faint">Segure o número da série para mais ações.</span>}
             <div className="sets-head">
               <span>Série</span>
               <span className="center">Peso</span>
@@ -437,9 +508,9 @@ export function ExerciseBlock({
               const isWork = s.kind !== "warmup";
               const n = isWork ? ++workCounter : 0;
               const wm = isWork ? null : warmupSpec(sug.weight, warmupCounter++, totalWarmups, step, availableWeights);
-              const baseTarget = sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0];
-              const repsPh = isWork ? (lowDay ? Math.max(ex.reps[0], baseTarget - 1) : baseTarget) : wm!.reps;
-              const weightPh = isWork ? (n > 1 && sug.volumeWeight != null ? sug.volumeWeight : sug.weight) : wm!.weight;
+              const ph = isWork ? workPlaceholder(n) : null;
+              const repsPh = ph ? ph.repsPh : wm!.reps;
+              const weightPh = ph ? ph.weightPh : wm!.weight;
               return (
                 <SetRow
                   key={s.id}
@@ -457,6 +528,7 @@ export function ExerciseBlock({
                   onReps={(r) => setSet(s.id, { reps: r })}
                   onToggle={(wv, rv) => toggleDone(s.id, wv, rv, weightPh, repsPh)}
                   onRemove={() => removeSet(s.id)}
+                  onLongPress={active ? () => setRadial(s.id) : undefined}
                 />
               );
             })}
@@ -497,6 +569,8 @@ export function ExerciseBlock({
 
           {showNote && (
             <textarea
+              /* key: recria o campo quando a anotação muda por fora (ex.: "Intensificador feito" no menu circular). */
+              key={entry.notes ?? ""}
               className="note"
               placeholder="Ajuste do banco, pegada, dor, máquina usada…"
               defaultValue={entry.notes ?? ""}
@@ -544,6 +618,14 @@ export function ExerciseBlock({
             </div>
           </details>
         </div>
+      )}
+      {radialSet && (
+        <RadialMenu
+          title={radialSet.kind === "warmup" ? "Aquec." : `S${radialN}`}
+          sub={radialSet.done ? `${formatWeight(radialSet.weight)}×${radialSet.reps}` : "pendente"}
+          actions={radialActions}
+          onClose={() => setRadial(null)}
+        />
       )}
     </article>
   );

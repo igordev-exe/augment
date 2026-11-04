@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
+import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { DAY_BY_ID, PROGRAM } from "../data/program";
 import type { Session } from "../data/types";
@@ -203,11 +204,10 @@ export function Today() {
             para recuperar articulações e sistema nervoso antes do próximo bloco.
           </div>
           <div className="row">
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-primary btn-sm grow"
-              onClick={() => {
+            <HoldButton
+              className="btn-primary btn-sm grow"
+              label="Antecipar Deload agora"
+              onConfirm={() => {
                 updateSettings({
                   mesoStart: fatigue.targetMesoStart,
                   reentryDismissed: monday,
@@ -216,7 +216,7 @@ export function Today() {
               }}
             >
               Antecipar Deload agora
-            </button>
+            </HoldButton>
             <button
               type="button"
               data-augmented-ui="tl-clip br-clip border"

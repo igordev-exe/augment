@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { SetEntry, Unit } from "../data/types";
 import { formatWeight } from "../lib/progression";
 import { Icon } from "./Icon";
+import { useLongPress } from "./RadialMenu";
 
 export function parseNum(s: string): number | null {
   const t = s.replace(",", ".").trim();
@@ -25,6 +26,7 @@ export function SetRow({
   onRir,
   onToggle,
   onRemove,
+  onLongPress,
 }: {
   set: SetEntry;
   label: string;
@@ -40,6 +42,8 @@ export function SetRow({
   onRir: (rir: number) => void;
   onToggle: (w: number | null, r: number | null) => void;
   onRemove: () => void;
+  /** Segurar o número da série abre o menu circular de ações. */
+  onLongPress?: () => void;
 }) {
   const [w, setW] = useState(set.weight != null ? formatWeight(set.weight) : "");
   const [r, setR] = useState(set.reps != null ? String(set.reps) : "");
@@ -57,6 +61,8 @@ export function SetRow({
   }, [set.done]);
 
   const showRir = set.done && set.kind !== "warmup" && (askRir || editRir);
+  const lp = useLongPress(() => onLongPress?.());
+  const { consumedClick, ...lpHandlers } = lp;
 
   if (!active) {
     return (
@@ -77,20 +83,20 @@ export function SetRow({
   const kindCls = set.kind === "warmup" ? "warmup" : set.kind === "drop" ? "drop" : "";
   return (
     <div className={`set ${set.kind}${set.done ? " done" : ""}`}>
-      <div className={`set-kind ${kindCls}`}>
+      <div className={`set-kind ${kindCls}${onLongPress ? " hold-target" : ""}`} {...(onLongPress ? lpHandlers : {})}>
         {label}
         {set.done && set.rir != null && (
           <button
             type="button"
             className="rir-tag"
             aria-label={`Sobraram ${set.rir} reps. Tocar para mudar.`}
-            onClick={() => setEditRir((v) => !v)}
+            onClick={() => !consumedClick() && setEditRir((v) => !v)}
           >
             sobra {set.rir >= 4 ? "4+" : set.rir}
           </button>
         )}
         {canRemove && (
-          <button type="button" className="x" aria-label="Remover série" onClick={onRemove}>
+          <button type="button" className="x" aria-label="Remover série" onClick={() => !consumedClick() && onRemove()}>
             ×
           </button>
         )}

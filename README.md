@@ -31,6 +31,10 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
   de ajustes do plano alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício, aplicada com um toque
   no relatório do mesociclo (ou por cartão do treinador) e desfeita no mesmo lugar. As regras
   estão no Guia → Motor.
+- **HUD do treino**: barra no topo com uma casa por série do dia, quadro "próxima série" (peso × reps × sobra e o porquê, com a
+  fila de séries do exercício), menu circular ao segurar o número da série (+ série, −15%, falhou, intensificador feito, trocar,
+  anotar), "segure para confirmar" em descartar/excluir treino, antecipar deload, novo mesociclo e apagar tudo, e log de terminal
+  ao concluir (séries, volume, recordes, o que sobe na próxima sessão e o backup).
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.

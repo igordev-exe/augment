@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { ExerciseBlock } from "../components/ExerciseBlock";
+import { HoldButton } from "../components/HoldButton";
+import { SessionHud } from "../components/SessionHud";
+import { TerminalLog } from "../components/TerminalLog";
 import { Icon } from "../components/Icon";
 import { Choice } from "../components/SetRow";
 import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
@@ -20,10 +23,12 @@ import {
   mainLoad,
   prsInSession,
   revertBackoff,
+  suggest,
   suggestNext,
   type PR,
 } from "../lib/progression";
 import { intensifierPlan, liveNudges, NUDGE_TONE, type Nudge } from "../lib/engine";
+import { finishLogLines } from "../lib/hud";
 import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
@@ -81,7 +86,6 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     return ex && work.some((s) => !s.done);
   });
   const [open, setOpen] = useState<number>(isActive ? Math.max(0, firstOpen) : -1);
-  const [confirm, setConfirm] = useState<"discard" | "delete" | null>(null);
   const [summary, setSummary] = useState<PR[] | null>(null);
   const [backupPromptDismissed, setBackupPromptDismissed] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -192,7 +196,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     // As regras de RIR esperam a marcação de "sobraram" (onRirMarked).
     const live =
       set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps", "descanso-curto", "intensificador", "meta-batida"]);
-    if (live) toast(live.text, NUDGE_TONE[live.tone]);
+    if (live) toast(live.text, NUDGE_TONE[live.tone], live.id === "recorde-reps" || live.id === "meta-batida" ? "glitch" : undefined);
 
     // Timer de descanso.
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
@@ -283,11 +287,55 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     !backupPromptDismissed &&
     (!settings.lastBackupAt || daysBetween(settings.lastBackupAt, today) >= 7 || totalDoneCount % 5 === 0);
 
+  // Log de fim de treino (terminal): séries, volume, recordes, o que sobe na próxima sessão e o backup.
+  const logLines = (() => {
+    if (isActive || !summary) return null;
+    let planned = 0;
+    let done = 0;
+    const up: string[] = [];
+    let same = 0;
+    let down = 0;
+    for (const e of session.exercises) {
+      const ex = EXERCISE_BY_ID[e.exId];
+      if (!ex) continue;
+      planned += setsFor(ex, week, settings.setAdjust?.[ex.id]);
+      done += e.sets.filter((x) => x.done && x.kind !== "warmup").length;
+      if (!e.sets.some((x) => x.done && x.kind !== "warmup")) continue;
+      const next = suggest(
+        ex,
+        e,
+        setsFor(ex, week, settings.setAdjust?.[ex.id]),
+        week,
+        increaseStep(ex, e.unit, settings.increments[ex.id]),
+        week,
+        settings.machineWeights?.[ex.id],
+      );
+      if (next.kind === "up") up.push(shortName(ex));
+      else if (next.kind === "down") down += 1;
+      else same += 1;
+    }
+    return finishLogLines({
+      dayCode: day.code,
+      dayName: day.name,
+      setsDone: done,
+      setsPlanned: planned,
+      volumeKg: stats.volumeKg,
+      minutes: Math.round(stats.duration / 60000),
+      prs: prs.length,
+      up,
+      same,
+      down,
+      backupAt: settings.lastBackupAt,
+      today,
+    });
+  })();
+
   // F8: Debrief automático pós-treino
   const debriefQuery = `Acabei de concluir o treino ${day.name} de ${session.date} (${rule.label}). Faça um debrief direto em 3 pontos: o que evoluiu bem, o que saiu da meta de reps/sobra e o principal ajuste para a próxima sessão.`;
 
   return (
     <div className="stack-lg">
+      {isActive && <SessionHud session={session} code={`${day.code} // ${rule.label.toUpperCase()}`} now={Date.now()} />}
       <PageHead
         back={isActive ? "/" : "/historico"}
         code={isActive ? `MISSÃO ATIVA // PROTOCOLO ${day.code}` : `REGISTRO // PROTOCOLO ${day.code}`}
@@ -305,7 +353,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
       {!isActive && (
         <section className="stack">
-          {summary && <div className="callout">Protocolo concluído e salvo.{prs.length ? " Recordes batidos:" : ""}</div>}
+          {logLines && <TerminalLog title="Protocolo concluído" lines={logLines} />}
           <div className="tiles">
             <div data-augmented-ui="tl-clip border" className="tile">
               <span className="label">Séries</span>
@@ -591,48 +639,21 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary btn-big" onClick={finish}>
             <Icon name="check" size={20} /> Concluir protocolo
           </button>
-          {confirm === "discard" ? (
-            <div data-augmented-ui="tl-clip br-clip border" className="card flat stack">
-              <div className="small">Descartar apaga este treino e tudo que foi anotado nele.</div>
-              <div className="row">
-                <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-danger grow" onClick={remove}>
-                  Descartar treino
-                </button>
-                <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setConfirm(null)}>
-                  Manter
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-ghost"
-              onClick={() => setConfirm("discard")}
-            >
-              Descartar treino
-            </button>
-          )}
+          <HoldButton className="btn-danger" label="Descartar treino" onConfirm={remove}>
+            Descartar treino
+          </HoldButton>
+          <span className="tiny faint" style={{ textAlign: "center" }}>
+            Segure para descartar: apaga este treino e tudo que foi anotado nele.
+          </span>
         </section>
       ) : (
         <section className="stack">
-          {confirm === "delete" ? (
-            <div data-augmented-ui="tl-clip br-clip border" className="card flat stack">
-              <div className="small">Excluir remove este treino do histórico, dos gráficos e dos recordes.</div>
-              <div className="row">
-                <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-danger grow" onClick={remove}>
-                  Excluir treino
-                </button>
-                <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setConfirm(null)}>
-                  Manter
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => setConfirm("delete")}>
-              <Icon name="trash" size={18} /> Excluir treino
-            </button>
-          )}
+          <HoldButton className="btn-danger" label="Excluir treino" onConfirm={remove}>
+            <Icon name="trash" size={18} /> Excluir treino
+          </HoldButton>
+          <span className="tiny faint" style={{ textAlign: "center" }}>
+            Segure para excluir: sai do histórico, dos gráficos e dos recordes.
+          </span>
         </section>
       )}
     </div>

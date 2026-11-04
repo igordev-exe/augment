@@ -50,13 +50,16 @@ const TOAST_LABEL: Record<ToastTone, string> = {
   danger: "SYS // ALERTA",
 };
 
-const ToastCtx = createContext<(msg: string, tone?: ToastTone) => void>(() => {});
+/** `fx: "glitch"`: recompensa visual (recorde, teto batido). */
+export type ToastFx = "glitch";
+
+const ToastCtx = createContext<(msg: string, tone?: ToastTone, fx?: ToastFx) => void>(() => {});
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ msg: string; tone: ToastTone } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; tone: ToastTone; fx?: ToastFx; at: number } | null>(null);
   const timer = useRef<number>();
-  const show = useCallback((msg: string, tone: ToastTone = "info") => {
-    setToast({ msg, tone });
+  const show = useCallback((msg: string, tone: ToastTone = "info", fx?: ToastFx) => {
+    setToast({ msg, tone, fx, at: Date.now() });
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setToast(null), 3600);
   }, []);
@@ -64,9 +67,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={show}>
       {children}
       {toast && (
-        <div className={`toast-wrap tone-${toast.tone}`} role="status" onClick={() => setToast(null)}>
+        <div key={toast.at} className={`toast-wrap tone-${toast.tone}`} role="status" onClick={() => setToast(null)}>
           <div data-augmented-ui="tl-clip br-clip border" className="toast">
-            <b>{TOAST_LABEL[toast.tone]}</b>
+            <b className={toast.fx === "glitch" ? "glitch" : undefined} data-text={TOAST_LABEL[toast.tone]}>
+              {TOAST_LABEL[toast.tone]}
+            </b>
             {toast.msg}
           </div>
         </div>

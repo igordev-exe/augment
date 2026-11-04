@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
+import { HoldButton } from "../components/HoldButton";
 import { RestorePoints } from "../components/RestorePoints";
 import { LIB_BY_ID } from "../data/library";
 import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
@@ -381,11 +382,11 @@ export function SettingsScreen() {
               em Pontos de restauração se quiser limpar de vez.
             </p>
             <div className="row">
-              <button
-                type="button"
-                data-augmented-ui="tl-clip br-clip border"
-                className="btn btn-danger grow"
-                onClick={async () => {
+              <HoldButton
+                className="btn-danger grow"
+                label="Apagar tudo"
+                ms={1400}
+                onConfirm={async () => {
                   await createRestorePoint("antes-apagar");
                   await db.sessions.clear();
                   await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
@@ -395,7 +396,7 @@ export function SettingsScreen() {
                 }}
               >
                 Apagar tudo
-              </button>
+              </HoldButton>
               <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setWipe(false)}>
                 Cancelar
               </button>

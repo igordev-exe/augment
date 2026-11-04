@@ -22,9 +22,8 @@ export function TimerBar() {
       <div data-augmented-ui="tl-clip br-clip border" className={`timer-inner scan${over ? " over" : ""}`}>
         <div className="timer-clock">{over ? `+${formatClock(-left)}` : formatClock(left)}</div>
         <div className="grow timer-label">
-          {over ? "Descanso acabou. Próxima série." : "Descanso"}
-          <br />
-          <span>{state.label}</span>
+          <span className="timer-state">{over ? "Descanso acabou" : "Descanso"}</span>
+          <span className="timer-what">{state.label}</span>
         </div>
         {!over && (
           <>
