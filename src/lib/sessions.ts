@@ -30,7 +30,7 @@ export function buildSession(
     const lastItem = hist[hist.length - 1];
     const last = lastItem?.entry;
     const unit = unitFor(ex.id, settings, last);
-    const planned = setsFor(ex, week);
+    const planned = setsFor(ex, week, settings.setAdjust?.[ex.id]);
     const sets: SetEntry[] = [];
     for (let w = 0; w < warmupsFor(i); w++) sets.push(emptySet("warmup"));
 
@@ -126,11 +126,14 @@ export function weeklyVolume(sessions: Session[], date: string, fractional = fal
   return out;
 }
 
-/** Séries planejadas por músculo para uma semana do mesociclo (diretas, ou fracionadas com `fractional`). */
-export function plannedVolume(week: number, fractional = false): Record<MuscleId, number> {
+/**
+ * Séries planejadas por músculo para uma semana do mesociclo (diretas, ou fracionadas com `fractional`).
+ * `adjust`: ajuste de séries por exercício (Ajustes → setAdjust).
+ */
+export function plannedVolume(week: number, fractional = false, adjust?: Record<string, number>): Record<MuscleId, number> {
   const out = emptyVolume();
   for (const d of Object.values(DAY_BY_ID)) {
-    for (const ex of d.exercises) addSets(out, ex, setsFor(ex, week), fractional);
+    for (const ex of d.exercises) addSets(out, ex, setsFor(ex, week, adjust?.[ex.id]), fractional);
   }
   return out;
 }

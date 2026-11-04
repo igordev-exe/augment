@@ -28,7 +28,8 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
   evidência. Ao vivo: composto à falha, série longe da falha, descanso curto que custou reps, dia abaixo do normal, recorde de reps
   na hora, intensificador só na última série (cota da semana) e teto batido. Entre sessões: série-âncora da ficha v2, subida
   antecipada quando sobram reps e queda de reps com a mesma carga. Fadiga: dois sinais juntos antecipam o deload. Peso: a tabela
-  de ajustes do plano alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício. As regras
+  de ajustes do plano alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício, aplicada com um toque
+  no relatório do mesociclo (ou por cartão do treinador) e desfeita no mesmo lugar. As regras
   estão no Guia → Motor.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.

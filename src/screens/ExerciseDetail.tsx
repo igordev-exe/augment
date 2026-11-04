@@ -72,8 +72,8 @@ export function ExerciseDetail() {
               <StopBadge stop={ex.stop} week={week} />
             </div>
             <div className="small">
-              {setsFor(ex, week)} séries de {ex.reps[0]}–{ex.reps[1]} reps{ex.perSide ? " por lado" : ""}. Descanso:{" "}
-              {ex.restLabel.toLowerCase()}.{ex.tempo ? ` ${ex.tempo}.` : ""}
+              {setsFor(ex, week, settings.setAdjust?.[ex.id])} séries de {ex.reps[0]}–{ex.reps[1]} reps{ex.perSide ? " por lado" : ""}.
+              Descanso: {ex.restLabel.toLowerCase()}.{ex.tempo ? ` ${ex.tempo}.` : ""}
               {ex.intensifier ? ` Intensificador (semana 3+): ${ex.intensifier.toLowerCase()}.` : ""}
             </div>
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>

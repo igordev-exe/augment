@@ -121,7 +121,7 @@ export const ENGINE_RULES: { id: string; quando: string; recado: string; why: st
   {
     id: "volume-musculo",
     quando: "Fim do mesociclo: retorno de pump/volume/articulação e evolução por músculo.",
-    recado: "Sugere +1 ou −1 série por músculo para o próximo mesociclo.",
+    recado: "Sugere +1 ou −1 série por exercício para o próximo mesociclo; um toque aplica (e desfaz), sem passar de 4 séries.",
     why: "feedback-volume",
   },
 ];

@@ -37,9 +37,20 @@ export const DEFAULT_SETTINGS: Settings = {
   swaps: {},
   videos: {},
   exerciseNotes: {},
+  setAdjust: {},
 };
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Ajuste de séries por exercício: inteiros de −2 a +2, sem zeros. */
+function sanitizeSetAdjust(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "number" && Number.isInteger(v) && v !== 0 && Math.abs(v) <= 2) out[k] = v;
+  }
+  return out;
+}
 
 function sanitizeRecordString(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== "object") return {};
@@ -116,6 +127,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     swaps: sanitizeRecordString(s.swaps),
     videos: sanitizeRecordString(s.videos),
     exerciseNotes: sanitizeRecordString(s.exerciseNotes),
+    setAdjust: sanitizeSetAdjust(s.setAdjust),
     bodyGoal: sanitizeBodyGoal(s.bodyGoal),
     lastBackupAt: typeof s.lastBackupAt === "string" && ISO_DATE_RE.test(s.lastBackupAt) ? s.lastBackupAt : undefined,
     backupDismissed: typeof s.backupDismissed === "string" && ISO_DATE_RE.test(s.backupDismissed) ? s.backupDismissed : undefined,

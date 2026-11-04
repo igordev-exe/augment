@@ -191,6 +191,8 @@ export interface Settings {
   swaps: Record<string, string>;
   /** Vídeo de referência escolhido (id da biblioteca → URL). */
   videos: Record<string, string>;
+  /** Séries a mais ou a menos por exercício (id do programa → −2…+2), do ajuste de fim de mesociclo. */
+  setAdjust?: Record<string, number>;
   /** Lembretes técnicos fixados por exercício (id do programa → texto). */
   exerciseNotes: Record<string, string>;
   /** Meta de peso corporal (Progresso → Biometria). */

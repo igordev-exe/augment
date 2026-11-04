@@ -7,7 +7,7 @@ import { addDays, mondayOf, shortDate } from "../lib/dates";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { whyLabel } from "../components/NudgeList";
 import { fatigueAlert } from "../lib/engine";
-import { WEEK_RULES } from "../lib/mesocycle";
+import { WEEK_RULES, withSetAdjust } from "../lib/mesocycle";
 import { formatWeight } from "../lib/progression";
 import { mesoReport, weeklyReport } from "../lib/report";
 
@@ -38,7 +38,7 @@ export function Report() {
 
   const current = mondayOf(today);
   const weekStart = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? mondayOf(param) : addDays(current, -7);
-  const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays, today);
+  const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
   const m = mesoReport(sessions, settings.mesoStart, settings.trainingDays, today);
   const fatigue = fatigueAlert(sessions, settings.mesoStart, today, settings.reentryDismissed);
   const open = weekStart === current;
@@ -53,6 +53,19 @@ export function Report() {
     !r.stalls.length &&
     !r.signals.length &&
     !r.joints.length;
+
+  /** Ajustes ativos que o relatório deste ciclo não está sugerindo (vindos de outro ciclo ou do treinador). */
+  const extraAdjust = Object.entries(settings.setAdjust ?? {}).filter(
+    ([exId]) => EXERCISE_BY_ID[exId] && !m.volumeAdvice.some((v) => v.exId === exId),
+  );
+
+  function setAdjustFor(exId: string, valor: number, name: string) {
+    updateSettings({ setAdjust: withSetAdjust(settings.setAdjust, exId, valor) });
+    const ex = EXERCISE_BY_ID[exId];
+    toast(
+      valor ? `${name}: ${ex.sets + valor} séries por treino a partir do próximo.` : `${name}: de volta às ${ex.sets} séries da ficha.`,
+    );
+  }
 
   function toggleAccessorySwap(exId: string, alt: string) {
     const next = { ...settings.swaps };
@@ -229,21 +242,53 @@ export function Report() {
             </div>
           </Section>
 
-          {/* Motor de decisões: +1/−1 série por exercício para o próximo mesociclo */}
-          {m.volumeAdvice.length > 0 && (
+          {/* Motor de decisões: +1/−1 série por exercício para o próximo mesociclo, com aplicar/desfazer */}
+          {(m.volumeAdvice.length > 0 || extraAdjust.length > 0) && (
             <Section title="Séries no próximo mesociclo">
               <p className="small muted" style={{ margin: 0 }}>
-                Pelo seu "como bateu" e pela evolução do 1RM estimado. Sugestão para discutir com o treinador; a ficha não muda sozinha.
+                Pelo seu "como bateu" e pela evolução do 1RM estimado. Toque para aplicar: vale a partir do próximo treino, sem passar de 4
+                séries, e dá para desfazer aqui.
               </p>
               <ul data-augmented-ui="tl-clip br-clip border" className="list">
-                {m.volumeAdvice.map((v) => (
-                  <li key={v.exId} className="list-item small">
+                {m.volumeAdvice.map((v) => {
+                  const applied = settings.setAdjust?.[v.exId] === v.change;
+                  const label = v.change > 0 ? "+1 série" : "−1 série";
+                  return (
+                    <li key={v.exId} className="list-item small" style={{ gap: 8 }}>
+                      <span className="grow">
+                        <strong>{v.name}</strong> <span className="muted">· {v.reason}</span>
+                      </span>
+                      <button
+                        type="button"
+                        data-augmented-ui="tl-clip br-clip border"
+                        className="toggle-chip"
+                        style={{ fontSize: 12, textTransform: "none", color: v.change > 0 ? "var(--cyan)" : "var(--amber)" }}
+                        aria-pressed={applied}
+                        onClick={() => setAdjustFor(v.exId, applied ? 0 : v.change, v.name)}
+                      >
+                        {applied ? `${label} ✓ desfazer` : `Aplicar ${label}`}
+                      </button>
+                    </li>
+                  );
+                })}
+                {extraAdjust.map(([exId, n]) => (
+                  <li key={exId} className="list-item small" style={{ gap: 8 }}>
                     <span className="grow">
-                      <strong>{v.name}</strong> <span className="muted">· {v.reason}</span>
+                      <strong>{shortName(EXERCISE_BY_ID[exId])}</strong>{" "}
+                      <span className="muted">
+                        · ajuste ativo: {n > 0 ? "+" : "−"}
+                        {Math.abs(n)} série{Math.abs(n) > 1 ? "s" : ""}
+                      </span>
                     </span>
-                    <span className="num" style={{ color: v.change > 0 ? "var(--cyan)" : "var(--amber)" }}>
-                      {v.change > 0 ? "+1 série" : "−1 série"}
-                    </span>
+                    <button
+                      type="button"
+                      data-augmented-ui="tl-clip br-clip border"
+                      className="toggle-chip"
+                      style={{ fontSize: 12, textTransform: "none" }}
+                      onClick={() => setAdjustFor(exId, 0, shortName(EXERCISE_BY_ID[exId]))}
+                    >
+                      Voltar à ficha
+                    </button>
                   </li>
                 ))}
               </ul>

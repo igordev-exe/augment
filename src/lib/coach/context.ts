@@ -3,7 +3,7 @@ import { DAY_BY_ID, EXERCISE_BY_ID, PROGRAM, shortName } from "../../data/progra
 import { SCIENCE, scienceText } from "../../data/science";
 import type { BodyEntry, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, bySessionDesc, daysBetween, mondayOf, weekdayName, weekdayShort } from "../dates";
-import { earlyDeloadMesoStart, reentryFor, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
+import { earlyDeloadMesoStart, MAX_SETS, reentryFor, withSetAdjust, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
 import { formatWeight, historyOf, increaseStep, recordsOf, suggestNext, workSets } from "../progression";
 import { bodyAdvice, ENGINE_RULES, fatigueAlert, intensifierPlan } from "../engine";
 import { mesoReport, weeklyReport } from "../report";
@@ -180,6 +180,7 @@ export function toolPlan(data: CoachData) {
     inicio_mesociclo: settings.mesoStart,
     dias_de_treino: settings.trainingDays,
     acessorios_trocados: Object.keys(settings.swaps ?? {}).length ? settings.swaps : undefined,
+    ajustes_de_series: Object.keys(settings.setAdjust ?? {}).length ? settings.setAdjust : undefined,
     ultimo_treino: last ? { data: last.date, treino: DAY_BY_ID[last.dayId]?.name, dias_atras: daysBetween(last.date, today) } : null,
     aviso_retomada: reentry,
     alerta_fadiga: fatigue,
@@ -197,7 +198,7 @@ export function toolPlan(data: CoachData) {
             const sug = suggestNext(
               ex,
               h,
-              setsFor(ex, week),
+              setsFor(ex, week, settings.setAdjust?.[ex.id]),
               week,
               increaseStep(ex, unit, settings.increments[ex.id]),
               settings.machineWeights?.[ex.id],
@@ -207,7 +208,7 @@ export function toolPlan(data: CoachData) {
               id: ex.id,
               nome: shortName(ex),
               alternativa: activeAlt,
-              series: setsFor(ex, week),
+              series: setsFor(ex, week, settings.setAdjust?.[ex.id]),
               faixa: `${ex.reps[0]}–${ex.reps[1]}`,
               ate_onde: stopFor(ex.stop, week).label,
               sobra_meta: rirRange(ex.stop, week),
@@ -225,7 +226,7 @@ export function toolPlan(data: CoachData) {
 export function toolWeekReport(data: CoachData, input: { semana?: unknown }) {
   const start = input.semana == null ? addDays(mondayOf(data.today), -7) : isISO(input.semana) ? mondayOf(input.semana) : null;
   if (!start) throw new ToolInputError("semana deve ser uma data AAAA-MM-DD.");
-  const r = weeklyReport(data.sessions, start, data.settings.mesoStart, data.settings.trainingDays, data.today);
+  const r = weeklyReport(data.sessions, start, data.settings.mesoStart, data.settings.trainingDays, data.today, data.settings.setAdjust);
   const name = (id: string) => shortName(EXERCISE_BY_ID[id]);
   return {
     semana: `${start} a ${addDays(start, 6)}`,
@@ -291,7 +292,13 @@ export function toolMesoReport(data: CoachData) {
     })),
     candidatos_rotacao_acessorios: m.swapCandidates,
     ajuste_series_proximo_meso: m.volumeAdvice.length
-      ? m.volumeAdvice.map((v) => ({ exercicio: v.name, id: v.exId, mudanca: v.change > 0 ? "+1 série" : "−1 série", motivo: v.reason }))
+      ? m.volumeAdvice.map((v) => ({
+          exercicio: v.name,
+          id: v.exId,
+          mudanca: v.change > 0 ? "+1 série" : "−1 série",
+          motivo: v.reason,
+          ja_aplicado: data.settings.setAdjust?.[v.exId] === v.change || undefined,
+        }))
       : undefined,
   };
 }
@@ -339,7 +346,7 @@ export function toolExerciseHistory(data: CoachData, input: { exercicio?: unknow
   const sug = suggestNext(
     ex,
     h,
-    setsFor(ex, week),
+    setsFor(ex, week, data.settings.setAdjust?.[ex.id]),
     week,
     increaseStep(ex, unit, data.settings.increments[ex.id]),
     data.settings.machineWeights?.[ex.id],
@@ -388,7 +395,8 @@ export type Proposal =
   | { tipo: "antecipar_deload"; motivo: string }
   | { tipo: "dias_treino"; dias: number[]; motivo: string }
   | { tipo: "lembrete_exercicio"; exercicio: string; nota: string; motivo: string }
-  | { tipo: "trocar_acessorio"; exercicio: string; alternativa: string; motivo: string };
+  | { tipo: "trocar_acessorio"; exercicio: string; alternativa: string; motivo: string }
+  | { tipo: "ajustar_series"; exercicio: string; valor: number; motivo: string };
 
 export function parseProposal(input: Record<string, unknown>): Proposal {
   const motivo = typeof input.motivo === "string" ? input.motivo.trim() : "";
@@ -422,11 +430,22 @@ export function parseProposal(input: Record<string, unknown>): Proposal {
     if (alternativa.length > 100) throw new ToolInputError("alternativa inválida.");
     return { tipo: "trocar_acessorio", exercicio: ex.id, alternativa, motivo };
   }
+  if (input.tipo === "ajustar_series") {
+    const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+    const valor = typeof input.valor === "number" ? input.valor : NaN;
+    if (!ex) throw new ToolInputError("exercicio deve ser um id do programa.");
+    if (!Number.isInteger(valor) || Math.abs(valor) > 2)
+      throw new ToolInputError("valor deve ser −2, −1, 0, +1 ou +2 séries (0 volta à ficha).");
+    if (ex.sets + valor < 2 || ex.sets + valor > MAX_SETS) {
+      throw new ToolInputError(`Com esse ajuste ${shortName(ex)} ficaria com ${ex.sets + valor} séries; o limite é de 2 a ${MAX_SETS}.`);
+    }
+    return { tipo: "ajustar_series", exercicio: ex.id, valor, motivo };
+  }
   if (input.tipo === "recomecar_mesociclo" || input.tipo === "repetir_semana" || input.tipo === "antecipar_deload") {
     return { tipo: input.tipo, motivo };
   }
   throw new ToolInputError(
-    "tipo deve ser incremento, recomecar_mesociclo, repetir_semana, antecipar_deload, dias_treino, lembrete_exercicio ou trocar_acessorio.",
+    "tipo deve ser incremento, recomecar_mesociclo, repetir_semana, antecipar_deload, dias_treino, lembrete_exercicio, trocar_acessorio ou ajustar_series.",
   );
 }
 
@@ -450,6 +469,11 @@ export function describeProposal(p: Proposal, settings: Settings, today: string)
       ? `Trocar ${shortName(ex)} por "${p.alternativa}" neste mesociclo`
       : `Voltar ${shortName(ex)} ao exercício titular`;
   }
+  if (p.tipo === "ajustar_series") {
+    const ex = EXERCISE_BY_ID[p.exercicio];
+    if (p.valor === 0) return `${shortName(ex)}: voltar às ${ex.sets} séries da ficha`;
+    return `${shortName(ex)}: ${ex.sets} → ${ex.sets + p.valor} séries por treino (${p.valor > 0 ? "+" : "−"}${Math.abs(p.valor)})`;
+  }
   const week = weekFor(settings.mesoStart, today);
   if (p.tipo === "antecipar_deload") {
     return `Antecipar semana de Deload já para esta semana (hoje: semana ${week})`;
@@ -469,6 +493,7 @@ export function proposalPatch(p: Proposal, settings: Settings, today: string): P
     else delete next[p.exercicio];
     return { swaps: next };
   }
+  if (p.tipo === "ajustar_series") return { setAdjust: withSetAdjust(settings.setAdjust, p.exercicio, p.valor) };
   if (p.tipo === "antecipar_deload") {
     return { mesoStart: earlyDeloadMesoStart(today), reentryDismissed: mondayOf(today) };
   }

@@ -26,11 +26,11 @@ export function BrandMark() {
 }
 
 /** Duração estimada: séries × (descanso + ~40 s de execução). */
-function estimateMinutes(dayId: string, week: number): number {
+function estimateMinutes(dayId: string, week: number, adjust: Record<string, number> = {}): number {
   const d = DAY_BY_ID[dayId];
   let sec = 0;
   for (const ex of d.exercises) {
-    const n = setsFor(ex, week);
+    const n = setsFor(ex, week, adjust[ex.id]);
     sec += n * (defaultRest(ex.rest) + 40) + 90; // + aquecimento e troca de aparelho
   }
   return Math.round(sec / 60 / 5) * 5;
@@ -81,7 +81,10 @@ export function Today() {
   );
   const fatigue = !reentry ? fatigueAlert(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
   const lastWeek = addDays(monday, -7);
-  const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today);
+  const report =
+    settings.reportSeen === monday
+      ? null
+      : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
   const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);
   const doneThisWeek = doneAll.filter((s) => s.date >= monday && s.date < addDays(monday, 7)).length;
   const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;
@@ -303,7 +306,7 @@ export function Today() {
                   <Icon name="barbell" size={15} /> {day.exercises.length} módulos
                 </span>
                 <span>
-                  <Icon name="clock" size={15} /> ~{estimateMinutes(day.id, week)} min
+                  <Icon name="clock" size={15} /> ~{estimateMinutes(day.id, week, settings.setAdjust)} min
                 </span>
                 <span>
                   <Icon name="chart" size={15} /> {rule.label}
@@ -363,7 +366,7 @@ export function Today() {
                     </span>
                     <span className="mono faint" style={{ fontSize: 12 }}>
                       {swapped ? `Troca do ciclo (${ex.name.replace(/^A[12] · /, "")}) · ` : ""}
-                      {setsFor(ex, week)}×{ex.reps[0]}–{ex.reps[1]}
+                      {setsFor(ex, week, settings.setAdjust?.[ex.id])}×{ex.reps[0]}–{ex.reps[1]}
                       {ex.perSide ? " por lado" : ""}, {ex.restLabel.toLowerCase()}
                     </span>
                   </span>

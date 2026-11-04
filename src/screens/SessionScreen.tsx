@@ -127,7 +127,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       week,
       lowDay,
       history: historyOf(before, ex.id, entry.alt),
-      plannedSets: setsFor(ex, week),
+      plannedSets: setsFor(ex, week, settings.setAdjust?.[ex.id]),
       step: increaseStep(ex, entry.unit, settings.increments[ex.id]),
       availableWeights: settings.machineWeights?.[ex.id],
       intensifier: intensifiers.has(ex.id),
@@ -468,6 +468,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               step={step}
               availableWeights={available}
               intensifierToday={intensifiers.has(ex.id)}
+              setAdjust={settings.setAdjust?.[ex.id] ?? 0}
               onRirMarked={(e) => {
                 const msg = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
                 if (msg) toast(msg);
@@ -477,7 +478,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               onSetDone={(e, setId) => onSetDone(i, e, setId)}
               onAlt={(alt) => {
                 const altHist = historyOf(before, ex.id, alt);
-                const altSug = suggestNext(ex, altHist, setsFor(ex, week), week, step, available);
+                const altSug = suggestNext(ex, altHist, setsFor(ex, week, settings.setAdjust?.[ex.id]), week, step, available);
                 mutateEntry(entry.exId, (e) => {
                   e.alt = alt;
                   for (const s of e.sets) {

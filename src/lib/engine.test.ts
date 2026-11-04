@@ -3,11 +3,12 @@ import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
 import { PRINCIPLES } from "../data/science";
 import type { BodyEntry, Session, SessionExercise, SetEntry } from "../data/types";
 import { bodyAdvice, ENGINE_RULES, intensifierPlan, liveNudges, regressingExercises, volumeAdvice, type LiveInput } from "./engine";
-import { fatigueDeloadFor } from "./mesocycle";
+import { describeProposal, parseProposal, proposalPatch } from "./coach/context";
+import { DEFAULT_SETTINGS, sanitizeSettings } from "./db";
+import { fatigueDeloadFor, setsFor, withSetAdjust } from "./mesocycle";
 import { loadRef, regressionOf, suggest, suggestNext, type ExerciseHistoryItem } from "./progression";
 import { weeklyReport } from "./report";
-import { buildSession } from "./sessions";
-import { DEFAULT_SETTINGS } from "./db";
+import { buildSession, plannedVolume } from "./sessions";
 
 // Motor de decisões: regras ao vivo, entre sessões, fadiga, peso e fim de mesociclo.
 
@@ -249,5 +250,41 @@ describe("motor: relatórios", () => {
     expect(volumeAdvice(leve, { [MAQ.id]: 4 }, () => 4)).toEqual([]); // já no teto de 4 séries
     const pesado = [1, 2, 3].map((i) => session(`2026-10-0${i}`, "push-a", [fb("pesado")]));
     expect(volumeAdvice(pesado, { [MAQ.id]: 0 }, () => 3)[0].change).toBe(-1);
+  });
+});
+
+describe("ajuste de séries (fim de mesociclo)", () => {
+  it("setsFor aplica o ajuste sobre a ficha, com as regras da semana por cima e teto de 4", () => {
+    const crucifixo = EXERCISE_BY_ID["push-a.crucifixo-cabo"]; // 3 séries, isolado, ▲
+    expect(setsFor(crucifixo, 3, 1)).toBe(4);
+    expect(setsFor(crucifixo, 4, 1)).toBe(4); // ▲ não passa de 4
+    expect(setsFor(crucifixo, 7, 1)).toBe(2); // deload: metade de 4
+    expect(setsFor(crucifixo, 1, -1)).toBe(1); // semana 1: −1 dos isolados
+    expect(setsFor(crucifixo, 3)).toBe(3);
+  });
+
+  it("treino novo, volume planejado e séries faltando usam o ajuste", () => {
+    const settings = { ...DEFAULT_SETTINGS, setAdjust: { [MAQ.id]: 1 } };
+    const s = buildSession("push-a", "2026-10-26", 3, settings, []);
+    expect(s.exercises.find((e) => e.exId === MAQ.id)!.sets.filter((x) => x.kind === "work")).toHaveLength(4);
+    expect(plannedVolume(3, false, settings.setAdjust).peito).toBe(plannedVolume(3).peito + 1);
+    const done = session("2026-10-19", "push-a", [entry(MAQ.id, [[60, 10], [60, 10], [60, 10]])]); // prettier-ignore
+    const r = weeklyReport([done], "2026-10-19", "2026-10-05", [1, 2, 3, 4, 5], "2026-10-26", settings.setAdjust);
+    expect(r.shortfalls).toEqual([expect.objectContaining({ exId: MAQ.id, done: 3, planned: 4 })]);
+  });
+
+  it("backup: só aceita inteiros de −2 a +2 diferentes de zero", () => {
+    const s = sanitizeSettings({ setAdjust: { a: 1, b: 0, c: 3, d: "1", e: -2, f: 0.5 } });
+    expect(s.setAdjust).toEqual({ a: 1, e: -2 });
+    expect(withSetAdjust({ a: 1 }, "a", 0)).toEqual({});
+  });
+
+  it("treinador: proposta ajustar_series com limite de 2 a 4 séries", () => {
+    const p = parseProposal({ tipo: "ajustar_series", exercicio: MAQ.id, valor: 1, motivo: "leve e subindo" });
+    expect(describeProposal(p, DEFAULT_SETTINGS, "2026-11-04")).toContain("3 → 4 séries");
+    expect(proposalPatch(p, DEFAULT_SETTINGS, "2026-11-04")).toEqual({ setAdjust: { [MAQ.id]: 1 } });
+    expect(() => parseProposal({ tipo: "ajustar_series", exercicio: SUPINO.id, valor: 1, motivo: "x" })).toThrow(/limite/);
+    const undo = parseProposal({ tipo: "ajustar_series", exercicio: MAQ.id, valor: 0, motivo: "voltar" });
+    expect(proposalPatch(undo, { ...DEFAULT_SETTINGS, setAdjust: { [MAQ.id]: 1 } }, "2026-11-04")).toEqual({ setAdjust: {} });
   });
 });

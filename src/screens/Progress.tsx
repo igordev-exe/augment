@@ -64,7 +64,7 @@ export function Progress() {
 
   const done = sessions.filter((s) => s.status === "done");
   const vol = weeklyVolume(done, today);
-  const plan = plannedVolume(week);
+  const plan = plannedVolume(week, false, settings.setAdjust);
 
   // Treinos por semana (últimas 8)
   const monday = mondayOf(today);

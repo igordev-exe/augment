@@ -65,7 +65,7 @@ export const COACH_TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "propor_ajuste",
     description:
-      "Propõe uma mudança no app; ele vê um cartão e decide se aplica. Tipos: 'incremento' (muda o salto de carga de um exercício, em kg; exige exercicio e valor), 'recomecar_mesociclo' (volta para a semana 1 a partir desta segunda), 'repetir_semana' (volta uma semana), 'antecipar_deload' (entra na semana 7 de deload já nesta semana por fadiga), 'dias_treino' (muda os dias da semana em que ele treina; exige dias), 'lembrete_exercicio' (fixa um lembrete técnico curto no exercício; exige exercicio e nota) e 'trocar_acessorio' (fixa uma alternativa da biblioteca para um exercício no mesociclo; exige exercicio e alternativa). Sempre com motivo curto.",
+      "Propõe uma mudança no app; ele vê um cartão e decide se aplica. Tipos: 'incremento' (muda o salto de carga de um exercício, em kg; exige exercicio e valor), 'recomecar_mesociclo' (volta para a semana 1 a partir desta segunda), 'repetir_semana' (volta uma semana), 'antecipar_deload' (entra na semana 7 de deload já nesta semana por fadiga), 'dias_treino' (muda os dias da semana em que ele treina; exige dias), 'lembrete_exercicio' (fixa um lembrete técnico curto no exercício; exige exercicio e nota), 'trocar_acessorio' (fixa uma alternativa da biblioteca para um exercício no mesociclo; exige exercicio e alternativa) e 'ajustar_series' (séries a mais ou a menos por treino num exercício, a partir da ficha: valor −2 a +2, 0 volta à ficha, entre 2 e 4 séries no total; use com o ajuste_series_proximo_meso do relatório do mesociclo). Sempre com motivo curto.",
     input_schema: {
       type: "object",
       properties: {
@@ -79,13 +79,17 @@ export const COACH_TOOLS: Anthropic.Beta.BetaTool[] = [
             "dias_treino",
             "lembrete_exercicio",
             "trocar_acessorio",
+            "ajustar_series",
           ],
         },
         exercicio: {
           type: "string",
-          description: "Id do exercício (para incremento, lembrete_exercicio ou trocar_acessorio).",
+          description: "Id do exercício (para incremento, lembrete_exercicio, trocar_acessorio ou ajustar_series).",
         },
-        valor: { type: "number", description: "Novo incremento em kg (só para incremento)." },
+        valor: {
+          type: "number",
+          description: "Novo incremento em kg (incremento) ou séries a mais/menos sobre a ficha, −2 a +2 (ajustar_series).",
+        },
         dias: {
           type: "array",
           items: { type: "integer" },

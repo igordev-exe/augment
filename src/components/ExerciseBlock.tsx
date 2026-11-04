@@ -38,6 +38,7 @@ export function ExerciseBlock({
   step,
   availableWeights,
   intensifierToday,
+  setAdjust = 0,
   onToggle,
   mutate,
   onSetDone,
@@ -59,6 +60,8 @@ export function ExerciseBlock({
   availableWeights?: number[];
   /** Intensificador liberado hoje para este exercício (cota da semana, motor de decisões). */
   intensifierToday: boolean;
+  /** Séries a mais/menos do ajuste de fim de mesociclo. */
+  setAdjust?: number;
   onToggle: () => void;
   mutate: (fn: (e: SessionExercise) => void) => Promise<SessionExercise | undefined>;
   onSetDone: (e: SessionExercise, setId: string) => void;
@@ -70,7 +73,7 @@ export function ExerciseBlock({
 }) {
   const lib = LIB_BY_ID[ex.lib];
   const alts = lib?.alternatives ?? [];
-  const planned = setsFor(ex, week);
+  const planned = setsFor(ex, week, setAdjust);
   const workAll = entry.sets.filter((s) => s.kind !== "warmup");
   const workDone = workAll.filter((s) => s.done).length;
   const complete = workAll.length > 0 && workDone >= workAll.length;
@@ -195,6 +198,11 @@ export function ExerciseBlock({
           <span className="ex-name">
             {entry.alt ?? ex.name.replace(/^A[12] · /, "")}
             {ex.up && week >= 4 && week <= 6 && <span className="plus">▲ +1 série</span>}
+            {setAdjust !== 0 && week !== 7 && (
+              <span className="plus" title="Ajuste do fim do mesociclo">
+                {setAdjust > 0 ? `+${setAdjust}` : `−${-setAdjust}`} série (ajuste)
+              </span>
+            )}
           </span>
           <span className="ex-sub" style={{ display: "block" }}>
             {entry.alt ? `Alternativa (${shortName(ex)}) · ` : `${ex.muscleLabel}. `}

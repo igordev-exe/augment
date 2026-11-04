@@ -69,7 +69,15 @@ function list(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
 }
 
-export function weeklyReport(all: Session[], weekStart: string, mesoStart: string, trainingDays: number[], today = todayISO()): WeekReport {
+export function weeklyReport(
+  all: Session[],
+  weekStart: string,
+  mesoStart: string,
+  trainingDays: number[],
+  today = todayISO(),
+  /** Ajuste de séries por exercício (Ajustes → setAdjust). */
+  setAdjust: Record<string, number> = {},
+): WeekReport {
   const weekEnd = addDays(weekStart, 7);
   const done = all.filter((s) => s.status === "done");
   const sessions = done.filter((s) => s.date >= weekStart && s.date < weekEnd).sort(bySessionAsc);
@@ -88,7 +96,7 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
     for (const e of s.exercises) {
       const ex = EXERCISE_BY_ID[e.exId];
       if (!ex) continue;
-      const want = setsFor(ex, s.week);
+      const want = setsFor(ex, s.week, setAdjust[ex.id]);
       const got = workSets(e).length;
       if (got < want) shortfalls.push({ date: s.date, dayId: s.dayId, exId: e.exId, done: got, planned: want });
     }
@@ -96,9 +104,9 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
 
   // Volume por músculo contra a meta da semana
   const vol = weeklyVolume(sessions, weekStart);
-  const plan = plannedVolume(mesoWeek ?? 2);
+  const plan = plannedVolume(mesoWeek ?? 2, false, setAdjust);
   const frac = weeklyVolume(sessions, weekStart, true);
-  const fracPlan = plannedVolume(mesoWeek ?? 2, true);
+  const fracPlan = plannedVolume(mesoWeek ?? 2, true, setAdjust);
   const volume = MUSCLE_ORDER.filter((m) => plan[m] > 0).map((m) => ({
     muscle: m,
     done: vol[m],

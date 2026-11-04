@@ -247,12 +247,28 @@ export function fatigueDeloadFor(
   };
 }
 
-export function setsFor(e: Pick<ProgramExercise, "sets" | "iso" | "up">, week: number): number {
-  if (week === 7) return Math.ceil(e.sets / 2);
-  let s = e.sets;
+/** Teto de séries por exercício (ficha v2: "nenhum exercício passa de 4 séries"). */
+export const MAX_SETS = 4;
+
+/**
+ * Séries do exercício na semana. `adjust`: séries a mais/menos do ajuste de fim de mesociclo (Ajustes → setAdjust).
+ * O ajuste muda a base da ficha; as regras da semana (−1 na semana 1, ▲, deload) continuam por cima, sem passar de 4.
+ */
+export function setsFor(e: Pick<ProgramExercise, "sets" | "iso" | "up">, week: number, adjust = 0): number {
+  const base = Math.max(1, e.sets + adjust);
+  if (week === 7) return Math.ceil(base / 2);
+  let s = base;
   if (week === 1 && e.iso) s -= 1;
   if (week >= 4 && week <= 6 && e.up) s += 1;
-  return s;
+  return Math.max(1, Math.min(Math.max(MAX_SETS, e.sets), s));
+}
+
+/** Novo mapa de ajuste de séries com `valor` para o exercício (0 remove). */
+export function withSetAdjust(cur: Record<string, number> | undefined, exId: string, valor: number): Record<string, number> {
+  const next = { ...cur };
+  if (valor) next[exId] = valor;
+  else delete next[exId];
+  return next;
 }
 
 /** Descanso padrão do timer: meio da faixa, arredondado a 15 s. */
