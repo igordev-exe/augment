@@ -40,6 +40,10 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.
 - **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga e aviso quando eu bato um recorde ao concluir o treino.
 - **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta da ficha e treinos por semana.
+- **Atributos do operador**: Força, Volume, Consistência, Recuperação e Composição, de 0 a 20, todos calculados dos registros,
+  com o que faz cada um subir e o princípio científico por trás.
+- **Slots de volume**: uma casa por série fracionada da semana por músculo, com marcas da dose mínima e da faixa eficiente, e
+  de onde veio cada série ao tocar no músculo.
 - **Mapa muscular** (volume, recuperação e o que ficou sem treino), **mapa de atividade do ano**, **meta de peso** com ritmo semanal,
   **fotos antes/depois** e **força relativa** ao peso corporal.
 - **Biblioteca** dos 34 exercícios da ficha, com fotos de início e fim do movimento: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.

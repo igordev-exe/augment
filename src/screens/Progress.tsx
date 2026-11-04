@@ -6,9 +6,11 @@ import { BodyGoalCard } from "../components/BodyGoalCard";
 import { bodyAdvice } from "../lib/engine";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
+import { AttributeTree } from "../components/AttributeTree";
 import { FatigueMap } from "../components/FatigueMap";
+import { VolumeSlots } from "../components/VolumeSlots";
 import { PhotoCompare } from "../components/PhotoCompare";
-import { EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
+import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
 import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
 import { addDays, bySessionDesc, mondayOf, shortDate } from "../lib/dates";
@@ -18,7 +20,8 @@ import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "../lib/progression";
 import { planAhead } from "../lib/schedule";
-import { plannedVolume, weeklyVolume } from "../lib/sessions";
+import { attributes } from "../lib/attributes";
+import { volumeSlots } from "../lib/slots";
 import { activityGrid, dailySets, muscleStatus, readiness, relativeStrength } from "../lib/visual";
 
 export function Progress() {
@@ -63,8 +66,8 @@ export function Progress() {
   if (!sessions) return null;
 
   const done = sessions.filter((s) => s.status === "done");
-  const vol = weeklyVolume(done, today);
-  const plan = plannedVolume(week, false, settings.setAdjust);
+  const slots = volumeSlots(sessions, today, week, settings.setAdjust);
+  const attrs = attributes({ sessions, bodyLog: bodyLog ?? [], settings, today });
 
   // Treinos por semana (últimas 8)
   const monday = mondayOf(today);
@@ -138,34 +141,11 @@ export function Progress() {
         </Link>
       </div>
 
+      <AttributeTree list={attrs.list} index={attrs.index} />
+
       <FatigueMap status={muscles} daily={daily} next={nextWorkout} today={today} />
 
-      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
-        <div>
-          <h2 className="h-sec">Séries desta semana</h2>
-          <p className="small muted" style={{ marginTop: 4 }}>
-            Séries de trabalho feitas por músculo. O traço marca o que a ficha pede na semana {week === 7 ? "de deload" : week}.
-          </p>
-        </div>
-        <div className="stack" style={{ gap: 9 }}>
-          {MUSCLE_ORDER.map((m) => {
-            const target = plan[m];
-            const scale = Math.max(target, vol[m], 1) * 1.1;
-            return (
-              <div key={m} className="vol">
-                <span className="small">{MUSCLE_LABEL[m]}</span>
-                <span className="vol-track" aria-hidden="true">
-                  <span className="vol-fill" style={{ width: `${(vol[m] / scale) * 100}%` }} />
-                  <span className="vol-target" style={{ left: `${(target / scale) * 100}%` }} />
-                </span>
-                <span className="small num" style={{ textAlign: "right" }}>
-                  {vol[m]}/{target}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <VolumeSlots slots={slots} weekLabel={week === 7 ? "semana de deload" : `semana ${week} do mesociclo`} weekOver={false} />
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <h2 className="h-sec">Treinos por semana</h2>
