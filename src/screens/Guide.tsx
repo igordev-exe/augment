@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { PageHead } from "../components/bits";
 import { MUSCLE_LABEL, MUSCLE_ORDER } from "../data/program";
+import { whyLabel } from "../components/NudgeList";
 import { AUDITS, LEVEL_LABEL, PRINCIPLES, SCIENCE, type EvidenceLevel } from "../data/science";
+import { ENGINE_RULES } from "../lib/engine";
 import { plannedVolume } from "../lib/sessions";
 
 // Guia: regras da ficha v2 (carga fixa, até onde ir, −15% na última série) e fontes.
@@ -19,6 +21,7 @@ const SECTIONS = [
   { id: "dieta", t: "Recomposição" },
   { id: "recuperacao", t: "Recuperação" },
   { id: "erros", t: "Erros" },
+  { id: "motor", t: "Motor" },
   { id: "ciencia", t: "Evidências" },
   { id: "fontes", t: "Fontes" },
 ];
@@ -419,6 +422,36 @@ export function Guide() {
           <li>Achar que mais volume é sempre melhor.</li>
           <li>Trocar exercício por tier list. Troque por equipamento, conforto ou evidência direta.</li>
         </ol>
+      </Sec>
+
+      <Sec id="motor" title="Motor de decisões">
+        <p>
+          O app acompanha cada série, cada semana e o peso, e avisa com recados curtos. Nada muda sozinho: ele sugere, você decide. Cada
+          regra aponta para o princípio que a justifica (seção seguinte).
+        </p>
+        <div data-augmented-ui="tl-clip br-clip border" className="table-wrap">
+          <table className="t">
+            <thead>
+              <tr>
+                <th>Quando</th>
+                <th>O que o app diz</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ENGINE_RULES.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.quando}</td>
+                  <td>
+                    {r.recado}
+                    <span className="tiny faint" style={{ display: "block" }}>
+                      {whyLabel(r.why)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Sec>
 
       <Sec id="ciencia" title="Base de evidências">

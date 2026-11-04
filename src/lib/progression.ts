@@ -123,6 +123,8 @@ export type SuggestionKind = "first" | "up" | "same" | "down" | "deload";
 export interface Suggestion {
   kind: SuggestionKind;
   weight: number | null;
+  /** Carga das séries 2+ no formato série-âncora (senão, todas usam `weight`). */
+  volumeWeight?: number;
   /** Meta de reps por série (placeholder). */
   targets: number[];
   title: string;
@@ -179,9 +181,38 @@ export function increaseStep(ex: ProgramExercise, unit: Unit, custom?: number): 
   return unit === "lb" ? 5 : ex.increment;
 }
 
+/** Carga de referência de uma sessão e as séries que contam para a progressão. */
+export interface LoadRef {
+  load: number;
+  atLoad: SetEntry[];
+  /** Formato série-âncora (ficha v2): série 1 mais pesada + séries de volume ~10–15% mais leves. */
+  anchor: boolean;
+  /** Carga das séries de volume (só no formato âncora). */
+  volumeLoad?: number;
+}
+
+/**
+ * Qual carga a dupla progressão acompanha:
+ * - série-âncora: a 1ª série é a mais pesada e as outras ficam entre 75% e 97% dela → progride pela âncora;
+ * - cargas muito diferentes (>20%, rampa registrada como trabalho) → a mais pesada;
+ * - senão, a carga mais usada.
+ */
+export function loadRef(work: SetEntry[]): LoadRef {
+  const weights = work.map((s) => s.weight!);
+  const w0 = weights[0];
+  const rest = weights.slice(1);
+  if (rest.length && w0 > 0 && rest.every((w) => w <= w0 * 0.97 && w >= w0 * 0.75)) {
+    return { load: w0, atLoad: [work[0]], anchor: true, volumeLoad: mainLoad(work.slice(1)) ?? rest[0] };
+  }
+  const mixed = Math.max(...weights) / Math.max(1e-9, Math.min(...weights)) > 1.2;
+  const load = mixed ? Math.max(...weights) : (mainLoad(work) ?? w0);
+  return { load, atLoad: work.filter((s) => s.weight === load), anchor: false };
+}
+
 /**
  * Sugestão para a próxima sessão a partir da última vez que o exercício foi feito.
  * Regra: carga fixa; quando TODAS as séries de trabalho baterem o topo da faixa, sobe.
+ * No formato série-âncora, quem decide é a âncora. Se o RIR marcado mostra que sobrou muito, sobe antes.
  */
 export function suggest(
   ex: ProgramExercise,
@@ -210,18 +241,24 @@ export function suggest(
     };
   }
 
-  const notes = lastTimeNotes(ex, last, work, lastWeek);
-  // Cargas muito diferentes entre si (rampa registrada como trabalho): a referência é a mais pesada.
-  const weights = work.map((s) => s.weight!);
-  const mixed = Math.max(...weights) / Math.max(1e-9, Math.min(...weights)) > 1.2;
-  const load = mixed ? Math.max(...weights) : (mainLoad(work) ?? work[0].weight!);
-  const atLoad = work.filter((s) => s.weight === load);
+  const ref = loadRef(work);
+  const { load, atLoad, anchor } = ref;
+  const notes = lastTimeNotes(ex, last, anchor ? atLoad : work, lastWeek);
   const usedDrop = workSets(last, true).some((s) => s.kind === "drop");
+  // Volume no formato âncora: mantém a proporção que ele usou (ex.: 60 → 50 = 83%).
+  const ratio = anchor && ref.volumeLoad ? ref.volumeLoad / load : undefined;
+  const volumeFor = (w: number) => (ratio ? snapWeight(w * ratio, step, availableWeights) : undefined);
+  if (ratio) {
+    notes.unshift(
+      `Série-âncora: a 1ª com ${formatWeight(load)}${u} guia a progressão; as outras ~${Math.round((1 - ratio) * 100)}% mais leves.`,
+    );
+  }
 
   if (week === 7) {
     return {
       kind: "deload",
       weight: load,
+      volumeWeight: volumeFor(load),
       targets: Array(plannedSets).fill(Math.max(lo, (atLoad[0]?.reps ?? lo) - 4)),
       title: `Deload: ${formatWeight(load)}${u}`,
       detail: "Mesma carga, metade das séries, parando com ~4 reps sobrando.",
@@ -231,7 +268,10 @@ export function suggest(
 
   // 1RM estimado na carga atual, contando as reps que sobraram quando foram marcadas.
   const bestAtLoad = Math.max(...atLoad.map((s) => e1rm(load, s.reps! + (s.rir ?? 0))));
-  const allTop = atLoad.length >= Math.min(plannedSets, work.length) && atLoad.every((s) => (s.reps ?? 0) >= hi) && !usedDrop;
+  const allTop = anchor
+    ? (atLoad[0].reps ?? 0) >= hi && !usedDrop
+    : atLoad.length >= Math.min(plannedSets, work.length) && atLoad.every((s) => (s.reps ?? 0) >= hi) && !usedDrop;
+  const who = anchor ? "A série-âncora bateu" : "Todas as séries bateram";
   if (allTop) {
     const next = nextAvailableWeight(load, step, availableWeights);
     const predicted = predictReps(bestAtLoad, next);
@@ -246,6 +286,7 @@ export function suggest(
       return {
         kind: "same",
         weight: load,
+        volumeWeight: volumeFor(load),
         targets,
         title: `Manter ${formatWeight(load)}${u}, salto grande`,
         detail: `Subir para ${formatWeight(next)}${u} é +${Math.round(jump * 100)}% e daria ~${predicted} reps, abaixo de ${lo}. Passe de ${hi} reps (${targets.join(", ")}) antes de subir.`,
@@ -255,9 +296,10 @@ export function suggest(
     return {
       kind: "up",
       weight: next,
+      volumeWeight: volumeFor(next),
       targets: Array(plannedSets).fill(lo),
       title: `Subir para ${formatWeight(next)}${u}`,
-      detail: `Todas as séries bateram ${hi} reps com ${formatWeight(load)}${u}. Previsão: ~${predicted} reps. Volte a buscar ${lo}+.`,
+      detail: `${who} ${hi} reps com ${formatWeight(load)}${u}. Previsão: ~${predicted} reps. Volte a buscar ${lo}+.`,
       notes,
     };
   }
@@ -268,6 +310,7 @@ export function suggest(
     return {
       kind: "down",
       weight: lower,
+      volumeWeight: volumeFor(lower),
       targets: Array(plannedSets).fill(lo),
       title: `Baixar para ~${formatWeight(lower)}${u}`,
       detail: `Na última vez a 1ª série deu ${first} reps, abaixo da faixa de ${lo}–${hi}.`,
@@ -275,16 +318,43 @@ export function suggest(
     };
   }
 
+  // Sobrou muito além da meta em todas as séries marcadas: a carga está leve. Se a previsão na carga
+  // seguinte (contando o que sobrou) cabe na faixa, sobe já: séries longe da falha estimulam menos.
+  if (lastWeek && lastWeek !== 7) {
+    const [, tMax] = rirRange(ex.stop, lastWeek);
+    const marked = atLoad.filter((s) => s.rir != null);
+    const minRir = marked.length ? Math.min(...marked.map((s) => s.rir!)) : -1;
+    if (marked.length === atLoad.length && minRir >= tMax + 2) {
+      const next = nextAvailableWeight(load, step, availableWeights);
+      const predicted = predictReps(bestAtLoad, next);
+      if (predicted >= lo + 1) {
+        return {
+          kind: "up",
+          weight: next,
+          volumeWeight: volumeFor(next),
+          targets: Array(plannedSets).fill(Math.min(hi, predicted - 1)),
+          title: `Subir para ${formatWeight(next)}${u}: sobrou reps`,
+          detail: `Sobraram ${minRir >= 4 ? "4+" : minRir} reps em todas as séries, e a meta era até ${tMax}. Contando o que sobrou, a previsão com ${formatWeight(next)}${u} é ~${predicted} reps.`,
+          notes,
+        };
+      }
+    }
+  }
+
   const targets = Array.from({ length: plannedSets }, (_, i) => {
-    const prev = atLoad[i]?.reps ?? atLoad[atLoad.length - 1]?.reps ?? lo;
+    const prev =
+      anchor && i > 0 ? (work[i]?.reps ?? work[work.length - 1].reps!) : (atLoad[i]?.reps ?? atLoad[atLoad.length - 1]?.reps ?? lo);
     return Math.min(hi, prev + 1);
   });
   return {
     kind: "same",
     weight: load,
+    volumeWeight: volumeFor(load),
     targets,
     title: `Manter ${formatWeight(load)}${u}`,
-    detail: `Meta: +1 rep por série (${targets.join(", ")}). Sobe quando todas baterem ${hi}.`,
+    detail: anchor
+      ? `Meta: +1 rep na âncora (${targets[0]}) e nas de volume. Sobe quando a âncora bater ${hi}.`
+      : `Meta: +1 rep por série (${targets.join(", ")}). Sobe quando todas baterem ${hi}.`,
     notes,
   };
 }
@@ -540,8 +610,7 @@ export function stallOf(hist: ExerciseHistoryItem[]): ExerciseStall | null {
   if (h.length < STALL_SESSIONS) return null;
   const loads = h.map(({ entry }) => {
     const ws = workSets(entry, false);
-    const l = mainLoad(ws) ?? ws[0]?.weight;
-    return l == null ? null : toKg(l, entry.unit);
+    return ws.length ? toKg(loadRef(ws).load, entry.unit) : null;
   });
   // Mudou a carga no meio (subiu, baixou ou já destravou): a contagem recomeça.
   if (loads.some((l) => l == null || Math.abs(l - loads[0]!) > 1e-6)) return null;
@@ -552,10 +621,10 @@ export function stallOf(hist: ExerciseHistoryItem[]): ExerciseStall | null {
   const lastWork = workSets(last, false);
   const marked = lastWork.filter((s) => s.rir != null);
   return {
-    load: mainLoad(lastWork) ?? lastWork[0].weight!,
+    load: loadRef(lastWork).load,
     trail: h.map(({ entry }) => {
       const ws = workSets(entry, false);
-      const l = mainLoad(ws) ?? ws[0].weight!;
+      const l = loadRef(ws).load;
       return `${formatWeight(l)}×${ws
         .filter((s) => s.weight === l)
         .map((s) => s.reps)
@@ -563,6 +632,38 @@ export function stallOf(hist: ExerciseHistoryItem[]): ExerciseStall | null {
     }),
     easyRir: marked.length > 0 && marked.every((s) => s.rir! >= 3),
   };
+}
+
+// ---------- Queda de desempenho: reps caindo com a mesma carga ----------
+
+export interface ExerciseRegression {
+  load: number;
+  /** "80×10,9 → 80×9,8 → 80×8,7", do mais antigo para o mais novo. */
+  trail: string[];
+}
+
+/** Reps médias na carga de referência, somando o que sobrou (normaliza semanas com RIR diferente). */
+function effortReps(entry: SessionExercise): { kg: number; reps: number; label: string } | null {
+  const ws = workSets(entry, false);
+  if (!ws.length) return null;
+  const { load, atLoad } = loadRef(ws);
+  const reps = atLoad.reduce((a, s) => a + s.reps! + (s.rir ?? 0), 0) / atLoad.length;
+  return { kg: toKg(load, entry.unit), reps, label: `${formatWeight(load)}×${atLoad.map((s) => s.reps).join(",")}` };
+}
+
+/**
+ * Reps caindo com a mesma carga em 2 sessões seguidas (3 pontos, fora do deload), já contando o que sobrou.
+ * É o sinal de fadiga da ficha v2 ("volume cego"): não falta força, falta recuperação.
+ */
+export function regressionOf(hist: ExerciseHistoryItem[]): ExerciseRegression | null {
+  const h = hist.filter((x) => x.session.week !== 7).slice(-3);
+  if (h.length < 3) return null;
+  const pts = h.map((x) => effortReps(x.entry));
+  if (pts.some((p) => !p) || pts.some((p) => Math.abs(p!.kg - pts[0]!.kg) > 1e-6)) return null;
+  const [a, b, c] = pts as { kg: number; reps: number; label: string }[];
+  if (!(b.reps <= a.reps - 0.5 && c.reps <= b.reps - 0.5)) return null;
+  const lastWork = workSets(h[2].entry, false);
+  return { load: loadRef(lastWork).load, trail: pts.map((p) => p!.label) };
 }
 
 /**
@@ -578,8 +679,19 @@ export function suggestNext(
   availableWeights?: number[],
 ): Suggestion {
   const lastItem = hist[hist.length - 1];
-  const s = suggest(ex, lastItem?.entry, plannedSets, week, step, lastItem?.session.week, availableWeights);
-  if (s.kind !== "same" || week === 7) return s;
+  const base = suggest(ex, lastItem?.entry, plannedSets, week, step, lastItem?.session.week, availableWeights);
+  if (week === 7) return base;
+  const reg = regressionOf(hist);
+  const s = reg
+    ? {
+        ...base,
+        notes: [
+          ...base.notes,
+          `Reps caindo com a mesma carga há 2 treinos (${reg.trail.join(" → ")}): sinal de fadiga, não de falta de força. Priorize sono e proteína; se acontecer em vários exercícios, o app sugere antecipar o deload.`,
+        ],
+      }
+    : base;
+  if (s.kind !== "same") return s;
   const stall = stallOf(hist);
   if (!stall) return s;
   if (stall.easyRir) {

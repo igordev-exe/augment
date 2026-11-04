@@ -3,8 +3,9 @@ import { DAY_BY_ID, EXERCISE_BY_ID, PROGRAM, shortName } from "../../data/progra
 import { SCIENCE, scienceText } from "../../data/science";
 import type { BodyEntry, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, bySessionDesc, daysBetween, mondayOf, weekdayName, weekdayShort } from "../dates";
-import { earlyDeloadMesoStart, fatigueDeloadFor, reentryFor, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
+import { earlyDeloadMesoStart, reentryFor, rirRange, setsFor, stopFor, weekFor, WEEK_RULES } from "../mesocycle";
 import { formatWeight, historyOf, increaseStep, recordsOf, suggestNext, workSets } from "../progression";
+import { bodyAdvice, ENGINE_RULES, fatigueAlert, intensifierPlan } from "../engine";
 import { mesoReport, weeklyReport } from "../report";
 import { planAhead } from "../schedule";
 import { goalStatus, weightTrend } from "../visual";
@@ -50,6 +51,12 @@ export function programText(): string {
   return lines.join("\n");
 }
 
+function engineRulesText(): string {
+  return ENGINE_RULES.map(
+    (r) => `- ${r.id}: quando ${r.quando.charAt(0).toLowerCase()}${r.quando.slice(1)} → ${r.recado} (princípio: ${r.why})`,
+  ).join("\n");
+}
+
 function weekRulesText(): string {
   return [1, 2, 3, 4, 5, 6, 7]
     .map((w) => {
@@ -88,6 +95,10 @@ export function coachSystem(name = "Igor"): string {
 - A agenda segue a sequência Push A → Pull A → Lower A → Upper B → Lower B e nunca pula treino: dia perdido empurra a sequência.
 - Após 10+ dias parado, recomeça o mesociclo na semana 1; com menos da metade dos treinos numa semana, repete a semana.
 - Deload (semana 7): metade das séries, mesma carga, ~4 reps sobrando; depois troque 2–3 acessórios (bons candidatos: os estagnados).
+
+## Motor de decisões do app
+O app roda estas regras sozinho e mostra os recados durante o treino, nos relatórios e no peso. Você não precisa repetir o que ele já disse; use-as para explicar o porquê (o id do princípio aponta para a base científica) e para decidir quando discordar.
+${engineRulesText()}
 
 ## Semanas do mesociclo
 ${weekRulesText()}
@@ -160,7 +171,7 @@ export function toolPlan(data: CoachData) {
     settings.trainingDays,
     settings.reentryDismissed,
   );
-  const fatigue = fatigueDeloadFor(all, settings.mesoStart, today, settings.reentryDismissed);
+  const fatigue = fatigueAlert(all, settings.mesoStart, today, settings.reentryDismissed);
   return {
     hoje: today,
     dia_semana: weekdayName(today),
@@ -177,6 +188,7 @@ export function toolPlan(data: CoachData) {
       ? {
           data: next!.date,
           treino: nextDay.name,
+          intensificadores_liberados: [...intensifierPlan(nextDay.exercises, week, false)],
           exercicios: nextDay.exercises.map((ex) => {
             const activeAlt = settings.swaps?.[ex.id] || undefined;
             const h = historyOf(all, ex.id, activeAlt);
@@ -200,6 +212,7 @@ export function toolPlan(data: CoachData) {
               ate_onde: stopFor(ex.stop, week).label,
               sobra_meta: rirRange(ex.stop, week),
               sugestao: `${sug.title}. ${sug.detail}`,
+              carga_series_volume: sug.volumeWeight,
               observacoes: sug.notes.length ? sug.notes : undefined,
               lembrete: reminder || undefined,
             };
@@ -277,6 +290,9 @@ export function toolMesoReport(data: CoachData) {
       queixas_articulares: e.jointComplaints,
     })),
     candidatos_rotacao_acessorios: m.swapCandidates,
+    ajuste_series_proximo_meso: m.volumeAdvice.length
+      ? m.volumeAdvice.map((v) => ({ exercicio: v.name, id: v.exId, mudanca: v.change > 0 ? "+1 série" : "−1 série", motivo: v.reason }))
+      : undefined,
   };
 }
 
@@ -292,8 +308,10 @@ export function toolBodyLog(data: CoachData) {
   const trend = weightTrend(data.bodyLog ?? []);
   const goal = data.settings.bodyGoal;
   const status = goalStatus(trend, goal);
+  const advice = bodyAdvice(data.bodyLog ?? [], goal, data.sessions, data.today);
   return {
     total_registros: (data.bodyLog ?? []).length,
+    orientacao_do_motor: advice.length ? advice.map((n) => n.text) : undefined,
     meta: goal ? { direcao: goal.mode, peso_alvo_kg: goal.targetKg ?? null, faixa_pct_semana: status?.range } : null,
     ritmo:
       trend && trend.spanDays >= 6

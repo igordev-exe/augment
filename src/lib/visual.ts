@@ -238,7 +238,7 @@ export interface WeightTrend {
 /** Ritmo recomendado (% do peso por semana) para quem treina hipertrofia. */
 export const GOAL_RANGES: Record<BodyGoal["mode"], [number, number]> = {
   ganhar: [0.25, 0.5],
-  perder: [-1, -0.5],
+  perder: [-0.7, -0.4],
   manter: [-0.25, 0.25],
 };
 

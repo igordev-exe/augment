@@ -3,7 +3,7 @@ import { SCIENCE, SYNERGISTS } from "../data/science";
 import type { MuscleId, ProgramExercise, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
-import { historyOf, increaseStep, mainLoad, suggestNext, toKg, workSets } from "./progression";
+import { historyOf, increaseStep, loadRef, suggestNext, toKg, workSets } from "./progression";
 import { uid } from "./db";
 
 function emptySet(kind: SetEntry["kind"], weight: number | null = null): SetEntry {
@@ -37,15 +37,17 @@ export function buildSession(
     const source = repeatFrom?.exercises.find((e) => e.exId === ex.id);
     if (source && workSets(source).length) {
       // Carga fixa: todas as séries de trabalho com a carga principal (ignora a última com −15%).
-      const load = mainLoad(workSets(source, false)) ?? workSets(source)[0].weight;
-      for (let k = 0; k < planned; k++) sets.push(emptySet("work", load));
+      const main = workSets(source, false);
+      const ref = main.length ? loadRef(main) : { load: workSets(source)[0].weight!, anchor: false, volumeLoad: undefined };
+      for (let k = 0; k < planned; k++) sets.push(emptySet("work", k > 0 && ref.anchor ? (ref.volumeLoad ?? ref.load) : ref.load));
       return { exId: ex.id, unit: source.unit, alt: source.alt ?? defaultAlt, sets };
     }
 
     const step = increaseStep(ex, unit, settings.increments[ex.id]);
     const available = settings.machineWeights?.[ex.id];
     const s = suggestNext(ex, hist, planned, week, step, available);
-    for (let k = 0; k < planned; k++) sets.push(emptySet("work", s.weight));
+    // Formato série-âncora: a 1ª com a carga da âncora, as de volume com a carga mais leve.
+    for (let k = 0; k < planned; k++) sets.push(emptySet("work", k > 0 && s.volumeWeight != null ? s.volumeWeight : s.weight));
     return { exId: ex.id, unit, alt: defaultAlt, sets };
   });
 

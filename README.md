@@ -24,6 +24,12 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Destravar estagnação**: 3 treinos seguidos na mesma carga sem 1RM estimado novo, a sugestão baixa ~10% para voltar a subir.
   Se as séries estavam sobrando 3+ reps, em vez de baixar ela avisa que falta esforço.
 - **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
+- **Motor de decisões** (`src/lib/engine.ts`): acompanha cada série, semana e o peso e dá recados curtos, cada um com o nível de
+  evidência. Ao vivo: composto à falha, série longe da falha, descanso curto que custou reps, dia abaixo do normal, recorde de reps
+  na hora, intensificador só na última série (cota da semana) e teto batido. Entre sessões: série-âncora da ficha v2, subida
+  antecipada quando sobram reps e queda de reps com a mesma carga. Fadiga: dois sinais juntos antecipam o deload. Peso: a tabela
+  de ajustes do plano alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício. As regras
+  estão no Guia → Motor.
 - **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.

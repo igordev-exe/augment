@@ -8,7 +8,8 @@ import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf,
 import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
-import { defaultRest, fatigueDeloadFor, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { fatigueAlert } from "../lib/engine";
+import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import { weeklyReport } from "../lib/report";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
@@ -78,7 +79,7 @@ export function Today() {
     settings.trainingDays,
     settings.reentryDismissed,
   );
-  const fatigue = !reentry ? fatigueDeloadFor(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
+  const fatigue = !reentry ? fatigueAlert(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
   const lastWeek = addDays(monday, -7);
   const report = settings.reportSeen === monday ? null : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today);
   const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);

@@ -5,7 +5,9 @@ import { Icon } from "../components/Icon";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
-import { fatigueDeloadFor, WEEK_RULES } from "../lib/mesocycle";
+import { whyLabel } from "../components/NudgeList";
+import { fatigueAlert } from "../lib/engine";
+import { WEEK_RULES } from "../lib/mesocycle";
 import { formatWeight } from "../lib/progression";
 import { mesoReport, weeklyReport } from "../lib/report";
 
@@ -38,7 +40,7 @@ export function Report() {
   const weekStart = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? mondayOf(param) : addDays(current, -7);
   const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays, today);
   const m = mesoReport(sessions, settings.mesoStart, settings.trainingDays, today);
-  const fatigue = fatigueDeloadFor(sessions, settings.mesoStart, today, settings.reentryDismissed);
+  const fatigue = fatigueAlert(sessions, settings.mesoStart, today, settings.reentryDismissed);
   const open = weekStart === current;
   const sets = r.sessions.reduce((n, s) => n + s.exercises.reduce((k, e) => k + e.sets.filter((x) => x.kind !== "warmup").length, 0), 0);
   const under = r.volume.filter((v) => v.done < v.planned * 0.7);
@@ -226,6 +228,28 @@ export function Report() {
               )}
             </div>
           </Section>
+
+          {/* Motor de decisões: +1/−1 série por exercício para o próximo mesociclo */}
+          {m.volumeAdvice.length > 0 && (
+            <Section title="Séries no próximo mesociclo">
+              <p className="small muted" style={{ margin: 0 }}>
+                Pelo seu "como bateu" e pela evolução do 1RM estimado. Sugestão para discutir com o treinador; a ficha não muda sozinha.
+              </p>
+              <ul data-augmented-ui="tl-clip br-clip border" className="list">
+                {m.volumeAdvice.map((v) => (
+                  <li key={v.exId} className="list-item small">
+                    <span className="grow">
+                      <strong>{v.name}</strong> <span className="muted">· {v.reason}</span>
+                    </span>
+                    <span className="num" style={{ color: v.change > 0 ? "var(--cyan)" : "var(--amber)" }}>
+                      {v.change > 0 ? "+1 série" : "−1 série"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <span className="tiny faint">{whyLabel("feedback-volume")}</span>
+            </Section>
+          )}
 
           {/* F2: Evolução de carga e 1RM do início ao fim do mesociclo */}
           <Section title="Evolução por exercício no mesociclo">

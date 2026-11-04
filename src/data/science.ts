@@ -318,6 +318,77 @@ export const PRINCIPLES: Principle[] = [
       "Concentrar carboidrato perto do treino para encher glicogênio (cada g retém água) deixa o músculo mais 'cheio' visualmente; efeito estético agudo, não hipertrofia. Em composição corporal alta, manutenção ou leve déficit com proteína alta é o padrão.",
     fontes: ["Relatório 'Treino Hipertrofia Cinco Dias', seção 8", "Aragon e Schoenfeld, Strength Cond J"],
   },
+  // ---------- Autorregulação (motor de decisões) ----------
+  {
+    id: "autorregulacao",
+    tema: "Autorregulação",
+    nivel: "consenso",
+    texto:
+      "O desempenho oscila de um dia para o outro (sono, estresse, déficit). Ajustar a sessão pelo que a primeira série e o RIR mostram, em vez de forçar o número planejado, mantém o esforço na faixa certa sem acumular fadiga à toa.",
+    app: "O motor compara a 1ª série com a última vez e o RIR marcado com a meta da semana, e ajusta o recado da série seguinte.",
+    fontes: ["Helms, Cronin, Storey e Zourdos, Strength Cond J 2016 (RIR)", "Zourdos et al., JSCR 2016", "Refalo et al. 2024"],
+  },
+  {
+    id: "ancora",
+    tema: "Autorregulação",
+    nivel: "campo",
+    texto:
+      "Quem varia a carga entre séries usa série-âncora (a mais pesada, na faixa e no RIR, segue a dupla progressão) + séries de volume ~10–15% mais leves. Alternar cargas sem critério (40/60/40) impede comparar semanas.",
+    app: "O motor reconhece o formato âncora e progride pela série 1, não pela carga das séries leves.",
+    fontes: ["Programa de Hipertrofia v2, Parte 2"],
+  },
+  {
+    id: "volume-cego",
+    tema: "Autorregulação",
+    nivel: "campo",
+    texto:
+      "Cargas ou reps caindo de forma sistemática, semana a semana, com a mesma carga, indicam que o volume passou do recuperável: corte séries, não adicione. Em déficit esse limite chega antes (atenção a partir da semana 4). Antecipe o deload quando dois sinais aparecem juntos: queda de reps com a mesma carga em 2 sessões seguidas, sono ruim, articulação reclamando.",
+    app: "O alerta de fadiga conta exercícios com reps caindo na mesma carga e cruza com check-in e articulação.",
+    fontes: ["Programa de Hipertrofia v2, Parte 2", "Rogerson et al., Sports Med Open 2024 (deload na prática)"],
+  },
+  {
+    id: "feedback-volume",
+    tema: "Autorregulação",
+    nivel: "campo",
+    texto:
+      "Ajustar séries por músculo a partir do retorno (pump, sensação de volume, articulação) e do desempenho é heurística de treinadores (estilo RP). O que tem evidência é que individualizar o volume rende mais que um volume fixo em treinados.",
+    app: "No fim do mesociclo o relatório sugere +1 ou −1 série por músculo para o próximo, nunca passando de 4 séries por exercício.",
+    fontes: ["Israetel, Scientific Principles of Hypertrophy Training", "Scarpelli et al. 2022"],
+  },
+  // ---------- Recomposição e recuperação ----------
+  {
+    id: "ritmo-perda",
+    tema: "Recomposição",
+    nivel: "evidencia",
+    texto:
+      "Em treinados, perder ~0,7% do peso por semana preservou e ganhou mais massa magra que 1,4% (Garthe 2011). Déficits ~500 kcal/dia tendem a zerar o ganho de massa magra do treino (Murphy e Koehler 2022). Alvo da fase: 0,4–0,6 kg por semana pela média semanal do peso.",
+    app: "Com 2 semanas seguidas fora da faixa, o motor sugere ±130 kcal (4 colheres de arroz), nunca abaixo do piso de 2.100 kcal.",
+    fontes: ["Garthe et al., IJSNEM 2011", "Murphy e Koehler, Scand J Med Sci Sports 2022", "Plano Alimentar v2"],
+  },
+  {
+    id: "recomposicao",
+    tema: "Recomposição",
+    nivel: "evidencia",
+    texto:
+      "Em treinados com ~25% de gordura, déficit de ~250 kcal com 2,5 g/kg de proteína reduziu ~2,9 kg de gordura e aumentou ~1 kg de massa magra em 10 semanas. Estudo pequeno (10 por grupo): indício, não garantia. Peso parado com cintura caindo e cargas subindo = recomposição acontecendo.",
+    fontes: ["Vargas-Molina et al., Eur J Appl Physiol 2026"],
+  },
+  {
+    id: "proteina",
+    tema: "Recomposição",
+    nivel: "consenso",
+    texto:
+      "Em déficit, ~2,0–2,3 g/kg de proteína (ou ~2,8–3 g/kg de massa magra), em 4 refeições de 30–55 g. Acima disso sem benefício claro.",
+    fontes: ["Refalo, Trexler e Helms, Strength Cond J 2025", "Helms et al., IJSNEM 2014", "Mamerow et al., J Nutr 2014"],
+  },
+  {
+    id: "sono",
+    tema: "Recomposição",
+    nivel: "evidencia",
+    texto:
+      "Com o mesmo déficit, dormir ~5,5 h em vez de ~8,5 h reduziu em 55% a perda de gordura e aumentou em 60% a perda de massa magra. Sono ruim repetido é o primeiro suspeito quando as cargas caem.",
+    fontes: ["Nedeltcheva et al., Ann Intern Med 2010"],
+  },
 ];
 
 /** Alegações comuns já auditadas (CoVe): crença → veredito. */

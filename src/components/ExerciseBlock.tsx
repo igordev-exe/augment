@@ -19,8 +19,10 @@ import {
   type ExerciseHistoryItem,
 } from "../lib/progression";
 import { newSet } from "../lib/sessions";
+import { liveNudges } from "../lib/engine";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
+import { NudgeList } from "./NudgeList";
 import { Choice, SetRow } from "./SetRow";
 
 export function ExerciseBlock({
@@ -35,9 +37,11 @@ export function ExerciseBlock({
   recentHistory,
   step,
   availableWeights,
+  intensifierToday,
   onToggle,
   mutate,
   onSetDone,
+  onRirMarked,
   onAlt,
   onClearReminder,
   onUnit,
@@ -53,9 +57,13 @@ export function ExerciseBlock({
   recentHistory: ExerciseHistoryItem[];
   step: number;
   availableWeights?: number[];
+  /** Intensificador liberado hoje para este exercício (cota da semana, motor de decisões). */
+  intensifierToday: boolean;
   onToggle: () => void;
   mutate: (fn: (e: SessionExercise) => void) => Promise<SessionExercise | undefined>;
   onSetDone: (e: SessionExercise, setId: string) => void;
+  /** RIR marcado numa série: o motor pode ter um recado na hora. */
+  onRirMarked: (e: SessionExercise) => void;
   onAlt: (alt: string | undefined) => void;
   onClearReminder: () => void;
   onUnit: (u: Unit) => void;
@@ -69,7 +77,20 @@ export function ExerciseBlock({
   const last = recentHistory[recentHistory.length - 1];
   const sug = suggestNext(ex, recentHistory, planned, week, step, availableWeights);
   const stop = stopFor(ex.stop, week);
-  const showInt = !!ex.intensifier && WEEK_RULES[week].intensifiers > 0 && !lowDay;
+  const showInt = !!ex.intensifier && intensifierToday && WEEK_RULES[week].intensifiers > 0;
+  const nudges = active
+    ? liveNudges({
+        ex,
+        entry,
+        week,
+        lowDay,
+        history: recentHistory,
+        plannedSets: planned,
+        step,
+        availableWeights,
+        intensifier: intensifierToday,
+      })
+    : [];
   const [showNote, setShowNote] = useState(!!entry.notes);
   const [pickAlt, setPickAlt] = useState(false);
   const baseRir = rirRange(ex.stop, week);
@@ -115,8 +136,8 @@ export function ExerciseBlock({
   let warmupCounter = 0;
   const totalWarmups = entry.sets.filter((s) => s.kind === "warmup").length;
 
-  function setSet(setId: string, patch: Partial<SetEntry>) {
-    mutate((e) => {
+  async function setSet(setId: string, patch: Partial<SetEntry>) {
+    const fresh = await mutate((e) => {
       const s = e.sets.find((x) => x.id === setId);
       if (!s) return;
       Object.assign(s, patch);
@@ -124,6 +145,7 @@ export function ExerciseBlock({
         revertBackoff(e, ex.reps[0], step, availableWeights);
       }
     });
+    if (fresh && "rir" in patch && patch.rir != null) onRirMarked(fresh);
   }
 
   async function toggleDone(setId: string, wVal: number | null, rVal: number | null, weightPh: number | null, repsPh: number | null) {
@@ -286,6 +308,11 @@ export function ExerciseBlock({
               {lowDay && (
                 <span className="small sug-note">Dia de baixa no check-in: sem intensificador hoje e pare com +1 rep de sobra.</span>
               )}
+              {sug.volumeWeight != null && (
+                <span className="small sug-note">
+                  Séries 2+ (volume): {formatWeight(sug.volumeWeight)} {entry.unit}.
+                </span>
+              )}
               {sug.notes.map((n) => (
                 <span key={n} className="small sug-note">
                   {n}
@@ -326,6 +353,13 @@ export function ExerciseBlock({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {active && nudges.length > 0 && (
+            <div className="stack" style={{ gap: 6 }}>
+              <span className="label">Leitura ao vivo</span>
+              <NudgeList nudges={nudges} />
             </div>
           )}
 
@@ -397,7 +431,7 @@ export function ExerciseBlock({
               const wm = isWork ? null : warmupSpec(sug.weight, warmupCounter++, totalWarmups, step, availableWeights);
               const baseTarget = sug.targets[n - 1] ?? sug.targets[sug.targets.length - 1] ?? ex.reps[0];
               const repsPh = isWork ? (lowDay ? Math.max(ex.reps[0], baseTarget - 1) : baseTarget) : wm!.reps;
-              const weightPh = isWork ? sug.weight : wm!.weight;
+              const weightPh = isWork ? (n > 1 && sug.volumeWeight != null ? sug.volumeWeight : sug.weight) : wm!.weight;
               return (
                 <SetRow
                   key={s.id}

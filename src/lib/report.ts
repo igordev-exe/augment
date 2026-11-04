@@ -5,6 +5,7 @@ import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
 import { bestE1rm, e1rm, formatWeight, historyOf, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
+import { restsBefore, volumeAdvice, type VolumeAdvice } from "./engine";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
 // Relatório da semana (seg–dom) e do mesociclo (6 semanas + deload): regras fixas, sem IA.
@@ -165,6 +166,32 @@ export function weeklyReport(all: Session[], weekStart: string, mesoStart: strin
   if (badSleep >= 2) signals.push(`Sono ruim em ${badSleep} de ${checked.length} treinos.`);
   if (lowEnergy >= 2) signals.push(`Energia baixa em ${lowEnergy} de ${checked.length} treinos.`);
   for (const s of checked.filter((x) => x.checkin!.pain === "forte")) signals.push(`Dor forte no check-in de ${shortDate(s.date)}.`);
+  // Descanso real (pelos horários de "feita") bem abaixo do da ficha: custa reps (Singer 2024; erro nº 2 da ficha).
+  const shortRest: string[] = [];
+  const restById = new Map<string, number[]>();
+  for (const s of sessions) {
+    for (const e of s.exercises) {
+      const ex = EXERCISE_BY_ID[e.exId];
+      if (!ex || ex.superset || ex.rest[0] < 60) continue;
+      const rs = restsBefore(e)
+        .map((r) => r.rest)
+        .filter((r): r is number => r != null && r < 600);
+      restById.set(e.exId, [...(restById.get(e.exId) ?? []), ...rs]);
+    }
+  }
+  for (const [exId, rs] of restById) {
+    if (rs.length < 2) continue;
+    const median = [...rs].sort((a, b) => a - b)[Math.floor(rs.length / 2)];
+    const ex = EXERCISE_BY_ID[exId];
+    if (median < ex.rest[0] * 0.6) shortRest.push(`${shortName(ex)} (~${median} s, ficha ${ex.restLabel})`);
+  }
+  if (shortRest.length) {
+    signals.push(`Descanso curto em ${list(shortRest)}: com menos descanso as séries seguintes rendem menos reps.`);
+  }
+  const long = sessions.filter((s) => s.finishedAt && (s.finishedAt - s.startedAt) / 60000 > 100).length;
+  if (long >= 2) {
+    signals.push(`${long} treinos passaram de 100 min (a ficha prevê 70–80): use o superset e, se precisar, corte 1 série da face pull.`);
+  }
   if (belowMinimum.length) {
     signals.push(
       `${list(belowMinimum.map((m) => MUSCLE_LABEL[m]))} abaixo de ${SCIENCE.volume.minEffective} séries fracionadas: ` +
@@ -313,6 +340,8 @@ export interface MesoReport {
   prsCount: number;
   exercises: MesoExerciseProgress[];
   swapCandidates: AccessorySwapCandidate[];
+  /** +1/−1 série por exercício para o próximo mesociclo (retorno "como bateu" + evolução). */
+  volumeAdvice: (VolumeAdvice & { name: string })[];
 }
 
 /**
@@ -458,5 +487,8 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
     prsCount,
     exercises,
     swapCandidates,
+    volumeAdvice: volumeAdvice(inCycle, Object.fromEntries(exercises.map((e) => [e.exId, e.deltaE1rmPct])), (id) =>
+      EXERCISE_BY_ID[id] ? setsFor(EXERCISE_BY_ID[id], 3) : 0,
+    ).map((v) => ({ ...v, name: shortName(EXERCISE_BY_ID[v.exId]) })),
   };
 }

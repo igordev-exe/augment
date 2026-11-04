@@ -23,6 +23,7 @@ import {
   suggestNext,
   type PR,
 } from "../lib/progression";
+import { intensifierPlan, liveNudges } from "../lib/engine";
 import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 
@@ -114,6 +115,25 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const checkin = session.checkin;
   const askCheckin = !checkin?.skipped && !(checkin?.sleep && checkin?.energy && checkin?.pain);
   const lowDay = isLowDay(checkin);
+  const intensifiers = intensifierPlan(day.exercises, week, lowDay);
+
+  /** Recado do motor que vale um aviso na hora para este exercício (`only`: restringe às regras listadas). */
+  function liveToast(entry: SessionExercise, only?: string[]): string | null {
+    const ex = EXERCISE_BY_ID[entry.exId];
+    if (!ex) return null;
+    const n = liveNudges({
+      ex,
+      entry,
+      week,
+      lowDay,
+      history: historyOf(before, ex.id, entry.alt),
+      plannedSets: setsFor(ex, week),
+      step: increaseStep(ex, entry.unit, settings.increments[ex.id]),
+      availableWeights: settings.machineWeights?.[ex.id],
+      intensifier: intensifiers.has(ex.id),
+    }).find((x) => x.toast && (!only || only.includes(x.id)));
+    return n?.text ?? null;
+  }
 
   async function setCheckin(patch: Checkin) {
     await db.transaction("rw", db.sessions, async () => {
@@ -139,6 +159,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     const set = entry.sets[setIdx];
     if (!isActive || !set?.done) return;
     let fresh = entry;
+    let warned = false;
     const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
     const avail = settings.machineWeights?.[ex.id];
     // Reps abaixo do piso → a última série pendente vai com −15% sobre a carga da série atual.
@@ -158,6 +179,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             }
           })) ?? entry;
         toast(`${set.reps} reps, abaixo de ${ex.reps[0]}: a última série vai com −15% (${formatWeight(w)} ${entry.unit}).`);
+        warned = true;
       }
     } else if ((set.kind === "work" || set.kind === "drop") && set.reps != null && set.reps >= ex.reps[0]) {
       fresh =
@@ -166,6 +188,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         })) ?? entry;
     }
     const next = fresh;
+    // Motor de decisões: recorde, descanso curto, intensificador na última série, teto batido.
+    // As regras de RIR esperam a marcação de "sobraram" (onRirMarked).
+    const live =
+      set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps", "descanso-curto", "intensificador", "meta-batida"]);
+    if (live) toast(live);
 
     // Timer de descanso.
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
@@ -173,7 +200,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       timer.start(60, `${shortName(ex)}: aquecimento`);
     } else if (ex.superset?.order === 1) {
       const partner = EXERCISE_BY_ID[ex.superset.with];
-      toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
+      if (!live && !warned) toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
     } else {
       const rest = ex.superset?.order === 2 ? 60 : defaultRest(ex.rest);
       timer.start(rest, remaining ? `${shortName(ex)}: próxima série` : "Próximo exercício");
@@ -405,7 +432,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             Intensificadores hoje:{" "}
             {lowDay
               ? "desativados pelo check-in (dia de baixa)"
-              : `${rule.intensifierLabel.toLowerCase()}, só na última série de máquina ou cabo`}
+              : intensifiers.size
+                ? `${[...intensifiers].map((id) => shortName(EXERCISE_BY_ID[id]).toLowerCase()).join(", ")} (cota da semana: ${rule.intensifierLabel.toLowerCase()}), só na última série`
+                : "nenhum nesta semana"}
             .
           </div>
           {day.notes.map((n) => (
@@ -438,6 +467,11 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               recentHistory={hist}
               step={step}
               availableWeights={available}
+              intensifierToday={intensifiers.has(ex.id)}
+              onRirMarked={(e) => {
+                const msg = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
+                if (msg) toast(msg);
+              }}
               onToggle={() => setOpen(open === i ? -1 : i)}
               mutate={(fn) => mutateEntry(entry.exId, fn)}
               onSetDone={(e, setId) => onSetDone(i, e, setId)}

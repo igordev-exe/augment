@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import type { BodyEntry, BodyGoal, Settings } from "../data/types";
 import { shortDate } from "../lib/dates";
+import type { Nudge } from "../lib/engine";
 import { formatWeight } from "../lib/progression";
 import { GOAL_LABEL, goalStatus, weightTrend, type GoalPace } from "../lib/visual";
+import { NudgeList } from "./NudgeList";
 
 // Meta de peso corporal: direção, peso alvo, ritmo semanal contra a faixa recomendada e previsão.
 
@@ -21,7 +23,7 @@ const HINT: Record<BodyGoal["mode"], Partial<Record<GoalPace, string>>> = {
     contrario: "O peso está caindo. Para ganhar massa, coma mais.",
   },
   perder: {
-    rapido: "Acima de 1%/sem arrisca perder músculo e força. Coma um pouco mais.",
+    rapido: "Acima de ~0,7%/sem arrisca perder músculo e força. Coma um pouco mais.",
     devagar: "Descendo, mas devagar. Um déficit um pouco maior ajuda.",
     contrario: "O peso está subindo. Revise o déficit.",
   },
@@ -39,10 +41,13 @@ export function BodyGoalCard({
   entries,
   goal,
   onGoal,
+  advice = [],
 }: {
   entries: BodyEntry[];
   goal: BodyGoal | undefined;
   onGoal: (patch: Partial<Settings>) => void;
+  /** Recados do motor (tabela de ajustes do plano alimentar). Quando há, substituem a dica genérica. */
+  advice?: Nudge[];
 }) {
   const trend = weightTrend(entries);
   const status = goalStatus(trend, goal);
@@ -135,7 +140,8 @@ export function BodyGoalCard({
           {status.etaWeeks != null ? ` · ~${status.etaWeeks} semana${status.etaWeeks === 1 ? "" : "s"} no ritmo atual` : ""}.
         </p>
       )}
-      {status && goal && !status.reached && HINT[goal.mode][status.pace] && (
+      {advice.length > 0 && <NudgeList nudges={advice} />}
+      {!advice.length && status && goal && !status.reached && HINT[goal.mode][status.pace] && (
         <p className="small muted" style={{ margin: 0 }}>
           {HINT[goal.mode][status.pace]}
         </p>

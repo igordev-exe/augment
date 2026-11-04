@@ -168,15 +168,25 @@ export interface FatigueDeloadAlert {
   lowCheckins: number;
   jointComplaints: number;
   underTargetExs: number;
+  /** Exercícios com reps caindo na mesma carga em 2 sessões seguidas. */
+  regressingExs: number;
   reasons: string[];
   targetMesoStart: string;
 }
 
 /**
  * Detecta fadiga acumulada nas semanas 3–6 (check-ins seguidos de sono ruim / energia baixa,
- * dores articulares ou múltiplas quedas abaixo do piso de repetições) e sugere antecipar o Deload.
+ * dores articulares, quedas abaixo do piso de repetições ou reps caindo na mesma carga) e sugere antecipar o Deload.
+ * Ficha v2: antecipe quando dois sinais aparecem juntos; 3+ exercícios regredindo sozinhos já são "volume cego".
+ * `regressing`: nomes dos exercícios com reps caindo na mesma carga (calculado pelo motor, ver engine.ts).
  */
-export function fatigueDeloadFor(sessions: Session[], mesoStart: string, today: string, dismissed?: string): FatigueDeloadAlert | null {
+export function fatigueDeloadFor(
+  sessions: Session[],
+  mesoStart: string,
+  today: string,
+  dismissed?: string,
+  regressing: string[] = [],
+): FatigueDeloadAlert | null {
   const monday = mondayOf(today);
   if (dismissed === monday) return null;
   const week = weekFor(mesoStart, today);
@@ -210,14 +220,20 @@ export function fatigueDeloadFor(sessions: Session[], mesoStart: string, today: 
     }
   }
 
-  const totalSignals = lowCheckins + jointComplaints + underTargetExs;
-  const shouldAlert =
-    (lowCheckins >= 2 && (jointComplaints >= 1 || underTargetExs >= 1)) || jointComplaints >= 3 || underTargetExs >= 3 || totalSignals >= 4;
+  const regressingExs = regressing.length;
+  const totalSignals = lowCheckins + jointComplaints + underTargetExs + regressingExs;
+  // Tipos de sinal da ficha v2: sono/energia ruins repetidos, articulação reclamando, reps caindo na mesma carga.
+  const kinds = [lowCheckins >= 2, jointComplaints >= 1, regressingExs >= 1 || underTargetExs >= 1].filter(Boolean).length;
+  const shouldAlert = kinds >= 2 || jointComplaints >= 3 || underTargetExs >= 3 || regressingExs >= 3 || totalSignals >= 4;
   if (!shouldAlert) return null;
 
   const reasons: string[] = [];
   if (lowCheckins > 0) reasons.push(`${lowCheckins} check-in(s) de sono ruim/energia baixa ou dor`);
   if (underTargetExs > 0) reasons.push(`${underTargetExs} exercício(s) abaixo do mínimo de reps`);
+  if (regressingExs > 0) {
+    const names = regressing.slice(0, 3).join(", ") + (regressingExs > 3 ? "…" : "");
+    reasons.push(`reps caindo com a mesma carga em ${regressingExs} exercício(s) (${names})`);
+  }
   if (jointComplaints > 0) reasons.push(`${jointComplaints} queixa(s) de incômodo articular`);
 
   return {
@@ -225,6 +241,7 @@ export function fatigueDeloadFor(sessions: Session[], mesoStart: string, today: 
     lowCheckins,
     jointComplaints,
     underTargetExs,
+    regressingExs,
     reasons,
     targetMesoStart: earlyDeloadMesoStart(today),
   };

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { dayName, PageHead } from "../components/bits";
 import { BodyGoalCard } from "../components/BodyGoalCard";
+import { bodyAdvice } from "../lib/engine";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
 import { FatigueMap } from "../components/FatigueMap";
@@ -339,7 +340,12 @@ export function Progress() {
           </div>
         )}
 
-        <BodyGoalCard entries={bodyLog ?? []} goal={settings.bodyGoal} onGoal={updateSettings} />
+        <BodyGoalCard
+          entries={bodyLog ?? []}
+          goal={settings.bodyGoal}
+          onGoal={updateSettings}
+          advice={bodyAdvice(bodyLog ?? [], settings.bodyGoal, sessions ?? [], today)}
+        />
 
         {weightPoints.length >= 2 && (
           <LineChart
