@@ -222,7 +222,7 @@ export function Coach() {
   }
 
   return (
-    <div className="stack-lg coach">
+    <div className="stack-lg coach mode-terminal">
       <PageHead
         back="/"
         code="AUG.OS // TREINADOR"
@@ -333,7 +333,7 @@ export function Coach() {
           </div>
         )}
         {busy && !live && (
-          <div className="thinking small">
+          <div className="thinking small scan-beam">
             <span className="status-dot ok" /> {tool ? `${TOOL_LABEL[tool] ?? tool}…` : "Pensando…"}
           </div>
         )}
@@ -395,7 +395,7 @@ export function Coach() {
 function CoachSetup({ config, onSave, onCancel }: { config: CoachConfig; onSave: (c: CoachConfig) => void; onCancel?: () => void }) {
   const [c, setC] = useState<CoachConfig>(config.apiKey ? config : { ...DEFAULT_CONFIG, ...config });
   return (
-    <div className="stack-lg">
+    <div className="stack-lg mode-terminal">
       <PageHead back="/" code="AUG.OS // TREINADOR" title="Configurar treinador" />
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <h2 className="h-sec">Chave da API</h2>

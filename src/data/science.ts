@@ -431,3 +431,15 @@ export function scienceText(): string {
   for (const a of AUDITS) out.push(`- "${a.crenca}" → ${a.veredito}`);
   return out.join("\n");
 }
+
+/** Etiqueta de evidência por exercício da biblioteca (aparece na oficina de exercícios). */
+export const EXERCISE_EVIDENCE: Record<string, { tag: string; why: string }> = {
+  "flexora-sentada": { tag: "Alongado", why: "biarticulares" },
+  "triceps-overhead-cabo": { tag: "Alongado", why: "biarticulares" },
+  "panturrilha-em-pe": { tag: "Alongado", why: "biarticulares" },
+  "cadeira-extensora": { tag: "Reto femoral", why: "reto-femoral" },
+  "leg-press-profundo": { tag: "Vastos + glúteo", why: "reto-femoral" },
+  "rosca-scott-bayesian": { tag: "Parcial alongada", why: "parciais-alongadas" },
+  "elevacao-pelvica": { tag: "EMG ≠ crescimento", why: "semg" },
+  "remada-apoio-peito": { tag: "Estável", why: "estabilidade" },
+};

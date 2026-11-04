@@ -13,6 +13,13 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Check-in** antes do treino (sono, energia, dor) e **"como bateu?"** depois de cada exercício (pump, volume, articulação).
 - **Sugestão mais esperta**: cargas misturadas (rampa registrada como trabalho) usam a mais pesada; salto grande demais para a faixa
   (ex.: cabo de 17,5 → 20 kg) acumula reps antes de subir, com previsão de reps pela carga nova.
+- **Relatório em formato de laudo** (branco sobre preto, abas embaixo): Semana, Mesociclo, **Corpo** (monitor do peso em linha
+  verde com média móvel, medidas com variação em 28 dias, foto com etiquetas de medida e a orientação do plano alimentar) e
+  **Motor** (o que as regras estão vendo agora: fadiga, próximo treino, dose mínima, peso e ajustes ativos).
+- **Oficina de exercícios**: filtros por músculo e equipamento, grade com foto, 1RM estimado e última carga, e etiqueta de
+  evidência (ex.: "Alongado", "Reto femoral").
+- **Modos de cor**: o treinador (IA) usa uma paleta de terminal verde-limão com varredura enquanto pensa; na semana de deload o
+  app inteiro troca o vermelho por azul-aço.
 - **Relatório da semana** (seg–dom), com um cartão na tela inicial na segunda: treinos feitos e os que ficaram de fora, séries que
   faltaram, volume por músculo contra a meta, reps que sobraram contra a meta, exercícios estagnados, sinais do corpo, recordes e
   **um foco só** para a semana seguinte. Dá para navegar pelas semanas anteriores em Progresso.

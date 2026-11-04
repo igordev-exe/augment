@@ -1,14 +1,17 @@
 import { useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { dayCode, dayName, PageHead } from "../components/bits";
+import { BodyLab } from "../components/BodyLab";
+import { EngineLab } from "../components/EngineLab";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
-import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { whyLabel } from "../components/NudgeList";
 import { fatigueAlert } from "../lib/engine";
 import { WEEK_RULES, withSetAdjust } from "../lib/mesocycle";
+import { engineDiagnostics } from "../lib/diagnostics";
 import { formatWeight } from "../lib/progression";
 import { mesoReport, weeklyReport } from "../lib/report";
 
@@ -25,7 +28,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** Relatório da semana e consolidado do mesociclo (6 semanas + deload). */
+type LaudoTab = "week" | "meso" | "corpo" | "motor";
+const LAUDO_TABS: { id: LaudoTab; label: string; code: string }[] = [
+  { id: "week", label: "Semana", code: "SEMANAL" },
+  { id: "meso", label: "Mesociclo", code: "MESOCICLO" },
+  { id: "corpo", label: "Corpo", code: "BIOMETRIA" },
+  { id: "motor", label: "Motor", code: "MOTOR" },
+];
+
+/** Relatório da semana e consolidado do mesociclo (6 semanas + deload), em formato de laudo com abas embaixo. */
 export function Report() {
   const { week: param } = useParams();
   const [searchParams] = useSearchParams();
@@ -33,7 +44,9 @@ export function Report() {
   const [settings, updateSettings] = useSettings();
   const today = useToday();
   const toast = useToast();
-  const [tab, setTab] = useState<"week" | "meso">(searchParams.get("tab") === "meso" ? "meso" : "week");
+  const tabParam = searchParams.get("tab");
+  const [tab, setTab] = useState<LaudoTab>(LAUDO_TABS.some((t) => t.id === tabParam) ? (tabParam as LaudoTab) : "week");
+  const bodyLog = useBodyLog();
 
   if (!sessions) return null;
 
@@ -76,14 +89,19 @@ export function Report() {
     updateSettings({ swaps: next });
   }
 
+  const tabCode = LAUDO_TABS.find((t) => t.id === tab)!.code;
   return (
-    <div className="stack-lg">
+    <div className="stack-lg laudo">
       <PageHead
         back="/"
         code="AUG.OS // RELATÓRIO"
         title="Relatório"
         sub={
-          tab === "meso" ? (
+          tab === "corpo" ? (
+            <>Peso, medidas, foto e a orientação do motor pelo plano alimentar.</>
+          ) : tab === "motor" ? (
+            <>O que as regras do motor estão vendo agora.</>
+          ) : tab === "meso" ? (
             <>
               Ciclo de {shortDate(m.cycleStart)} a {shortDate(m.cycleEnd)} · {WEEK_RULES[m.currentWeek].label}.
             </>
@@ -97,25 +115,10 @@ export function Report() {
         }
       />
 
-      <div className="row">
-        <button
-          type="button"
-          data-augmented-ui="tl-clip br-clip border"
-          className="toggle-chip grow"
-          aria-pressed={tab === "week"}
-          onClick={() => setTab("week")}
-        >
-          Semana
-        </button>
-        <button
-          type="button"
-          data-augmented-ui="tl-clip br-clip border"
-          className="toggle-chip grow"
-          aria-pressed={tab === "meso"}
-          onClick={() => setTab("meso")}
-        >
-          Mesociclo &amp; Rotação
-        </button>
+      <div className="laudo-bar" aria-hidden="true">
+        <span>AUG.MED // LAUDO {tabCode}</span>
+        <span className="barcode" />
+        <span>FIR {weekStart.replaceAll("-", "").slice(2)}</span>
       </div>
 
       {/* F3: Deload antecipado por fadiga */}
@@ -147,7 +150,11 @@ export function Report() {
         </section>
       )}
 
-      {tab === "meso" ? (
+      {tab === "corpo" ? (
+        <BodyLab entries={bodyLog ?? []} goal={settings.bodyGoal} sessions={sessions} today={today} />
+      ) : tab === "motor" ? (
+        <EngineLab items={engineDiagnostics({ sessions, settings, bodyLog: bodyLog ?? [], today })} />
+      ) : tab === "meso" ? (
         <>
           <div className="tiles">
             <div data-augmented-ui="tl-clip border" className="tile">
@@ -568,6 +575,13 @@ export function Report() {
           )}
         </>
       )}
+      <div className="laudo-tabs" role="tablist" aria-label="Seções do laudo">
+        {LAUDO_TABS.map((t) => (
+          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -4126,3 +4126,423 @@ table.t a {
   height: 100%;
   background: var(--cyan);
 }
+
+/* ==========================================================================
+   Fase 3 — Relatório em laudo, oficina de exercícios, modo terminal e deload
+   ========================================================================== */
+
+/* ---------- Laudo: branco sobre preto, linhas finas, abas embaixo ---------- */
+.laudo {
+  --cut: #ecece6;
+  --lab-line: #d9d9d2;
+}
+.laudo .card,
+.laudo .list,
+.laudo .tile {
+  --aug-border-bg: #d9d9d299;
+  background: #060606;
+}
+.laudo .h-sec {
+  color: #f2f2ee;
+  letter-spacing: 0.06em;
+}
+.laudo .callout {
+  background: #0b0b0b;
+}
+.laudo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 8px;
+  border: 1px solid var(--lab-line);
+  background: #050505;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e9e9e4;
+}
+.laudo-bar .barcode {
+  flex: 1;
+  max-width: 90px;
+  height: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e9e9e4 0 1px,
+    transparent 1px 3px,
+    #e9e9e4 3px 5px,
+    transparent 5px 6px,
+    #e9e9e4 6px 7px,
+    transparent 7px 10px
+  );
+}
+.laudo-tabs {
+  position: sticky;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 8px);
+  z-index: 12;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--lab-line);
+  background: #050505f0;
+}
+.app.has-timer .laudo-tabs {
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 96px);
+}
+.laudo-tabs button {
+  position: relative;
+  min-height: 40px;
+  padding: 0 4px;
+  border: 1px solid #6c6c66;
+  background: #0b0b0b;
+  color: #d9d9d2;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+}
+/* Marca de régua no topo de cada aba, como nos painéis clínicos. */
+.laudo-tabs button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28%;
+  width: 1px;
+  height: 6px;
+  background: currentColor;
+}
+.laudo-tabs button[aria-pressed="true"] {
+  background: #ecece6;
+  border-color: #ecece6;
+  color: #060606;
+}
+
+/* Monitor do peso: linha de fósforo verde. */
+.monitor {
+  padding: 8px 10px 6px;
+  border: 1px solid #2c5a3c;
+  background: #020a05;
+}
+.monitor-head,
+.monitor-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fd7a0;
+}
+.monitor-head b {
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ok);
+}
+.monitor svg {
+  display: block;
+  width: 100%;
+  height: 140px;
+  margin: 6px 0;
+  overflow: visible;
+  filter: drop-shadow(0 0 3px #4ff08f80);
+}
+.monitor .grid {
+  stroke: #163a24;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.monitor .line {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+}
+.monitor .avg {
+  fill: none;
+  stroke: #4ff08f66;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+.monitor circle {
+  fill: var(--ok);
+}
+
+/* Tabela de medidas do laudo. */
+.lab-table {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px 16px;
+  font-size: 14px;
+}
+.lab-table .r {
+  text-align: right;
+}
+
+/* Foto com etiquetas de medida. */
+.scan-photo {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--lab-line);
+  background: #000;
+}
+.scan-photo img {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  filter: grayscale(1) contrast(1.15) brightness(0.95);
+}
+.scan-tag {
+  position: absolute;
+  padding: 3px 6px;
+  border: 1px solid var(--lab-line);
+  background: #000c;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2f2ee;
+}
+.scan-tag::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: var(--lead, 40px);
+  height: 1px;
+  background: var(--lab-line);
+}
+.scan-tag.l {
+  left: 6px;
+}
+.scan-tag.l::before {
+  left: 100%;
+}
+.scan-tag.r {
+  right: 6px;
+}
+.scan-tag.r::before {
+  right: 100%;
+}
+.scan-tag b {
+  color: var(--ok);
+  font-weight: 400;
+}
+
+/* Diagnóstico do motor. */
+.diag-list {
+  display: flex;
+  flex-direction: column;
+}
+.diag-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a28;
+}
+.diag-row:last-child {
+  border-bottom: 0;
+}
+.diag-area {
+  height: fit-content;
+  padding: 3px 4px;
+  border: 1px solid #6c6c66;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: #bdbdb6;
+}
+.diag-row.warn .diag-area {
+  border-color: #f5b83d88;
+  color: var(--warn);
+}
+.diag-row.ok .diag-area {
+  border-color: #4ff08f88;
+  color: var(--ok);
+}
+.diag-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* ---------- Oficina de exercícios ---------- */
+.ws-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.ws-filters::-webkit-scrollbar {
+  display: none;
+}
+.ws-filter {
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ws-filter.small {
+  min-height: 30px;
+  font-size: 11px;
+}
+.ws-filter[aria-pressed="true"] {
+  --aug-border-bg: var(--sel);
+  background: var(--sel-soft);
+  color: var(--sel);
+}
+.ws-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ws-card {
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  --aug-border-all: 1px;
+  --aug-border-bg: #4a2224;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 8px 9px;
+  background: linear-gradient(180deg, #1c1011, #121418 55%);
+  color: var(--ink);
+  text-decoration: none;
+}
+.ws-card:active {
+  --aug-border-bg: var(--sel);
+}
+.ws-photo {
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #0c0e11;
+  border-bottom: 2px solid var(--red);
+}
+.ws-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ws-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 2px 5px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #000c;
+  border: 1px solid currentColor;
+}
+.ws-tag.ok {
+  color: var(--ok);
+}
+.ws-tag.warn {
+  color: var(--warn);
+}
+.ws-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.2;
+}
+.ws-muscle {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ws-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.ws-stats b {
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* ---------- Treinador: paleta de terminal (verde-limão) e varredura enquanto pensa ---------- */
+.mode-terminal {
+  --red: #cfe800;
+  --red-hi: #e4ff3d;
+  --red-deep: #98ab00;
+  --red-soft: #1c2105;
+  --red-ink: #0c0e11;
+  --cut: #cfe800;
+  --glow-red: drop-shadow(0 0 3px #cfe800a6) drop-shadow(0 0 12px #cfe8004d);
+}
+/* Limão é claro: texto escuro em cima dele (branco daria 1,4:1 de contraste). */
+.mode-terminal .toggle-chip[aria-pressed="true"],
+.mode-terminal .check[aria-pressed="true"] {
+  color: var(--red-ink);
+}
+.scan-beam {
+  position: relative;
+  overflow: hidden;
+}
+.scan-beam::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -35%;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, #cfe80033, transparent);
+  animation: scan-beam 1.3s linear infinite;
+  pointer-events: none;
+}
+@keyframes scan-beam {
+  to {
+    left: 100%;
+  }
+}
+
+/* ---------- Semana de deload: paleta calma (o vermelho de ação vira azul-aço) ---------- */
+:root.mode-deload {
+  /* Azul-aço com branco em cima: 4,2:1, o mesmo patamar do vermelho normal (4,1:1). */
+  --red: #2b84a8;
+  --red-hi: #6cc0df;
+  --red-deep: #1f6585;
+  --red-soft: #0e2531;
+  --glow-red: drop-shadow(0 0 3px #2b84a8b3) drop-shadow(0 0 12px #2b84a840);
+}
+/* O cartão "Missão do dia" tem degradê e ilustração vermelhos fixos: no deload, viram azul-aço. */
+:root.mode-deload .mission {
+  --aug-border-bg: #6cc0df;
+  background: repeating-linear-gradient(0deg, #00000014 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #2b84a8 0%, #1f6585 55%, #123f55 100%);
+}
+:root.mode-deload .mission .shade {
+  background: linear-gradient(180deg, transparent 38%, #123f55b3 70%, #0a2533f0 100%);
+}
+:root.mode-deload .mission .figure {
+  filter: hue-rotate(190deg) saturate(0.85);
+}
