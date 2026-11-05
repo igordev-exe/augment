@@ -318,7 +318,6 @@ export function Today() {
                 Iniciar protocolo <span className="arrow">&gt;</span>
               </button>
               <span className="dock-row" aria-hidden="true">
-                <i className="dock-rail" />
                 <span className="dock-tag">
                   {day.code}-{String(dayIdx).padStart(2, "0")}
                 </span>

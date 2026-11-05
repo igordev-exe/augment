@@ -72,6 +72,23 @@ describe("atributos do operador", () => {
     expect(r.index).not.toBeNull();
   });
 
+  it("intensidade: parte das séries de trabalho com RIR marcado a 0–3 RIR (14 dias)", () => {
+    const e = ex("push-a.supino-maq", 4);
+    e.sets = e.sets.map((x, i) => ({ ...x, rir: [1, 2, 4, 3][i] }));
+    const r = attributes({ sessions: [session("2026-11-02", "push-a", [e])], bodyLog: [], settings, today: "2026-11-04" });
+    const it = r.list.find((a) => a.id === "intensidade")!;
+    expect(it.value).toBe(75);
+    expect(it.level).toBe(15);
+    // Sem RIR marcado, fica sem dados.
+    const r2 = attributes({
+      sessions: [session("2026-11-02", "push-a", [ex("push-a.supino-maq", 4)])],
+      bodyLog: [],
+      settings,
+      today: "2026-11-04",
+    });
+    expect(r2.list.find((a) => a.id === "intensidade")!.value).toBeNull();
+  });
+
   it("composição: no ritmo da meta pontua alto", () => {
     const log: BodyEntry[] = Array.from({ length: 22 }, (_, i) => ({
       id: String(i),

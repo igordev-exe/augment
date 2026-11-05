@@ -1,22 +1,15 @@
-import { useState } from "react";
+import { Fragment, useState, type CSSProperties } from "react";
 import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { MuscleId } from "../data/types";
-import { SLOT_COLUMNS, slotCells, type MuscleSlots } from "../lib/slots";
+import type { MuscleSlots } from "../lib/slots";
 import { whyLabel } from "./NudgeList";
 
-// Slots de volume no estilo "implantes": cada músculo é uma fileira de casas (uma por série fracionada da semana).
-// Cheia = feita, meia = série indireta (0,5), vazia = falta, verde = além do plano. Marcas na casa 4 (dose mínima)
-// e 10 (início da faixa eficiente). Toque num músculo para ver de onde vieram as séries.
+// Séries da semana por músculo: uma barra contínua por músculo (séries fracionadas feitas), o traço branco marca o que a
+// ficha pede, âmbar a dose mínima (4) e ciano o início da faixa eficiente (10). Toque numa linha para ver de onde
+// vieram as séries.
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
-
-function badge(m: MuscleSlots): { text: string; cls: string } {
-  if (m.status === "sem-plano") return { text: "—", cls: "" };
-  if (m.status === "acima") return { text: `+${fmt(m.done - m.planned)}`, cls: "ok" };
-  if (m.status === "meta") return { text: "META ✓", cls: "ok" };
-  return { text: `FALTAM ${m.missing}`, cls: m.status === "abaixo-minimo" ? "warn" : "" };
-}
 
 function statusText(m: MuscleSlots, weekOver: boolean): string {
   const min = SCIENCE.volume.minEffective;
@@ -32,24 +25,24 @@ function statusText(m: MuscleSlots, weekOver: boolean): string {
 
 export function VolumeSlots({ slots, weekLabel, weekOver }: { slots: MuscleSlots[]; weekLabel: string; weekOver: boolean }) {
   const [picked, setPicked] = useState<MuscleId | null>(null);
-  const by = Object.fromEntries(slots.map((s) => [s.muscle, s])) as Record<MuscleId, MuscleSlots>;
   const withPlan = slots.filter((s) => s.planned > 0);
   const atMeta = withPlan.filter((s) => s.status === "meta" || s.status === "acima").length;
   const total = withPlan.reduce((a, s) => a + s.done, 0);
   const totalPlan = withPlan.reduce((a, s) => a + s.planned, 0);
-  const sel = picked ? by[picked] : null;
+  const min = SCIENCE.volume.minEffective;
+  const eff = SCIENCE.volume.efficient[0];
 
   return (
-    <section className="fm slots" aria-label="Slots de volume da semana">
+    <section className="fm vb" aria-label="Séries da semana por músculo">
       <div className="fm-intro">
         <div>
           <div className="fm-eyebrow">
-            <span>02</span> IMPLANTES / VOLUME DA SEMANA
+            <span>03</span> VOLUME / SÉRIES DA SEMANA
           </div>
           <h2>
-            SLOTS DE <em>VOLUME</em>
+            SÉRIES DA <em>SEMANA</em>
           </h2>
-          <p>Uma casa por série fracionada ({weekLabel}). Marcas: dose mínima (4) e faixa eficiente (10).</p>
+          <p>Séries fracionadas por músculo ({weekLabel}). O traço marca o que a ficha pede.</p>
         </div>
         <div className="fm-status">
           <div>
@@ -69,49 +62,78 @@ export function VolumeSlots({ slots, weekLabel, weekOver }: { slots: MuscleSlots
         </div>
       </div>
 
-      <div className="fm-panel slots-grid">
-        {SLOT_COLUMNS.map((col) => (
-          <div key={col.title} className="slots-col">
-            <div className="slots-col-title">{col.title}</div>
-            {col.muscles.map((mid) => {
-              const m = by[mid];
-              const b = badge(m);
-              const cells = slotCells(m);
-              return (
-                <button
-                  key={mid}
-                  type="button"
-                  className={`slot-row${picked === mid ? " on" : ""}`}
-                  aria-pressed={picked === mid}
-                  aria-label={`${MUSCLE_LABEL[mid]}: ${fmt(m.done)} de ${fmt(m.planned)} séries fracionadas`}
-                  onClick={() => setPicked(picked === mid ? null : mid)}
-                >
-                  <span className="slot-head">
-                    <strong>{MUSCLE_LABEL[mid]}</strong>
-                    <em className={b.cls}>{b.text}</em>
-                  </span>
-                  <span className="slot-cells" aria-hidden="true">
-                    {cells.map((c, i) => (
-                      <i
-                        key={i}
-                        className={`c-${c}${i === SCIENCE.volume.minEffective ? " mark-min" : ""}${i === SCIENCE.volume.efficient[0] ? " mark-eff" : ""}`}
-                      />
-                    ))}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-        <div className="slots-legend" aria-hidden="true">
+      <div className="fm-panel vb-panel">
+        {slots.map((m, row) => {
+          const scale = Math.max(m.planned, m.done, eff, 1) * 1.1;
+          const pos = (v: number) => `${(v / scale) * 100}%`;
+          const inPlan = Math.min(m.done, m.planned || m.done);
+          const extra = Math.max(0, m.done - Math.max(m.planned, 0));
+          const tone =
+            m.status === "acima" || m.status === "meta"
+              ? "ok"
+              : m.status === "abaixo-minimo"
+                ? "warn"
+                : m.status === "sem-plano"
+                  ? "off"
+                  : "";
+          const open = picked === m.muscle;
+          return (
+            <Fragment key={m.muscle}>
+              <button
+                type="button"
+                className={`vb-row ${tone}${open ? " on" : ""}`}
+                style={{ "--row": row } as CSSProperties}
+                aria-expanded={open}
+                aria-label={`${MUSCLE_LABEL[m.muscle]}: ${fmt(m.done)} de ${fmt(m.planned)} séries fracionadas`}
+                onClick={() => setPicked(open ? null : m.muscle)}
+              >
+                <span className="vb-name">{MUSCLE_LABEL[m.muscle]}</span>
+                <span className="vb-track" aria-hidden="true">
+                  <span className="vb-fill" style={{ width: pos(inPlan) }} />
+                  {extra > 0 && <span className="vb-extra" style={{ left: pos(inPlan), width: pos(extra) }} />}
+                  <span className="vb-mark min" style={{ left: pos(min) }} />
+                  <span className="vb-mark eff" style={{ left: pos(eff) }} />
+                  {m.planned > 0 && <span className="vb-target" style={{ left: pos(m.planned) }} />}
+                </span>
+                <span className="vb-num">
+                  {fmt(m.done)}
+                  <small>/{fmt(m.planned)}</small>
+                </span>
+              </button>
+              {open && (
+                <div className="vb-detail" aria-live="polite">
+                  <p>{statusText(m, weekOver)}</p>
+                  {m.sources.length > 0 ? (
+                    <ul>
+                      {m.sources.map((src) => (
+                        <li key={src.exId}>
+                          <span>{shortName(EXERCISE_BY_ID[src.exId])}</span>
+                          <span>
+                            {src.sets} × {src.weight === 1 ? "1" : "0,5"} = <b>{fmt(src.sets * src.weight)}</b>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="dim">Nenhuma série deste músculo na semana ainda.</p>
+                  )}
+                  <small className="dim">
+                    {m.direct} diretas · {whyLabel("volume-fracionado")}
+                  </small>
+                </div>
+              )}
+            </Fragment>
+          );
+        })}
+        <div className="vb-legend" aria-hidden="true">
           <span>
-            <i className="full" /> feita
-          </span>
-          <span>
-            <i /> falta
+            <i className="fill" /> feita
           </span>
           <span>
             <i className="extra" /> além do plano
+          </span>
+          <span>
+            <i className="target" /> plano
           </span>
           <span>
             <i className="min" /> dose mínima
@@ -121,38 +143,6 @@ export function VolumeSlots({ slots, weekLabel, weekOver }: { slots: MuscleSlots
           </span>
         </div>
       </div>
-
-      {sel && (
-        <div className="fm-panel slots-detail" aria-live="polite">
-          <div className="fm-heading">
-            <div>
-              <span>{MUSCLE_LABEL[sel.muscle].toUpperCase()}</span>
-              <small>
-                {fmt(sel.done)} DE {fmt(sel.planned)} FRACIONADAS · {sel.direct} DIRETAS
-              </small>
-            </div>
-            <b>{fmt(sel.done)}</b>
-          </div>
-          <div className="slots-detail-body">
-            <p>{statusText(sel, weekOver)}</p>
-            {sel.sources.length > 0 ? (
-              <ul>
-                {sel.sources.map((src) => (
-                  <li key={src.exId}>
-                    <span>{shortName(EXERCISE_BY_ID[src.exId])}</span>
-                    <span>
-                      {src.sets} × {src.weight === 1 ? "1" : "0,5"} = <b>{fmt(src.sets * src.weight)}</b>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="dim">Nenhuma série deste músculo na semana ainda.</p>
-            )}
-            <small className="dim">{whyLabel("volume-fracionado")}</small>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

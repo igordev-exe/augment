@@ -5,10 +5,10 @@ import { strengthTrend } from "./engine";
 import { plannedVolume, weeklyVolume } from "./sessions";
 import { GOAL_LABEL, goalStatus, weightTrend } from "./visual";
 
-// Atributos do operador (Fase 2 do design, estilo "árvore de atributos"): cinco números de 0 a 100, todos
+// Atributos do operador (roda de atributos): seis números de 0 a 100, todos
 // tirados dos registros. Nível = valor ÷ 5 (0–20). Sem dados suficientes, o atributo fica sem nível.
 
-export type AttributeId = "forca" | "volume" | "consistencia" | "recuperacao" | "composicao";
+export type AttributeId = "forca" | "volume" | "consistencia" | "recuperacao" | "intensidade" | "composicao";
 
 export interface Attribute {
   id: AttributeId;
@@ -102,6 +102,23 @@ export function attributes(input: { sessions: Session[]; bodyLog: BodyEntry[]; s
     why: "sono",
   };
 
+  // Intensidade: séries de trabalho com RIR marcado (14 dias) que ficaram a 0–3 RIR ou na falha.
+  const rated = recent.flatMap((s) =>
+    s.exercises.flatMap((e) => e.sets.filter((x) => x.done && x.kind === "work" && (x.rir != null || x.failure))),
+  );
+  const close = rated.filter((x) => x.failure || (x.rir ?? 9) <= 3).length;
+  const intensidade: Attribute = {
+    id: "intensidade",
+    name: "Intensidade",
+    value: rated.length >= 3 ? clamp((100 * close) / rated.length) : null,
+    level: null,
+    summary: rated.length
+      ? `${close}/${rated.length} séries de trabalho a 0–3 RIR (14 dias)`
+      : "Marque o RIR depois das séries de trabalho para medir.",
+    how: "Levar a maioria das séries a 1–2 RIR. Falha real só nos isolados e máquinas, nunca nos compostos pesados.",
+    why: "rir-hipertrofia",
+  };
+
   // Composição: ritmo do peso contra a meta da fase; cintura caindo soma.
   const goal = settings.bodyGoal;
   const trend = weightTrend(bodyLog);
@@ -125,7 +142,7 @@ export function attributes(input: { sessions: Session[]; bodyLog: BodyEntry[]; s
     why: "ritmo-perda",
   };
 
-  const list = [forca, volume, consistencia, recuperacao, composicao].map((a) => ({ ...a, level: lvl(a.value) }));
+  const list = [forca, volume, consistencia, recuperacao, intensidade, composicao].map((a) => ({ ...a, level: lvl(a.value) }));
   const vals = list.map((a) => a.value).filter((v): v is number => v != null);
   return { list, index: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 5) : null };
 }
