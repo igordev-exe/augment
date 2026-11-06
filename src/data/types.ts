@@ -170,6 +170,9 @@ export interface Session {
   repeatedFrom?: string;
 }
 
+/** Efeitos visuais: máximo sempre, automático (calmo durante o treino) ou mínimo. */
+export type FxLevel = "max" | "auto" | "min";
+
 export interface Settings {
   /** Como o app te chama ("Operador: …"). */
   operator: string;
@@ -181,6 +184,8 @@ export interface Settings {
   vibrate: boolean;
   /** Notificar em segundo plano quando o timer de descanso acabar. */
   notify?: boolean;
+  /** Efeitos visuais (padrão: automático). */
+  fx?: FxLevel;
   /** Unidade escolhida por exercício (id do programa). */
   units: Record<string, Unit>;
   /** Incremento personalizado por exercício (id do programa). */

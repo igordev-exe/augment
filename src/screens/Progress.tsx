@@ -8,6 +8,8 @@ import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
 import { AttributeWheel } from "../components/AttributeWheel";
 import { SysModule, SysModuleGroup } from "../components/SysModule";
+import { PanelActions } from "../components/PanelActions";
+import { weekdayName } from "../lib/dates";
 import { FatigueMap } from "../components/FatigueMap";
 import { VolumeSlots } from "../components/VolumeSlots";
 import { PhotoCompare } from "../components/PhotoCompare";
@@ -42,6 +44,7 @@ export function Progress() {
   const [bNotes, setBNotes] = useState("");
   const [bPhoto, setBPhoto] = useState<string | undefined>(undefined);
   const [viewPhotoId, setViewPhotoId] = useState<string | null>(null);
+  const [bioSignal, setBioSignal] = useState(0);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const prMap = useMemo(() => (sessions ? prsBySession(sessions) : new Map<string, PR[]>()), [sessions]);
@@ -125,6 +128,11 @@ export function Progress() {
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const lastWeight = weightPoints.length ? weightPoints[weightPoints.length - 1].value : null;
+  const withPlan = slots.filter((x) => x.planned > 0);
+  const missingSets = withPlan.reduce((a, x) => a + x.missing, 0);
+  const missingMuscles = withPlan.filter((x) => x.missing > 0).length;
+  const lowest = attrs.list.filter((a) => a.level != null).sort((a, b) => a.level! - b.level!)[0];
+  const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="stack-lg">
@@ -144,11 +152,55 @@ export function Progress() {
         </Link>
       </div>
 
-      <FatigueMap status={muscles} daily={daily} next={nextWorkout} today={today} />
+      <section data-augmented-ui="tl-clip br-clip border" className="card sys-brief" aria-label="Resumo da semana">
+        <span className="sys-brief-tag">SYS // RESUMO</span>
+        <button type="button" className="sys-brief-row" onClick={() => jump("p-series")}>
+          <b className={missingSets > 0 ? "warn" : "ok"}>{missingSets > 0 ? missingSets : "OK"}</b>
+          <span>
+            {missingSets > 0
+              ? `Faltam ${missingSets} séries em ${missingMuscles} ${missingMuscles === 1 ? "músculo" : "músculos"} nesta semana`
+              : "Plano de séries da semana cumprido"}
+          </span>
+        </button>
+        <button type="button" className="sys-brief-row" onClick={() => jump("p-atributos")}>
+          <b>{lowest?.level ?? "–"}</b>
+          <span>{lowest ? `Atributo mais baixo: ${lowest.name}` : "Atributos aparecem com os primeiros registros"}</span>
+        </button>
+        <button type="button" className="sys-brief-row" onClick={() => jump("p-fadiga")}>
+          <b>{nextWorkout ? `${nextWorkout.readiness}%` : "–"}</b>
+          <span>{nextWorkout ? `Próximo: ${nextWorkout.name} · ${weekdayName(nextWorkout.date)}` : "Sem treino agendado"}</span>
+        </button>
+      </section>
 
-      <AttributeWheel list={attrs.list} index={attrs.index} />
+      <div id="p-fadiga" className="stack panel-wrap">
+        <FatigueMap status={muscles} daily={daily} next={nextWorkout} today={today} />
+        <PanelActions
+          links={[
+            {
+              to: `/treinador?auto=1&q=${encodeURIComponent("Como está minha recuperação muscular agora e o que ajusto no próximo treino?")}`,
+              label: "Perguntar ao treinador",
+            },
+          ]}
+        />
+      </div>
 
-      <VolumeSlots slots={slots} weekLabel={week === 7 ? "semana de deload" : `semana ${week} do mesociclo`} weekOver={false} />
+      <div id="p-atributos" className="stack panel-wrap">
+        <AttributeWheel list={attrs.list} index={attrs.index} />
+        <PanelActions
+          links={[
+            { to: "/relatorio", label: "Ver relatório da semana" },
+            {
+              to: `/treinador?auto=1&q=${encodeURIComponent(`Meu atributo mais baixo é ${lowest?.name ?? "—"}. O que faço nas próximas sessões para subir?`)}`,
+              label: "Como subir o mais baixo",
+            },
+          ]}
+        />
+      </div>
+
+      <div id="p-series" className="stack panel-wrap">
+        <VolumeSlots slots={slots} weekLabel={week === 7 ? "semana de deload" : `semana ${week} do mesociclo`} weekOver={false} />
+        <PanelActions links={[{ to: "/relatorio", label: "Ver no relatório" }]} />
+      </div>
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <h2 className="h-sec">Treinos por semana</h2>
@@ -210,6 +262,15 @@ export function Progress() {
           title="Biometria"
           hint="Peso, medidas e fotos"
           meta={lastWeight != null ? `${formatWeight(lastWeight)} kg` : "—"}
+          quick={{
+            label: "+ Peso",
+            onClick: () => {
+              setShowBodyForm(true);
+              setBioSignal((n) => n + 1);
+              window.setTimeout(() => document.getElementById("b-weight")?.focus(), 450);
+            },
+          }}
+          openSignal={bioSignal}
         >
           <div className="stack">
             <div className="spread">

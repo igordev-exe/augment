@@ -100,6 +100,8 @@ export function ExerciseBlock({
   const [pickAlt, setPickAlt] = useState(false);
   /** Série com o menu circular aberto (segurar o número da série). */
   const [radial, setRadial] = useState<string | null>(null);
+  /** Série com o RIR reaberto para corrigir (pelo menu circular). */
+  const [rirEdit, setRirEdit] = useState<string | null>(null);
   const baseRir = rirRange(ex.stop, week);
   const rirTarget: [number, number] = lowDay ? [Math.min(4, baseRir[0] + 1), Math.min(4, baseRir[1] + 1)] : baseRir;
   // Pergunta o RIR da série feita mais recente que ainda não tem resposta.
@@ -241,7 +243,7 @@ export function ExerciseBlock({
           ? [
               {
                 id: "int",
-                label: "Intensificador feito",
+                label: "Intensif. feito",
                 tone: "ok" as const,
                 disabled: !radialSet.done,
                 onPick: () =>
@@ -252,6 +254,12 @@ export function ExerciseBlock({
               },
             ]
           : []),
+        {
+          id: "rir",
+          label: "Mudar sobra",
+          disabled: !radialSet.done || radialSet.kind === "warmup",
+          onPick: () => setRirEdit(radialSet.id),
+        },
         { id: "remover", label: "Remover série", tone: "warn", disabled: radialSet.done, onPick: () => removeSet(radialSet.id) },
         ...(alts.length > 0 ? [{ id: "trocar", label: "Trocar hoje", onPick: () => setPickAlt(true) }] : []),
         { id: "anotar", label: "Anotar", onPick: () => setShowNote(true) },
@@ -286,9 +294,19 @@ export function ExerciseBlock({
           <div className="spread">
             <span className="label">Como bateu?</span>
             {askFeedback && (
-              <button type="button" className="link-btn" onClick={() => setFeedback({ skipped: true })}>
-                Pular
-              </button>
+              <span className="row" style={{ gap: 6 }}>
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn btn-sm quick-ok"
+                  onClick={() => setFeedback({ pump: "bom", volume: "ok", joint: "ok" })}
+                >
+                  <Icon name="check" size={14} /> Tudo ok
+                </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFeedback({ skipped: true })}>
+                  Pular
+                </button>
+              </span>
             )}
           </div>
           {askRirClosed && (
@@ -499,10 +517,10 @@ export function ExerciseBlock({
                 ))}
               </span>
             </div>
-            {active && <span className="tiny faint">Segure o número da série para mais ações.</span>}
+            {active && <span className="tiny faint">Toque no número da série para mais ações.</span>}
             <div className="sets-head">
               <span>Série</span>
-              <span className="center">Peso</span>
+              <span className="center">Peso · {entry.unit}</span>
               <span className="center">Reps</span>
               <span className="center">Feita</span>
             </div>
@@ -522,15 +540,16 @@ export function ExerciseBlock({
                   active={active}
                   weightPh={weightPh}
                   repsPh={repsPh}
-                  canRemove={!s.done}
-                  askRir={s.id === askRirId}
+                  askRir={s.id === askRirId || s.id === rirEdit}
                   rirTarget={rirTarget}
-                  onRir={(v) => setSet(s.id, { rir: v })}
+                  onRir={(v) => {
+                    setRirEdit(null);
+                    setSet(s.id, { rir: v });
+                  }}
                   onWeight={(w) => setSet(s.id, { weight: w })}
                   onReps={(r) => setSet(s.id, { reps: r })}
                   onToggle={(wv, rv) => toggleDone(s.id, wv, rv, weightPh, repsPh)}
-                  onRemove={() => removeSet(s.id)}
-                  onLongPress={active ? () => setRadial(s.id) : undefined}
+                  onMenu={active ? () => setRadial(s.id) : undefined}
                 />
               );
             })}

@@ -48,8 +48,13 @@
   --ok-soft: var(--green-soft);
   --warn: var(--amber);
   --warn-soft: var(--amber-soft);
-  --danger: var(--red-hi);
-  --danger-soft: var(--red-soft);
+  /* Perigo é sempre vermelho, mesmo no deload (que troca só o vermelho de ação). */
+  --danger-line: #ef302c;
+  --danger: #ff5a4f;
+  --danger-soft: #3b1513;
+  --danger-fill: #d42a26;
+  /* Preenchimento de ação com texto branco em cima: 5,05:1. O #ef302c neon fica na borda e no brilho. */
+  --action-fill: #d42a26;
   --sel: var(--cyan);
   --sel-soft: var(--cyan-soft);
   /*
@@ -121,7 +126,7 @@ svg {
   max-width: 100%;
 }
 ::selection {
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 :focus-visible {
@@ -148,7 +153,7 @@ svg {
   min-height: 100vh;
 }
 .app.has-timer {
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 104px);
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 124px);
 }
 .stack {
   display: flex;
@@ -328,7 +333,7 @@ p {
 }
 .status {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--ink-3);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -533,7 +538,7 @@ p {
 }
 .btn-primary {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: var(--red-ink);
 }
 .btn-primary:active:not(:disabled) {
@@ -555,9 +560,9 @@ p {
   color: var(--ink-3);
 }
 .btn-danger {
-  --aug-border-bg: var(--red);
-  color: var(--red-hi);
-  background: var(--red-soft);
+  --aug-border-bg: var(--danger-line);
+  color: var(--danger);
+  background: var(--danger-soft);
 }
 .btn-big {
   min-height: 58px;
@@ -668,7 +673,7 @@ p {
 }
 .toggle-chip[aria-pressed="true"] {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 
@@ -702,7 +707,7 @@ p {
   text-decoration: none;
   color: var(--ink-3);
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -733,6 +738,7 @@ p {
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   padding: 0 12px 10px;
 }
+/* Duas linhas: em cima o estado e o exercício; embaixo relógio, próxima série e botões. */
 .timer-inner {
   --aug-tl: 14px;
   --aug-br: 14px;
@@ -741,14 +747,58 @@ p {
   max-width: 536px;
   margin: 0 auto;
   background: #121418f5;
-  padding: 10px 10px 13px 16px;
+  padding: 8px 10px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.timer-top {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.timer-top b {
+  font-weight: 400;
+  color: var(--ink);
+}
+.timer-inner.over .timer-top,
+.timer-inner.over .timer-top b {
+  color: #fff;
+}
+.timer-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+}
+.timer-next {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.timer-next span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.timer-next span:first-child {
+  color: #fff;
 }
 .timer-inner.over {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 .timer-progress {
@@ -762,25 +812,46 @@ p {
 .timer-inner.over .timer-progress {
   display: none;
 }
-.timer-clock {
+.timer .timer-clock {
+  display: inline-flex;
+  align-items: baseline;
+  min-height: 0;
+  min-width: 92px;
+  padding: 0;
+  border: 0;
   font-family: var(--tech);
   font-weight: 800;
   font-size: 30px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  min-width: 92px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* Cada algarismo numa caixa da largura do "0": o relógio não pula quando passa por um "1". */
+.timer-clock .dg {
+  display: inline-block;
+  width: 0.84em;
+  text-align: center;
+}
+.timer-clock .sg {
+  display: inline-block;
+  width: 0.62em;
+  text-align: center;
+}
+.timer-clock .sep {
+  display: inline-block;
+  width: 0.34em;
+  text-align: center;
 }
 .timer-label {
   font-family: var(--mono);
   font-size: 12px;
-  opacity: 0.85;
+  opacity: 1;
   line-height: 1.35;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 .timer button {
-  min-height: 40px;
+  min-height: 44px;
   min-width: 50px;
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
@@ -789,6 +860,21 @@ p {
   font-family: var(--mono);
   font-size: 13px;
   text-transform: uppercase;
+}
+
+/* "Pular" separado do "+15" por um divisor: menos toque errado. */
+.timer .timer-skip {
+  position: relative;
+  margin-left: 10px;
+}
+.timer .timer-skip::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: color-mix(in srgb, currentColor 40%, transparent);
 }
 
 /* ---------- Mission hero (tela inicial) ---------- */
@@ -803,7 +889,7 @@ p {
     linear-gradient(135deg, #e3342e 0%, #c3221d 55%, #8f1714 100%);
   color: #fff;
   padding: 16px 16px 18px;
-  min-height: 440px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -879,7 +965,7 @@ p {
 }
 .mission-code {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   color: #ffd9d4;
   text-transform: uppercase;
@@ -906,7 +992,19 @@ p {
 }
 .mission-body {
   margin-top: auto;
-  padding-top: 190px;
+  padding-top: 130px;
+}
+/* Telas baixas: o "Iniciar protocolo" cabe na primeira dobra. */
+@media (max-height: 760px) {
+  .mission {
+    min-height: 0 !important;
+  }
+  .mission-body {
+    padding-top: 96px;
+  }
+}
+.h-hero.h-hero-sm {
+  font-size: clamp(26px, 8vw, 34px);
 }
 .mission-meta {
   display: flex;
@@ -936,7 +1034,7 @@ p {
   background: #121418dd;
   padding: 5px 7px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.35;
   letter-spacing: 0.06em;
   color: var(--cyan);
@@ -971,7 +1069,7 @@ p {
 }
 .weeks .w.now {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
   box-shadow: 0 0 14px #ef302c55;
 }
@@ -1032,7 +1130,7 @@ p {
 .day-dot small {
   font-family: var(--mono);
   font-weight: 400;
-  font-size: 10.5px;
+  font-size: 11px;
   color: inherit;
   opacity: 0.8;
 }
@@ -1047,7 +1145,7 @@ p {
 }
 .day-dot.today {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
   box-shadow: 0 0 14px #ef302c55;
 }
@@ -1207,7 +1305,7 @@ p {
 }
 .sets-head {
   display: grid;
-  grid-template-columns: 56px 1fr 1fr 54px;
+  grid-template-columns: 56px 1.3fr 0.7fr 54px;
   gap: 8px;
   padding: 0 2px;
   font-family: var(--mono);
@@ -1218,12 +1316,14 @@ p {
 }
 .set {
   display: grid;
-  grid-template-columns: 56px 1fr 1fr 54px;
+  grid-template-columns: 56px 1.3fr 0.7fr 54px;
   gap: 8px;
   align-items: center;
 }
 .set-kind {
   height: 50px;
+  width: 100%;
+  padding: 0;
   display: grid;
   place-items: center;
   position: relative;
@@ -1253,18 +1353,25 @@ p {
   background: var(--amber-soft);
   border-color: #f5b83d66;
 }
-.set-kind button.x {
+/* Número da série é um botão: abre o menu circular. O "⋯" no canto mostra que dá para tocar. */
+button.set-kind {
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+button.set-kind:active {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.set-more {
   position: absolute;
-  top: -7px;
-  left: -7px;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink-3);
-  font-size: 12px;
-  line-height: 1;
-  padding: 0;
+  top: 5px;
+  right: 5px;
+  width: 11px;
+  height: 3px;
+  background: radial-gradient(circle, var(--cyan) 1.2px, transparent 1.6px) 0 0 / 4px 3px repeat-x;
+  opacity: 0.85;
 }
 .field {
   position: relative;
@@ -1272,15 +1379,15 @@ p {
 .field input {
   width: 100%;
   height: 50px;
-  border: 1px solid var(--line);
+  border: 1px solid #6b717b;
   background: var(--bg);
   font-family: var(--tech);
   font-weight: 800;
-  font-size: 20px;
+  font-size: clamp(16px, 5.2vw, 20px);
   text-align: center;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  padding: 0 28px 0 6px;
+  padding: 0 4px;
   -moz-appearance: textfield;
   appearance: textfield;
   border-radius: 0;
@@ -1290,9 +1397,10 @@ p {
   -webkit-appearance: none;
   margin: 0;
 }
+/* Sugestão do sistema (o que o ✓ grava se o campo ficar vazio): ciano "fantasma", 5,9:1. */
 .field input::placeholder {
-  color: var(--ink-3);
-  opacity: 0.5;
+  color: #3fd8e0b3;
+  opacity: 1;
 }
 .field input:focus {
   border-color: var(--red);
@@ -1330,7 +1438,7 @@ p {
 }
 .check[aria-pressed="true"] {
   --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 .set.warmup .check[aria-pressed="true"] {
@@ -1355,12 +1463,11 @@ p {
   bottom: 4px;
   left: 0;
   right: 0;
-  border: 0;
-  background: none;
-  padding: 0;
+  white-space: nowrap;
   font-family: var(--mono);
   font-weight: 400;
-  font-size: 9.5px;
+  font-size: 11px;
+  letter-spacing: 0 !important;
   letter-spacing: 0.02em;
   color: var(--cyan);
 }
@@ -1380,19 +1487,41 @@ p {
   margin-right: auto;
   color: var(--cyan);
 }
+.rir-ask {
+  gap: 8px;
+}
 .rir-ask button {
-  min-width: 38px;
-  height: 36px;
-  border: 1px solid var(--line);
+  position: relative;
+  flex: 1;
+  max-width: 54px;
+  min-width: 42px;
+  height: 48px;
+  border: 1px solid #6b717b;
   background: var(--bg);
   color: var(--ink-2);
   font-family: var(--tech);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+}
+.rir-ask button small {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
 }
 .rir-ask button.target {
-  border-color: #3fd8e088;
+  border-color: var(--cyan);
   color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--cyan);
+}
+.rir-ask button[aria-pressed="true"] small {
+  color: var(--bg);
 }
 .rir-ask button[aria-pressed="true"] {
   background: var(--cyan);
@@ -1423,7 +1552,7 @@ p {
 .choice button {
   flex: 1;
   min-width: 0;
-  height: 36px;
+  height: 44px;
   border: 1px solid var(--line);
   background: var(--bg);
   color: var(--ink-2);
@@ -1468,7 +1597,7 @@ p {
   text-transform: uppercase;
 }
 .unit-toggle button[aria-pressed="true"] {
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 
@@ -1518,6 +1647,19 @@ textarea.note:focus {
   border-color: var(--red);
 }
 
+/* "Tudo ok": responde as perguntas de um toque com o padrão (sem bloquear o treino). */
+.btn.quick-ok {
+  --aug-border-bg: var(--cyan);
+  color: var(--cyan);
+  background: var(--cyan-soft);
+  min-height: 44px;
+}
+.finish-confirm {
+  --aug-border-bg: var(--warn);
+  gap: 10px;
+  animation: aw-panel-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 /* ---------- Toast (aviso com trilho lateral, colchete e tom) ---------- */
 .toast-wrap {
   --tc: var(--sel);
@@ -1555,7 +1697,7 @@ textarea.note:focus {
   --tc-label: #ffd98a;
 }
 .toast-wrap.tone-danger {
-  --tc: var(--red);
+  --tc: var(--danger-line);
   --tc-bg: #1a0f0ff0;
   --tc-label: #ff8a80;
 }
@@ -1569,6 +1711,54 @@ textarea.note:focus {
   padding: 11px 14px 11px 18px;
   font-size: 14.5px;
   border-left: 4px solid var(--tc);
+}
+.toast {
+  position: relative;
+}
+/* Barra de vida do aviso: encolhe no tempo de leitura (pausa com o dedo em cima). */
+.toast-life {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--tc);
+  opacity: 0.7;
+  transform-origin: left;
+  animation: toast-life linear forwards;
+}
+.toast-wrap:active .toast-life {
+  animation-play-state: paused;
+}
+@keyframes toast-life {
+  to {
+    transform: scaleX(0);
+  }
+}
+.toast-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.toast-act,
+.toast-close {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--tc);
+  background: color-mix(in srgb, var(--tc) 18%, transparent);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.toast-act {
+  flex: 1;
+}
+.toast-close {
+  border-color: #6b717b;
+  background: transparent;
+  color: var(--ink-2);
 }
 .toast b {
   display: block;
@@ -1644,7 +1834,7 @@ textarea.note:focus {
   padding: 4px 4px 3px;
 }
 .cal .code.done {
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
 }
 .cal .code.planned {
@@ -1898,7 +2088,7 @@ table.t a {
   content: "SYS // INFO";
   display: block;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--cyan);
   margin-bottom: 4px;
@@ -1939,7 +2129,7 @@ table.t a {
   padding-top: 14px;
   border-top: 1px solid var(--line);
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11px;
   color: var(--ink-3);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2095,7 +2285,7 @@ table.t a {
 .fm {
   --fm-display: "Rajdhani", var(--body);
   --fm-ink: #d8f8fb;
-  --fm-dim: #5f808a;
+  --fm-dim: #8fb3bc;
   --fm-line: #17303a;
   --fm-panel: rgba(4, 10, 15, 0.86);
   --fm-ok: #55f9b3;
@@ -2131,7 +2321,7 @@ table.t a {
   flex-wrap: wrap;
 }
 .fm-eyebrow {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   color: var(--fm-dim);
   margin-bottom: 6px;
@@ -2168,7 +2358,7 @@ table.t a {
 .fm-status small {
   display: block;
   color: var(--fm-dim);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.13em;
 }
 .fm-status strong {
@@ -2240,8 +2430,8 @@ table.t a {
 }
 .fm-heading small {
   display: block;
-  color: #4f727c;
-  font-size: 9px;
+  color: var(--fm-dim);
+  font-size: 11px;
   letter-spacing: 0.11em;
   margin-top: 2px;
 }
@@ -2347,7 +2537,7 @@ table.t a {
   padding: 8px 16px;
 }
 .fm .fm-switch button[aria-pressed="true"] {
-  background: var(--red);
+  background: var(--action-fill);
   color: #fff;
   box-shadow: 0 0 14px rgba(239, 48, 44, 0.3);
 }
@@ -2356,8 +2546,8 @@ table.t a {
   top: 60px;
   left: 18px;
   z-index: 3;
-  color: #5c7c84;
-  font-size: 9px;
+  color: var(--fm-dim);
+  font-size: 11px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2386,8 +2576,8 @@ table.t a {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #4f727c;
-  font-size: 9px;
+  color: var(--fm-dim);
+  font-size: 11px;
   letter-spacing: 0.1em;
 }
 .fm-caption i {
@@ -2538,7 +2728,7 @@ table.t a {
 }
 .fm .callout-value {
   fill: currentColor;
-  font: 600 9px var(--mono);
+  font: 600 11px var(--mono);
   letter-spacing: 0.1em;
 }
 
@@ -2585,7 +2775,7 @@ table.t a {
   place-items: center;
   border-top: 1px solid currentColor;
   border-bottom: 1px solid currentColor;
-  font-size: 10px;
+  font-size: 11px;
   transform: skew(-12deg);
 }
 .fm-index.critico {
@@ -2602,7 +2792,7 @@ table.t a {
 .fm-zone-copy small {
   display: block;
   color: var(--fm-dim);
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 2px;
 }
 .fm-zone-value {
@@ -2630,8 +2820,8 @@ table.t a {
   border-top: 1px solid #142d36;
 }
 .fm-legend > small {
-  font-size: 9px;
-  color: #54747d;
+  font-size: 11px;
+  color: var(--fm-dim);
   letter-spacing: 0.13em;
 }
 .fm-legend > div {
@@ -2643,7 +2833,7 @@ table.t a {
 .fm-legend span {
   display: inline-flex;
   align-items: center;
-  font-size: 9px;
+  font-size: 11px;
   color: #6c8790;
 }
 .fm-legend i {
@@ -2677,8 +2867,8 @@ table.t a {
   padding: 16px 16px 4px;
 }
 .fm-selected small {
-  font-size: 9px;
-  color: #52737d;
+  font-size: 11px;
+  color: var(--fm-dim);
   letter-spacing: 0.1em;
 }
 .fm-selected h3 {
@@ -2687,7 +2877,7 @@ table.t a {
   text-transform: uppercase;
 }
 .fm-selected > span {
-  font-size: 10px;
+  font-size: 11px;
   padding: 5px 7px;
   border: 1px solid currentColor;
   white-space: nowrap;
@@ -2736,7 +2926,7 @@ table.t a {
   display: block;
   color: #65838c;
   margin-top: 8px;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.16em;
 }
 .fm-tick {
@@ -2780,8 +2970,8 @@ table.t a {
 .fm-metrics small,
 .fm-metrics span {
   display: block;
-  font-size: 9px;
-  color: #53747d;
+  font-size: 11px;
+  color: var(--fm-dim);
 }
 .fm-metrics strong {
   display: block;
@@ -2852,8 +3042,8 @@ table.t a {
   display: flex;
   justify-content: space-between;
   padding: 0 15px;
-  color: #4f6f78;
-  font-size: 9px;
+  color: var(--fm-dim);
+  font-size: 11px;
 }
 .fm-cards {
   display: grid;
@@ -2887,8 +3077,8 @@ table.t a {
 .fm-card small,
 .fm-ready > span {
   display: block;
-  color: #5a7a83;
-  font-size: 9px;
+  color: var(--fm-dim);
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 .fm-card strong {
@@ -2897,8 +3087,8 @@ table.t a {
   margin: 4px 0;
 }
 .fm-card span {
-  color: #5b7d86;
-  font-size: 10px;
+  color: var(--fm-dim);
+  font-size: 11px;
 }
 .fm-ready {
   width: 92px;
@@ -3005,7 +3195,7 @@ table.t a {
 .hm-label {
   fill: var(--ink-3);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   text-transform: lowercase;
 }
 .hm-cell {
@@ -3082,7 +3272,7 @@ table.t a {
   background: #0c0e11d9;
   color: var(--ink);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.03em;
   pointer-events: none;
   white-space: nowrap;
@@ -3169,7 +3359,7 @@ table.t a {
   background: #0c0e11d9;
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 .ex-thumb {
@@ -3245,7 +3435,7 @@ table.t a {
 .dock-tag {
   padding: 4px 14px 4px 8px;
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1;
   letter-spacing: 0.16em;
   background: var(--amber);
@@ -3411,7 +3601,7 @@ table.t a {
   padding: 2px 6px;
   border: 1px solid #3fd8e088;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   color: var(--sel);
 }
@@ -3472,7 +3662,7 @@ table.t a {
 .plan-more summary em {
   padding: 1px 5px;
   font-style: normal;
-  font-size: 9.5px;
+  font-size: 11px;
   background: var(--warn);
   color: #0c0e11;
 }
@@ -3577,7 +3767,7 @@ table.t a {
   right: 10px;
   bottom: 3px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   opacity: 0.7;
@@ -3679,6 +3869,23 @@ table.t a {
 .wheel-slice:active .wheel-label {
   fill: #fff;
 }
+/* Slot offline: a ação não se aplica agora, mas a fatia fica no mesmo lugar. */
+.wheel-slice.offline {
+  cursor: default;
+}
+.wheel-slice.offline path,
+.wheel-slice.offline:hover path,
+.wheel-slice.offline:active path {
+  fill: url(#slot-off);
+  stroke: #ffffff1f;
+}
+.wheel-slice.offline .wheel-label,
+.wheel-slice.offline:hover .wheel-label {
+  fill: #6b717b;
+}
+.wheel-slice.offline .wheel-idx {
+  fill: #ffffff26;
+}
 .wheel-hub {
   cursor: pointer;
   outline: none;
@@ -3747,7 +3954,7 @@ table.t a {
   border-bottom: 1px solid #4ff08f40;
   background: #4ff08f12;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: #7fd7a0;
 }
@@ -3996,15 +4203,27 @@ table.t a {
 }
 @media (max-width: 600px) {
   .timer-inner {
-    gap: 8px;
-    padding: 9px 8px 12px 12px;
+    padding: 8px 8px 12px 12px;
   }
-  .timer-clock {
-    font-size: 26px;
-    min-width: 74px;
+  .timer .timer-clock {
+    font-size: 24px;
+    min-width: 0;
+  }
+  .timer-row {
+    gap: 6px;
+  }
+  .timer-next {
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+  .timer .timer-skip {
+    margin-left: 6px;
+  }
+  .timer .timer-skip::before {
+    left: -6px;
   }
   .timer button {
-    min-width: 44px;
+    min-width: 40px;
     padding: 0 6px;
   }
 }
@@ -4202,7 +4421,7 @@ table.t a {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--fm-line);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--fm-dim);
   text-transform: uppercase;
@@ -4597,7 +4816,7 @@ table.t a {
 }
 .aw-focus span,
 .aw-why span {
-  font: 600 10px var(--mono);
+  font: 600 11px var(--mono);
   letter-spacing: 0.12em;
   color: var(--aw-gold);
 }
@@ -4609,10 +4828,10 @@ table.t a {
 .aw-why {
   margin: 10px 0 0;
   font-size: 11px;
-  color: #6f82a0;
+  color: #9aaccb;
 }
 .aw-why span {
-  color: #4f6a8c;
+  color: #8ea3c0;
 }
 @keyframes aw-panel-in {
   0% {
@@ -4632,6 +4851,83 @@ table.t a {
   }
 }
 
+/* ---------- Progresso: resumo no topo e próximo passo de cada painel ---------- */
+.sys-brief {
+  --aug-border-bg: #3fd8e066;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 8px;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #3fd8e006 3px 4px), linear-gradient(90deg, #3fd8e012, transparent 70%),
+    #0a1014;
+}
+.sys-brief-tag {
+  font: 11px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-bottom: 4px;
+}
+.sys-brief-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  border-top: 1px solid #3fd8e01f;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.sys-brief-row:first-of-type {
+  border-top: 0;
+}
+.sys-brief-row b {
+  flex: 0 0 52px;
+  font: 700 18px var(--tech);
+  color: var(--cyan);
+  text-align: center;
+}
+.sys-brief-row b.warn {
+  color: var(--warn);
+}
+.sys-brief-row b.ok {
+  color: var(--ok);
+}
+.sys-brief-row::after {
+  content: "▸";
+  margin-left: auto;
+  color: var(--ink-3);
+}
+.panel-wrap {
+  gap: 8px;
+  scroll-margin-top: 12px;
+}
+.panel-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.panel-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #3fd8e04d;
+  background: #3fd8e00d;
+  color: var(--cyan);
+  font: 12.5px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.panel-act:active {
+  background: #3fd8e026;
+}
+
 /* ---------- Módulos colapsáveis (subsistemas) ---------- */
 .sysmod-group {
   display: flex;
@@ -4642,7 +4938,7 @@ table.t a {
   display: flex;
   align-items: center;
   gap: 10px;
-  font: 10px var(--mono);
+  font: 11px var(--mono);
   letter-spacing: 0.16em;
   color: var(--ink-3);
   margin-bottom: 2px;
@@ -4677,6 +4973,22 @@ table.t a {
   --mod-soft: #f5b83d1c;
   --mod-line: #f5b83d73;
 }
+.sysmod-head {
+  display: flex;
+  gap: 6px;
+}
+.sysmod-quick {
+  flex: 0 0 auto;
+  min-width: 56px;
+  padding: 0 10px;
+  border: 1px solid var(--mod-line);
+  background: var(--mod-soft);
+  color: var(--mod);
+  font: 13px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
 .sysmod-bar {
   position: relative;
   display: flex;
@@ -4710,7 +5022,7 @@ table.t a {
   align-self: stretch;
   display: grid;
   place-items: center;
-  min-width: 62px;
+  min-width: 56px;
   padding: 0 8px;
   font: 11px var(--mono);
   letter-spacing: 0.1em;
@@ -4732,6 +5044,31 @@ table.t a {
   flex-direction: column;
   gap: 2px;
 }
+.sysmod-head .sysmod-bar {
+  gap: 9px;
+  padding-right: 10px;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-bar {
+  gap: 6px;
+  padding-right: 8px;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-code {
+  min-width: 44px;
+  padding: 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-meta {
+  font-size: 14px;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-led {
+  display: none;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-title :is(strong, small) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sysmod-title strong {
   font:
     700 17px/1.1 "Rajdhani",
@@ -4741,7 +5078,7 @@ table.t a {
   color: var(--ink);
 }
 .sysmod-title small {
-  font: 10px var(--mono);
+  font: 11px var(--mono);
   letter-spacing: 0.08em;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -4935,7 +5272,7 @@ table.t a {
   stroke-width: 1;
 }
 .holo-axis {
-  font-size: 10.5px;
+  font-size: 11px;
   fill: #5f8a93;
   letter-spacing: 0.04em;
 }
@@ -5044,26 +5381,21 @@ table.t a {
    Animações de interface: entrada de tela, toque, botões e navegação
    ========================================================================== */
 
-/* Entrada de tela: um feixe desce pela tela e os blocos sobem em cascata. */
+/* Entrada de tela: os blocos sobem em cascata curta (tudo em ≤ 300 ms, limiar de Doherty). */
 .app > .stack-lg > * {
-  animation: route-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation: route-rise 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 .app > .stack-lg > :nth-child(2) {
-  animation-delay: 0.05s;
+  animation-delay: 0.03s;
 }
 .app > .stack-lg > :nth-child(3) {
-  animation-delay: 0.1s;
+  animation-delay: 0.06s;
 }
-.app > .stack-lg > :nth-child(4) {
-  animation-delay: 0.15s;
+.app > .stack-lg > :nth-child(n + 4) {
+  animation-delay: 0.08s;
 }
-.app > .stack-lg > :nth-child(5) {
-  animation-delay: 0.2s;
-}
-.app > .stack-lg > :nth-child(n + 6) {
-  animation-delay: 0.25s;
-}
-.app > .stack-lg::before {
+/* Feixe de varredura: só na abertura do app e ao iniciar um protocolo (classe fx-boot, lib/fx.ts). */
+:root.fx-boot .app > .stack-lg::before {
   content: "";
   position: fixed;
   left: 0;
@@ -5081,8 +5413,69 @@ table.t a {
 @keyframes route-rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
   }
+}
+
+.term {
+  cursor: pointer;
+}
+@media (max-width: 380px) {
+  .hide-narrow {
+    display: none;
+  }
+}
+.term-skip {
+  margin-left: auto;
+  margin-right: 10px;
+  opacity: 0.75;
+}
+
+/* Painéis fora da tela: animações pausadas (lib/fx.ts). Voltam a rodar quando aparecem. */
+.fx-paused,
+.fx-paused * {
+  animation-play-state: paused !important;
+}
+
+/* Modo academia (automático durante o treino): sem loops decorativos, sem ruído nem cascata. Os indicadores
+   funcionais (próxima série no HUD) e a resposta ao toque continuam. */
+:root:is(.fx-gym, .fx-min)
+  :is(
+    .fm-orbit,
+    .fm .holo-ring.front path,
+    .fm .vessel-flow path,
+    .fm .scan-sweep,
+    .fm .reticle-outer,
+    .term-leds i:first-child,
+    .aw-flow,
+    .core-ring,
+    .aw-rail,
+    .sysmod.open .sysmod-led,
+    .holo-ping,
+    .scan-beam::after,
+    .bm-sweep,
+    .hm-sweep
+  ) {
+  animation: none !important;
+}
+:root:is(.fx-gym, .fx-min) .hm-holo .hm-cell.today {
+  animation: none !important;
+}
+:root:is(.fx-gym, .fx-min) .hm-sweep {
+  display: none;
+}
+:root:is(.fx-gym, .fx-min) .app > .stack-lg > * {
+  animation: none;
+}
+:root:is(.fx-gym, .fx-min) body::before {
+  display: none;
+}
+/* Mínimo: como "reduzir movimento", mas escolhido no app. */
+:root.fx-min *,
+:root.fx-min *::before,
+:root.fx-min *::after {
+  animation: none !important;
+  transition: none !important;
 }
 @keyframes route-beam {
   0% {
@@ -5244,7 +5637,7 @@ table.t a {
   border: 1px solid var(--lab-line);
   background: #050505;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #e9e9e4;
@@ -5263,9 +5656,10 @@ table.t a {
     transparent 7px 10px
   );
 }
+/* Abas no topo, presas ao rolar (antes ficavam empilhadas sobre a navegação de baixo). */
 .laudo-tabs {
   position: sticky;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 8px);
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
   z-index: 12;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -5274,12 +5668,10 @@ table.t a {
   border: 1px solid var(--lab-line);
   background: #050505f0;
 }
-.app.has-timer .laudo-tabs {
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 96px);
-}
+
 .laudo-tabs button {
   position: relative;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 4px;
   border: 1px solid #6c6c66;
   background: #0b0b0b;
@@ -5300,7 +5692,7 @@ table.t a {
   height: 6px;
   background: currentColor;
 }
-.laudo-tabs button[aria-pressed="true"] {
+.laudo-tabs button[aria-selected="true"] {
   background: #ecece6;
   border-color: #ecece6;
   color: #060606;
@@ -5326,7 +5718,7 @@ table.t a {
   border: 1px solid var(--lab-line);
   background: #000c;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #f2f2ee;
@@ -5399,7 +5791,7 @@ table.t a {
   background-clip: padding-box;
 }
 .ws-bracket small {
-  font-size: 10px;
+  font-size: 11px;
   color: currentColor;
   opacity: 0.6;
 }
@@ -5476,7 +5868,7 @@ table.t a {
   right: 12px;
   padding: 2px 5px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   background: #000c;
@@ -5495,7 +5887,7 @@ table.t a {
 }
 .ws-muscle {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -5553,11 +5945,12 @@ table.t a {
 
 /* ---------- Semana de deload: paleta calma (o vermelho de ação vira azul-aço) ---------- */
 :root.mode-deload {
-  /* Azul-aço com branco em cima: 4,2:1, o mesmo patamar do vermelho normal (4,1:1). */
+  /* Azul-aço; o preenchimento com texto branco fica em --action-fill (5,7:1). O perigo continua vermelho. */
   --red: #2b84a8;
   --red-hi: #6cc0df;
   --red-deep: #1f6585;
   --red-soft: #0e2531;
+  --action-fill: #236e8c;
   --glow-red: drop-shadow(0 0 3px #2b84a8b3) drop-shadow(0 0 12px #2b84a840);
 }
 /* O cartão "Missão do dia" tem degradê e ilustração vermelhos fixos: no deload, viram azul-aço. */
@@ -5648,7 +6041,7 @@ table.t a {
   padding: 2px 5px;
   border: 1px solid #4ff08f66;
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: 0.08em;
   color: var(--ok);
@@ -5743,7 +6136,7 @@ table.t a {
 .bm-pill {
   padding: 2px 7px;
   border: 1px solid currentColor;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--fm-dim);
 }
@@ -5772,7 +6165,7 @@ table.t a {
   padding: 12px 10px 12px 12px;
 }
 .bm-gauge small {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--fm-dim);
 }
@@ -5801,7 +6194,7 @@ table.t a {
 }
 .bm-gauge em i {
   font-style: normal;
-  font-size: 9px;
+  font-size: 11px;
   color: var(--fm-dim);
 }
 .bm-scan {
@@ -5908,7 +6301,7 @@ table.t a {
   font: 700 28px/1 var(--fm-display);
 }
 .eg-counts small {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--fm-dim);
 }
@@ -5943,13 +6336,13 @@ table.t a {
   padding: 2px 8px;
   border-top: 1px solid currentColor;
   border-bottom: 1px solid currentColor;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   color: var(--fm-ink);
   transform: skew(-12deg);
 }
 .eg-tag {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.14em;
 }
 .eg-tag.warn {
@@ -5979,7 +6372,7 @@ table.t a {
   padding: 4px 0;
   list-style: none;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -5998,7 +6391,7 @@ table.t a {
   color: #9fbfc6;
 }
 .eg-why small {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--fm-dim);
 }
 .eg-link {
@@ -6050,7 +6443,7 @@ table.t a {
   padding: 1px 6px;
   border: 1px solid var(--red);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   color: #ff8a80;
 }
@@ -6064,7 +6457,7 @@ table.t a {
 }
 .dz-sub {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #ff8a80b3;
@@ -6076,8 +6469,8 @@ table.t a {
   color: #f0d6d3;
 }
 .dz-btn {
-  --aug-border-bg: var(--red-hi);
-  background: var(--red);
+  --aug-border-bg: var(--danger);
+  background: var(--danger-fill);
   color: #fff;
 }
 

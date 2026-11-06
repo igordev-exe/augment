@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
+import { SysModule } from "../components/SysModule";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { DAY_BY_ID, PROGRAM } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
+import { bootBeam } from "../lib/fx";
 import { shareOrDownload } from "../lib/files";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { fatigueAlert } from "../lib/engine";
@@ -62,6 +64,7 @@ export function Today() {
   const lastDone = [...doneAll].sort(bySessionDesc)[0];
 
   async function start(from?: Session) {
+    bootBeam();
     if (active) {
       navigate(`/treino/${active.id}`);
       return;
@@ -99,6 +102,11 @@ export function Today() {
         ? "Missão do dia"
         : `Descanso hoje. Próxima: ${next ? `${weekdayName(next.date)}, ${shortDate(next.date)}` : "—"}`;
 
+  // Retomada e fadiga mudam o treino da semana: ficam sempre à vista. Relatório e backup vão para a barra de avisos.
+  const warnItems = [!active && showReport ? "relatório" : null, showBackupReminder ? "backup" : null].filter((x): x is string => !!x);
+  const warnCount = warnItems.length;
+  const warnHint = warnItems.join(" · ");
+
   async function quickBackup() {
     await updateSettings({ lastBackupAt: today, backupDismissed: monday });
     const b = await exportBackup();
@@ -124,20 +132,6 @@ export function Today() {
           </Link>
         </div>
       </header>
-
-      <div className="stack" style={{ gap: 8 }}>
-        <div className="eyebrow">
-          Sistema online / {weekdayName(today)}, {shortDate(today)}
-        </div>
-        <p className="h-hero" aria-hidden="true">
-          Beyond
-          <br />
-          limits<span style={{ color: "var(--red)" }}>.</span>
-        </p>
-        <p className="small muted">
-          {settings.operator ? `Operador: ${settings.operator}. ` : ""}Seu corpo é o hardware. Cada série registrada é uma atualização.
-        </p>
-      </div>
 
       {active && (
         <Link
@@ -229,62 +223,71 @@ export function Today() {
         </section>
       )}
 
-      {!active && showReport && (
-        <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
-          <div className="spread">
-            <span className="label">
-              Relatório da semana passada · {report!.done}/{report!.planned} treinos
-            </span>
-          </div>
-          <div className="display" style={{ fontSize: 20 }}>
-            {report!.focus.title}
-          </div>
-          <p className="small muted" style={{ margin: 0 }}>
-            {report!.focus.detail}
-          </p>
-          <div className="row">
-            <Link to={`/relatorio/${lastWeek}`} data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow">
-              Ver relatório <span className="arrow">&gt;</span>
-            </Link>
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-sm btn-ghost"
-              onClick={() => updateSettings({ reportSeen: monday })}
-            >
-              Entendido
-            </button>
-          </div>
-        </section>
-      )}
+      {warnCount > 0 && (
+        <SysModule
+          id="avisos-home"
+          code="SYS.!"
+          title={warnCount === 1 ? "1 aviso" : `${warnCount} avisos`}
+          hint={warnHint}
+          tone="amber"
+          meta={warnCount}
+        >
+          <div className="stack">
+            {!active && showReport && (
+              <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
+                <div className="spread">
+                  <span className="label">
+                    Relatório da semana passada · {report!.done}/{report!.planned} treinos
+                  </span>
+                </div>
+                <div className="display" style={{ fontSize: 20 }}>
+                  {report!.focus.title}
+                </div>
+                <p className="small muted" style={{ margin: 0 }}>
+                  {report!.focus.detail}
+                </p>
+                <div className="row">
+                  <Link to={`/relatorio/${lastWeek}`} data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow">
+                    Ver relatório <span className="arrow">&gt;</span>
+                  </Link>
+                  <button
+                    type="button"
+                    data-augmented-ui="tl-clip br-clip border"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => updateSettings({ reportSeen: monday })}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </section>
+            )}
 
-      {showBackupReminder && (
-        <section data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
-          <span className="label">Segurança local // Backup</span>
-          <p className="small muted" style={{ margin: 0 }}>
-            {backupAge == null
-              ? `Você já tem ${doneAll.length} treinos salvos no aparelho e ainda não exportou um backup.`
-              : `Faz ${backupAge} dias desde o último backup (${shortDate(settings.lastBackupAt!)}). Guarde uma cópia.`}
-          </p>
-          <div className="row">
-            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow" onClick={quickBackup}>
-              Exportar backup (.json)
-            </button>
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-sm btn-ghost"
-              onClick={() => updateSettings({ backupDismissed: monday })}
-            >
-              Depois
-            </button>
+            {showBackupReminder && (
+              <section data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
+                <span className="label">Segurança local // Backup</span>
+                <p className="small muted" style={{ margin: 0 }}>
+                  {backupAge == null
+                    ? `Você já tem ${doneAll.length} treinos salvos no aparelho e ainda não exportou um backup.`
+                    : `Faz ${backupAge} dias desde o último backup (${shortDate(settings.lastBackupAt!)}). Guarde uma cópia.`}
+                </p>
+                <div className="row">
+                  <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm grow" onClick={quickBackup}>
+                    Exportar backup (.json)
+                  </button>
+                  <button
+                    type="button"
+                    data-augmented-ui="tl-clip br-clip border"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => updateSettings({ backupDismissed: monday })}
+                  >
+                    Depois
+                  </button>
+                </div>
+              </section>
+            )}
           </div>
-        </section>
+        </SysModule>
       )}
-
-      <Link to="/treinador" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost coach-link">
-        <span className="status-dot ok" /> Falar com o treinador <span className="arrow">&gt;</span>
-      </Link>
 
       {!active && (
         <section className="stack">
@@ -358,7 +361,7 @@ export function Today() {
             <span className="label" style={{ color: "var(--red-hi)" }}>
               [ {String(dayIdx).padStart(2, "0")} ] Módulos do protocolo
             </span>
-            <span className="label">Sys.0{dayIdx} // no excuses</span>
+            <span className="label hide-narrow">Sys.0{dayIdx} // no excuses</span>
           </div>
           <ol data-augmented-ui="tl-clip br-clip border" className="list">
             {day.exercises.map((ex, i) => {
@@ -384,6 +387,23 @@ export function Today() {
           </ol>
         </section>
       )}
+      <Link to="/treinador" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost coach-link">
+        <span className="status-dot ok" /> Falar com o treinador <span className="arrow">&gt;</span>
+      </Link>
+
+      <div className="stack" style={{ gap: 8 }}>
+        <div className="eyebrow">
+          Sistema online / {weekdayName(today)}, {shortDate(today)}
+        </div>
+        <p className="h-hero h-hero-sm" aria-hidden="true">
+          Beyond
+          <br />
+          limits<span style={{ color: "var(--red)" }}>.</span>
+        </p>
+        <p className="small muted">
+          {settings.operator ? `Operador: ${settings.operator}. ` : ""}Seu corpo é o hardware. Cada série registrada é uma atualização.
+        </p>
+      </div>
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div className="spread">

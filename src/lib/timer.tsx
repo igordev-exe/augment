@@ -76,7 +76,7 @@ function notifyDone(label: string) {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
   const title = "Descanso acabou";
   const options: NotificationOptions = {
-    body: label,
+    body: label.replace(/\n/g, " · "),
     tag: "augment-timer",
     icon: "icon-192.png",
   };

@@ -122,6 +122,14 @@ export function Report() {
         <span>FIR {weekStart.replaceAll("-", "").slice(2)}</span>
       </div>
 
+      <div className="laudo-tabs" role="tablist" aria-label="Seções do laudo">
+        {LAUDO_TABS.map((t) => (
+          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* F3: Deload antecipado por fadiga */}
       {fatigue && (
         <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
@@ -563,13 +571,6 @@ export function Report() {
           )}
         </>
       )}
-      <div className="laudo-tabs" role="tablist" aria-label="Seções do laudo">
-        {LAUDO_TABS.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

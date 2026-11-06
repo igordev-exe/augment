@@ -121,6 +121,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     sound: typeof s.sound === "boolean" ? s.sound : DEFAULT_SETTINGS.sound,
     vibrate: typeof s.vibrate === "boolean" ? s.vibrate : DEFAULT_SETTINGS.vibrate,
     notify: typeof s.notify === "boolean" ? s.notify : undefined,
+    fx: s.fx === "max" || s.fx === "min" || s.fx === "auto" ? s.fx : undefined,
     units: sanitizeUnits(s.units),
     increments: sanitizeIncrements(s.increments),
     machineWeights: sanitizeMachineWeights(s.machineWeights),

@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 
 // Log de fim de treino como um terminal: um comando digitado, depois cada linha "datilografada" caractere a caractere
 // (uma depois da outra), barra de envio e cursor piscando. Glitch no título e varredura passando pela tela.
@@ -33,11 +33,24 @@ export function TerminalLog({ title, lines, command }: { title: string; lines: s
   const lineStyles = lines.map((l) => typed(l));
   const barDelay = t;
   const caretDelay = t + 900;
+  const ref = useRef<HTMLElement>(null);
+
+  // Toque no terminal: termina a digitação na hora (para quem só quer ver o resultado e ir embora).
+  function skip() {
+    ref.current?.getAnimations({ subtree: true }).forEach((a) => {
+      try {
+        if (a.effect?.getComputedTiming().iterations !== Infinity) a.finish();
+      } catch {
+        /* animação sem fim definido */
+      }
+    });
+  }
 
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="term" aria-label={title}>
+    <section ref={ref} data-augmented-ui="tl-clip br-clip border" className="term" aria-label={title} onClick={skip}>
       <div className="term-bar" aria-hidden="true">
         <span>AUG.SHELL // v2.6</span>
+        <span className="term-skip">toque para pular</span>
         <span className="term-leds">
           <i />
           <i />

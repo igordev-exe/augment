@@ -2,8 +2,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
 import { TimerBar } from "./components/TimerBar";
-import { ToastProvider, useSettings, useToday } from "./lib/hooks";
-import { installTapFx } from "./lib/fx";
+import { setToastVibrate, ToastProvider, useSettings, useToday } from "./lib/hooks";
+import { applyFxLevel, bootBeam, installTapFx } from "./lib/fx";
 import { weekFor } from "./lib/mesocycle";
 import { TimerProvider, useTimer } from "./lib/timer";
 import { ExerciseDetail } from "./screens/ExerciseDetail";
@@ -37,7 +37,13 @@ function Shell() {
   useEffect(() => {
     document.documentElement.classList.toggle("mode-deload", deload);
   }, [deload]);
-  useEffect(() => installTapFx(), []);
+  useEffect(() => {
+    const off = installTapFx();
+    bootBeam();
+    return off;
+  }, []);
+  useEffect(() => applyFxLevel(settings.fx, pathname.startsWith("/treino/")), [settings.fx, pathname]);
+  useEffect(() => setToastVibrate(settings.vibrate), [settings.vibrate]);
   useEffect(
     () => configure({ sound: settings.sound, vibrate: settings.vibrate, notify: settings.notify }),
     [settings.sound, settings.vibrate, settings.notify, configure],

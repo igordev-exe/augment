@@ -53,26 +53,114 @@ const TOAST_LABEL: Record<ToastTone, string> = {
 /** `fx: "glitch"`: recompensa visual (recorde, teto batido). */
 export type ToastFx = "glitch";
 
-const ToastCtx = createContext<(msg: string, tone?: ToastTone, fx?: ToastFx) => void>(() => {});
+/** Botão no próprio aviso (ex.: "Desfazer"). Com ação, o aviso fica pelo menos 8 s. */
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+
+type ToastFn = (msg: string, tone?: ToastTone, fx?: ToastFx, action?: ToastAction) => void;
+
+const ToastCtx = createContext<ToastFn>(() => {});
+
+/** Vibrar nos avisos de atenção/perigo (o Shell liga conforme Ajustes → vibrar). */
+let vibrateOnWarn = true;
+export function setToastVibrate(on: boolean) {
+  vibrateOnWarn = on;
+}
+
+/** Tempo de leitura: ~55 ms por caractere, entre 4 e 10 s. */
+export function toastDuration(msg: string, hasAction: boolean): number {
+  const t = Math.min(10_000, Math.max(4_000, msg.length * 55));
+  return hasAction ? Math.max(8_000, t) : t;
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ msg: string; tone: ToastTone; fx?: ToastFx; at: number } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; tone: ToastTone; fx?: ToastFx; action?: ToastAction; at: number } | null>(null);
   const timer = useRef<number>();
-  const show = useCallback((msg: string, tone: ToastTone = "info", fx?: ToastFx) => {
-    setToast({ msg, tone, fx, at: Date.now() });
+  /** Quando o aviso some (para pausar e retomar com o tempo que faltava). */
+  const deadline = useRef(0);
+  const left = useRef(0);
+  const [paused, setPaused] = useState(false);
+  const close = useCallback(() => {
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setToast(null), 3600);
+    setToast(null);
   }, []);
+  const arm = useCallback((ms: number) => {
+    window.clearTimeout(timer.current);
+    deadline.current = Date.now() + ms;
+    timer.current = window.setTimeout(() => setToast(null), ms);
+  }, []);
+  const pause = () => {
+    window.clearTimeout(timer.current);
+    left.current = Math.max(0, deadline.current - Date.now());
+    setPaused(true);
+  };
+  const resume = () => {
+    setPaused(false);
+    arm(Math.max(1_500, left.current));
+  };
+  const show = useCallback<ToastFn>(
+    (msg, tone = "info", fx, action) => {
+      setToast({ msg, tone, fx, action, at: Date.now() });
+      arm(toastDuration(msg, !!action));
+      if (vibrateOnWarn && (tone === "warn" || tone === "danger")) navigator.vibrate?.([40, 60, 40]);
+    },
+    [arm],
+  );
   return (
     <ToastCtx.Provider value={show}>
       {children}
       {toast && (
-        <div key={toast.at} className={`toast-wrap tone-${toast.tone}`} role="status" onClick={() => setToast(null)}>
+        <div
+          key={toast.at}
+          className={`toast-wrap tone-${toast.tone}`}
+          role="status"
+          // Dedo em cima pausa; ao soltar, sobra tempo para terminar de ler.
+          onPointerDown={pause}
+          onPointerUp={resume}
+          onPointerCancel={resume}
+          onClick={() => !toast.action && close()}
+        >
           <div data-augmented-ui="tl-clip br-clip border" className="toast">
             <b className={toast.fx === "glitch" ? "glitch" : undefined} data-text={TOAST_LABEL[toast.tone]}>
               {TOAST_LABEL[toast.tone]}
             </b>
             {toast.msg}
+            {toast.action && (
+              <span className="toast-actions">
+                <button
+                  type="button"
+                  className="toast-act"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.action!.run();
+                    close();
+                  }}
+                >
+                  {toast.action.label}
+                </button>
+                <button
+                  type="button"
+                  className="toast-close"
+                  aria-label="Fechar aviso"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    close();
+                  }}
+                >
+                  OK
+                </button>
+              </span>
+            )}
+            <i
+              className="toast-life"
+              style={{
+                animationDuration: `${toastDuration(toast.msg, !!toast.action)}ms`,
+                animationPlayState: paused ? "paused" : "running",
+              }}
+              aria-hidden="true"
+            />
           </div>
         </div>
       )}

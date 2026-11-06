@@ -21,6 +21,8 @@ export function SysModule({
   hint,
   meta,
   tone = "cyan",
+  quick,
+  openSignal,
   children,
 }: {
   id: string;
@@ -30,12 +32,22 @@ export function SysModule({
   /** Leitura curta mostrada na barra (ex.: "92,6 kg", "7/20"). */
   meta?: ReactNode;
   tone?: "cyan" | "red" | "green" | "amber";
+  /** Atalho ao lado da barra (ex.: "+ Peso"): age sem precisar abrir o módulo antes. */
+  quick?: { label: string; onClick: () => void };
+  /** Quando muda (contador), abre o módulo. */
+  openSignal?: number;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(() => readOpen(id));
   const [mounted, setMounted] = useState(open);
   const bodyId = useId();
   const drawer = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!openSignal) return;
+    setOpen(true);
+    setMounted(true);
+  }, [openSignal]);
 
   // Fechado, a gaveta fica fora do foco e do leitor de tela (React 18 não repassa "inert" como prop).
   useEffect(() => {
@@ -55,17 +67,24 @@ export function SysModule({
 
   return (
     <section className={`sysmod tone-${tone}${open ? " open" : ""}`}>
-      <button type="button" className="sysmod-bar" aria-expanded={open} aria-controls={bodyId} onClick={toggle}>
-        <span className="sysmod-code">{code}</span>
-        <span className="sysmod-title">
-          <strong>{title}</strong>
-          {hint && <small>{hint}</small>}
-        </span>
-        {meta != null && <span className="sysmod-meta">{meta}</span>}
-        <span className="sysmod-led" aria-hidden="true" />
-        <span className="sysmod-chev" aria-hidden="true" />
-        <i className="sysmod-load" aria-hidden="true" />
-      </button>
+      <div className="sysmod-head">
+        <button type="button" className="sysmod-bar" aria-expanded={open} aria-controls={bodyId} onClick={toggle}>
+          <span className="sysmod-code">{code}</span>
+          <span className="sysmod-title">
+            <strong>{title}</strong>
+            {hint && <small>{hint}</small>}
+          </span>
+          {meta != null && <span className="sysmod-meta">{meta}</span>}
+          <span className="sysmod-led" aria-hidden="true" />
+          <span className="sysmod-chev" aria-hidden="true" />
+          <i className="sysmod-load" aria-hidden="true" />
+        </button>
+        {quick && (
+          <button type="button" className="sysmod-quick" onClick={quick.onClick}>
+            {quick.label}
+          </button>
+        )}
+      </div>
       <div className="sysmod-drawer" id={bodyId} ref={drawer}>
         <div className="sysmod-inner">
           <div className="sysmod-content">{mounted && children}</div>

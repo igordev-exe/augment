@@ -1,8 +1,9 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent as RPointerEvent } from "react";
 import { createPortal } from "react-dom";
 
-// Roda de ações rápidas: segure o número da série e escolha com o polegar. Cada ação é uma fatia do anel;
-// ações que não se aplicam agora saem da roda (nada de fatia apagada ou buraco).
+// Roda de ações rápidas: toque no número da série e escolha com o polegar. Cada ação tem uma fatia fixa no anel
+// (memória muscular: "Remover" fica sempre no mesmo lugar). Ação que não se aplica agora vira "SLOT OFFLINE":
+// hachurada, sem ação, mas no mesmo lugar.
 
 export interface RadialAction {
   id: string;
@@ -95,7 +96,7 @@ export function RadialMenu({
   actions: RadialAction[];
   onClose: () => void;
 }) {
-  const live = actions.filter((a) => !a.disabled);
+  const firstLive = actions.findIndex((a) => !a.disabled);
   const first = useRef<SVGGElement>(null);
   useEffect(() => {
     first.current?.focus();
@@ -104,10 +105,11 @@ export function RadialMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const n = live.length;
+  const n = actions.length;
   const step = 360 / n;
   const start = -90 - step / 2;
   const pick = (a: RadialAction) => {
+    if (a.disabled) return;
     a.onPick();
     onClose();
   };
@@ -122,7 +124,13 @@ export function RadialMenu({
           const [x1, y1] = pt(R_OUT + (i % 4 === 0 ? 13 : 9), a);
           return <line key={i} className="wheel-tick" x1={x0} y1={y0} x2={x1} y2={y1} />;
         })}
-        {live.map((a, i) => {
+        <defs>
+          <pattern id="slot-off" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#0c0f12" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#ffffff14" strokeWidth="2" />
+          </pattern>
+        </defs>
+        {actions.map((a, i) => {
           const a0 = start + i * step + GAP_DEG / 2;
           const a1 = start + (i + 1) * step - GAP_DEG / 2;
           const mid = (a0 + a1) / 2;
@@ -132,11 +140,12 @@ export function RadialMenu({
           return (
             <g
               key={a.id}
-              ref={i === 0 ? first : undefined}
-              className={`wheel-slice${a.tone ? ` ${a.tone}` : ""}`}
+              ref={i === firstLive ? first : undefined}
+              className={`wheel-slice${a.tone ? ` ${a.tone}` : ""}${a.disabled ? " offline" : ""}`}
               role="button"
-              tabIndex={0}
-              aria-label={a.label}
+              tabIndex={a.disabled ? -1 : 0}
+              aria-disabled={a.disabled || undefined}
+              aria-label={a.disabled ? `${a.label} (indisponível agora)` : a.label}
               onClick={() => pick(a)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter" || e.key === " ") {

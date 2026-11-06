@@ -197,6 +197,34 @@ export function SettingsScreen() {
         </p>
       </section>
 
+      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
+        <h2 className="h-sec">Efeitos visuais</h2>
+        <div className="row-wrap" role="group" aria-label="Nível dos efeitos visuais">
+          {(
+            [
+              ["max", "Máximo"],
+              ["auto", "Automático"],
+              ["min", "Mínimo"],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="toggle-chip"
+              aria-pressed={(settings.fx ?? "auto") === v}
+              onClick={() => update({ fx: v })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="tiny faint">
+          Automático: tudo ligado fora do treino e modo academia durante o protocolo (sem animações em loop, mais bateria). Mínimo: só o
+          essencial, sem retícula de toque nem transições. O sistema em &quot;reduzir movimento&quot; sempre vence.
+        </p>
+      </section>
+
       {/* F1: Rotação de acessórios do mesociclo */}
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <details key={`swaps-${loaded}`}>

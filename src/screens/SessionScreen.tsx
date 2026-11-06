@@ -9,6 +9,7 @@ import { TerminalLog } from "../components/TerminalLog";
 import { Icon } from "../components/Icon";
 import { Choice } from "../components/SetRow";
 import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
+import { SysModule } from "../components/SysModule";
 import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
 import type { CardioEntry, Checkin, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
@@ -90,6 +91,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const [summary, setSummary] = useState<PR[] | null>(null);
   const [backupPromptDismissed, setBackupPromptDismissed] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  /** Tocou em Concluir com séries pendentes: mostra a confirmação. */
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const pendingSets = session.exercises.reduce((n, e) => n + e.sets.filter((s) => !s.done && s.kind !== "warmup").length, 0);
   const [, tick] = useState(0);
 
   useEffect(() => {
@@ -202,13 +206,25 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     // Timer de descanso.
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
     if (set.kind === "warmup") {
-      timer.start(60, `${shortName(ex)}: aquecimento`);
+      timer.start(60, `Aquecimento\n${shortName(ex)}`);
     } else if (ex.superset?.order === 1) {
       const partner = EXERCISE_BY_ID[ex.superset.with];
       if (!live && !warned) toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
     } else {
       const rest = ex.superset?.order === 2 ? 60 : defaultRest(ex.rest);
-      timer.start(rest, remaining ? `${shortName(ex)}: próxima série` : "Próximo exercício");
+      const workAll = next.sets.filter((s) => s.kind !== "warmup");
+      const nextSet = workAll.find((s) => !s.done);
+      const nextN = nextSet ? workAll.indexOf(nextSet) + 1 : 0;
+      const nextLoad = nextSet?.weight ?? set.weight;
+      const nextWhat = nextLoad != null ? ` · ${formatWeight(nextLoad)} ${next.unit}` : "";
+      const nextEx = session.exercises.find((e, i) => i > index && e.sets.some((s) => s.kind !== "warmup" && !s.done));
+      const nextExDef = nextEx && EXERCISE_BY_ID[nextEx.exId];
+      timer.start(
+        rest,
+        remaining
+          ? `Série ${nextN}/${workAll.length}${nextWhat}\n${shortName(ex)}`
+          : `Próximo exercício${nextExDef ? `\n${shortName(nextExDef)}` : ""}`,
+      );
     }
     if (ex.superset?.order === 1) {
       // Superset: alterna A1 → A2 a cada série.
@@ -228,13 +244,22 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     }
   }
 
-  async function finish() {
+  async function finish(confirmed = false) {
     const next = (await db.sessions.get(session.id)) ?? clone(session);
     const doneSets = next.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done && s.kind !== "warmup").length, 0);
     if (doneSets === 0) {
       toast("Nenhuma série de trabalho marcada. Marque pelo menos uma série ou descarte o treino.", "warn");
       return;
     }
+    // Séries de trabalho que ficaram sem marcar somem ao concluir: pergunta antes.
+    const pending = next.exercises.reduce((n, e) => n + e.sets.filter((s) => !s.done && s.kind !== "warmup").length, 0);
+    if (pending > 0 && !confirmed) {
+      setConfirmFinish(true);
+      return;
+    }
+    setConfirmFinish(false);
+    const snapshot = clone(next);
+    const timerBefore = timer.state;
     const { finishedAt, capped } = effectiveEndAt(next);
     next.exercises = next.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) }));
     next.status = "done";
@@ -242,6 +267,19 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     await save(next);
     timer.stop();
     if (capped) toast("Treino ficou aberto por horas: duração ajustada pelo horário da última série.", "warn");
+    else
+      toast("Protocolo concluído e salvo.", "ok", undefined, {
+        label: "Desfazer",
+        run: async () => {
+          // Volta o treino como estava (séries pendentes incluídas) e reabre a sessão.
+          await save(snapshot);
+          if (timerBefore && timerBefore.endAt > Date.now())
+            timer.start(Math.round((timerBefore.endAt - Date.now()) / 1000), timerBefore.label);
+          setSummary(null);
+          setShowShare(false);
+          setOpen(Math.max(0, firstOpen));
+        },
+      });
     setSummary(prsInSession(next, [...before, next]));
     setShowShare(true);
     setOpen(-1);
@@ -442,9 +480,19 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
           <div className="spread">
             <h2 className="h-sec">Check-in</h2>
-            <button type="button" className="link-btn" onClick={() => setCheckin({ skipped: true })}>
-              Pular
-            </button>
+            <span className="row" style={{ gap: 6 }}>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm quick-ok"
+                onClick={() => setCheckin({ sleep: "ok", energy: "ok", pain: "nenhuma" })}
+              >
+                <Icon name="check" size={14} /> Tudo ok
+              </button>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setCheckin({ skipped: true })}>
+                Pular
+              </button>
+            </span>
           </div>
           <Choice label="Sono" options={["ruim", "ok", "bom"]} value={checkin?.sleep} onPick={(v) => setCheckin({ sleep: v })} />
           <Choice label="Energia" options={["baixa", "ok", "alta"]} value={checkin?.energy} onPick={(v) => setCheckin({ energy: v })} />
@@ -549,84 +597,140 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         </p>
       )}
 
-      {/* F10: Cardio e Passos do dia */}
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
-        <h2 className="h-sec">Cardio e passos (opcional)</h2>
-        <div className="row-wrap">
-          <div className="grow">
-            <label className="label" htmlFor="cardio-min">
-              Cardio (min)
-            </label>
-            <input
-              id="cardio-min"
-              className="input"
-              inputMode="numeric"
-              placeholder="ex.: 25"
-              defaultValue={session.cardio?.minutes ?? ""}
-              onBlur={(e) => {
-                const v = e.target.value.replace(/\D/g, "");
-                setCardio({ minutes: v ? Number(v) : undefined });
-              }}
-            />
-          </div>
-          <div className="grow">
-            <label className="label" htmlFor="cardio-kind">
-              Modalidade
-            </label>
-            <input
-              id="cardio-kind"
-              className="input"
-              placeholder="Esteira inclinada, bike…"
-              defaultValue={session.cardio?.kind ?? ""}
-              onBlur={(e) => setCardio({ kind: e.target.value.trim() || undefined })}
-            />
-          </div>
-          <div className="grow">
-            <label className="label" htmlFor="cardio-steps">
-              Passos no dia
-            </label>
-            <input
-              id="cardio-steps"
-              className="input"
-              inputMode="numeric"
-              placeholder="ex.: 8500"
-              defaultValue={session.cardio?.steps ?? ""}
-              onBlur={(e) => {
-                const v = e.target.value.replace(/\D/g, "");
-                setCardio({ steps: v ? Number(v) : undefined });
-              }}
-            />
-          </div>
-        </div>
-        <Choice
-          label="Intensidade"
-          options={["leve", "moderada", "alta"]}
-          value={session.cardio?.intensity}
-          onPick={(v) => setCardio({ intensity: v })}
-        />
-      </section>
+      {isActive && (
+        <section className="stack">
+          {confirmFinish && pendingSets > 0 ? (
+            <div
+              data-augmented-ui="tl-clip br-clip border"
+              className="card stack finish-confirm"
+              role="alertdialog"
+              aria-label="Concluir com séries pendentes"
+            >
+              <span className="label" style={{ color: "var(--warn)" }}>
+                SYS // {pendingSets} {pendingSets === 1 ? "SÉRIE PENDENTE" : "SÉRIES PENDENTES"}
+              </span>
+              <p className="small" style={{ margin: 0 }}>
+                {pendingSets === 1 ? "Falta 1 série de trabalho." : `Faltam ${pendingSets} séries de trabalho.`} Concluir agora descarta o
+                que não foi marcado. Dá para desfazer logo depois.
+              </p>
+              <div className="row">
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn btn-primary grow"
+                  onClick={() => finish(true)}
+                >
+                  Concluir assim
+                </button>
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn grow"
+                  onClick={() => setConfirmFinish(false)}
+                >
+                  Voltar ao treino
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary btn-big" onClick={() => finish()}>
+              <Icon name="check" size={20} /> Concluir protocolo
+            </button>
+          )}
+        </section>
+      )}
 
-      <section className="stack">
-        <label className="label" htmlFor="session-notes">
-          Anotações do treino
-        </label>
-        <textarea
-          id="session-notes"
-          className="note"
-          placeholder="Horário, cardio, máquina ocupada, o que chamou atenção…"
-          defaultValue={session.notes ?? ""}
-          onBlur={(e) => {
-            const v = e.target.value;
-            db.sessions.update(session.id, { notes: v });
-          }}
-        />
-      </section>
+      {/* F10: Cardio, passos e notas: opcionais, recolhidos depois do Concluir. */}
+      <SysModule
+        id="sessao-extras"
+        code="CRD.01"
+        title="Cardio, passos e notas"
+        hint="Opcional"
+        tone="amber"
+        meta={
+          [
+            session.cardio?.minutes ? `${session.cardio.minutes} min` : null,
+            session.cardio?.steps ? `${session.cardio.steps} passos` : null,
+            session.notes?.trim() ? "nota" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "—"
+        }
+      >
+        <div className="stack" style={{ gap: 8 }}>
+          <div className="row-wrap">
+            <div className="grow">
+              <label className="label" htmlFor="cardio-min">
+                Cardio (min)
+              </label>
+              <input
+                id="cardio-min"
+                className="input"
+                inputMode="numeric"
+                placeholder="ex.: 25"
+                defaultValue={session.cardio?.minutes ?? ""}
+                onBlur={(e) => {
+                  const v = e.target.value.replace(/\D/g, "");
+                  setCardio({ minutes: v ? Number(v) : undefined });
+                }}
+              />
+            </div>
+            <div className="grow">
+              <label className="label" htmlFor="cardio-kind">
+                Modalidade
+              </label>
+              <input
+                id="cardio-kind"
+                className="input"
+                placeholder="Esteira inclinada, bike…"
+                defaultValue={session.cardio?.kind ?? ""}
+                onBlur={(e) => setCardio({ kind: e.target.value.trim() || undefined })}
+              />
+            </div>
+            <div className="grow">
+              <label className="label" htmlFor="cardio-steps">
+                Passos no dia
+              </label>
+              <input
+                id="cardio-steps"
+                className="input"
+                inputMode="numeric"
+                placeholder="ex.: 8500"
+                defaultValue={session.cardio?.steps ?? ""}
+                onBlur={(e) => {
+                  const v = e.target.value.replace(/\D/g, "");
+                  setCardio({ steps: v ? Number(v) : undefined });
+                }}
+              />
+            </div>
+          </div>
+          <Choice
+            label="Intensidade"
+            options={["leve", "moderada", "alta"]}
+            value={session.cardio?.intensity}
+            onPick={(v) => setCardio({ intensity: v })}
+          />
+        </div>
+
+        <div className="stack" style={{ marginTop: 12 }}>
+          <label className="label" htmlFor="session-notes">
+            Anotações do treino
+          </label>
+          <textarea
+            id="session-notes"
+            className="note"
+            placeholder="Horário, cardio, máquina ocupada, o que chamou atenção…"
+            defaultValue={session.notes ?? ""}
+            onBlur={(e) => {
+              const v = e.target.value;
+              db.sessions.update(session.id, { notes: v });
+            }}
+          />
+        </div>
+      </SysModule>
 
       {isActive ? (
         <section className="stack">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary btn-big" onClick={finish}>
-            <Icon name="check" size={20} /> Concluir protocolo
-          </button>
           <HoldButton className="btn-danger" label="Descartar treino" onConfirm={remove}>
             Descartar treino
           </HoldButton>

@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AUGMENT antes e depois</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Prancha espalhada: cada cartão é uma mudança, com o celular antes (cinza) e depois (ciano) lado a lado. */
+      :root {
+        --bg: #0b0d10;
+        --panel: #12161b;
+        --ink: #e6e7e5;
+        --ink-2: #a7b0bb;
+        --line: #2a3038;
+        --cyan: #3fd8e0;
+        --red: #ef302c;
+        --amber: #f5b83d;
+        --display: "Orbitron", "Arial Black", sans-serif;
+        --mono: "Share Tech Mono", ui-monospace, Menlo, monospace;
+        --body: "Exo 2", "Segoe UI", system-ui, sans-serif;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background:
+          radial-gradient(circle at 1px 1px, #ffffff0d 1px, transparent 1.4px) 0 0 / 22px 22px,
+          var(--bg);
+        color: var(--ink);
+        font: 15px/1.5 var(--body);
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+        padding: 14px max(16px, 3vw);
+        background: #0b0d10ee;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+      }
+      h1 {
+        margin: 0;
+        font: 900 clamp(18px, 2.4vw, 26px) / 1 var(--display);
+        letter-spacing: 0.04em;
+        text-wrap: balance;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--cyan);
+      }
+      .meta {
+        font: 12px var(--mono);
+        letter-spacing: 0.08em;
+        color: var(--ink-2);
+        text-transform: uppercase;
+      }
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-left: auto;
+        align-items: center;
+      }
+      .chip,
+      .seg button {
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink-2);
+        font: 12px var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+      }
+      .chip[aria-pressed="true"],
+      .seg button[aria-pressed="true"] {
+        border-color: var(--cyan);
+        color: var(--bg);
+        background: var(--cyan);
+      }
+      .seg {
+        display: inline-flex;
+        gap: 4px;
+      }
+      label.zoom {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font: 12px var(--mono);
+        color: var(--ink-2);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      :focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+      }
+
+      main {
+        padding: 20px max(16px, 3vw) 60px;
+      }
+      .intro {
+        max-width: 70ch;
+        color: var(--ink-2);
+        margin: 0 0 18px;
+      }
+      .intro b {
+        color: var(--ink);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 0 0 20px;
+        font: 12px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-2);
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+
+      .board {
+        --w: 230px;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(auto-fill, minmax(calc(var(--w) * 2 + 54px), 1fr));
+        align-items: start;
+      }
+      .card {
+        position: relative;
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        background: linear-gradient(180deg, #151a20, #101318);
+        border: 1px solid var(--line);
+        clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      }
+      .card[hidden] {
+        display: none;
+      }
+      .card-head {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+      }
+      .num {
+        font: 900 22px var(--display);
+        color: var(--cyan);
+        font-variant-numeric: tabular-nums;
+      }
+      .card h2 {
+        margin: 0;
+        font: 700 15px/1.25 var(--display);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-wrap: balance;
+      }
+      .area {
+        margin-left: auto;
+        font: 11px var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, var(--w)));
+        gap: 14px;
+        justify-content: start;
+      }
+      .pair.single {
+        grid-template-columns: minmax(0, var(--w));
+      }
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 6px;
+      }
+      figcaption {
+        font: 12px var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .antes figcaption {
+        color: var(--ink-2);
+      }
+      .depois figcaption {
+        color: var(--cyan);
+      }
+      .shot {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 1px solid var(--line);
+        background: #000;
+        cursor: zoom-in;
+      }
+      .depois .shot {
+        border-color: #3fd8e080;
+        box-shadow:
+          0 0 0 1px #3fd8e033,
+          0 0 18px #3fd8e01f;
+      }
+      .shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      /* Modo deslizar: as duas imagens empilhadas, a de depois recortada pelo controle. */
+      .slide {
+        display: none;
+        position: relative;
+        width: min(100%, calc(var(--w) * 1.35));
+      }
+      .slide img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+      }
+      .slide .over {
+        position: absolute;
+        inset: 0;
+        clip-path: inset(0 0 0 var(--cut, 50%));
+      }
+      .slide .bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: var(--cut, 50%);
+        width: 2px;
+        background: var(--cyan);
+        box-shadow: 0 0 10px var(--cyan);
+        pointer-events: none;
+      }
+      .slide .tagl,
+      .slide .tagr {
+        position: absolute;
+        top: 8px;
+        font: 11px var(--mono);
+        padding: 2px 6px;
+        letter-spacing: 0.1em;
+      }
+      .slide .tagl {
+        left: 8px;
+        background: #000c;
+        color: var(--ink-2);
+      }
+      .slide .tagr {
+        right: 8px;
+        background: var(--cyan);
+        color: var(--bg);
+      }
+      .slide input {
+        width: 100%;
+        margin-top: 8px;
+        accent-color: var(--cyan);
+      }
+      body.mode-slide .pair:not(.single) {
+        display: none;
+      }
+      body.mode-slide .slide {
+        display: block;
+      }
+
+      ul.changes {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 7px;
+        max-width: 64ch;
+      }
+      ul.changes li {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--ink);
+      }
+      ul.changes li b {
+        font: 12px var(--mono);
+        color: var(--amber);
+        padding-top: 2px;
+      }
+      ul.changes small {
+        display: block;
+        color: var(--ink-2);
+        font: 12px/1.4 var(--mono);
+        letter-spacing: 0.02em;
+      }
+
+      section.extra {
+        margin-top: 28px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+      section.extra h2 {
+        margin: 0 0 12px;
+        font: 700 15px var(--display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      section.extra ul {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
+        max-width: 80ch;
+        color: var(--ink);
+      }
+      section.extra li small {
+        color: var(--ink-2);
+        font-family: var(--mono);
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        place-items: center;
+        background: #000e;
+        padding: 16px;
+      }
+      .lightbox.on {
+        display: grid;
+      }
+      .lightbox .lb-pair {
+        display: flex;
+        gap: 16px;
+        max-height: 100%;
+        overflow: auto;
+      }
+      .lightbox figure {
+        width: min(46vw, 420px);
+      }
+      .lightbox img {
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+      }
+      .lightbox button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+      }
+
+      @media (max-width: 620px) {
+        .board {
+          --w: calc((100vw - 32px - 32px - 14px) / 2);
+          grid-template-columns: 1fr;
+        }
+        .tools {
+          margin-left: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AUGMENT <em>antes × depois</em></h1>
+      <span class="meta">Prioridades 1–3 · 28 melhorias · tela de 375 px</span>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="Filtrar por tela" id="filters"></div>
+        <div class="seg" role="group" aria-label="Modo de comparação">
+          <button type="button" id="m-side" aria-pressed="true">Lado a lado</button>
+          <button type="button" id="m-slide" aria-pressed="false">Deslizar</button>
+        </div>
+        <label class="zoom" for="zoom">Tamanho <input id="zoom" type="range" min="160" max="340" value="230" /></label>
+      </div>
+    </header>
+    <main>
+      <p class="intro">
+        Mesmos dados de demonstração nas duas versões, capturados no navegador em tamanho de celular. <b>Antes</b> é o último commit
+        (485d837); <b>depois</b> é a árvore de trabalho atual, ainda sem commit. A semana da demo é de deload, por isso o vermelho de ação
+        aparece azul-aço nas duas. Os números entre colchetes são os itens da lista de melhorias. Toque numa imagem para ampliar.
+      </p>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background: var(--ink-2)"></i>antes</span>
+        <span><i style="background: var(--cyan)"></i>depois</span>
+        <span><i style="background: var(--amber)"></i>item da lista</span>
+      </div>
+      <div class="board" id="board"></div>
+
+      <section class="extra">
+        <h2>Mudanças que não aparecem numa captura</h2>
+        <ul>
+          <li>
+            Botão vermelho de ação com preenchimento mais escuro: texto branco passa de 4,09:1 para 5,05:1. <small>[3] WCAG 1.4.3</small>
+          </li>
+          <li>Animações em loop pausam quando o painel sai da tela e voltam ao aparecer. <small>[7] WCAG 2.2.2, bateria</small></li>
+          <li>
+            Ajuste "Efeitos visuais": no automático, o treino entra em modo academia, sem loops decorativos nem ruído de fundo.
+            <small>[7]</small>
+          </li>
+          <li>
+            Entrada de tela em até 0,3 s (era 0,7 s); o feixe de varredura só passa ao abrir o app e ao iniciar um protocolo.
+            <small>[8] Limiar de Doherty</small>
+          </li>
+          <li>Fim do descanso: a tela rola até a série atual e, se ninguém reagir em 15 s, vibra de novo. <small>[16] [17]</small></li>
+          <li>
+            Avisos ficam de 4 a 10 s conforme o tamanho do texto, pausam com o dedo em cima e vibram quando são de atenção.
+            <small>[21]</small>
+          </li>
+          <li>
+            Peso e reps salvam enquanto você digita (300 ms depois da última tecla), não só ao sair do campo.
+            <small>[22] ISO 9241-110 robustez</small>
+          </li>
+          <li>"Como bateu?" de cada exercício ganhou "Tudo ok" em um toque. <small>[19]</small></li>
+          <li>Fadiga, atributos e séries terminam com um próximo passo: ver no relatório ou perguntar ao treinador. <small>[25]</small></li>
+        </ul>
+      </section>
+    </main>
+
+    <div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+      <button type="button" class="chip" id="lb-close">Fechar</button>
+      <div class="lb-pair" id="lb-pair"></div>
+    </div>
+
+    <script>
+      const CARDS = [
+        {
+          id: "01-home",
+          area: "Tela inicial",
+          title: "Iniciar protocolo na primeira dobra",
+          items: [
+            [
+              "23",
+              "O cartão da missão vem logo abaixo do topo; antes ficava depois do hero, de dois avisos e do link do treinador.",
+              "Lei de Fitts, hierarquia",
+            ],
+            ["23", 'Relatório e backup viraram uma barra só, "2 avisos", que abre quando você quer.', "Hick-Hyman"],
+            ["—", "A etiqueta PL-02 fica presa na ponta esquerda do botão.", ""],
+          ],
+        },
+        {
+          id: "02-checkin",
+          area: "Treino",
+          title: "Check-in em um toque",
+          items: [
+            ["20", '"Tudo ok" responde sono, energia e dor com o padrão de uma vez; "Pular" virou botão.', "Lei de Tesler"],
+            ["11", "Opções do check-in com 44 px de altura (eram 36 px).", "WCAG 2.5.5"],
+          ],
+        },
+        {
+          id: "03-series",
+          area: "Treino",
+          title: "Linha de série legível",
+          items: [
+            ["1", "Sugestão do sistema em ciano: 5,9:1 contra 2,38:1. É o que o ✓ grava se o campo ficar vazio.", "WCAG 1.4.3, APCA"],
+            ["5", '"kg" foi para o cabeçalho e o campo de peso ficou mais largo: "102,5" cabe inteiro.', "Legibilidade"],
+            ["12", "Saiu o × de 20 px; remover fica no menu da série.", "WCAG 2.5.8"],
+            ["14", 'Os "⋯" no número mostram que dá para tocar ali para abrir as ações.', "Nielsen #6"],
+            ["31", "Borda dos campos visível: 3,9:1 (era 1,7:1).", "WCAG 1.4.11"],
+          ],
+        },
+        {
+          id: "04-rir-timer",
+          area: "Treino",
+          title: "RIR e timer de descanso",
+          items: [
+            ["10", "RIR com 48 px e a faixa certa escrita como ALVO, não só pela cor.", "Fitts, WCAG 1.4.1"],
+            ["9", "Relógio com algarismos de largura fixa: não pula a cada segundo.", "Percepção"],
+            ["16", 'Rótulo começa pela próxima série ("Série 2/2 · 55 kg").', "ISO autodescrição"],
+            ["—", '"Pular" separado do "+15" por um divisor.', "Fitts"],
+          ],
+        },
+        {
+          id: "05-menu",
+          area: "Treino",
+          title: "Menu da série com lugares fixos",
+          items: [
+            [
+              "13",
+              'Cada ação tem sempre a mesma fatia; a que não vale agora fica hachurada no lugar ("Remover série" depois de feita).',
+              "Memória muscular",
+            ],
+            ["11", 'Nova ação "Mudar sobra" para corrigir o RIR.', ""],
+            ["14", "Abre com um toque no número da série (antes só segurando).", "Descoberta"],
+          ],
+        },
+        {
+          id: "06-fim",
+          area: "Treino",
+          title: "Concluir com rede de segurança",
+          items: [
+            ["2", 'Com séries pendentes, pergunta antes: "13 séries pendentes, concluir assim?".', "ISO prevenção de erro"],
+            ["18", "Concluir vem antes; cardio, passos e notas ficaram num módulo recolhido.", "Lei do pico-fim"],
+            ["6", '"Descartar treino" continua vermelho no deload (antes ficava azul).', "Uma cor, um significado"],
+          ],
+        },
+        {
+          id: "07-concluido",
+          area: "Treino",
+          title: "Desfazer e pular o log",
+          items: [
+            ["2", 'Aviso "Protocolo concluído" com DESFAZER: reabre o treino com as séries pendentes.', "Nielsen #3"],
+            ["21", "Barra de vida no aviso mostra quanto tempo ainda resta.", ""],
+            ["28", '"toque para pular" termina a digitação do terminal na hora.', ""],
+          ],
+        },
+        {
+          id: "08-progresso",
+          area: "Progresso",
+          title: "Resumo antes dos painéis",
+          items: [
+            [
+              "24",
+              "SYS // RESUMO: séries que faltam, atributo mais baixo e prontidão do próximo treino; cada linha leva ao painel.",
+              "Carga cognitiva",
+            ],
+          ],
+        },
+        {
+          id: "09-musculos",
+          area: "Progresso",
+          title: "Textos pequenos que dão para ler",
+          items: [["4", "Rótulos petróleo do Progresso a 8,8:1 (eram 3,6–4,6:1) e nada menor que 11 px.", "WCAG 1.4.3, APCA"]],
+        },
+        {
+          id: "10-subsistemas",
+          area: "Progresso",
+          title: "Atalho para registrar peso",
+          items: [
+            ["26", '"+ Peso" ao lado da Biometria abre o formulário com o cursor no campo.', "Atalho"],
+            ["—", "A barra encurta a dica quando há atalho, para o peso não encostar no título.", ""],
+          ],
+        },
+        {
+          id: "11-relatorio",
+          area: "Relatório",
+          title: "Abas no topo",
+          items: [
+            [
+              "27",
+              "Semana, Mesociclo, Corpo e Motor ficam sob o título e presas ao rolar; antes ficavam empilhadas sobre a navegação.",
+              "Fitts, Hick",
+            ],
+            ["33", "As abas usam aria-selected (antes tinham aria-pressed junto).", "ARIA"],
+          ],
+        },
+        {
+          id: "12-efeitos",
+          area: "Ajustes",
+          title: "Efeitos visuais",
+          single: true,
+          items: [["7", "Máximo, Automático ou Mínimo. No automático, o treino fica sem animações em loop.", "WCAG 2.2.2, bateria"]],
+        },
+      ];
+
+      const board = document.getElementById("board");
+      const areas = ["Tudo", ...new Set(CARDS.map((c) => c.area))];
+      const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+
+      board.innerHTML = CARDS.map((c, i) => {
+        const a = `img/${c.id}-antes.jpg`,
+          d = `img/${c.id}-depois.jpg`;
+        const figs = c.single
+          ? `<div class="pair single"><figure class="depois"><figcaption>Novo</figcaption><button type="button" class="shot" data-d="${d}"><img src="${d}" alt="${esc(c.title)}, versão nova" loading="lazy" width="480" height="1039"></button></figure></div>`
+          : `<div class="pair"><figure class="antes"><figcaption>Antes</figcaption><button type="button" class="shot" data-a="${a}" data-d="${d}"><img src="${a}" alt="${esc(c.title)}, antes" loading="lazy" width="480" height="1039"></button></figure>
+       <figure class="depois"><figcaption>Depois</figcaption><button type="button" class="shot" data-a="${a}" data-d="${d}"><img src="${d}" alt="${esc(c.title)}, depois" loading="lazy" width="480" height="1039"></button></figure></div>
+       <div class="slide"><img src="${a}" alt="" loading="lazy" width="480" height="1039"><img class="over" src="${d}" alt="" loading="lazy" width="480" height="1039"><i class="bar"></i><span class="tagl">ANTES</span><span class="tagr">DEPOIS</span>
+       <label class="meta" for="cut-${i}">Arraste para comparar</label><input id="cut-${i}" type="range" min="0" max="100" value="50"></div>`;
+        const list = c.items
+          .map(([n, t, p]) => `<li><b>${n === "—" ? "—" : `[${n}]`}</b><span>${esc(t)}${p ? `<small>${esc(p)}</small>` : ""}</span></li>`)
+          .join("");
+        return `<article class="card" data-area="${c.area}"><div class="card-head"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${esc(c.title)}</h2><span class="area">${c.area}</span></div>${figs}<ul class="changes">${list}</ul></article>`;
+      }).join("");
+
+      // Filtro por tela
+      const filters = document.getElementById("filters");
+      filters.innerHTML = areas.map((a, i) => `<button type="button" class="chip" aria-pressed="${i === 0}">${a}</button>`).join("");
+      filters.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        filters.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        const area = b.textContent;
+        board.querySelectorAll(".card").forEach((c) => {
+          c.hidden = area !== "Tudo" && c.dataset.area !== area;
+        });
+      });
+
+      // Lado a lado × deslizar
+      const side = document.getElementById("m-side"),
+        slide = document.getElementById("m-slide");
+      function mode(s) {
+        document.body.classList.toggle("mode-slide", s);
+        side.setAttribute("aria-pressed", String(!s));
+        slide.setAttribute("aria-pressed", String(s));
+      }
+      side.onclick = () => mode(false);
+      slide.onclick = () => mode(true);
+      board.addEventListener("input", (e) => {
+        if (e.target.type !== "range") return;
+        e.target.closest(".slide").style.setProperty("--cut", e.target.value + "%");
+      });
+
+      // Tamanho das capturas
+      document.getElementById("zoom").addEventListener("input", (e) => board.style.setProperty("--w", e.target.value + "px"));
+
+      // Ampliar
+      const lb = document.getElementById("lb"),
+        lbPair = document.getElementById("lb-pair");
+      board.addEventListener("click", (e) => {
+        const b = e.target.closest(".shot");
+        if (!b) return;
+        lbPair.innerHTML =
+          (b.dataset.a
+            ? `<figure class="antes"><figcaption>Antes</figcaption><img src="${b.dataset.a}" alt="Antes, ampliado"></figure>`
+            : "") +
+          `<figure class="depois"><figcaption>${b.dataset.a ? "Depois" : "Novo"}</figcaption><img src="${b.dataset.d}" alt="Depois, ampliado"></figure>`;
+        lb.classList.add("on");
+        document.getElementById("lb-close").focus();
+      });
+      const close = () => lb.classList.remove("on");
+      document.getElementById("lb-close").onclick = close;
+      lb.addEventListener("click", (e) => {
+        if (e.target === lb) close();
+      });
+      addEventListener("keydown", (e) => {
+        if (e.key === "Escape") close();
+      });
+    </script>
+  </body>
+</html>

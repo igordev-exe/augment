@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SetEntry, Unit } from "../data/types";
 import { formatWeight } from "../lib/progression";
 import { Icon } from "./Icon";
-import { useLongPress } from "./RadialMenu";
 
 export function parseNum(s: string): number | null {
   const t = s.replace(",", ".").trim();
@@ -20,13 +19,11 @@ export function SetRow({
   repsPh,
   askRir,
   rirTarget,
-  canRemove,
   onWeight,
   onReps,
   onRir,
   onToggle,
-  onRemove,
-  onLongPress,
+  onMenu,
 }: {
   set: SetEntry;
   label: string;
@@ -36,40 +33,55 @@ export function SetRow({
   repsPh?: number;
   askRir: boolean;
   rirTarget: [number, number];
-  canRemove: boolean;
   onWeight: (w: number | null) => void;
   onReps: (r: number | null) => void;
   onRir: (rir: number) => void;
   onToggle: (w: number | null, r: number | null) => void;
-  onRemove: () => void;
-  /** Segurar o número da série abre o menu circular de ações. */
-  onLongPress?: () => void;
+  /** Tocar (ou segurar) o número da série abre o menu circular de ações. */
+  onMenu?: () => void;
 }) {
   const [w, setW] = useState(set.weight != null ? formatWeight(set.weight) : "");
   const [r, setR] = useState(set.reps != null ? String(set.reps) : "");
-  const [editRir, setEditRir] = useState(false);
+  const editing = useRef<"w" | "r" | null>(null);
+  const saveW = useRef<number>();
+  const saveR = useRef<number>();
 
-  // Sincroniza se o peso ou reps mudaram por fora (−15% na última série, sugestão, desfazer).
+  // Sincroniza se o peso ou reps mudaram por fora (−15% na última série, sugestão, desfazer), mas não enquanto digita.
   useEffect(() => {
-    setW(set.weight != null ? formatWeight(set.weight) : "");
+    if (editing.current !== "w") setW(set.weight != null ? formatWeight(set.weight) : "");
   }, [set.weight]);
   useEffect(() => {
-    setR(set.reps != null ? String(set.reps) : "");
+    if (editing.current !== "r") setR(set.reps != null ? String(set.reps) : "");
   }, [set.reps]);
-  useEffect(() => {
-    if (!set.done) setEditRir(false);
-  }, [set.done]);
+  useEffect(
+    () => () => {
+      window.clearTimeout(saveW.current);
+      window.clearTimeout(saveR.current);
+    },
+    [],
+  );
 
-  const showRir = set.done && set.kind !== "warmup" && (askRir || editRir);
-  const lp = useLongPress(() => onLongPress?.());
-  const { consumedClick, ...lpHandlers } = lp;
+  // Salva enquanto digita (300 ms depois da última tecla): se o celular encerrar o app no descanso, nada se perde.
+  function commitW(v: string) {
+    window.clearTimeout(saveW.current);
+    const n = parseNum(v);
+    if (n !== set.weight) onWeight(n);
+  }
+  function commitR(v: string) {
+    window.clearTimeout(saveR.current);
+    const n = v === "" ? null : Number(v);
+    if (n !== set.reps) onReps(n);
+  }
+
+  const showRir = set.done && set.kind !== "warmup" && askRir;
+  const rirText = set.rir != null ? `sobra ${set.rir >= 4 ? "4+" : set.rir}` : null;
 
   if (!active) {
     return (
       <div className={`set ${set.kind}${set.done ? " done" : ""}`}>
         <div className="set-kind">
           {label}
-          {set.done && set.rir != null && <span className="rir-tag">sobra {set.rir >= 4 ? "4+" : set.rir}</span>}
+          {set.done && rirText && <span className="rir-tag">{rirText}</span>}
         </div>
         <div>
           {formatWeight(set.weight)} <span className="muted small">{unit}</span>
@@ -83,38 +95,44 @@ export function SetRow({
   const kindCls = set.kind === "warmup" ? "warmup" : set.kind === "drop" ? "drop" : "";
   return (
     <div className={`set ${set.kind}${set.done ? " done" : ""}`}>
-      <div className={`set-kind ${kindCls}${onLongPress ? " hold-target" : ""}`} {...(onLongPress ? lpHandlers : {})}>
-        {label}
-        {set.done && set.rir != null && (
-          <button
-            type="button"
-            className="rir-tag"
-            aria-label={`Sobraram ${set.rir} reps. Tocar para mudar.`}
-            onClick={() => !consumedClick() && setEditRir((v) => !v)}
-          >
-            sobra {set.rir >= 4 ? "4+" : set.rir}
-          </button>
-        )}
-        {canRemove && (
-          <button type="button" className="x" aria-label="Remover série" onClick={() => !consumedClick() && onRemove()}>
-            ×
-          </button>
-        )}
-      </div>
+      {onMenu ? (
+        <button
+          type="button"
+          className={`set-kind ${kindCls}`}
+          aria-haspopup="menu"
+          aria-label={`Série ${label}${rirText ? `, ${rirText}` : ""}: mais ações`}
+          onClick={onMenu}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onMenu();
+          }}
+        >
+          {label}
+          {set.done && rirText && <span className="rir-tag">{rirText}</span>}
+          <i className="set-more" aria-hidden="true" />
+        </button>
+      ) : (
+        <div className={`set-kind ${kindCls}`}>{label}</div>
+      )}
       <div className="field">
         <input
           inputMode="decimal"
           enterKeyHint="next"
-          aria-label={`Peso da série ${label}`}
+          aria-label={`Peso da série ${label} em ${unit}`}
           placeholder={weightPh != null ? formatWeight(weightPh) : "–"}
           value={w}
-          onChange={(e) => setW(e.target.value)}
+          onFocus={() => (editing.current = "w")}
+          onChange={(e) => {
+            const v = e.target.value;
+            setW(v);
+            window.clearTimeout(saveW.current);
+            saveW.current = window.setTimeout(() => commitW(v), 300);
+          }}
           onBlur={() => {
-            const n = parseNum(w);
-            if (n !== set.weight) onWeight(n);
+            editing.current = null;
+            commitW(w);
           }}
         />
-        <span className="suffix">{unit}</span>
       </div>
       <div className="field">
         <input
@@ -123,10 +141,16 @@ export function SetRow({
           aria-label={`Repetições da série ${label}`}
           placeholder={repsPh != null ? String(repsPh) : "–"}
           value={r}
-          onChange={(e) => setR(e.target.value.replace(/\D/g, ""))}
+          onFocus={() => (editing.current = "r")}
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, "");
+            setR(v);
+            window.clearTimeout(saveR.current);
+            saveR.current = window.setTimeout(() => commitR(v), 300);
+          }}
           onBlur={() => {
-            const n = r === "" ? null : Number(r);
-            if (n !== set.reps) onReps(n);
+            editing.current = null;
+            commitR(r);
           }}
         />
       </div>
@@ -138,7 +162,11 @@ export function SetRow({
           className="check"
           aria-pressed={set.done}
           aria-label={set.done ? "Desmarcar série" : "Marcar série como feita"}
-          onClick={() => onToggle(parseNum(w), r === "" ? null : Number(r))}
+          onClick={() => {
+            window.clearTimeout(saveW.current);
+            window.clearTimeout(saveR.current);
+            onToggle(parseNum(w), r === "" ? null : Number(r));
+          }}
         >
           <Icon name="check" size={22} />
         </button>
@@ -146,20 +174,22 @@ export function SetRow({
       {showRir && (
         <div className="rir-ask" role="group" aria-label={`Quantas reps sobraram na série ${label}?`}>
           <span className="label">Sobraram</span>
-          {[0, 1, 2, 3, 4].map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={v >= rirTarget[0] && v <= rirTarget[1] ? "target" : undefined}
-              aria-pressed={set.rir === v}
-              onClick={() => {
-                onRir(v);
-                setEditRir(false);
-              }}
-            >
-              {v === 4 ? "4+" : v}
-            </button>
-          ))}
+          {[0, 1, 2, 3, 4].map((v) => {
+            const target = v >= rirTarget[0] && v <= rirTarget[1];
+            return (
+              <button
+                key={v}
+                type="button"
+                className={target ? "target" : undefined}
+                aria-pressed={set.rir === v}
+                aria-label={`${v === 4 ? "4 ou mais" : v}${target ? " (alvo)" : ""}`}
+                onClick={() => onRir(v)}
+              >
+                {v === 4 ? "4+" : v}
+                {target && <small>alvo</small>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
