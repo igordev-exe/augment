@@ -103,3 +103,24 @@ movimento por baixo dela.**
 
 Medir em 3 treinos reais: erros de toque, tempo entre o ✓ e o RIR, e séries começadas sem registrar a anterior. É a
 forma de não cair no viés estética-usabilidade (um visual bonito parece fácil de usar sem necessariamente ser).
+
+## Status (6 nov 2026)
+
+Prioridades 1 a 3 aplicadas no commit 889a0ae, com uma revisão em 360 px que corrigiu o timer, o aviso de fadiga
+escondido e outros cortes. Prioridade 4:
+
+- **Foco:** anel ciano; nos botões chanfrados o foco vira a própria borda (2 px). Navegação e timer fixos não cobrem o
+  elemento focado (`scroll-padding`).
+- **Mapa do ano:** nível 1 a 3,4:1 da célula vazia; setas do teclado escolhem o dia; botões ‹ › de 44 px como
+  alternativa às células de 11 px.
+- **Contraste:** texto terciário `#a0a8b2` (8:1), borda de campo e casa vazia como tokens (≥ 3:1), dica "segure" com
+  opacidade 1. Textos em SVG medidos no tamanho real da tela: rótulos do gráfico de peso, da anatomia e o "Fechar" da
+  roda passaram de ~7–8 px para ≥ 11 px; "Índice" da roda ficou em ~9,5 px (é o que cabe na pedra).
+- **Tokens:** camada de componente (`--field-border`, `--track-empty`, `--focus-ring`) e escala tipográfica de 6
+  passos (`--fs-1` … `--fs-6`); 190 tamanhos migrados com no máximo 0,5 px de diferença.
+- **Lint:** `style/type-scale` recusa fonte abaixo de 17 px fora da escala (CSS e `fontSize` inline);
+  `style/hex-budget` impede que as cores hex fora do `:root` passem de 400 (o número só pode cair).
+- **ARIA:** abas do relatório com `aria-selected`, setas/Home/End e só a aba ativa na ordem do Tab.
+
+Fica para depois: migrar as 400 cores hex soltas para tokens (o lint já impede que aumentem) e exportar os tokens no
+formato DTCG `.tokens.json`.

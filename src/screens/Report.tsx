@@ -124,7 +124,34 @@ export function Report() {
 
       <div className="laudo-tabs" role="tablist" aria-label="Seções do laudo">
         {LAUDO_TABS.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`laudo-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            tabIndex={tab === t.id ? 0 : -1}
+            onClick={() => setTab(t.id)}
+            onKeyDown={(e) => {
+              // Padrão de abas: setas trocam de aba, Home/End vão às pontas.
+              const i = LAUDO_TABS.findIndex((x) => x.id === tab);
+              const to =
+                e.key === "ArrowRight"
+                  ? i + 1
+                  : e.key === "ArrowLeft"
+                    ? i - 1
+                    : e.key === "Home"
+                      ? 0
+                      : e.key === "End"
+                        ? LAUDO_TABS.length - 1
+                        : null;
+              if (to == null) return;
+              e.preventDefault();
+              const next = LAUDO_TABS[(to + LAUDO_TABS.length) % LAUDO_TABS.length];
+              setTab(next.id);
+              document.getElementById(`laudo-tab-${next.id}`)?.focus();
+            }}
+          >
             {t.label}
           </button>
         ))}
@@ -222,7 +249,7 @@ export function Report() {
                             type="button"
                             data-augmented-ui="tl-clip br-clip border"
                             className="toggle-chip"
-                            style={{ fontSize: 12, textTransform: "none" }}
+                            style={{ fontSize: "var(--fs-2)", textTransform: "none" }}
                             aria-pressed={chosen === alt}
                             onClick={() => toggleAccessorySwap(c.exId, alt)}
                           >
@@ -279,7 +306,7 @@ export function Report() {
                         data-augmented-ui="tl-clip br-clip border"
                         className="toggle-chip"
                         style={{
-                          fontSize: 12,
+                          fontSize: "var(--fs-2)",
                           textTransform: "none",
                           color: applied ? "var(--ok)" : v.change > 0 ? "var(--sel)" : "var(--warn)",
                         }}
@@ -304,7 +331,7 @@ export function Report() {
                       type="button"
                       data-augmented-ui="tl-clip br-clip border"
                       className="toggle-chip"
-                      style={{ fontSize: 12, textTransform: "none" }}
+                      style={{ fontSize: "var(--fs-2)", textTransform: "none" }}
                       onClick={() => setAdjustFor(exId, 0, shortName(EXERCISE_BY_ID[exId]))}
                     >
                       Voltar à ficha

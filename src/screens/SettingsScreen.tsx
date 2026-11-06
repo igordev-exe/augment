@@ -309,7 +309,7 @@ export function SettingsScreen() {
                   </div>
                   <input
                     className="input"
-                    style={{ minHeight: 34, fontSize: 13 }}
+                    style={{ minHeight: 34, fontSize: "var(--fs-2)" }}
                     aria-label={`Pesos disponíveis para ${shortName(ex)}`}
                     placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
                     defaultValue={

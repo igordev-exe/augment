@@ -489,7 +489,7 @@ export function ExerciseBlock({
                     type="button"
                     data-augmented-ui="tl-clip br-clip border"
                     className="toggle-chip"
-                    style={{ fontSize: 12, textTransform: "none" }}
+                    style={{ fontSize: "var(--fs-2)", textTransform: "none" }}
                     aria-pressed={entry.alt === a}
                     onClick={() => {
                       onAlt(entry.alt === a ? undefined : a);

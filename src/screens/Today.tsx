@@ -374,7 +374,7 @@ export function Today() {
                       {swapped ?? ex.name.replace(/^A[12] · /, "")}
                       {ex.up && week >= 4 && week <= 6 && <span className="plus">▲</span>}
                     </span>
-                    <span className="mono faint" style={{ fontSize: 12 }}>
+                    <span className="mono faint" style={{ fontSize: "var(--fs-2)" }}>
                       {swapped ? `Troca do ciclo (${ex.name.replace(/^A[12] · /, "")}) · ` : ""}
                       {setsFor(ex, week, settings.setAdjust?.[ex.id])}×{ex.reps[0]}–{ex.reps[1]}
                       {ex.perSide ? " por lado" : ""}, {ex.restLabel.toLowerCase()}

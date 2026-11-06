@@ -112,6 +112,53 @@ function lintFile(filePath: string): LintIssue[] {
 const files = [...collectTsFiles("src"), ...collectTsFiles("scripts")];
 const allIssues = files.flatMap(lintFile);
 
+// ---------- Estilo: escala tipográfica e teto de cores soltas ----------
+// Texto abaixo de 17 px usa a escala (--fs-1 … --fs-6); acima disso são títulos de cada tela.
+// Cores hex fora do :root têm um teto: o número só pode cair (mover para tokens), nunca subir.
+const MIN_FREE_FONT_PX = 17;
+const HEX_BUDGET = 400;
+
+function lintStyles(): LintIssue[] {
+  const issues: LintIssue[] = [];
+  const file = "src/styles.css";
+  const css = fs.readFileSync(file, "utf8");
+  css.split(/\r?\n/).forEach((line, i) => {
+    if (line.includes("lint-ok")) return;
+    const m = line.match(/font(?:-size)?:\s*(?:\d{3}\s+)?(\d+(?:\.\d+)?)px/);
+    if (m && Number(m[1]) < MIN_FREE_FONT_PX) {
+      issues.push({ file, line: i + 1, rule: "style/type-scale", message: `${m[1]}px fora da escala: use var(--fs-1) … var(--fs-6).` });
+    }
+  });
+  const outside = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/:root[^{,]*\{[^}]*\}/g, "");
+  const hex = outside.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+  if (hex.length > HEX_BUDGET) {
+    issues.push({
+      file,
+      line: 1,
+      rule: "style/hex-budget",
+      message: `${hex.length} cores hex fora do :root (teto ${HEX_BUDGET}). Use um token do :root em vez de uma cor nova.`,
+    });
+  }
+  for (const tsx of files.filter((f) => f.endsWith(".tsx"))) {
+    const rel = path.relative(process.cwd(), tsx).replace(/\\/g, "/");
+    fs.readFileSync(tsx, "utf8")
+      .split(/\r?\n/)
+      .forEach((line, i) => {
+        const m = line.match(/fontSize:\s*(\d+(?:\.\d+)?)\b/);
+        if (m && Number(m[1]) < MIN_FREE_FONT_PX) {
+          issues.push({
+            file: rel,
+            line: i + 1,
+            rule: "style/type-scale",
+            message: `fontSize ${m[1]} fora da escala: use "var(--fs-1)" … "var(--fs-6)".`,
+          });
+        }
+      });
+  }
+  return issues;
+}
+allIssues.push(...lintStyles());
+
 if (allIssues.length > 0) {
   for (const iss of allIssues) {
     console.error(`${iss.file}:${iss.line} [${iss.rule}] ${iss.message}`);

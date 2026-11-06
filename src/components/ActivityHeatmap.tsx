@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { addDays, fromISO, longDate, monthName } from "../lib/dates";
 import type { ActivityGrid } from "../lib/visual";
 import { dayName } from "./bits";
 
 // Mapa de atividade do ano: uma coluna por semana (seg → dom), um quadrado por dia.
+// As células são pequenas (11 px) para caber o ano; a alternativa de toque são os botões ‹ › de 44 px abaixo,
+// e pelo teclado o mapa aceita as setas (← → semana, ↑ ↓ dia).
 
 const CELL = 11;
 const STEP = 14;
 const LEFT = 22;
 const TOP = 16;
-const OPACITY = [0, 0.3, 0.55, 0.8, 1];
+/** Opacidade por nível: o nível 1 já fica a ≥ 3:1 da célula vazia. */
+const OPACITY = [0, 0.5, 0.68, 0.85, 1];
 
 export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: string }) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -23,6 +26,38 @@ export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: st
 
   const width = LEFT + grid.weeks.length * STEP;
   const height = TOP + 7 * STEP;
+  const first = grid.weeks[0] ?? today;
+
+  // Mantém o dia escolhido à vista quando muda pelos botões ou pelo teclado.
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || !picked) return;
+    const col = grid.weeks.findIndex((w) => picked >= w && picked < addDays(w, 7));
+    if (col < 0) return;
+    const x = LEFT + col * STEP;
+    if (x < el.scrollLeft + LEFT || x > el.scrollLeft + el.clientWidth - STEP) el.scrollLeft = x - el.clientWidth / 2;
+  }, [picked, grid.weeks]);
+
+  function move(days: number) {
+    const base = picked ?? today;
+    let next = addDays(base, days);
+    if (next > today) next = today;
+    if (next < first) next = first;
+    setPicked(next);
+  }
+
+  function onKey(e: KeyboardEvent<SVGSVGElement>) {
+    const step: Record<string, number> = { ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1 };
+    if (e.key in step) {
+      e.preventDefault();
+      move(step[e.key]);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setPicked(today);
+    } else if (e.key === "Escape") {
+      setPicked(null);
+    }
+  }
 
   // Rótulo do mês na primeira semana que começa nele.
   const months: { x: number; label: string }[] = [];
@@ -46,7 +81,15 @@ export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: st
         <i className="holo-corner br" aria-hidden="true" />
         <i className="hm-sweep" aria-hidden="true" />
         <div ref={scroller} className="hm-scroll holo-scroll">
-          <svg width={width} height={height} role="img" aria-label="Treinos por dia nas últimas 53 semanas">
+          <svg
+            width={width}
+            height={height}
+            role="application"
+            tabIndex={0}
+            aria-label="Treinos por dia nas últimas 53 semanas. Setas escolhem o dia: esquerda e direita mudam a semana, cima e baixo o dia."
+            className="hm-svg"
+            onKeyDown={onKey}
+          >
             {months.map((m) => (
               <text key={m.x} x={m.x} y={10} className="hm-label">
                 {m.label}
@@ -83,8 +126,25 @@ export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: st
         </div>
       </div>
 
+      <div className="hm-nav">
+        <button type="button" onClick={() => move(-1)} aria-label="Dia anterior">
+          ‹
+        </button>
+        <span aria-live="polite">{picked ? longDate(picked) : "Toque num dia ou use ‹ ›"}</span>
+        <button type="button" onClick={() => move(1)} aria-label="Próximo dia" disabled={picked === today}>
+          ›
+        </button>
+      </div>
       <div className="spread tiny muted">
-        <span>{picked ? longDate(picked) : "Toque num dia para ver o treino."}</span>
+        {picked ? (
+          <span className="small" style={{ color: "var(--ink)" }}>
+            {pick
+              ? `${pick.dayIds.map(dayName).join(" + ")} · ${pick.sets} séries · ${Math.round(pick.volumeKg).toLocaleString("pt-BR")} kg`
+              : "Sem treino neste dia."}
+          </span>
+        ) : (
+          <span />
+        )}
         <span className="hm-scale" aria-hidden="true">
           menos
           {OPACITY.map((o, i) => (
@@ -93,13 +153,6 @@ export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: st
           mais
         </span>
       </div>
-      {picked && (
-        <p className="small" style={{ margin: 0 }}>
-          {pick
-            ? `${pick.dayIds.map(dayName).join(" + ")} · ${pick.sets} séries · ${Math.round(pick.volumeKg).toLocaleString("pt-BR")} kg`
-            : "Sem treino neste dia."}
-        </p>
-      )}
     </div>
   );
 }
