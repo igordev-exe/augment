@@ -317,7 +317,7 @@ export function Today() {
               <div className="mission-label">
                 Protocolo {String(dayIdx).padStart(2, "0")} // {day.focus}
               </div>
-              <h1>{day.name}</h1>
+              <h1 data-len={day.name.length > 22 ? "xl" : day.name.length > 10 ? "l" : undefined}>{day.name}</h1>
               <div className="mission-meta">
                 <span>
                   <Icon name="barbell" size={15} /> {day.exercises.length} módulos

@@ -955,12 +955,16 @@ p {
 .mission .figure {
   position: absolute;
   z-index: 0;
-  right: -64px;
-  top: -6px;
-  width: 330px;
+  /*
+    Composição aprovada medida num card de 328 px (tela de 360): figura de 290 px, -66 px à direita, 56 px de recuo.
+    Tudo em % da largura do card, então o desenho é o mesmo em qualquer celular (360, 393, 412 px…).
+  */
+  right: -20.12%;
+  top: -1.83%;
+  width: 88.41%;
   height: auto;
-  padding-left: 56px;
-  padding-top: 20px;
+  padding-left: 17.07%;
+  padding-top: 6.1%;
   box-sizing: content-box;
   max-width: none;
   pointer-events: none;
@@ -1012,6 +1016,17 @@ p {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+/* Telas de 320 px: menos espaçamento para a etiqueta de descanso caber em duas linhas. */
+@media (max-width: 340px) {
+  .mission-top .mission-tag {
+    letter-spacing: 0.02em;
+    padding-inline: 8px;
+    gap: 6px;
+  }
+  .mission .mission-body h1[data-len="xl"] {
+    font-size: 20px;
+  }
+}
 /* Nunca passa do meio do card: à direita começa o capacete. */
 .mission-tag {
   max-width: 52%;
@@ -1053,12 +1068,25 @@ p {
   text-shadow:
     0 2px 0 #00000040,
     0 0 22px #8f171488;
-  white-space: nowrap;
+  /* Nome do dia vem do programa de cada um: quebra em até duas linhas em vez de sair do card. */
+  max-width: 100%;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+/* Nomes longos (programa do usuário) encolhem para caber em duas linhas em qualquer tela. */
+.mission h1[data-len="l"] {
+  font-size: 30px;
+}
+.mission h1[data-len="xl"] {
+  font-size: 24px;
 }
 .mission-body {
   margin-top: auto;
-  /* Espaço da cabeça do robô; o texto entra sobre o pescoço, que some no degradê. */
-  padding-top: 130px;
+  /*
+    Espaço da cabeça do robô, proporcional como a figura: o rótulo fica a 57,3% da largura do card a partir do topo
+    (188 px num card de 328). Os 39,6 px descontam o que não escala (respiro do card, faixa da etiqueta e o vão).
+  */
+  padding-top: calc(57.3% - 39.6px);
 }
 .h-hero.h-hero-sm {
   font-size: clamp(26px, 8vw, 34px);
@@ -2232,10 +2260,6 @@ table.t a {
   }
   .tiles .tile .v {
     font-size: 18px;
-  }
-  .mission .figure {
-    width: 290px;
-    right: -66px;
   }
   .mission h1 {
     font-size: 38px;
