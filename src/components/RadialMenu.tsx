@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent as RPointerEvent } from "react";
+import { vibrate } from "../lib/native";
 import { createPortal } from "react-dom";
 
 // Roda de ações rápidas: toque no número da série e escolha com o polegar. Cada ação tem uma fatia fixa no anel
@@ -29,7 +30,7 @@ export function useLongPress(onLong: () => void, ms = 450) {
       origin.current = { x: e.clientX, y: e.clientY };
       t.current = window.setTimeout(() => {
         fired.current = true;
-        navigator.vibrate?.(15);
+        vibrate(15);
         onLong();
       }, ms);
     },

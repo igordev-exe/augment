@@ -4,6 +4,7 @@ import { activeProgram, programVersion, rememberSessions, subscribeProgram } fro
 import type { BodyEntry, Program, Session, Settings } from "../data/types";
 import { db, DEFAULT_SETTINGS, loadBodyLog, loadSettings, saveSettings } from "./db";
 import { todayISO } from "./dates";
+import { isNative, keepAwake, vibrate } from "./native";
 
 export function useSessions(): Session[] | undefined {
   return useLiveQuery(async () => {
@@ -121,7 +122,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (msg, tone = "info", fx, action) => {
       setToast({ msg, tone, fx, action, at: Date.now() });
       arm(toastDuration(msg, !!action));
-      if (vibrateOnWarn && (tone === "warn" || tone === "danger")) navigator.vibrate?.([40, 60, 40]);
+      if (vibrateOnWarn && (tone === "warn" || tone === "danger")) vibrate([40, 60, 40]);
     },
     [arm],
   );
@@ -193,7 +194,14 @@ export function useToast() {
 
 export function useWakeLock(active: boolean) {
   useEffect(() => {
-    if (!active || !("wakeLock" in navigator)) return;
+    if (!active) return;
+    if (isNative) {
+      keepAwake(true).catch(() => {});
+      return () => {
+        keepAwake(false).catch(() => {});
+      };
+    }
+    if (!("wakeLock" in navigator)) return;
     let lock: WakeLockSentinel | null = null;
     let cancelled = false;
     const request = async () => {

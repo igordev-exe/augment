@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatClock } from "../lib/dates";
 import { useSettings } from "../lib/hooks";
+import { vibrate as buzz } from "../lib/native";
 import { useTimer } from "../lib/timer";
 
 // Barra do descanso. Dígitos em caixas de largura fixa (a Orbitron não tem algarismos tabulares: sem isso o relógio
@@ -48,7 +49,7 @@ export function TimerBar() {
   // Lembrete: 15 s depois do fim, se o descanso ainda está na tela, vibra mais uma vez.
   useEffect(() => {
     if (!over || !vibrate) return;
-    const id = window.setTimeout(() => navigator.vibrate?.([300, 150, 300]), 15_000);
+    const id = window.setTimeout(() => buzz([300, 150, 300]), 15_000);
     return () => window.clearTimeout(id);
   }, [over, vibrate]);
 

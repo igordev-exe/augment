@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { todayISO } from "./lib/dates";
+import { isNative, setupBackButton } from "./lib/native";
 import { ensureWeeklyRestorePoint } from "./lib/restore";
 // Fontes empacotadas com o app: funcionam offline na academia.
 import "@fontsource/orbitron/latin-600.css";
@@ -25,14 +26,16 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-// Service worker: deixa o app funcionando offline e instalável.
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
+// Service worker: deixa a PWA funcionando offline e instalável. No APK os arquivos já estão no aparelho.
+if ("serviceWorker" in navigator && import.meta.env.PROD && !isNative) {
   import("virtual:pwa-register")
     .then(({ registerSW }) => registerSW({ immediate: true }))
     .catch(() => {
       /* ambiente sem SW (ex.: prévia): segue sem */
     });
 }
+
+setupBackButton();
 
 // Pede ao navegador para não apagar os dados do IndexedDB por falta de espaço.
 navigator.storage?.persist?.().catch(() => {});

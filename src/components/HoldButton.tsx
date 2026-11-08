@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { vibrate } from "../lib/native";
 
 // Segurar para confirmar: ações difíceis de desfazer pedem o dedo parado ~0,8 s em vez de um toque.
 // Evita toque acidental com a mão suada na academia. Funciona com dedo, mouse e teclado (segurar Espaço/Enter).
@@ -29,7 +30,7 @@ export function HoldButton({
     if (v >= 1 && !fired.current) {
       fired.current = true;
       start.current = null;
-      navigator.vibrate?.(30);
+      vibrate(30);
       onConfirm();
       return;
     }

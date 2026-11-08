@@ -1,3 +1,5 @@
+import { isNative, shareFileNative } from "./native";
+
 export function download(name: string, content: string, type = "text/plain") {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -15,6 +17,11 @@ export async function shareOrDownload(
   title = name,
   type = "application/json",
 ): Promise<"shared" | "downloaded"> {
+  // APK: não há "baixar"; o arquivo vai para a folha de compartilhar (Drive, WhatsApp, Arquivos…).
+  if (isNative) {
+    await shareFileNative(name, content, title);
+    return "shared";
+  }
   try {
     if (typeof navigator !== "undefined" && "share" in navigator && "canShare" in navigator) {
       const file = new File([content], name, { type });

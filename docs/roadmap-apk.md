@@ -61,6 +61,13 @@
 
 ## Fase 4 — APK (Capacitor)
 
+> **Feito (nov/2026):** Capacitor 8 com `android/`, `src/lib/native.ts` (alarme do descanso agendado pelo Android com
+> alarme exato, haptics, keep-awake, filesystem + share, chave no armazenamento seguro, botão voltar), ícone e tela de
+> abertura próprios e APK gerado pelo GitHub Actions (`.github/workflows/android.yml`; Releases nas tags `v*`).
+> Falta: criar a chave de release e os segredos no GitHub; testar num aparelho real (vídeo do YouTube embutido na
+> WebView, alarme com a tela bloqueada, compartilhar o backup). Para a Play Store, a permissão `USE_EXACT_ALARM`
+> precisa ser justificada (timer de descanso) ou trocada por `SCHEDULE_EXACT_ALARM` com pedido ao usuário.
+
 14. **Capacitor + Android**: `npx cap add android`; build com `base: "./"`; sem service worker na versão nativa (o
     Workbox fica só na PWA do GitHub Pages).
 15. **Trocar APIs do navegador por plugins**:

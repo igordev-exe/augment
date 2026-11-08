@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "../db";
+import { isNative, readSecretKey, writeSecretKey } from "../native";
 import { coachSystem, runCoachTool, ToolInputError, type CoachData } from "./context";
 import { COACH_TOOLS } from "./tools";
 
@@ -74,10 +75,22 @@ export function pruneExpiredToolResults(chat: CoachChat, now = Date.now()): Coac
 
 export async function loadCoachConfig(): Promise<CoachConfig> {
   const row = await db.kv.get("coach-config");
-  return { ...DEFAULT_CONFIG, ...((row?.value as Partial<CoachConfig>) ?? {}) };
+  const cfg = { ...DEFAULT_CONFIG, ...((row?.value as Partial<CoachConfig>) ?? {}) };
+  if (!isNative) return cfg;
+  // APK: a chave mora no armazenamento seguro do Android. Uma chave antiga no IndexedDB é movida para lá.
+  if (cfg.apiKey) {
+    await saveCoachConfig(cfg);
+    return cfg;
+  }
+  return { ...cfg, apiKey: await readSecretKey().catch(() => "") };
 }
 
 export async function saveCoachConfig(c: CoachConfig): Promise<void> {
+  if (isNative) {
+    await writeSecretKey(c.apiKey);
+    await db.kv.put({ key: "coach-config", value: { ...c, apiKey: "" } });
+    return;
+  }
   await db.kv.put({ key: "coach-config", value: c });
 }
 

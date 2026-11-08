@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { cancelRestAlarm, isNative, scheduleRestAlarm, vibrate } from "./native";
 
 // Timer de descanso global. Sobrevive a recarregar a página (localStorage).
 
@@ -108,12 +109,20 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setState(s);
   }, []);
 
+  // No APK o Android agenda o aviso de fim do descanso: toca com a tela bloqueada e o app em segundo plano.
+  const alarm = useCallback((s: TimerState | null) => {
+    if (s && !s.fired && opts.current.notify !== false) scheduleRestAlarm(s.endAt, s.label);
+    else cancelRestAlarm();
+  }, []);
+
   const start = useCallback(
     (seconds: number, label: string) => {
       unlockAudio();
-      commit({ endAt: Date.now() + seconds * 1000, total: seconds, label, fired: false });
+      const s = { endAt: Date.now() + seconds * 1000, total: seconds, label, fired: false };
+      commit(s);
+      alarm(s);
     },
-    [commit],
+    [commit, alarm],
   );
   const add = useCallback(
     (seconds: number) => {
@@ -121,15 +130,22 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       if (!s) return;
       if (seconds < 0) {
         const nextEnd = Math.max(Date.now(), s.endAt + seconds * 1000);
-        commit({ ...s, endAt: nextEnd, total: Math.max(15, s.total + seconds) });
+        const next = { ...s, endAt: nextEnd, total: Math.max(15, s.total + seconds) };
+        commit(next);
+        alarm(next);
         return;
       }
       const base = Math.max(s.endAt, Date.now());
-      commit({ ...s, endAt: base + seconds * 1000, total: s.total + seconds, fired: false });
+      const next = { ...s, endAt: base + seconds * 1000, total: s.total + seconds, fired: false };
+      commit(next);
+      alarm(next);
     },
-    [commit],
+    [commit, alarm],
   );
-  const stop = useCallback(() => commit(null), [commit]);
+  const stop = useCallback(() => {
+    commit(null);
+    alarm(null);
+  }, [commit, alarm]);
   const configure = useCallback((o: TimerOpts) => {
     opts.current = o;
   }, []);
@@ -140,9 +156,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     const fire = () => {
       const cur = read();
       if (!cur || cur.fired || cur.endAt > Date.now() + 50) return;
-      if (opts.current.vibrate && "vibrate" in navigator) navigator.vibrate?.([220, 120, 220, 120, 400]);
+      if (opts.current.vibrate) vibrate([220, 120, 220, 120, 400]);
       if (opts.current.sound) beep();
-      if (opts.current.notify && document.visibilityState === "hidden") notifyDone(cur.label);
+      if (isNative) {
+        // App aberto: o alarme já tocou aqui, a notificação agendada sairia repetida.
+        if (document.visibilityState === "visible") cancelRestAlarm();
+      } else if (opts.current.notify && document.visibilityState === "hidden") notifyDone(cur.label);
       commit({ ...cur, fired: true });
     };
     const ms = state.endAt - Date.now();

@@ -69,10 +69,17 @@ guarda tudo no próprio aparelho.
 
 ## Como instalar no celular
 
-- **Android (Chrome):** abra o link → menu ⋮ → **Instalar app**.
+- **Android, APK:** baixe o `augment-*.apk` nas **Releases** do GitHub (ou, a cada push no `main`, em **Actions → APK
+  Android → Artifacts**) e abra no celular, permitindo "instalar apps desconhecidos" para o navegador ou o gerenciador
+  de arquivos. No APK o aviso de fim do descanso toca com a tela bloqueada, a tela fica acesa no treino e o backup vai
+  pela folha de compartilhar (Drive, WhatsApp, Arquivos).
+- **Android (Chrome), sem APK:** abra o link → menu ⋮ → **Instalar app**.
 - **iPhone (Safari):** abra o link → Compartilhar → **Adicionar à Tela de Início**.
 
 Depois de aberto uma vez, funciona sem internet, inclusive na academia sem sinal.
+
+O APK e o app do navegador guardam os dados separados: para levar seus treinos, exporte o backup em um e importe no
+outro (**Ajustes → Exportar / Importar backup**).
 
 ## Dados
 
@@ -98,6 +105,28 @@ Os programas ficam no aparelho e são editados no app (**Ajustes → Programa de
 `src/data/templates/`, o registro do programa em uso em `src/data/program.ts`, as edições em `src/lib/program-edit.ts` e a
 biblioteca em `src/data/library.ts` (curada) e `src/data/library-extended.ts` (completa, gerada por
 `scripts/import-exercise-db.py`). As regras do mesociclo estão em `src/lib/mesocycle.ts` e a progressão em `src/lib/progression.ts`.
+
+## APK Android (Capacitor)
+
+O APK é o mesmo app web empacotado com [Capacitor](https://capacitorjs.com). A pasta `android/` é o projeto nativo;
+`src/lib/native.ts` escolhe entre plugin nativo e API do navegador (alarme do descanso, vibração, tela acesa,
+compartilhar arquivos, chave da Anthropic no armazenamento seguro do Android, botão voltar).
+
+- **Gerar:** o workflow `.github/workflows/android.yml` monta o APK no GitHub (não precisa de Android Studio). Uma tag
+  `v1.2.3` publica nas Releases.
+- **Local (opcional, com Android Studio):** `npm run build:android` e depois `npm run android:open`.
+- **Ícone e tela de abertura:** `python scripts/android-assets.py` (gera a partir de `public/icon-512-maskable.png`).
+- **Assinatura de release:** sem chave, o workflow gera o APK de debug, que instala normalmente. Para atualizar sempre por
+  cima e publicar, crie uma chave uma vez e guarde-a bem (sem ela não dá para atualizar o app depois):
+
+  ```bash
+  keytool -genkeypair -v -keystore augment-release.jks -alias augment -keyalg RSA -keysize 2048 -validity 10000
+  ```
+
+  Em **Settings → Secrets and variables → Actions** do repositório, crie `ANDROID_KEYSTORE_BASE64` (o arquivo em
+  base64: `base64 -w0 augment-release.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`augment`) e
+  `ANDROID_KEY_PASSWORD`. Quem instalou o APK de debug precisa desinstalar uma vez ao passar para o assinado (exporte o
+  backup antes).
 
 ## Desenvolvimento
 

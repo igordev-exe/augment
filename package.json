@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:android": "tsc -b && vite build --base ./ && cap sync android",
+    "android:open": "cap open android",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "vite-node scripts/lint.ts",
@@ -17,6 +19,15 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
+    "@aparajita/capacitor-secure-storage": "8.0.1",
+    "@capacitor-community/keep-awake": "8.0.1",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
     "@fontsource/exo-2": "5.2.5",
     "@fontsource/orbitron": "5.2.5",
     "@fontsource/rajdhani": "5.2.5",
@@ -29,6 +40,7 @@
     "react-router-dom": "6.28.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.4",

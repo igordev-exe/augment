@@ -3,6 +3,7 @@ import { MUSCLE_LABEL, shortName, exOf, dayOf } from "../data/program";
 import type { MuscleId, Session } from "../data/types";
 import { shortDate } from "../lib/dates";
 import { useToast } from "../lib/hooks";
+import { isNative, shareFileNative } from "../lib/native";
 import { WEEK_RULES } from "../lib/mesocycle";
 import { e1rm, formatWeight, toKg, workSets, type PR } from "../lib/progression";
 import { sessionStats } from "../lib/sessions";
@@ -382,6 +383,10 @@ export function ShareWorkoutCard({
       toast("Não foi possível gerar a imagem.", "warn");
       return;
     }
+    if (isNative) {
+      await shareFileNative(fileName, file, "Card do treino").catch(() => {});
+      return;
+    }
     try {
       if (typeof navigator !== "undefined" && "share" in navigator) {
         const canShareFiles = typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : true;
@@ -400,6 +405,12 @@ export function ShareWorkoutCard({
 
   async function downloadImage() {
     if (!dataUrl) return;
+    if (isNative) {
+      // No APK "salvar" abre a folha de compartilhar: dá para mandar para a galeria, o Drive ou o WhatsApp.
+      const file = dataUrlToFile(dataUrl, fileName);
+      if (file) await shareFileNative(fileName, file, "Card do treino").catch(() => {});
+      return;
+    }
     triggerDownload(dataUrl, fileName);
     try {
       await navigator.clipboard.writeText(textSummary);

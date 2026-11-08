@@ -8,6 +8,7 @@ import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
+import { isNative, requestNotifyPermission } from "../lib/native";
 import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
@@ -75,16 +76,20 @@ export function SettingsScreen() {
       await update({ notify: false });
       return;
     }
-    if (typeof Notification === "undefined") {
+    if (!isNative && typeof Notification === "undefined") {
       toast("Este navegador não suporta notificações.", "warn");
       return;
     }
-    const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
-    if (perm === "granted") {
+    if (await requestNotifyPermission()) {
       await update({ notify: true });
-      toast("Aviso ativado ao trocar de aba/janela.", "ok");
+      toast(isNative ? "Aviso ativado, mesmo com a tela bloqueada." : "Aviso ativado ao trocar de aba/janela.", "ok");
     } else {
-      toast("Permissão de notificação negada nas configurações do navegador.", "warn");
+      toast(
+        isNative
+          ? "Permissão de notificação negada nas configurações do Android."
+          : "Permissão de notificação negada nas configurações do navegador.",
+        "warn",
+      );
     }
   }
 
