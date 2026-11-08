@@ -97,14 +97,11 @@ export function Today() {
   const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;
   const showBackupReminder =
     !active && doneAll.length >= 5 && settings.backupDismissed !== monday && (backupAge == null || backupAge >= 14);
-  // Etiqueta do banner em até duas linhas curtas: não pode avançar sobre o capacete do robô.
-  const missionLabel: [string, string?] = doneToday.length
-    ? [`Feito hoje: ${dayCode(doneToday[0].dayId)}`, "Próxima missão"]
-    : picked
-      ? ["Missão escolhida"]
-      : isToday
-        ? ["Missão do dia"]
-        : ["Descanso hoje", next ? `Próx. ${weekdayShort(fromISO(next.date).getDay()).toLowerCase()}, ${shortDate(next.date)}` : "Próx. —"];
+  // Etiqueta do banner: sempre uma linha curta (o tamanho de "Missão do dia"), para não chegar no capacete do robô.
+  // Quando hoje não é dia de treino, a data do próximo entra no lugar de "Protocolo 0N", acima do nome.
+  const missionLabel = doneToday.length ? "Próxima missão" : picked ? "Missão trocada" : isToday ? "Missão do dia" : "Descanso hoje";
+  const nextDateLabel =
+    !isToday && !picked && next ? `${weekdayShort(fromISO(next.date).getDay()).toLowerCase()}, ${shortDate(next.date)}` : null;
 
   // Retomada e fadiga mudam o treino da semana: ficam sempre à vista. Relatório e backup vão para a barra de avisos.
   const warnItems = [!active && showReport ? "relatório" : null, showBackupReminder ? "backup" : null].filter((x): x is string => !!x);
@@ -300,22 +297,12 @@ export function Today() {
             <span className="shade" aria-hidden="true" />
             <span className="hatch" aria-hidden="true" />
             <div className="mission-top">
-              <span className="mission-tag">
-                <span>
-                  {missionLabel[0]}
-                  {missionLabel[1] && (
-                    <>
-                      <br />
-                      {missionLabel[1]}
-                    </>
-                  )}
-                </span>
-              </span>
+              <span className="mission-tag">{missionLabel}</span>
               <span className="mission-code">EXO.PROTOCOL / {day.code}</span>
             </div>
             <div className="mission-body">
               <div className="mission-label">
-                Protocolo {String(dayIdx).padStart(2, "0")} // {day.focus}
+                {nextDateLabel ?? `Protocolo ${String(dayIdx).padStart(2, "0")}`} // {day.focus}
               </div>
               <h1 data-len={day.name.length > 22 ? "xl" : day.name.length > 10 ? "l" : undefined}>{day.name}</h1>
               <div className="mission-meta">

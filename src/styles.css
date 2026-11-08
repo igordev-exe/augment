@@ -959,7 +959,7 @@ p {
     Composição aprovada medida num card de 328 px (tela de 360): figura de 290 px, -66 px à direita, 56 px de recuo.
     Tudo em % da largura do card, então o desenho é o mesmo em qualquer celular (360, 393, 412 px…).
   */
-  right: -20.12%;
+  right: -23.5%;
   top: -1.83%;
   width: 88.41%;
   height: auto;
@@ -1025,6 +1025,10 @@ p {
   }
   .mission .mission-body h1[data-len="xl"] {
     font-size: 20px;
+  }
+  /* Card estreito: a etiqueta (tamanho fixo) ocupa mais do card, então o robô vai um pouco mais para a direita. */
+  .mission .figure {
+    right: -29%;
   }
 }
 /* Nunca passa do meio do card: à direita começa o capacete. */
