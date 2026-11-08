@@ -131,7 +131,7 @@ export async function coachTurn(
   const fallback = config.model.startsWith("claude-haiku")
     ? {}
     : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
-  const system = coachSystem(data.settings.operator || "Igor");
+  const system = coachSystem(data.settings.operator);
   let cur = pruneExpiredToolResults(chat);
 
   for (let step = 0; step < MAX_STEPS; step++) {

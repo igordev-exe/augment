@@ -1,5 +1,5 @@
 import { Fragment, useState, type CSSProperties } from "react";
-import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
+import { exById, MUSCLE_LABEL, shortName } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { MuscleId } from "../data/types";
 import type { MuscleSlots } from "../lib/slots";
@@ -107,7 +107,7 @@ export function VolumeSlots({ slots, weekLabel, weekOver }: { slots: MuscleSlots
                     <ul>
                       {m.sources.map((src) => (
                         <li key={src.exId}>
-                          <span>{shortName(EXERCISE_BY_ID[src.exId])}</span>
+                          <span>{shortName(exById(src.exId))}</span>
                           <span>
                             {src.sets} × {src.weight === 1 ? "1" : "0,5"} = <b>{fmt(src.sets * src.weight)}</b>
                           </span>

@@ -1,6 +1,6 @@
-import type { LibraryEntry } from "./types";
+import type { LibraryEntry, MuscleId } from "./types";
 
-// Biblioteca de execução. "why" resume por que o exercício está na ficha v2,
+// Biblioteca de execução. "why" resume por que o exercício está no modelo PPL,
 // usando as referências citadas no próprio programa.
 
 export const LIBRARY: LibraryEntry[] = [
@@ -26,7 +26,7 @@ export const LIBRARY: LibraryEntry[] = [
       "Cotovelos colados no corpo (vira tríceps) ou a 90° (estressa o ombro).",
       "Perder as escápulas no fim da série e deixar o ombro rolar para frente.",
     ],
-    why: "É o composto principal de peito do Push A. Com halteres, o braço passa abaixo da linha do tronco e o peito trabalha mais alongado do que na barra.",
+    why: "Bom composto principal de peito. Com halteres, o braço passa abaixo da linha do tronco e o peito trabalha mais alongado do que na barra.",
     videoPt: "supino inclinado com halteres execução correta",
     videoEn: "incline dumbbell press technique",
     alternatives: ["Supino inclinado na máquina", "Supino inclinado no Smith"],
@@ -165,7 +165,7 @@ export const LIBRARY: LibraryEntry[] = [
       "Não estender o braço em cima (corta a parte mais alongada).",
       "Deitar o tronco para trás e transformar em remada.",
     ],
-    why: "É o composto de largura do Pull A. Dorsal e costas ficam no topo da faixa de volume (17 séries por semana).",
+    why: "Composto de largura das costas: puxa a dorsal pelo alongamento e progride bem em carga.",
     videoPt: "puxada aberta pulley execução correta",
     videoEn: "wide grip lat pulldown technique",
     alternatives: ["Barra fixa", "Puxada na máquina articulada"],
@@ -280,7 +280,7 @@ export const LIBRARY: LibraryEntry[] = [
       "Empurre a plataforma com o pé inteiro até quase estender, sem travar o joelho.",
     ],
     errors: ["Meia amplitude para empilhar placas.", "Lombar descolando do encosto no fundo.", "Joelhos entrando para dentro na subida."],
-    why: "Composto principal de quadríceps do Lower A: estável, permite profundidade e progressão de carga com segurança.",
+    why: "Composto principal de quadríceps: estável, permite profundidade e progressão de carga com segurança.",
     videoPt: "hack machine agachamento execução profunda",
     videoEn: "hack squat technique deep",
     alternatives: ["Agachamento livre profundo", "Pendulum squat"],
@@ -375,7 +375,7 @@ export const LIBRARY: LibraryEntry[] = [
     setup: ["Banco a 30–45°, posicionado para a barra descer na parte alta do peito.", "Escápulas para trás e para baixo."],
     execution: ["Desça em 2–3 s até a barra quase tocar o peito alto.", "Empurre sem travar o cotovelo com tranco."],
     errors: ["Banco mal posicionado: a barra desce no pescoço ou na barriga.", "Quicar a barra no peito."],
-    why: "Segundo estímulo semanal de peito com ângulo diferente do Push A.",
+    why: "Bom segundo estímulo de peito na semana, com ângulo diferente do supino inclinado.",
     videoPt: "supino inclinado smith execução",
     videoEn: "incline smith machine press technique",
     alternatives: ["Supino inclinado na máquina"],
@@ -411,7 +411,7 @@ export const LIBRARY: LibraryEntry[] = [
       "Volte em 2–3 s.",
     ],
     errors: ["Balançar o tronco para frente e para trás.", "Encolher os ombros no fim da puxada."],
-    why: "Espessura de costas com o cabo mantendo tensão contínua. Ganha +1 série nas semanas 4–6 (▲).",
+    why: "Espessura de costas com o cabo mantendo tensão contínua.",
     videoPt: "remada baixa triângulo execução",
     videoEn: "seated cable row technique",
     alternatives: ["Remada na máquina com pegada neutra"],
@@ -428,7 +428,7 @@ export const LIBRARY: LibraryEntry[] = [
       "Desça em 2–3 s até a altura das orelhas ou um pouco abaixo.",
     ],
     errors: ["Arquear a lombar.", "Descer pouco."],
-    why: "Segundo estímulo de ombro anterior na semana, com amplitude livre.",
+    why: "Estímulo de ombro anterior com amplitude livre; bom como segundo do dia ou da semana.",
     videoPt: "desenvolvimento com halteres sentado execução",
     videoEn: "seated dumbbell shoulder press technique",
     alternatives: ["Desenvolvimento na máquina"],
@@ -562,7 +562,7 @@ export const LIBRARY: LibraryEntry[] = [
     setup: ["Joelhos a 90°, apoio sobre as coxas, ponta dos pés na plataforma."],
     execution: ["Desça até o alongamento máximo e pause embaixo.", "Suba até o fim, amplitude completa."],
     errors: ["Quicar embaixo.", "Amplitude curta."],
-    why: "Com o joelho flexionado, o sóleo é o principal trabalhador. Completa o gastrocnêmio do Lower A.",
+    why: "Com o joelho flexionado, o sóleo é o principal trabalhador. Completa a panturrilha em pé (gastrocnêmio).",
     videoPt: "panturrilha sentada execução",
     videoEn: "seated calf raise technique",
   },
@@ -574,7 +574,7 @@ export const LIBRARY: LibraryEntry[] = [
     setup: ["Em pé, halteres ao lado do corpo, tronco levemente inclinado para frente."],
     execution: ["Suba pelos lados até a linha do ombro, conduzindo com o cotovelo.", "Desça em 2–3 s."],
     errors: ["Balançar o corpo.", "Subir acima do ombro encolhendo o trapézio."],
-    why: "Terceiro estímulo semanal de deltoide lateral. Se o cabo estiver livre, prefira: mantém tensão na parte de baixo.",
+    why: "Estímulo extra de deltoide lateral. Se o cabo estiver livre, prefira: mantém tensão na parte de baixo.",
     videoPt: "elevação lateral com halteres execução",
     videoEn: "dumbbell lateral raise technique",
     alternatives: ["Elevação lateral no cabo"],
@@ -596,3 +596,44 @@ export const LIBRARY: LibraryEntry[] = [
 ];
 
 export const LIB_BY_ID: Record<string, LibraryEntry> = Object.fromEntries(LIBRARY.map((e) => [e.id, e]));
+
+/**
+ * Músculos com série direta de cada exercício da biblioteca (os mesmos que o PPL usa). O montador de treino preenche
+ * o exercício com isto; sinergistas (0,5 série) ficam em `SYNERGISTS` (src/data/science.ts).
+ */
+export const LIB_MUSCLES: Record<string, MuscleId[]> = {
+  "supino-inclinado-halteres": ["peito"],
+  "supino-reto-maquina": ["peito"],
+  "crucifixo-cabo": ["peito"],
+  "desenvolvimento-maquina": ["deltAnterior"],
+  "elevacao-lateral-cabo": ["deltLateral"],
+  "triceps-testa-halteres": ["triceps"],
+  "triceps-corda": ["triceps"],
+  "puxada-aberta": ["costas"],
+  "remada-apoio-peito": ["costas"],
+  "pullover-polia": ["costas"],
+  "crucifixo-inverso-maquina": ["deltPosterior"],
+  "encolhimento-halteres": ["trapezio"],
+  "rosca-inclinada": ["biceps"],
+  "rosca-martelo-corda": ["biceps"],
+  hack: ["quadriceps"],
+  "leg-press-profundo": ["quadriceps"],
+  "cadeira-extensora": ["quadriceps"],
+  "flexora-sentada": ["posterior"],
+  "panturrilha-em-pe": ["panturrilha"],
+  "abdominal-polia": ["abdomen"],
+  "supino-inclinado-smith": ["peito"],
+  "puxada-unilateral": ["costas"],
+  "remada-baixa-neutra": ["costas"],
+  "desenvolvimento-halteres": ["deltAnterior"],
+  "elevacao-lateral-maquina": ["deltLateral"],
+  "face-pull": ["deltPosterior"],
+  "triceps-overhead-cabo": ["triceps"],
+  "rosca-scott-bayesian": ["biceps"],
+  "terra-romeno": ["posterior"],
+  "elevacao-pelvica": ["gluteo"],
+  "bulgaro-leg-press-alto": ["quadriceps", "gluteo"],
+  "panturrilha-sentada": ["panturrilha"],
+  "elevacao-lateral-halteres": ["deltLateral"],
+  "abdominal-roda": ["abdomen"],
+};

@@ -1,5 +1,5 @@
 import { LIB_BY_ID } from "../../data/library";
-import { DAY_BY_ID, EXERCISE_BY_ID, PROGRAM, shortName } from "../../data/program";
+import { activeProgram, dayById, exById, isFixedProgram, programDays, shortName, exOf } from "../../data/program";
 import { SCIENCE, scienceText } from "../../data/science";
 import type { BodyEntry, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, bySessionDesc, daysBetween, mondayOf, weekdayName, weekdayShort } from "../dates";
@@ -24,7 +24,7 @@ export interface CoachData {
 /** A ficha inteira em texto, com os ids que as ferramentas aceitam. Determinístico (bom para cache). */
 export function programText(): string {
   const lines: string[] = [];
-  for (const d of PROGRAM) {
+  for (const d of programDays()) {
     lines.push(`### ${d.name} (id do dia: ${d.id}) — ${d.focus}`);
     for (const n of d.notes) lines.push(`Obs.: ${n}`);
     for (const ex of d.exercises) {
@@ -58,7 +58,7 @@ function engineRulesText(): string {
 }
 
 function weekRulesText(): string {
-  return [1, 2, 3, 4, 5, 6, 7]
+  return (isFixedProgram() ? [0] : [1, 2, 3, 4, 5, 6, 7])
     .map((w) => {
       const r = WEEK_RULES[w];
       return `- ${r.label}: ${r.summary} Compostos: ${r.compounds}. Isolados: ${r.isolations}. Intensificadores: ${r.intensifierLabel}.`;
@@ -66,24 +66,51 @@ function weekRulesText(): string {
     .join("\n");
 }
 
-/** Prompt de sistema fixo. Não pode ter data, hora ou nada que mude entre pedidos (quebraria o cache). */
-export function coachSystem(name = "Igor"): string {
-  return `Você é o treinador de ${name} dentro do AUGMENT, o app de treino dele. Ele segue um programa de hipertrofia fixo (abaixo) num mesociclo de 6 semanas + deload, 5 treinos por semana.
+/** O programa em uso numa frase: nome, treinos por semana e periodização. */
+function programLine(): string {
+  const p = activeProgram();
+  const n = p.days.length;
+  const plan = isFixedProgram(p) ? "fixo, sem mesociclo (as mesmas séries toda semana)" : "num mesociclo de 6 semanas + deload";
+  return `O programa em uso é "${p.name}" (abaixo), ${n} ${n === 1 ? "treino" : "treinos"} por semana, ${plan}.`;
+}
+
+/** Regras de agenda e de volta ao treino, que mudam com a periodização. */
+function scheduleRulesText(): string {
+  const seq = programDays()
+    .map((d) => d.name)
+    .join(" → ");
+  const lines = [`- A agenda segue a sequência ${seq || "dos treinos do programa"} e nunca pula treino: dia perdido empurra a sequência.`];
+  if (!isFixedProgram()) {
+    lines.push(
+      "- Após 10+ dias parado, recomeça o mesociclo na semana 1; com menos da metade dos treinos numa semana, repete a semana.",
+      "- Deload (semana 7): metade das séries, mesma carga, ~4 reps sobrando; depois troque 2–3 acessórios (bons candidatos: os estagnados).",
+    );
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Prompt de sistema fixo. Não pode ter data, hora ou nada que mude entre pedidos (quebraria o cache). Muda só quando
+ * o programa em uso ou o nome mudam.
+ */
+export function coachSystem(name = ""): string {
+  const who = name.trim();
+  return `Você é o treinador dentro do AUGMENT, um app de treino de hipertrofia. Fala direto com quem treina${who ? ` (${who})` : ""}, em segunda pessoa. ${programLine()}
 
 ## Como você trabalha
 - Responda em português do Brasil, direto e curto, como um treinador experiente falando no celular entre séries. Use listas curtas quando ajudar. Nada de enrolação nem elogio vazio.
 - Números vêm das ferramentas, nunca da memória ou de chute. Antes de falar de cargas, reps, frequência, peso corporal ou recordes, consulte as ferramentas. Se a ferramenta não tem o dado, diga que não tem.
-- As cargas da próxima sessão são decididas pelo motor de regras do app (dupla progressão, abaixo). Você explica, contextualiza e aponta o que fazer, mas não inventa outra carga: se discordar, explique por quê e deixe a decisão com ele.
-- Mudanças no app (incremento de carga de um exercício, recomeçar o mesociclo, repetir a semana, antecipar deload, ajustar dias de treino, fixar lembrete técnico ou trocar acessório do mesociclo) só por \`propor_ajuste\`: ele vê um cartão e decide. Nunca diga que algo foi aplicado.
+- As cargas da próxima sessão são decididas pelo motor de regras do app (dupla progressão, abaixo). Você explica, contextualiza e aponta o que fazer, mas não inventa outra carga: se discordar, explique por quê e deixe a decisão com a pessoa.
+- Mudanças no app (incremento de carga de um exercício, recomeçar o mesociclo, repetir a semana, antecipar deload, ajustar dias de treino, fixar lembrete técnico ou trocar acessório do mesociclo) só por \`propor_ajuste\`: a pessoa vê um cartão e decide. Nunca diga que algo foi aplicado.
 - Leve a sério dor e articulação: sugira reduzir amplitude, trocar pela alternativa da biblioteca ou parar, e procurar avaliação profissional quando a dor persistir ou for forte. Você não diagnostica lesão.
-- Leia as anotações, cardio/passos e o check-in dele: sono, energia, cardio, academia cheia explicam muita coisa.
+- Leia as anotações, cardio/passos e o check-in: sono, energia, cardio, academia cheia explicam muita coisa.
 - Priorize: um foco claro vale mais que dez observações.
 
 ## Como usar a ciência
-- O objetivo dele é hipertrofia (ficar maior), não força máxima. Recomendações que só servem à força (cargas ≥80% 1RM, mais frequência no gesto, parar longe da falha) são secundárias.
+- O objetivo é hipertrofia (ficar maior), não força máxima. Recomendações que só servem à força (cargas ≥80% 1RM, mais frequência no gesto, parar longe da falha) são secundárias.
 - Ao justificar uma decisão com ciência, use a base científica abaixo e diga o nível: Evidência (meta-análises/ECRs), Consenso, Prática de campo ou Hipótese. Não venda prática de campo ou hipótese como fato, e cite autor e ano quando ajudar.
 - Se a pergunta sai da base, responda com conhecimento geral deixando claro que não está na base do app e pode estar desatualizado. Nunca invente estudo, número ou PMID.
-- Se ele trouxer uma alegação da lista de "Alegações auditadas", corrija com o veredito.
+- Se a pessoa trouxer uma alegação da lista de "Alegações auditadas", corrija com o veredito.
 - Volume: o relatório traz séries diretas e fracionadas (diretas + ${SCIENCE.indirectSetWeight} por série indireta). Julgue pelo fracionado: abaixo de ${SCIENCE.volume.minEffective} é estímulo mínimo; ${SCIENCE.volume.efficient[0]}–${SCIENCE.volume.efficient[1]} é a faixa eficiente; mais ainda rende, com retorno decrescente.
 
 ## Regras do programa
@@ -92,15 +119,13 @@ export function coachSystem(name = "Igor"): string {
 - −15% na última série: se uma série cair abaixo do piso, a última vai com 15% a menos.
 - Séries de rampa não contam como trabalho; quando as cargas de trabalho variam mais de 20%, o app usa a mais pesada como referência.
 - "Sobra" = reps que sobraram (RIR) marcadas depois de cada série; 4 significa 4 ou mais.
-- A agenda segue a sequência Push A → Pull A → Lower A → Upper B → Lower B e nunca pula treino: dia perdido empurra a sequência.
-- Após 10+ dias parado, recomeça o mesociclo na semana 1; com menos da metade dos treinos numa semana, repete a semana.
-- Deload (semana 7): metade das séries, mesma carga, ~4 reps sobrando; depois troque 2–3 acessórios (bons candidatos: os estagnados).
+${scheduleRulesText()}
 
 ## Motor de decisões do app
 O app roda estas regras sozinho e mostra os recados durante o treino, nos relatórios e no peso. Você não precisa repetir o que ele já disse; use-as para explicar o porquê (o id do princípio aponta para a base científica) e para decidir quando discordar.
 ${engineRulesText()}
 
-## Semanas do mesociclo
+## ${isFixedProgram() ? "Semana do programa fixo" : "Semanas do mesociclo"}
 ${weekRulesText()}
 
 ## Base científica (fonte das decisões do app)
@@ -127,7 +152,7 @@ function sessionSummary(s: Session) {
   return {
     data: s.date,
     dia_semana: weekdayName(s.date),
-    treino: DAY_BY_ID[s.dayId]?.name ?? s.dayId,
+    treino: dayById(s.dayId)?.name ?? s.dayId,
     semana_meso: s.week,
     duracao_min: minutes,
     checkin: s.checkin && !s.checkin.skipped ? s.checkin : undefined,
@@ -135,7 +160,7 @@ function sessionSummary(s: Session) {
     anotacoes: s.notes || undefined,
     exercicios: s.exercises.map((e) => ({
       id: e.exId,
-      nome: shortName(EXERCISE_BY_ID[e.exId]),
+      nome: shortName(exOf(e)),
       alternativa: e.alt || undefined,
       series: setsLine(e) || "não feito",
       unidade: e.unit,
@@ -162,7 +187,7 @@ export function toolPlan(data: CoachData) {
   const all = done(data);
   const plan = planAhead(data.sessions, today, 7, settings.trainingDays);
   const next = plan[0];
-  const nextDay = next ? DAY_BY_ID[next.dayId] : undefined;
+  const nextDay = next ? dayById(next.dayId) : undefined;
   const last = [...all].sort(bySessionDesc)[0];
   const reentry = reentryFor(
     all.map((s) => s.date),
@@ -181,10 +206,10 @@ export function toolPlan(data: CoachData) {
     dias_de_treino: settings.trainingDays,
     acessorios_trocados: Object.keys(settings.swaps ?? {}).length ? settings.swaps : undefined,
     ajustes_de_series: Object.keys(settings.setAdjust ?? {}).length ? settings.setAdjust : undefined,
-    ultimo_treino: last ? { data: last.date, treino: DAY_BY_ID[last.dayId]?.name, dias_atras: daysBetween(last.date, today) } : null,
+    ultimo_treino: last ? { data: last.date, treino: dayById(last.dayId)?.name, dias_atras: daysBetween(last.date, today) } : null,
     aviso_retomada: reentry,
     alerta_fadiga: fatigue,
-    agenda_7_dias: plan.map((p) => ({ data: p.date, dia_semana: weekdayName(p.date), treino: DAY_BY_ID[p.dayId].name })),
+    agenda_7_dias: plan.map((p) => ({ data: p.date, dia_semana: weekdayName(p.date), treino: dayById(p.dayId).name })),
     proximo_treino: nextDay
       ? {
           data: next!.date,
@@ -227,15 +252,15 @@ export function toolWeekReport(data: CoachData, input: { semana?: unknown }) {
   const start = input.semana == null ? addDays(mondayOf(data.today), -7) : isISO(input.semana) ? mondayOf(input.semana) : null;
   if (!start) throw new ToolInputError("semana deve ser uma data AAAA-MM-DD.");
   const r = weeklyReport(data.sessions, start, data.settings.mesoStart, data.settings.trainingDays, data.today, data.settings.setAdjust);
-  const name = (id: string) => shortName(EXERCISE_BY_ID[id]);
+  const name = (id: string) => shortName(exById(id));
   return {
     semana: `${start} a ${addDays(start, 6)}`,
     em_andamento: start === mondayOf(data.today),
     semana_meso: r.mesoWeek,
     treinos_feitos: r.done,
     treinos_planejados: r.planned,
-    treinos: r.sessions.map((s) => `${s.date} ${DAY_BY_ID[s.dayId]?.name}`),
-    nao_feitos: r.missingDays.map((d) => DAY_BY_ID[d].name),
+    treinos: r.sessions.map((s) => `${s.date} ${dayById(s.dayId)?.name}`),
+    nao_feitos: r.missingDays.map((d) => dayById(d).name),
     series_faltando: r.shortfalls.map((s) => ({ data: s.date, exercicio: name(s.exId), feitas: s.done, planejadas: s.planned })),
     volume_por_musculo: r.volume.map((v) => ({
       musculo: v.muscle,
@@ -335,7 +360,7 @@ export function toolBodyLog(data: CoachData) {
 }
 
 export function toolExerciseHistory(data: CoachData, input: { exercicio?: unknown }) {
-  const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+  const ex = typeof input.exercicio === "string" ? exById(input.exercicio) : undefined;
   if (!ex) throw new ToolInputError("exercicio deve ser um id do programa, ex.: pull-a.puxada-aberta.");
   const activeAlt = data.settings.swaps?.[ex.id] || undefined;
   const h = historyOf(done(data), ex.id, activeAlt);
@@ -402,7 +427,7 @@ export function parseProposal(input: Record<string, unknown>): Proposal {
   const motivo = typeof input.motivo === "string" ? input.motivo.trim() : "";
   if (!motivo) throw new ToolInputError("motivo é obrigatório.");
   if (input.tipo === "incremento") {
-    const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+    const ex = typeof input.exercicio === "string" ? exById(input.exercicio) : undefined;
     const valor = typeof input.valor === "number" ? input.valor : NaN;
     if (!ex) throw new ToolInputError("exercicio deve ser um id do programa.");
     if (!(valor > 0 && valor <= 10)) throw new ToolInputError("valor deve ser um incremento em kg entre 0 e 10.");
@@ -417,21 +442,21 @@ export function parseProposal(input: Record<string, unknown>): Proposal {
     return { tipo: "dias_treino", dias: valid, motivo };
   }
   if (input.tipo === "lembrete_exercicio") {
-    const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+    const ex = typeof input.exercicio === "string" ? exById(input.exercicio) : undefined;
     const nota = typeof input.nota === "string" ? input.nota.trim() : "";
     if (!ex) throw new ToolInputError("exercicio deve ser um id do programa.");
     if (!nota || nota.length > 160) throw new ToolInputError("nota deve ter entre 1 e 160 caracteres.");
     return { tipo: "lembrete_exercicio", exercicio: ex.id, nota, motivo };
   }
   if (input.tipo === "trocar_acessorio") {
-    const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+    const ex = typeof input.exercicio === "string" ? exById(input.exercicio) : undefined;
     const alternativa = typeof input.alternativa === "string" ? input.alternativa.trim() : "";
     if (!ex) throw new ToolInputError("exercicio deve ser um id do programa.");
     if (alternativa.length > 100) throw new ToolInputError("alternativa inválida.");
     return { tipo: "trocar_acessorio", exercicio: ex.id, alternativa, motivo };
   }
   if (input.tipo === "ajustar_series") {
-    const ex = typeof input.exercicio === "string" ? EXERCISE_BY_ID[input.exercicio] : undefined;
+    const ex = typeof input.exercicio === "string" ? exById(input.exercicio) : undefined;
     const valor = typeof input.valor === "number" ? input.valor : NaN;
     if (!ex) throw new ToolInputError("exercicio deve ser um id do programa.");
     if (!Number.isInteger(valor) || Math.abs(valor) > 2)
@@ -452,7 +477,7 @@ export function parseProposal(input: Record<string, unknown>): Proposal {
 /** O que o cartão da proposta diz. */
 export function describeProposal(p: Proposal, settings: Settings, today: string): string {
   if (p.tipo === "incremento") {
-    const ex = EXERCISE_BY_ID[p.exercicio];
+    const ex = exById(p.exercicio);
     const cur = settings.increments[p.exercicio] ?? ex.increment;
     return `${shortName(ex)}: incremento de ${formatWeight(cur)} → ${formatWeight(p.valor)} kg`;
   }
@@ -460,17 +485,17 @@ export function describeProposal(p: Proposal, settings: Settings, today: string)
     return `Dias de treino: ${p.dias.map((d) => weekdayShort(d).toLowerCase()).join(", ")}`;
   }
   if (p.tipo === "lembrete_exercicio") {
-    const ex = EXERCISE_BY_ID[p.exercicio];
+    const ex = exById(p.exercicio);
     return `Lembrete em ${shortName(ex)}: "${p.nota}"`;
   }
   if (p.tipo === "trocar_acessorio") {
-    const ex = EXERCISE_BY_ID[p.exercicio];
+    const ex = exById(p.exercicio);
     return p.alternativa
       ? `Trocar ${shortName(ex)} por "${p.alternativa}" neste mesociclo`
       : `Voltar ${shortName(ex)} ao exercício titular`;
   }
   if (p.tipo === "ajustar_series") {
-    const ex = EXERCISE_BY_ID[p.exercicio];
+    const ex = exById(p.exercicio);
     if (p.valor === 0) return `${shortName(ex)}: voltar às ${ex.sets} séries da ficha`;
     return `${shortName(ex)}: ${ex.sets} → ${ex.sets + p.valor} séries por treino (${p.valor > 0 ? "+" : "−"}${Math.abs(p.valor)})`;
   }
@@ -521,7 +546,7 @@ export function runCoachTool(name: string, input: Record<string, unknown>, data:
       return {
         status: "mostrado",
         proposta: describeProposal(p, data.settings, data.today),
-        aviso: "Ele vê um cartão com Aplicar/Recusar. Não diga que foi aplicado; diga que ele pode aplicar no cartão.",
+        aviso: "A pessoa vê um cartão com Aplicar/Recusar. Não diga que foi aplicado; diga que dá para aplicar no cartão.",
       };
     }
     default:
@@ -529,8 +554,8 @@ export function runCoachTool(name: string, input: Record<string, unknown>, data:
   }
 }
 
-/** Linha de contexto que vai na frente de cada mensagem dele (data muda; por isso fica fora do sistema). */
+/** Linha de contexto que vai na frente de cada mensagem do usuário (data muda; por isso fica fora do sistema). */
 export function turnContext(data: CoachData): string {
   const week = weekFor(data.settings.mesoStart, data.today);
-  return `[Hoje: ${data.today}, ${weekdayName(data.today)}. ${WEEK_RULES[week].label} do mesociclo.]`;
+  return `[Hoje: ${data.today}, ${weekdayName(data.today)}. ${week === 0 ? "Programa fixo, sem mesociclo" : `${WEEK_RULES[week].label} do mesociclo`}.]`;
 }

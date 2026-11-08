@@ -14,7 +14,7 @@ import { FatigueMap } from "../components/FatigueMap";
 import { VolumeSlots } from "../components/VolumeSlots";
 import { PhotoCompare } from "../components/PhotoCompare";
 import { RecordList } from "../components/RecordList";
-import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
+import { exById, programDays, shortName } from "../data/program";
 import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
 import { addDays, bySessionDesc, mondayOf, shortDate } from "../lib/dates";
@@ -62,7 +62,7 @@ export function Progress() {
   const daily = useMemo(() => dailySets(sessions ?? [], today), [sessions, today]);
   const nextWorkout = useMemo(() => {
     const p = planAhead(sessions ?? [], today, 14, settings.trainingDays)[0];
-    const day = p && PROGRAM.find((d) => d.id === p.dayId);
+    const day = p && programDays().find((d) => d.id === p.dayId);
     if (!day) return undefined;
     const ms = [...new Set(day.exercises.flatMap((e) => e.muscles))];
     return { name: day.name, date: p.date, muscles: ms, readiness: readiness(muscles, ms) };
@@ -198,7 +198,11 @@ export function Progress() {
       </div>
 
       <div id="p-series" className="stack panel-wrap">
-        <VolumeSlots slots={slots} weekLabel={week === 7 ? "semana de deload" : `semana ${week} do mesociclo`} weekOver={false} />
+        <VolumeSlots
+          slots={slots}
+          weekLabel={week === 7 ? "semana de deload" : week === 0 ? "programa fixo" : `semana ${week} do mesociclo`}
+          weekOver={false}
+        />
         <PanelActions links={[{ to: "/relatorio", label: "Ver no relatório" }]} />
       </div>
 
@@ -225,7 +229,10 @@ export function Progress() {
             </div>
           ))}
         </div>
-        <p className="tiny faint">Semanas começando na segunda. A ficha pede 5 treinos por semana.</p>
+        <p className="tiny faint">
+          Semanas começando na segunda. O programa em uso pede {programDays().length} {programDays().length === 1 ? "treino" : "treinos"}{" "}
+          por semana.
+        </p>
       </section>
 
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
@@ -481,7 +488,7 @@ export function Progress() {
               <div className="stack" style={{ gap: 7 }}>
                 {relative.map((r) => (
                   <div key={r.exId} className="rel">
-                    <span className="small">{shortName(EXERCISE_BY_ID[r.exId])}</span>
+                    <span className="small">{shortName(exById(r.exId))}</span>
                     <span className="small num" style={{ textAlign: "right" }}>
                       <strong>{r.ratio.toFixed(2).replace(".", ",")}×</strong>
                       <span className="faint"> PC</span>
@@ -550,10 +557,10 @@ export function Progress() {
           code="CRG.05"
           title="Cargas atuais"
           hint="Carga de trabalho por exercício"
-          meta={`${PROGRAM.reduce((n, d) => n + d.exercises.length, 0)} ex.`}
+          meta={`${programDays().reduce((n, d) => n + d.exercises.length, 0)} ex.`}
         >
           <div className="stack">
-            {PROGRAM.map((d) => (
+            {programDays().map((d) => (
               <div key={d.id} className="stack" style={{ gap: 6 }}>
                 <div className="label">{dayName(d.id)}</div>
                 <ul data-augmented-ui="tl-clip br-clip border" className="list">

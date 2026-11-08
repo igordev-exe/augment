@@ -1,8 +1,15 @@
 import Dexie, { type Table } from "dexie";
-import type { BodyEntry, BodyGoal, Session, Settings, Unit } from "../data/types";
+import { rememberPrograms, setActiveProgram } from "../data/program";
+import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
+import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
+import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
 
 // Tudo fica no IndexedDB do próprio celular. Faça backup em Ajustes → Exportar.
+// Versões do banco:
+//   1. sessões + chave-valor (ajustes, medições, treinador). O programa era fixo no código.
+//   2. tabela `programs` (o programa vira dado) e retrato de cada exercício nas sessões (`snap`).
+//   3. retrato do dia nas sessões (`day`: nome e sigla), para o histórico depois de trocar de programa.
 
 interface KV {
   key: string;
@@ -12,6 +19,7 @@ interface KV {
 class AugmentDB extends Dexie {
   sessions!: Table<Session, string>;
   kv!: Table<KV, string>;
+  programs!: Table<Program, string>;
 
   constructor() {
     super("augment");
@@ -19,15 +27,58 @@ class AugmentDB extends Dexie {
       sessions: "id, date, dayId, status",
       kv: "key",
     });
+    // v2: o programa (antes fixo em src/data/program.ts) vira registro. Quem já usava o app ganha o PPL com os
+    // mesmos ids de dia e exercício, e cada sessão antiga recebe o retrato dos exercícios.
+    this.version(2)
+      .stores({
+        sessions: "id, date, dayId, status",
+        kv: "key",
+        programs: "id",
+      })
+      .upgrade(async (tx) => {
+        const ppl = pplProgram();
+        await tx.table("programs").put(ppl);
+        await tx
+          .table("sessions")
+          .toCollection()
+          .modify((sess: Session) => {
+            backfillSnapshots([sess], [ppl]);
+          });
+        const row = (await tx.table("kv").get("settings")) as KV | undefined;
+        if (row && row.value && typeof row.value === "object") {
+          const cur = row.value as Partial<Settings>;
+          if (!cur.activeProgramId) await tx.table("kv").put({ key: "settings", value: { ...cur, activeProgramId: PPL_PROGRAM_ID } });
+        }
+      });
+    this.version(3)
+      .stores({
+        sessions: "id, date, dayId, status",
+        kv: "key",
+        programs: "id",
+      })
+      .upgrade(async (tx) => {
+        const programs = (await tx.table("programs").toArray()) as Program[];
+        await tx
+          .table("sessions")
+          .toCollection()
+          .modify((sess: Session) => {
+            backfillSnapshots([sess], [...programs, pplProgram()]);
+          });
+      });
+    // Instalação nova: começa com o modelo PPL (as boas-vindas da fase 3 vão deixar escolher outro).
+    this.on("populate", (tx) => {
+      tx.table("programs").add(pplProgram());
+    });
   }
 }
 
 export const db = new AugmentDB();
 
 export const DEFAULT_SETTINGS: Settings = {
-  operator: "Igor",
-  // Início do primeiro mesociclo: segunda, 21/09/2026.
-  mesoStart: "2026-09-21",
+  // Sem nome: a tela de abertura pergunta; até lá o app fala com "você".
+  operator: "",
+  // Primeiro mesociclo começa na segunda desta semana. Fica gravado no primeiro acesso (ver `ensureSettings`).
+  mesoStart: mondayOf(todayISO()),
   trainingDays: [1, 2, 3, 4, 5],
   sound: true,
   vibrate: true,
@@ -116,6 +167,7 @@ export function sanitizeSettings(raw: unknown): Settings {
   const mesoStart = typeof s.mesoStart === "string" && ISO_DATE_RE.test(s.mesoStart) ? s.mesoStart : DEFAULT_SETTINGS.mesoStart;
   return {
     operator,
+    activeProgramId: typeof s.activeProgramId === "string" && s.activeProgramId.trim() ? s.activeProgramId.trim().slice(0, 80) : undefined,
     mesoStart,
     trainingDays: sanitizeTrainingDays(s.trainingDays),
     sound: typeof s.sound === "boolean" ? s.sound : DEFAULT_SETTINGS.sound,
@@ -150,6 +202,128 @@ export async function saveSettings(patch: Partial<Settings>): Promise<Settings> 
     await db.kv.put({ key: "settings", value: next });
     return next;
   });
+}
+
+// ---------- Programas ----------
+
+const STOPS = new Set(["F", "T", "R"]);
+const isPair = (x: unknown) => Array.isArray(x) && x.length === 2 && x.every((n) => typeof n === "number" && Number.isFinite(n));
+
+function isProgramExercise(x: unknown): x is ProgramExercise {
+  const e = x as ProgramExercise;
+  return (
+    !!e &&
+    typeof e.id === "string" &&
+    typeof e.lib === "string" &&
+    typeof e.name === "string" &&
+    Array.isArray(e.muscles) &&
+    typeof e.sets === "number" &&
+    isPair(e.reps) &&
+    isPair(e.rest) &&
+    STOPS.has(e.stop)
+  );
+}
+
+/** Programa vindo de backup ou do banco: confere o formato antes de usar. */
+export function isProgram(x: unknown): x is Program {
+  const p = x as Program;
+  return (
+    !!p &&
+    typeof p.id === "string" &&
+    typeof p.name === "string" &&
+    Array.isArray(p.days) &&
+    p.days.length > 0 &&
+    p.days.every(
+      (d) =>
+        !!d && typeof d.id === "string" && typeof d.name === "string" && Array.isArray(d.exercises) && d.exercises.every(isProgramExercise),
+    ) &&
+    (p.retired === undefined || (Array.isArray(p.retired) && p.retired.every(isProgramExercise)))
+  );
+}
+
+/**
+ * Preenche o retrato (`snap`) dos exercícios das sessões que ainda não têm, procurando o exercício pelo id nos
+ * programas dados (dias e removidos). Muda as sessões no lugar e devolve quantos retratos criou.
+ */
+export function backfillSnapshots(sessions: Session[], programs: Program[]): number {
+  const byId = new Map<string, ProgramExercise>();
+  const days = new Map<string, { name: string; code: string; focus?: string }>();
+  for (const p of programs) {
+    for (const e of p.retired ?? []) byId.set(e.id, e);
+    for (const d of p.days) {
+      for (const e of d.exercises) byId.set(e.id, e);
+      if (!days.has(d.id)) days.set(d.id, { name: d.name, code: d.code, focus: d.focus || undefined });
+    }
+  }
+  let n = 0;
+  for (const s of sessions) {
+    if (!s.day && days.has(s.dayId)) s.day = { ...days.get(s.dayId)! };
+    for (const e of s.exercises) {
+      if (e.snap) continue;
+      const ex = byId.get(e.exId);
+      if (ex) {
+        e.snap = structuredClone(ex);
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+/**
+ * Carrega o programa ativo e põe no registro (`src/data/program.ts`). Se o id dos ajustes não existir, usa o primeiro
+ * programa salvo; sem nenhum, cria o PPL. Chamado ao abrir o app e depois de importar um backup.
+ */
+/**
+ * Grava os ajustes no primeiro acesso, para a data de início do mesociclo não andar junto com o relógio. Se já houver
+ * treinos sem ajustes salvos (instalação antiga), a data sai do treino mais antigo e da semana dele.
+ */
+async function ensureSettings(): Promise<void> {
+  if (await db.kv.get("settings")) return;
+  const first = await db.sessions.orderBy("date").first();
+  const mesoStart = first ? addDays(mondayOf(first.date), -7 * Math.max(0, (first.week || 1) - 1)) : mondayOf(todayISO());
+  await db.kv.put({ key: "settings", value: sanitizeSettings({ ...DEFAULT_SETTINGS, mesoStart }) });
+}
+
+export async function loadActiveProgram(): Promise<Program> {
+  await ensureSettings();
+  const settings = await loadSettings();
+  let p = settings.activeProgramId ? await db.programs.get(settings.activeProgramId) : undefined;
+  if (!p || !isProgram(p)) p = (await db.programs.toArray()).find(isProgram);
+  if (!p) {
+    p = pplProgram();
+    await db.programs.put(p);
+  }
+  if (settings.activeProgramId !== p.id) await saveSettings({ activeProgramId: p.id });
+  rememberPrograms((await db.programs.toArray()).filter(isProgram));
+  setActiveProgram(p);
+  return p;
+}
+
+/** Salva o programa (novo ou editado). Se for o ativo, o app passa a usar a versão nova na hora. */
+export async function saveProgram(p: Program): Promise<void> {
+  if (!isProgram(p)) throw new Error("Programa inválido.");
+  const next = { ...p, updatedAt: Date.now() };
+  await db.programs.put(next);
+  const settings = await loadSettings();
+  if (settings.activeProgramId === p.id) setActiveProgram(next);
+}
+
+/** Usa outro programa a partir de agora. O histórico fica (cada sessão guarda o retrato dos exercícios). */
+export async function activateProgram(id: string): Promise<Program> {
+  const p = await db.programs.get(id);
+  if (!p || !isProgram(p)) throw new Error("Programa não encontrado.");
+  await saveSettings({ activeProgramId: id });
+  rememberPrograms((await db.programs.toArray()).filter(isProgram));
+  setActiveProgram(p);
+  return p;
+}
+
+/** Apaga um programa que não está em uso. */
+export async function deleteProgram(id: string): Promise<void> {
+  const settings = await loadSettings();
+  if (settings.activeProgramId === id) throw new Error("Não dá para apagar o programa em uso.");
+  await db.programs.delete(id);
 }
 
 // ---------- Body Log (F4: Peso corporal, medidas e fotos) ----------
@@ -202,16 +376,24 @@ export function uid(): string {
 // ---------- Backup ----------
 
 export interface Backup {
+  /** Continua "1": um backup novo ainda abre num app antigo, que só ignora `programs`. */
   app: "augment";
   version: 1;
   exportedAt: string;
   settings: Settings;
   sessions: Session[];
   bodyLog?: BodyEntry[];
+  /** Programas salvos (a partir da versão 2 do banco). Backup antigo não tem: o import cria o PPL. */
+  programs?: Program[];
 }
 
 export async function exportBackup(): Promise<Backup> {
-  const [settings, sessions, bodyLog] = await Promise.all([loadSettings(), db.sessions.toArray(), loadBodyLog()]);
+  const [settings, sessions, bodyLog, programs] = await Promise.all([
+    loadSettings(),
+    db.sessions.toArray(),
+    loadBodyLog(),
+    db.programs.toArray(),
+  ]);
   return {
     app: "augment",
     version: 1,
@@ -219,6 +401,7 @@ export async function exportBackup(): Promise<Backup> {
     settings,
     sessions,
     bodyLog,
+    programs,
   };
 }
 
@@ -246,14 +429,23 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
   if (opts.snapshot !== false) await createRestorePoint("antes-importar");
   const sessions = b.sessions.filter(isSession);
   const incomingBody = Array.isArray(b.bodyLog) ? b.bodyLog.filter(isBodyEntry) : [];
-  await db.transaction("rw", db.sessions, db.kv, async () => {
+  const incomingPrograms = Array.isArray(b.programs) ? b.programs.filter(isProgram) : [];
+  await db.transaction("rw", db.sessions, db.kv, db.programs, async () => {
     const incoming = sanitizeSettings(b.settings);
     const rawIncoming = (b.settings ?? {}) as Partial<Settings>;
+    // Programas: backup antigo (sem programas) traz o PPL, que é o programa com que ele foi gravado.
+    const programsIn = incomingPrograms.length ? incomingPrograms : [pplProgram()];
+    const current = mode === "replace" ? [] : await db.programs.toArray();
+    // Retratos para sessões antigas: procura nos programas do backup, nos atuais e no PPL.
+    backfillSnapshots(sessions, [...programsIn, ...current, pplProgram()]);
     if (mode === "replace") {
       await db.sessions.clear();
+      await db.programs.clear();
+      await db.programs.bulkPut(programsIn);
+      const activeOk = incoming.activeProgramId && programsIn.some((p) => p.id === incoming.activeProgramId);
       await db.kv.put({
         key: "settings",
-        value: incoming,
+        value: { ...incoming, activeProgramId: activeOk ? incoming.activeProgramId : programsIn[0].id },
       });
       await db.kv.put({
         key: "body-log",
@@ -280,8 +472,12 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
         videos: { ...incoming.videos, ...cur.videos },
         exerciseNotes: { ...incoming.exerciseNotes, ...cur.exerciseNotes },
         bodyGoal: cur.bodyGoal ?? incoming.bodyGoal,
+        activeProgramId: cur.activeProgramId ?? incoming.activeProgramId,
       });
       await db.kv.put({ key: "settings", value: merged });
+      // Mesclar: programa que já existe aqui fica como está (pode ter sido editado); os novos entram.
+      const have = new Set(current.map((p) => p.id));
+      await db.programs.bulkPut(programsIn.filter((p) => !have.has(p.id)));
       if (incomingBody.length > 0) {
         const curBody = await loadBodyLog();
         const byId = new Map<string, BodyEntry>();
@@ -295,5 +491,6 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
     }
     await db.sessions.bulkPut(sessions);
   });
+  await loadActiveProgram();
   return sessions.length;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
+import { dayById, exById, shortName } from "../data/program";
 import { PRINCIPLES } from "../data/science";
 import type { BodyEntry, Session, SessionExercise, SetEntry } from "../data/types";
 import { bodyAdvice, ENGINE_RULES, intensifierPlan, liveNudges, regressingExercises, volumeAdvice, type LiveInput } from "./engine";
@@ -35,9 +35,9 @@ function session(date: string, dayId: string, exercises: SessionExercise[], week
   return { id: `${dayId}-${date}`, date, dayId, week, startedAt: t, finishedAt: t + 70 * 60000, status: "done", exercises, ...extra };
 }
 
-const SUPINO = EXERCISE_BY_ID["push-a.supino-incl-halt"]; // 4×6–10, falha técnica, 3 min
-const LATERAL = EXERCISE_BY_ID["push-a.lateral-cabo"]; // 4×12–20, falha, intensificador
-const MAQ = EXERCISE_BY_ID["push-a.supino-maq"]; // 3×8–12, falha técnica, 2 min
+const SUPINO = exById("push-a.supino-incl-halt"); // 4×6–10, falha técnica, 3 min
+const LATERAL = exById("push-a.lateral-cabo"); // 4×12–20, falha, intensificador
+const MAQ = exById("push-a.supino-maq"); // 3×8–12, falha técnica, 2 min
 
 function live(partial: Partial<LiveInput> & Pick<LiveInput, "ex" | "entry">): ReturnType<typeof liveNudges> {
   return liveNudges({ week: 3, lowDay: false, history: [], plannedSets: 4, step: 2, intensifier: false, ...partial });
@@ -192,7 +192,7 @@ describe("motor: ao vivo", () => {
   });
 
   it("cota de intensificadores da semana (Push A tem 2)", () => {
-    const push = DAY_BY_ID["push-a"].exercises;
+    const push = dayById("push-a").exercises;
     expect(intensifierPlan(push, 2, false).size).toBe(0);
     expect(intensifierPlan(push, 3, false).size).toBe(1);
     expect(intensifierPlan(push, 4, false).size).toBe(2);
@@ -255,7 +255,7 @@ describe("motor: relatórios", () => {
 
 describe("ajuste de séries (fim de mesociclo)", () => {
   it("setsFor aplica o ajuste sobre a ficha, com as regras da semana por cima e teto de 4", () => {
-    const crucifixo = EXERCISE_BY_ID["push-a.crucifixo-cabo"]; // 3 séries, isolado, ▲
+    const crucifixo = exById("push-a.crucifixo-cabo"); // 3 séries, isolado, ▲
     expect(setsFor(crucifixo, 3, 1)).toBe(4);
     expect(setsFor(crucifixo, 4, 1)).toBe(4); // ▲ não passa de 4
     expect(setsFor(crucifixo, 7, 1)).toBe(2); // deload: metade de 4

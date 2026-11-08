@@ -1,5 +1,5 @@
-import { EXERCISE_BY_ID, MUSCLE_ORDER } from "../data/program";
-import { SCIENCE, SYNERGISTS } from "../data/science";
+import { MUSCLE_ORDER, exOf, synergistsOf } from "../data/program";
+import { SCIENCE } from "../data/science";
 import type { MuscleId, Session } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { workSets } from "./progression";
@@ -55,11 +55,11 @@ export function volumeSlots(sessions: Session[], today: string, week: number, ad
   };
   for (const s of inWeek) {
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       const n = workSets(e).length;
       if (!ex || !n) continue;
       for (const m of ex.muscles) add(m, ex.id, n, 1);
-      for (const m of SYNERGISTS[ex.lib] ?? []) if (!ex.muscles.includes(m)) add(m, ex.id, n, SCIENCE.indirectSetWeight as 0.5);
+      for (const m of synergistsOf(ex)) if (!ex.muscles.includes(m)) add(m, ex.id, n, SCIENCE.indirectSetWeight as 0.5);
     }
   }
 

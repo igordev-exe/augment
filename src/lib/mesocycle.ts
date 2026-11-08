@@ -1,13 +1,17 @@
-import { EXERCISE_BY_ID } from "../data/program";
+import { exOf, isFixedProgram } from "../data/program";
 import type { Checkin, ProgramExercise, Session, StopKind } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, mondayOf } from "./dates";
 
-// Regras do mesociclo de 6 semanas + deload (ficha, página 6).
+// Regras do mesociclo de 6 semanas + deload.
 
 export const MESO_LENGTH = 7;
 
-/** Semana 1–7 a partir da segunda-feira de início. Repete o ciclo depois do deload. */
+/**
+ * Semana 1–7 a partir da segunda-feira de início. Repete o ciclo depois do deload.
+ * Programa sem mesociclo (periodization "fixed"): sempre 0, a regra "Programa fixo".
+ */
 export function weekFor(mesoStart: string, date: string): number {
+  if (isFixedProgram()) return 0;
   const diff = daysBetween(mesoStart, date);
   const w = Math.floor(diff / 7);
   return (((w % MESO_LENGTH) + MESO_LENGTH) % MESO_LENGTH) + 1;
@@ -24,6 +28,14 @@ export interface WeekRule {
 }
 
 export const WEEK_RULES: Record<number, WeekRule> = {
+  0: {
+    label: "Programa fixo",
+    summary: "Sem mesociclo: séries e até onde ir como no programa, sem deload automático.",
+    compounds: "Falha técnica (1–2 sobrando)",
+    isolations: "Falha (0–1 sobrando)",
+    intensifiers: 0,
+    intensifierLabel: "Nenhum",
+  },
   1: {
     label: "Semana 1",
     summary: "Entrada: isolados com −1 série, ninguém vai à falha.",
@@ -177,7 +189,7 @@ export interface FatigueDeloadAlert {
 /**
  * Detecta fadiga acumulada nas semanas 3–6 (check-ins seguidos de sono ruim / energia baixa,
  * dores articulares, quedas abaixo do piso de repetições ou reps caindo na mesma carga) e sugere antecipar o Deload.
- * Ficha v2: antecipe quando dois sinais aparecem juntos; 3+ exercícios regredindo sozinhos já são "volume cego".
+ * Regra: antecipe quando dois sinais aparecem juntos; 3+ exercícios regredindo sozinhos já são "volume cego".
  * `regressing`: nomes dos exercícios com reps caindo na mesma carga (calculado pelo motor, ver engine.ts).
  */
 export function fatigueDeloadFor(
@@ -211,7 +223,7 @@ export function fatigueDeloadFor(
     }
     for (const entry of s.exercises) {
       if (entry.feedback?.joint === "incomodou") jointComplaints += 1;
-      const ex = EXERCISE_BY_ID[entry.exId];
+      const ex = exOf(entry);
       if (!ex) continue;
       const work = entry.sets.filter((st) => st.done && st.kind === "work" && (st.reps ?? 0) > 0);
       if (work.length >= 2 && work.every((st) => (st.reps ?? 0) < ex.reps[0])) {
@@ -222,7 +234,7 @@ export function fatigueDeloadFor(
 
   const regressingExs = regressing.length;
   const totalSignals = lowCheckins + jointComplaints + underTargetExs + regressingExs;
-  // Tipos de sinal da ficha v2: sono/energia ruins repetidos, articulação reclamando, reps caindo na mesma carga.
+  // Tipos de sinal: sono/energia ruins repetidos, articulação reclamando, reps caindo na mesma carga.
   const kinds = [lowCheckins >= 2, jointComplaints >= 1, regressingExs >= 1 || underTargetExs >= 1].filter(Boolean).length;
   const shouldAlert = kinds >= 2 || jointComplaints >= 3 || underTargetExs >= 3 || regressingExs >= 3 || totalSignals >= 4;
   if (!shouldAlert) return null;
@@ -247,7 +259,7 @@ export function fatigueDeloadFor(
   };
 }
 
-/** Teto de séries por exercício (ficha v2: "nenhum exercício passa de 4 séries"). */
+/** Teto de séries por exercício ("nenhum exercício passa de 4 séries"). */
 export const MAX_SETS = 4;
 
 /**

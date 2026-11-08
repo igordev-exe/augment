@@ -10,7 +10,7 @@ import { Icon } from "../components/Icon";
 import { Choice } from "../components/SetRow";
 import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
 import { SysModule } from "../components/SysModule";
-import { DAY_BY_ID, EXERCISE_BY_ID, shortName } from "../data/program";
+import { exById, shortName, exOf, dayOf } from "../data/program";
 import type { CardioEntry, Checkin, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
@@ -65,7 +65,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const timer = useTimer();
   const toast = useToast();
   const navigate = useNavigate();
-  const day = DAY_BY_ID[session.dayId];
+  const day = dayOf(session);
   const week = session.week;
   const rule = WEEK_RULES[week];
   const isActive = session.status === "active";
@@ -83,7 +83,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   );
 
   const firstOpen = session.exercises.findIndex((e) => {
-    const ex = EXERCISE_BY_ID[e.exId];
+    const ex = exOf(e);
     const work = e.sets.filter((s) => s.kind !== "warmup");
     return ex && work.some((s) => !s.done);
   });
@@ -128,7 +128,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
   /** Recado do motor que vale um aviso na hora para este exercício (`only`: restringe às regras listadas). */
   function liveToast(entry: SessionExercise, only?: string[]): Nudge | null {
-    const ex = EXERCISE_BY_ID[entry.exId];
+    const ex = exOf(entry);
     if (!ex) return null;
     const n = liveNudges({
       ex,
@@ -163,7 +163,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   }
 
   async function onSetDone(index: number, entry: SessionExercise, setId: string) {
-    const ex = EXERCISE_BY_ID[entry.exId];
+    const ex = exOf(entry);
     const setIdx = entry.sets.findIndex((x) => x.id === setId);
     const set = entry.sets[setIdx];
     if (!isActive || !set?.done) return;
@@ -208,7 +208,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     if (set.kind === "warmup") {
       timer.start(60, `Aquecimento\n${shortName(ex)}`);
     } else if (ex.superset?.order === 1) {
-      const partner = EXERCISE_BY_ID[ex.superset.with];
+      const partner = exById(ex.superset.with);
       if (!live && !warned) toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
     } else {
       const rest = ex.superset?.order === 2 ? 60 : defaultRest(ex.rest);
@@ -218,7 +218,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       const nextLoad = nextSet?.weight ?? set.weight;
       const nextWhat = nextLoad != null ? ` · ${formatWeight(nextLoad)} ${next.unit}` : "";
       const nextEx = session.exercises.find((e, i) => i > index && e.sets.some((s) => s.kind !== "warmup" && !s.done));
-      const nextExDef = nextEx && EXERCISE_BY_ID[nextEx.exId];
+      const nextExDef = nextEx && exById(nextEx.exId);
       timer.start(
         rest,
         remaining
@@ -335,7 +335,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     let same = 0;
     let down = 0;
     for (const e of session.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (!ex) continue;
       planned += setsFor(ex, week, settings.setAdjust?.[ex.id]);
       done += e.sets.filter((x) => x.done && x.kind !== "warmup").length;
@@ -382,7 +382,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
         sub={
           <>
             {longDate(session.date)}. {rule.label}
-            {week < 7 ? " de 6" : ""}.{" "}
+            {week >= 1 && week < 7 ? " de 6" : ""}.{" "}
             {isActive
               ? `Em andamento há ${formatDuration(Date.now() - session.startedAt)}.`
               : `Concluído em ${formatDuration(stats.duration)}.`}
@@ -517,7 +517,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             {lowDay
               ? "desativados pelo check-in (dia de baixa)"
               : intensifiers.size
-                ? `${[...intensifiers].map((id) => shortName(EXERCISE_BY_ID[id]).toLowerCase()).join(", ")} (cota da semana: ${rule.intensifierLabel.toLowerCase()}), só na última série`
+                ? `${[...intensifiers].map((id) => shortName(exById(id)).toLowerCase()).join(", ")} (cota da semana: ${rule.intensifierLabel.toLowerCase()}), só na última série`
                 : "nenhum nesta semana"}
             .
           </div>
@@ -531,7 +531,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
 
       <div className="stack">
         {session.exercises.map((entry, i) => {
-          const ex = EXERCISE_BY_ID[entry.exId];
+          const ex = exOf(entry);
           if (!ex) return null;
           if (!isActive && !entry.sets.length) return null;
           const hist = historyOf(before, ex.id, entry.alt);
@@ -591,7 +591,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           Sem registro neste treino:{" "}
           {session.exercises
             .filter((e) => !e.sets.length)
-            .map((e) => shortName(EXERCISE_BY_ID[e.exId]))
+            .map((e) => shortName(exOf(e)))
             .join(", ")}
           .
         </p>
@@ -644,8 +644,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       <SysModule
         id="sessao-extras"
         code="CRD.01"
-        title="Cardio, passos e notas"
-        hint="Opcional"
+        title="Cardio e notas"
+        hint="Passos e anotações · opcional"
         tone="amber"
         meta={
           [

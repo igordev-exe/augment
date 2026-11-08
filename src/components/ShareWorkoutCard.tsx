@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
+import { MUSCLE_LABEL, shortName, exOf, dayOf } from "../data/program";
 import type { MuscleId, Session } from "../data/types";
 import { shortDate } from "../lib/dates";
 import { useToast } from "../lib/hooks";
@@ -17,14 +17,14 @@ interface ExerciseLine {
 }
 
 function buildWorkoutSummary(session: Session, prs: PR[], operator?: string) {
-  const day = DAY_BY_ID[session.dayId];
+  const day = dayOf(session);
   const stats = sessionStats(session);
   const prExIds = new Set(prs.map((p) => p.exId));
   const muscleSets = new Map<MuscleId, number>();
   const lines: ExerciseLine[] = [];
 
   for (const entry of session.exercises) {
-    const ex = EXERCISE_BY_ID[entry.exId];
+    const ex = exOf(entry);
     const ws = workSets(entry);
     if (!ex || !ws.length) continue;
     for (const m of ex.muscles) {

@@ -163,7 +163,7 @@ export function History() {
                       <span className="h-card">{dayName(s.dayId)}</span>
                       <span className="small muted" style={{ display: "block" }}>
                         {shortDate(s.date)}, {st.sets} séries em {formatDuration(st.duration)}
-                        {s.week === 7 ? ", deload" : `, semana ${s.week}`}
+                        {s.week === 7 ? ", deload" : s.week === 0 ? ", programa fixo" : `, semana ${s.week}`}
                       </span>
                     </span>
                     {prs.length > 0 && (

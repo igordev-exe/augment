@@ -58,14 +58,14 @@ export const COACH_TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "corpo",
     description:
-      "Histórico de peso corporal e medidas (cintura, braço e observações), a meta de peso dele e o ritmo semanal contra a faixa recomendada.",
+      "Histórico de peso corporal e medidas (cintura, braço e observações), a meta de peso e o ritmo semanal contra a faixa recomendada.",
     input_schema: { type: "object", properties: {}, additionalProperties: false },
     eager_input_streaming: true,
   },
   {
     name: "propor_ajuste",
     description:
-      "Propõe uma mudança no app; ele vê um cartão e decide se aplica. Tipos: 'incremento' (muda o salto de carga de um exercício, em kg; exige exercicio e valor), 'recomecar_mesociclo' (volta para a semana 1 a partir desta segunda), 'repetir_semana' (volta uma semana), 'antecipar_deload' (entra na semana 7 de deload já nesta semana por fadiga), 'dias_treino' (muda os dias da semana em que ele treina; exige dias), 'lembrete_exercicio' (fixa um lembrete técnico curto no exercício; exige exercicio e nota), 'trocar_acessorio' (fixa uma alternativa da biblioteca para um exercício no mesociclo; exige exercicio e alternativa) e 'ajustar_series' (séries a mais ou a menos por treino num exercício, a partir da ficha: valor −2 a +2, 0 volta à ficha, entre 2 e 4 séries no total; use com o ajuste_series_proximo_meso do relatório do mesociclo). Sempre com motivo curto.",
+      "Propõe uma mudança no app; a pessoa vê um cartão e decide se aplica. Tipos: 'incremento' (muda o salto de carga de um exercício, em kg; exige exercicio e valor), 'recomecar_mesociclo' (volta para a semana 1 a partir desta segunda), 'repetir_semana' (volta uma semana), 'antecipar_deload' (entra na semana 7 de deload já nesta semana por fadiga), 'dias_treino' (muda os dias da semana de treino; exige dias), 'lembrete_exercicio' (fixa um lembrete técnico curto no exercício; exige exercicio e nota), 'trocar_acessorio' (fixa uma alternativa da biblioteca para um exercício no mesociclo; exige exercicio e alternativa) e 'ajustar_series' (séries a mais ou a menos por treino num exercício, a partir da ficha: valor −2 a +2, 0 volta à ficha, entre 2 e 4 séries no total; use com o ajuste_series_proximo_meso do relatório do mesociclo). Sempre com motivo curto.",
     input_schema: {
       type: "object",
       properties: {

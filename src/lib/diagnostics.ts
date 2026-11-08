@@ -1,4 +1,4 @@
-import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
+import { dayById, exById, MUSCLE_LABEL, shortName } from "../data/program";
 import type { BodyEntry, Session, Settings } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { bodyAdvice, fatigueAlert, regressingExercises, type NudgeTone } from "./engine";
@@ -58,7 +58,7 @@ export function engineDiagnostics(input: { sessions: Session[]; settings: Settin
 
   // Progressão: o que o motor manda no próximo treino.
   const next = planAhead(sessions, today, 7, settings.trainingDays)[0];
-  const day = next ? DAY_BY_ID[next.dayId] : undefined;
+  const day = next ? dayById(next.dayId) : undefined;
   if (day && done.length) {
     const week = weekFor(settings.mesoStart, next!.date);
     const up: string[] = [];
@@ -119,7 +119,7 @@ export function engineDiagnostics(input: { sessions: Session[]; settings: Settin
         area: "PROGR",
         tone: "warn",
         title: "Estagnação",
-        text: `${list(r.stalls.map((s) => shortName(EXERCISE_BY_ID[s.exId])))}: 3 sessões sem 1RM estimado novo. O app baixa ~10% para destravar.`,
+        text: `${list(r.stalls.map((s) => shortName(exById(s.exId))))}: 3 sessões sem 1RM estimado novo. O app baixa ~10% para destravar.`,
         why: "progressao",
       });
     }
@@ -131,13 +131,13 @@ export function engineDiagnostics(input: { sessions: Session[]; settings: Settin
   }
 
   // Ajustes ativos de séries.
-  const adj = Object.entries(settings.setAdjust ?? {}).filter(([id]) => EXERCISE_BY_ID[id]);
+  const adj = Object.entries(settings.setAdjust ?? {}).filter(([id]) => exById(id));
   if (adj.length) {
     out.push({
       area: "AJUSTE",
       tone: "info",
       title: `${adj.length} ajuste${adj.length > 1 ? "s" : ""} de séries ativo${adj.length > 1 ? "s" : ""}`,
-      text: adj.map(([id, n]) => `${shortName(EXERCISE_BY_ID[id])} ${n > 0 ? "+" : "−"}${Math.abs(n)}`).join(" · "),
+      text: adj.map(([id, n]) => `${shortName(exById(id))} ${n > 0 ? "+" : "−"}${Math.abs(n)}`).join(" · "),
       why: "feedback-volume",
     });
   }

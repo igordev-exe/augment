@@ -1,4 +1,4 @@
-// Tipos centrais do app. O programa (ficha) é estático; os registros ficam no IndexedDB.
+// Tipos centrais do app. O programa (ficha) é um registro salvo no IndexedDB, como as sessões.
 
 /** Até onde levar a série de trabalho. F = falha, T = falha técnica, R = parar com ~2 reps sobrando. */
 export type StopKind = "F" | "T" | "R";
@@ -71,6 +71,8 @@ export interface ProgramExercise {
   perSide?: boolean;
   /** Superset: id do par e posição. */
   superset?: { with: string; order: 1 | 2 };
+  /** Músculos que recebem 0,5 série por série (sinergistas). Sem isso, vale a tabela da biblioteca (`SYNERGISTS`). */
+  synergists?: MuscleId[];
   /** Exercício alterado na v2 da ficha. */
   changed?: string;
 }
@@ -83,6 +85,27 @@ export interface ProgramDay {
   focus: string;
   notes: string[];
   exercises: ProgramExercise[];
+}
+
+/** Programa de treino salvo (o "ficha" de cada usuário). Os dias seguem em rotação na ordem do array. */
+export interface Program {
+  id: string;
+  name: string;
+  /** Modelo de origem (ex.: "ppl-v2"), quando veio de um modelo pronto. */
+  template?: string;
+  /**
+   * "meso" (padrão): mesociclo de 6 semanas + deload, com as regras de cada semana.
+   * "fixed": sem mesociclo; séries e "até onde" como no programa, sem deload automático (semana 0 nas regras).
+   */
+  periodization?: "meso" | "fixed";
+  days: ProgramDay[];
+  /**
+   * Exercícios que saíram do programa mas aparecem no histórico (o montador de treino guarda aqui ao remover).
+   * Assim recordes e gráficos antigos continuam com nome e músculos.
+   */
+  retired?: ProgramExercise[];
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type SetKind = "warmup" | "work" | "drop";
@@ -110,6 +133,11 @@ export interface ExerciseFeedback {
 
 export interface SessionExercise {
   exId: string;
+  /**
+   * Retrato do exercício como estava no programa no dia do treino. Histórico, recordes, volume e atributos leem
+   * daqui quando o exercício já não existe no programa ativo (editado ou removido).
+   */
+  snap?: ProgramExercise;
   unit: Unit;
   notes?: string;
   /** Alternativa da biblioteca usada neste treino (máquina ocupada ou dor). */
@@ -156,6 +184,8 @@ export interface BodyGoal {
 export interface Session {
   id: string;
   dayId: string;
+  /** Retrato do dia como estava no programa (nome e sigla), para o histórico depois de trocar de programa. */
+  day?: { name: string; code: string; focus?: string };
   /** Data local AAAA-MM-DD. */
   date: string;
   week: number;
@@ -176,6 +206,8 @@ export type FxLevel = "max" | "auto" | "min";
 export interface Settings {
   /** Como o app te chama ("Operador: …"). */
   operator: string;
+  /** Programa em uso (tabela `programs`). */
+  activeProgramId?: string;
   /** Segunda-feira de início do mesociclo atual (AAAA-MM-DD). */
   mesoStart: string;
   /** Dias de treino (0 = domingo … 6 = sábado). */

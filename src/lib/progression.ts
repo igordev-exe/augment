@@ -1,8 +1,9 @@
+import { exById } from "../data/program";
 import type { ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
 import { bySessionAsc } from "./dates";
 import { rirRange } from "./mesocycle";
 
-// Dupla progressão com carga fixa (ficha, página 6) + recordes pessoais.
+// Dupla progressão com carga fixa + recordes pessoais.
 
 export const LB_TO_KG = 0.45359237;
 
@@ -185,7 +186,7 @@ export function increaseStep(ex: ProgramExercise, unit: Unit, custom?: number): 
 export interface LoadRef {
   load: number;
   atLoad: SetEntry[];
-  /** Formato série-âncora (ficha v2): série 1 mais pesada + séries de volume ~10–15% mais leves. */
+  /** Formato série-âncora: série 1 mais pesada + séries de volume ~10–15% mais leves. */
   anchor: boolean;
   /** Carga das séries de volume (só no formato âncora). */
   volumeLoad?: number;
@@ -432,11 +433,19 @@ export interface ExerciseHistoryItem {
  */
 export function historyOf(sessions: Session[], exId: string, alt?: string): ExerciseHistoryItem[] {
   const targetAlt = alt || undefined;
-  return sessions
-    .filter((s) => s.status === "done")
-    .map((s) => ({ session: s, entry: s.exercises.find((e) => e.exId === exId) }))
-    .filter((x): x is ExerciseHistoryItem => !!x.entry && (x.entry.alt || undefined) === targetAlt && workSets(x.entry).length > 0)
-    .sort((a, b) => bySessionAsc(a.session, b.session));
+  const pick = (match: (e: SessionExercise) => boolean) =>
+    sessions
+      .filter((s) => s.status === "done")
+      .map((s) => ({ session: s, entry: s.exercises.find(match) }))
+      .filter((x): x is ExerciseHistoryItem => !!x.entry && (x.entry.alt || undefined) === targetAlt && workSets(x.entry).length > 0)
+      .sort((a, b) => bySessionAsc(a.session, b.session));
+  const own = pick((e) => e.exId === exId);
+  if (own.length) return own;
+  // Exercício que nunca foi feito com este id (programa novo, dia novo): continua do mesmo exercício da biblioteca
+  // feito em outro dia ou programa. Quem já tem histórico próprio fica separado (a flexora de dois dias, por exemplo).
+  const lib = exById(exId)?.lib;
+  if (!lib) return own;
+  return pick((e) => e.exId !== exId && (e.snap?.lib ?? exById(e.exId)?.lib) === lib);
 }
 
 export function recordsOf(history: ExerciseHistoryItem[]): Records {
@@ -653,7 +662,7 @@ function effortReps(entry: SessionExercise): { kg: number; reps: number; label: 
 
 /**
  * Reps caindo com a mesma carga em 2 sessões seguidas (3 pontos, fora do deload), já contando o que sobrou.
- * É o sinal de fadiga da ficha v2 ("volume cego"): não falta força, falta recuperação.
+ * É o sinal de fadiga de "volume cego": não falta força, falta recuperação.
  */
 export function regressionOf(hist: ExerciseHistoryItem[]): ExerciseRegression | null {
   const h = hist.filter((x) => x.session.week !== 7).slice(-3);

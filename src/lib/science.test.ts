@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIB_BY_ID } from "../data/library";
-import { MUSCLE_ORDER, PROGRAM } from "../data/program";
+import { MUSCLE_ORDER, programDays } from "../data/program";
 import { PRINCIPLES, SCIENCE, scienceText, SYNERGISTS } from "../data/science";
 import type { Session, SessionExercise } from "../data/types";
 import { coachSystem } from "./coach/context";
@@ -59,7 +59,7 @@ describe("base científica", () => {
     for (const m of ["costas", "peito", "quadriceps", "posterior", "biceps", "triceps", "deltLateral"] as const) {
       expect(frac[m], m).toBeGreaterThanOrEqual(SCIENCE.volume.minEffective);
     }
-    expect(PROGRAM.length).toBe(5);
+    expect(programDays().length).toBe(5);
   });
 
   it("semana fechada com pouco volume → aviso de dose mínima; semana em andamento não avisa", () => {
@@ -80,7 +80,7 @@ describe("base científica", () => {
   });
 
   it("o prompt do treinador traz a base científica, fixa", () => {
-    const sys = coachSystem("Igor");
+    const sys = coachSystem("Ana");
     expect(sys).toContain(scienceText());
     expect(sys).toContain("Alegações auditadas");
     expect(sys).toContain("Pelland");

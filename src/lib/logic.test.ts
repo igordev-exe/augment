@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EXERCISE_BY_ID, PROGRAM } from "../data/program";
+import { exById, programDays } from "../data/program";
 import type { Session, SessionExercise } from "../data/types";
 import { computeAchievements } from "./achievements";
 import { DEFAULT_SETTINGS } from "./db";
@@ -21,9 +21,9 @@ import {
 import { planAhead } from "./schedule";
 import { plannedVolume } from "./sessions";
 
-const hack = EXERCISE_BY_ID["lower-a.hack"];
-const extensora = EXERCISE_BY_ID["lower-a.extensora"];
-const martelo = EXERCISE_BY_ID["pull-a.martelo-corda"];
+const hack = exById("lower-a.hack");
+const extensora = exById("lower-a.extensora");
+const martelo = exById("pull-a.martelo-corda");
 
 function entry(exId: string, sets: [number, number][], kinds?: ("work" | "drop")[], alt?: string): SessionExercise {
   return {
@@ -49,7 +49,7 @@ describe("mesociclo e fadiga", () => {
   it("ajusta séries por semana", () => {
     expect(setsFor(extensora, 1)).toBe(2); // isolado −1
     expect(setsFor(extensora, 3)).toBe(3);
-    const crucifixo = EXERCISE_BY_ID["push-a.crucifixo-cabo"];
+    const crucifixo = exById("push-a.crucifixo-cabo");
     expect(setsFor(crucifixo, 4)).toBe(4); // ▲
     expect(setsFor(hack, 7)).toBe(2); // deload: metade
   });
@@ -398,7 +398,7 @@ describe("recordes, alternativas e conquistas", () => {
 describe("agenda", () => {
   it("sem histórico segue a semana padrão", () => {
     const plan = planAhead([], "2026-10-12", 7, [1, 2, 3, 4, 5]); // segunda
-    expect(plan.map((p) => p.dayId)).toEqual(PROGRAM.map((p) => p.id));
+    expect(plan.map((p) => p.dayId)).toEqual(programDays().map((p) => p.id));
   });
 
   it("dia perdido empurra a sequência", () => {

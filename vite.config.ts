@@ -31,6 +31,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,webp,woff,woff2}"],
+        // Fotos da biblioteca ampliada (free-exercise-db): baixadas na primeira vez, depois funcionam offline.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/yuhonas\/free-exercise-db\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "exercise-images",
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
         skipWaiting: true,
         clientsClaim: true,
       },

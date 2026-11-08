@@ -4,17 +4,18 @@ import { PageHead, WeekStrip } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
 import { RestorePoints } from "../components/RestorePoints";
 import { LIB_BY_ID } from "../data/library";
-import { EXERCISE_BY_ID, PROGRAM, shortName } from "../data/program";
+import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
-import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
 
 export function SettingsScreen() {
   const [settings, update, loaded] = useSettings();
+  const program = useProgram();
   const sessions = useSessions();
   const today = useToday();
   const toast = useToast();
@@ -40,7 +41,7 @@ export function SettingsScreen() {
             s.date,
             s.dayId,
             String(s.week),
-            e.alt ? `${shortName(EXERCISE_BY_ID[e.exId])} (${e.alt})` : shortName(EXERCISE_BY_ID[e.exId]),
+            e.alt ? `${shortName(exOf(e))} (${e.alt})` : shortName(exOf(e)),
             st.kind === "drop" ? "-15%" : "trabalho",
             formatWeight(st.weight),
             e.unit,
@@ -90,6 +91,15 @@ export function SettingsScreen() {
   return (
     <div className="stack-lg">
       <PageHead back="/" code="AUG.OS // CONFIGURAÇÃO" title="Ajustes" />
+
+      <Link to="/programas" data-augmented-ui="tl-clip br-clip border" className="card stack pg-entry">
+        <span className="label">Programa de treino</span>
+        <span className="spread">
+          <strong>{program.name}</strong>
+          <span className="arrow">&gt;</span>
+        </span>
+        <span className="tiny faint">{program.days.map((d) => d.code).join(" · ")} · montar, trocar ou criar outro</span>
+      </Link>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="row" style={{ gap: 12 }}>
@@ -236,7 +246,7 @@ export function SettingsScreen() {
             mantendo o histórico separado.
           </p>
           <div className="stack" style={{ marginTop: 10, gap: 10 }}>
-            {PROGRAM.flatMap((d) =>
+            {programDays().flatMap((d) =>
               d.exercises
                 .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
                 .map((ex) => {
@@ -284,7 +294,7 @@ export function SettingsScreen() {
             vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
           </p>
           <div className="stack" style={{ marginTop: 10, gap: 12 }}>
-            {PROGRAM.flatMap((d) =>
+            {programDays().flatMap((d) =>
               d.exercises.map((ex) => (
                 <div key={ex.id} className="stack" style={{ gap: 4 }}>
                   <div className="spread small">

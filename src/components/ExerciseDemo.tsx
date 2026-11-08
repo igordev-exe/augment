@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import IMAGES from "../data/exercise-images.json";
+import { extendedImages } from "../data/library-extended";
 
 // Fotos de execução (início e fim do movimento) do free-exercise-db, domínio público.
 // Alterna as duas como uma animação enquanto está na tela; com "reduzir movimento", troca só no toque.
@@ -7,7 +8,7 @@ import IMAGES from "../data/exercise-images.json";
 const MAP = IMAGES as Record<string, string>;
 
 export function exerciseImages(libId: string): string[] {
-  if (!MAP[libId]) return [];
+  if (!MAP[libId]) return extendedImages(libId);
   return [0, 1].map((i) => `${import.meta.env.BASE_URL}exercises/${libId}-${i}.webp`);
 }
 

@@ -48,8 +48,8 @@ const data: CoachData = {
 
 describe("treinador: contexto", () => {
   it("prompt de sistema é fixo e traz os ids das ferramentas", () => {
-    const a = coachSystem("Igor");
-    expect(a).toBe(coachSystem("Igor"));
+    const a = coachSystem("Ana");
+    expect(a).toBe(coachSystem("Ana"));
     expect(a).toContain("pull-a.martelo-corda");
     expect(a).not.toContain("2026-11-03");
   });

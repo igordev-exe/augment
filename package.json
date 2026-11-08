@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "AUGMENT: app pessoal de treino de hipertrofia com estética cyberpunk. Ficha, cargas, timer, histórico, recordes e guia científico.",
+  "description": "AUGMENT: app de treino de hipertrofia com estética cyberpunk. Ficha, cargas, timer, histórico, recordes e guia científico.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

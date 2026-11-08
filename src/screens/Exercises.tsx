@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { exerciseImages } from "../components/ExerciseDemo";
 import { whyLabel } from "../components/NudgeList";
-import { LIB_BY_ID } from "../data/library";
-import { PROGRAM } from "../data/program";
+import { LIBRARY, LIB_BY_ID, LIB_MUSCLES } from "../data/library";
+import { EQUIP_LABEL, EXTENDED, EXT_BY_ID } from "../data/library-extended";
+import { MUSCLE_LABEL, programDays } from "../data/program";
 import { EXERCISE_EVIDENCE, PRINCIPLES } from "../data/science";
 import type { MuscleId, ProgramExercise } from "../data/types";
-import { useSessions } from "../lib/hooks";
+import { useProgram, useSessions } from "../lib/hooks";
 import { bestE1rm, formatWeight, historyOf, loadRef, workSets } from "../lib/progression";
 
 // Biblioteca no estilo oficina: filtros por músculo e equipamento, grade de cartões com foto,
@@ -33,6 +34,11 @@ const EQUIPS: { id: Equip; label: string }[] = [
   { id: "livre", label: "Livre" },
 ];
 
+/** Grupo de equipamento de um exercício da biblioteca ampliada. */
+function extEquip(key: string): Exclude<Equip, "todos"> {
+  return key === "polia" ? "cabo" : key === "maquina" ? "maquina" : key === "halteres" ? "halteres" : "livre";
+}
+
 /** Classifica o equipamento pelo texto da biblioteca (o primeiro que bater, na ordem). */
 export function equipOf(text: string): Exclude<Equip, "todos"> {
   if (/polia|pulley|crossover/i.test(text)) return "cabo";
@@ -49,24 +55,40 @@ export function Exercises() {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState<Group>("todos");
   const [equip, setEquip] = useState<Equip>("todos");
+  /** Curada (34, em português, com execução e evidência) ou completa (com a ampliada, em inglês). */
+  const [full, setFull] = useState(false);
   const query = norm(q.trim());
 
-  // Um cartão por exercício da biblioteca, na ordem da ficha (a flexora sentada aparece em dois dias).
+  // Um cartão por exercício: primeiro os do programa em uso, na ordem dele (a flexora pode aparecer em dois dias),
+  // depois o resto da biblioteca. Exercício personalizado do programa também aparece.
+  const program = useProgram();
   const items = useMemo(() => {
     const seen = new Map<string, ProgramExercise[]>();
-    for (const d of PROGRAM) for (const ex of d.exercises) seen.set(ex.lib, [...(seen.get(ex.lib) ?? []), ex]);
-    return [...seen.entries()].map(([lib, exs]) => ({ lib, exs }));
-  }, []);
+    for (const d of programDays()) for (const ex of d.exercises) seen.set(ex.lib, [...(seen.get(ex.lib) ?? []), ex]);
+    for (const l of LIBRARY) if (!seen.has(l.id)) seen.set(l.id, []);
+    if (full) for (const e of EXTENDED) if (!seen.has(e.id)) seen.set(e.id, []);
+    return [...seen.entries()].map(([lib, exs]) => ({
+      lib,
+      exs,
+      name: (exs[0]?.name ?? LIB_BY_ID[lib]?.name ?? EXT_BY_ID[lib]?.name ?? lib).replace(/^A[12] · /, ""),
+      muscles: exs.length ? [...new Set(exs.flatMap((e) => e.muscles))] : (LIB_MUSCLES[lib] ?? EXT_BY_ID[lib]?.muscles ?? []),
+      inProgram: exs.length > 0,
+      equipGroup: EXT_BY_ID[lib] ? extEquip(EXT_BY_ID[lib].equip) : equipOf(LIB_BY_ID[lib]?.equipment ?? ""),
+      equipLabel: EXT_BY_ID[lib] ? (EQUIP_LABEL[EXT_BY_ID[lib].equip] ?? "Outro") : undefined,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program, full]);
 
   const done = (sessions ?? []).filter((s) => s.status === "done");
-  const inGroup = (g: Group, exs: ProgramExercise[]) =>
-    g === "todos" || exs.some((e) => e.muscles.some((m) => GROUPS.find((x) => x.id === g)!.muscles.includes(m)));
-  const countGroup = (g: Group) => items.filter(({ exs }) => inGroup(g, exs)).length;
-  const shown = items.filter(({ lib, exs }) => {
+  const inGroup = (g: Group, muscles: MuscleId[]) =>
+    g === "todos" || muscles.some((m) => GROUPS.find((x) => x.id === g)!.muscles.includes(m));
+  const countGroup = (g: Group) => items.filter(({ muscles }) => inGroup(g, muscles)).length;
+  const shown = items.filter(({ lib, name, muscles, equipGroup }) => {
     const l = LIB_BY_ID[lib];
-    if (!inGroup(group, exs)) return false;
-    if (equip !== "todos" && equipOf(l?.equipment ?? "") !== equip) return false;
-    if (query && !norm(`${exs[0].name} ${exs[0].muscleLabel} ${l?.primary ?? ""} ${l?.secondary ?? ""}`).includes(query)) return false;
+    if (!inGroup(group, muscles)) return false;
+    if (equip !== "todos" && equipGroup !== equip) return false;
+    const label = muscles.map((m) => MUSCLE_LABEL[m]).join(" ");
+    if (query && !norm(`${name} ${label} ${l?.primary ?? ""} ${l?.secondary ?? ""}`).includes(query)) return false;
     return true;
   });
 
@@ -87,6 +109,20 @@ export function Exercises() {
       />
 
       <div className="stack" style={{ gap: 8 }}>
+        <div className="ws-switch" role="group" aria-label="Biblioteca">
+          <button type="button" aria-pressed={!full} onClick={() => setFull(false)}>
+            Curada · {LIBRARY.length}
+          </button>
+          <button type="button" aria-pressed={full} onClick={() => setFull(true)}>
+            Completa · {LIBRARY.length + EXTENDED.length}
+          </button>
+        </div>
+        {full && (
+          <p className="tiny faint" style={{ margin: 0 }}>
+            A completa inclui ~{Math.round(EXTENDED.length / 10) * 10} exercícios do free-exercise-db, com nome e passo a passo em inglês.
+            As fotos baixam na primeira vez.
+          </p>
+        )}
         <div className="ws-brackets" role="group" aria-label="Filtrar por músculo">
           {GROUPS.map((g) => (
             <button key={g.id} type="button" className="ws-bracket" aria-pressed={group === g.id} onClick={() => setGroup(g.id)}>
@@ -110,8 +146,7 @@ export function Exercises() {
       </div>
 
       <div className="ws-grid">
-        {shown.map(({ lib, exs }) => {
-          const l = LIB_BY_ID[lib];
+        {shown.slice(0, full ? 120 : undefined).map(({ lib, exs, name, muscles, inProgram, equipGroup, equipLabel }) => {
           // Histórico do exercício mais recente entre os dias em que ele aparece.
           const hist =
             exs
@@ -125,16 +160,22 @@ export function Exercises() {
           const ev = EXERCISE_EVIDENCE[lib];
           const img = exerciseImages(lib)[0];
           return (
-            <Link key={lib} to={`/exercicios/${lib}`} data-augmented-ui="tl-clip br-clip border" className="ws-card">
+            <Link
+              key={lib}
+              to={`/exercicios/${lib}`}
+              data-augmented-ui="tl-clip br-clip border"
+              className={`ws-card${inProgram ? "" : " off-program"}`}
+            >
               <span className="ws-photo">{img ? <img src={img} alt="" loading="lazy" /> : null}</span>
               {ev && (
                 <span className={`ws-tag ${LEVEL[ev.why] === "evidencia" ? "ok" : "warn"}`} title={whyLabel(ev.why) ?? undefined}>
                   {ev.tag}
                 </span>
               )}
-              <span className="ws-name">{exs[0].name.replace(/^A[12] · /, "")}</span>
+              <span className="ws-name">{name}</span>
               <span className="ws-muscle">
-                {exs[0].muscleLabel} · {EQUIPS.find((e) => e.id === equipOf(l?.equipment ?? ""))!.label}
+                {muscles.map((m) => MUSCLE_LABEL[m]).join(" e ") || "—"} · {equipLabel ?? EQUIPS.find((e) => e.id === equipGroup)!.label}
+                {!inProgram && " · fora do programa"}
               </span>
               <span className="ws-stats">
                 <span>
@@ -149,6 +190,9 @@ export function Exercises() {
         })}
       </div>
       {shown.length === 0 && <p className="small muted">Nenhum exercício com esses filtros.</p>}
+      {full && shown.length > 120 && (
+        <p className="small muted">Mostrando 120 de {shown.length}. Use a busca ou os filtros para achar o resto.</p>
+      )}
     </div>
   );
 }

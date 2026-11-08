@@ -1,15 +1,21 @@
 # AUGMENT
 
-Meu app de treino para uso domestico. Fiz para rodar o meu **Programa de Hipertrofia v2** (Push A / Pull A / Lower A / Upper B / Lower B) no celular,
-durante o treino, com estética cyberpunk. Funciona offline, fica instalado na minha tela inicial e guarda tudo no próprio aparelho.
+App de treino de hipertrofia para usar no celular, durante o treino, com estética cyberpunk. Cada pessoa monta o próprio
+programa (ou parte de um modelo: PPL 5 dias, Upper/Lower 4 dias, Full body 3 dias). Funciona offline, instala na tela inicial e
+guarda tudo no próprio aparelho.
 
 ## O que ele faz
 
-- **Treino do dia** pela agenda da minha ficha. Se eu perder um dia, a sequência é empurrada, não pulada.
+- **Programas de treino**: montador com dias, exercícios (da biblioteca ou personalizados), séries, faixa de reps, descanso, até
+  onde ir, supersets e ▲. Vários programas salvos, um em uso; o histórico guarda como cada treino era no dia, então editar ou
+  trocar de programa não estraga os registros. Periodização em **mesociclo de 6 semanas + deload** ou **fixa** (mesmas séries
+  toda semana).
+- **Treino do dia** pela agenda do programa em uso. Se um dia for perdido, a sequência é empurrada, não pulada.
 - **Registro de carga** série por série: peso, reps, aquecimento e unidade kg/lb por exercício.
-- **Sugestão de progressão** (dupla progressão com carga fixa): manter com meta de reps, subir ou baixar, com a minha última vez ao lado.
-- **Reps que sobraram (RIR)** com um toque depois de cada série, comparadas com a meta da semana. A sugestão seguinte avisa quando eu fui
-  à falha cedo demais ou deixei reps demais na mesa.
+- **Sugestão de progressão** (dupla progressão com carga fixa): manter com meta de reps, subir ou baixar, com a última vez ao lado.
+  Ao trocar de programa, o mesmo exercício da biblioteca herda o histórico.
+- **Reps que sobraram (RIR)** com um toque depois de cada série, comparadas com a meta da semana. A sugestão seguinte avisa quando a
+  série foi à falha cedo demais ou deixou reps demais na mesa.
 - **Check-in** antes do treino (sono, energia, dor) e **"como bateu?"** depois de cada exercício (pump, volume, articulação).
 - **Sugestão mais esperta**: cargas misturadas (rampa registrada como trabalho) usam a mais pesada; salto grande demais para a faixa
   (ex.: cabo de 17,5 → 20 kg) acumula reps antes de subir, com previsão de reps pela carga nova.
@@ -23,30 +29,29 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
 - **Relatório da semana** (seg–dom), com um cartão na tela inicial na segunda: treinos feitos e os que ficaram de fora, séries que
   faltaram, volume por músculo contra a meta, reps que sobraram contra a meta, exercícios estagnados, sinais do corpo, recordes e
   **um foco só** para a semana seguinte. Dá para navegar pelas semanas anteriores em Progresso.
-- **Treinador (IA)**: um chat com o Claude que consulta meus treinos, relatórios e agenda antes de responder (ferramentas que leem
-  os registros do app). As cargas continuam vindo do motor de regras: ele explica, e mudanças no app (incremento, recomeçar ou
-  repetir semana) chegam como cartão para eu aplicar ou recusar. Uso minha chave da API da Anthropic, guardada só no aparelho e
-  fora do backup. Configuro em **Ajustes → Treinador**.
+- **Treinador (IA)**: um chat com o Claude que consulta treinos, relatórios e agenda antes de responder (ferramentas que leem os
+  registros do app). As cargas continuam vindo do motor de regras: ele explica, e mudanças no app (incremento, recomeçar ou repetir
+  semana) chegam como cartão para aplicar ou recusar. Cada pessoa usa a própria chave da API da Anthropic, guardada só no aparelho e
+  fora do backup. Configuração em **Ajustes → Treinador**.
 - **Retomada**: depois de 10+ dias parado, ou de uma semana com menos da metade dos treinos, o app propõe recomeçar ou repetir a semana.
 - **Destravar estagnação**: 3 treinos seguidos na mesma carga sem 1RM estimado novo, a sugestão baixa ~10% para voltar a subir.
   Se as séries estavam sobrando 3+ reps, em vez de baixar ela avisa que falta esforço.
-- **−15% automático**: se uma série minha cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
+- **−15% automático**: se uma série cair abaixo do piso da faixa, a última série é recalculada com 15% a menos.
 - **Motor de decisões** (`src/lib/engine.ts`): acompanha cada série, semana e o peso e dá recados curtos, cada um com o nível de
   evidência. Ao vivo: composto à falha, série longe da falha, descanso curto que custou reps, dia abaixo do normal, recorde de reps
-  na hora, intensificador só na última série (cota da semana) e teto batido. Entre sessões: série-âncora da ficha v2, subida
-  antecipada quando sobram reps e queda de reps com a mesma carga. Fadiga: dois sinais juntos antecipam o deload. Peso: a tabela
-  de ajustes do plano alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício, aplicada com um toque
-  no relatório do mesociclo (ou por cartão do treinador) e desfeita no mesmo lugar. As regras
-  estão no Guia → Motor.
+  na hora, intensificador só na última série (cota da semana) e teto batido. Entre sessões: série-âncora, subida antecipada quando
+  sobram reps e queda de reps com a mesma carga. Fadiga: dois sinais juntos antecipam o deload. Peso: a tabela de ajustes do plano
+  alimentar (±130 kcal com 2 semanas fora da faixa). Fim do mesociclo: +1/−1 série por exercício, aplicada com um toque no
+  relatório do mesociclo (ou por cartão do treinador) e desfeita no mesmo lugar. As regras estão no Guia → Motor.
 - **HUD do treino**: barra no topo com uma casa por série do dia, quadro "próxima série" (peso × reps × sobra e o porquê, com a
   fila de séries do exercício), menu circular ao segurar o número da série (+ série, −15%, falhou, intensificador feito, trocar,
   anotar), "segure para confirmar" em descartar/excluir treino, antecipar deload, novo mesociclo e apagar tudo, e log de terminal
   ao concluir (séries, volume, recordes, o que sobe na próxima sessão e o backup).
-- **Timer de descanso** automático com o descanso da ficha, som, vibração e tela acesa.
+- **Timer de descanso** automático com o descanso do programa, som, vibração e tela acesa.
 - **Mesociclo de 6 semanas + deload**: séries (−1 nos isolados na semana 1, +1 nos ▲ nas semanas 4–6, metade no deload), até onde ir (falha, falha técnica, sobra N) e intensificadores mudam sozinhos.
 - **Histórico** com calendário (feito e planejado), lista por mês, repetir um treino antigo com um toque, editar ou excluir.
-- **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga e aviso quando eu bato um recorde ao concluir o treino.
-- **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta da ficha e treinos por semana.
+- **Recordes**: carga máxima, 1RM estimado (Epley), recorde de reps por carga e aviso de recorde ao concluir o treino.
+- **Gráficos** de carga de trabalho e 1RM estimado por exercício, séries por músculo na semana contra a meta do programa e treinos por semana.
 - **Roda de atributos do operador**: Força, Volume, Consistência, Recuperação, Intensidade (séries a 0–3 RIR) e Composição,
   de 0 a 20, todos calculados dos registros, com o que faz cada um subir e o princípio científico por trás.
 - **Séries da semana**: barra de séries fracionadas por músculo com o traço da meta, marcas da dose mínima e da faixa
@@ -55,47 +60,51 @@ durante o treino, com estética cyberpunk. Funciona offline, fica instalado na m
   entrada de tela e navegação (respeitam "reduzir movimento").
 - **Mapa muscular** (volume, recuperação e o que ficou sem treino), **mapa de atividade do ano**, **meta de peso** com ritmo semanal,
   **fotos antes/depois** e **força relativa** ao peso corporal.
-- **Biblioteca** dos 34 exercícios da ficha, com fotos de início e fim do movimento: preparação, execução, erros comuns, por que cada um está no programa, alternativas, busca de vídeo e o vídeo de referência que eu escolhi, embutido.
-- **Guia** com as regras da ficha, a **base de evidências** (cada princípio com nível: evidência, consenso, prática de campo ou hipótese) e as fontes. A mesma base (`src/data/science.ts`) entra no prompt do treinador e no motor: o relatório conta o **volume fracionado** (0,5 por série indireta, Pelland 2026) e avisa músculo abaixo da dose mínima efetiva.
-- **Backup** em JSON (exportar/importar) e exportação das séries em CSV.
+- **Biblioteca curada** de 34 exercícios em português, com fotos de início e fim do movimento: preparação, execução, erros comuns,
+  por que cada um funciona, alternativas, busca de vídeo e um vídeo de referência embutido. **Biblioteca completa** com mais ~550
+  exercícios do free-exercise-db (nome e passo a passo em inglês; as fotos baixam na primeira vez e ficam em cache).
+- **Guia** com as regras do app, a **base de evidências** (cada princípio com nível: evidência, consenso, prática de campo ou hipótese) e as fontes. A mesma base (`src/data/science.ts`) entra no prompt do treinador e no motor: o relatório conta o **volume fracionado** (0,5 por série indireta, Pelland 2026) e avisa músculo abaixo da dose mínima efetiva.
+- **Backup** em JSON (exportar/importar, com os programas) e exportação das séries em CSV.
 - **Pontos de restauração** no próprio aparelho: um por semana e antes de importar, restaurar ou apagar tudo (ficam os 6 mais recentes).
 
-## Como eu instalo no celular
+## Como instalar no celular
 
-- **Android (Chrome):** abro o link → menu ⋮ → **Instalar app**.
-- **iPhone (Safari):** abro o link → Compartilhar → **Adicionar à Tela de Início**.
+- **Android (Chrome):** abra o link → menu ⋮ → **Instalar app**.
+- **iPhone (Safari):** abra o link → Compartilhar → **Adicionar à Tela de Início**.
 
 Depois de aberto uma vez, funciona sem internet, inclusive na academia sem sinal.
 
-## Meus dados
+## Dados
 
-Os meus treinos ficam no IndexedDB do navegador do celular. Nada vai para servidor.
+Os treinos ficam no IndexedDB do navegador do celular. Nada vai para servidor.
 
-- Exporto um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar os dados do navegador.
+- Exporte um backup em **Ajustes → Exportar backup** de vez em quando, e sempre antes de trocar de celular ou limpar os dados do navegador.
 - O CSV de séries abre em qualquer planilha.
 
 ## Treinador pelo computador (sem chave no app)
 
-Com um backup exportado, gero um arquivo com as instruções do treinador e os dados já calculados pelo app:
+Com um backup exportado, gere um arquivo com as instruções do treinador e os dados já calculados pelo app:
 
 ```bash
 npm run coach -- caminho/do/augment-backup.json
 ```
 
-O arquivo sai em `coach/saida/` (fora do git). Colo numa conversa do claude.ai, ou uso `/treinador` no Claude Code, que roda o
+O arquivo sai em `coach/saida/` (fora do git). Cole numa conversa do claude.ai, ou use `/treinador` no Claude Code, que roda o
 script e faz o debrief.
 
-## Como eu mudo o programa
+## Onde fica cada coisa
 
-Tudo da ficha está em `src/data/program.ts` (séries, reps, descanso, até onde ir, ▲, intensificadores, dicas) e a biblioteca em
-`src/data/library.ts`. As regras do mesociclo estão em `src/lib/mesocycle.ts` e a progressão em `src/lib/progression.ts`.
+Os programas ficam no aparelho e são editados no app (**Ajustes → Programa de treino**). Os modelos de partida estão em
+`src/data/templates/`, o registro do programa em uso em `src/data/program.ts`, as edições em `src/lib/program-edit.ts` e a
+biblioteca em `src/data/library.ts` (curada) e `src/data/library-extended.ts` (completa, gerada por
+`scripts/import-exercise-db.py`). As regras do mesociclo estão em `src/lib/mesocycle.ts` e a progressão em `src/lib/progression.ts`.
 
 ## Desenvolvimento
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # testes (mesociclo, progressão, recordes, agenda, backup)
+npm test         # testes (mesociclo, progressão, recordes, agenda, backup, programas)
 npm run check    # tipos + formatação + testes
 npm run format   # formata o código com Prettier
 npm run build    # gera dist/
@@ -110,8 +119,9 @@ A imagem do card "Missão do dia" fica em `public/hero.webp`.
 - Cantos chanfrados com borda: [augmented-ui](https://github.com/propjockey/augmented-ui) (BSD-2-Clause), via o atributo
   `data-augmented-ui="tl-clip br-clip border"`. O tamanho do corte e a cor da borda ficam em `src/styles.css`
   (`--aug-tl`, `--aug-br`, `--aug-border-bg`). Todas as cores são tokens no topo do mesmo arquivo.
-- Fotos dos exercícios: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (domínio público). Para regerar:
-  `python scripts/exercise-images.py <pasta do free-exercise-db> .` (o mapa fica em `src/data/exercise-images.json`).
+- Fotos e biblioteca completa: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (domínio público). Para regerar as
+  fotos da curada: `python scripts/exercise-images.py <pasta do free-exercise-db> .` (o mapa fica em `src/data/exercise-images.json`);
+  para a completa: `python -I scripts/import-exercise-db.py <exercises.json>`.
 - Fontes (SIL Open Font License): Orbitron, Share Tech Mono e Exo 2, via Fontsource.
 - Avatar e referências visuais: [Sci-fi UI Kit (Free)](https://www.figma.com/community/file/1595778560755863610/sci-fi-ui-kit-free)
   e [CyberPunk 5000 UI Mega Kit](https://www.figma.com/community/file/1400413315812878567/cyberpunk-5000-ui-mega-kit-by-econev),
@@ -119,5 +129,5 @@ A imagem do card "Missão do dia" fica em `public/hero.webp`.
 
 ---
 
-Este é o meu treino pessoal, montado a partir de literatura pública. Não é recomendação para outras pessoas e não substitui avaliação
-de médico, nutricionista ou educador físico.
+Montado a partir de literatura pública. Não é recomendação individual e não substitui avaliação de médico, nutricionista ou
+educador físico.

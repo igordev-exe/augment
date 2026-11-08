@@ -1,12 +1,20 @@
 import type { ReactNode } from "react";
 import { PageHead } from "../components/bits";
-import { MUSCLE_LABEL, MUSCLE_ORDER } from "../data/program";
+import { MUSCLE_LABEL, MUSCLE_ORDER, shortName } from "../data/program";
 import { whyLabel } from "../components/NudgeList";
 import { AUDITS, LEVEL_LABEL, PRINCIPLES, SCIENCE, type EvidenceLevel } from "../data/science";
 import { ENGINE_RULES } from "../lib/engine";
+import { weekdayShort } from "../lib/dates";
+import { useProgram, useSettings } from "../lib/hooks";
 import { plannedVolume } from "../lib/sessions";
 
-// Guia: regras da ficha v2 (carga fixa, até onde ir, −15% na última série) e fontes.
+// Guia: regras do app (carga fixa, até onde ir, −15% na última série) e fontes. O que depende do programa
+// (sequência, dias, exercícios com ▲) sai do programa em uso.
+
+/** "a, b e c". */
+function listPt(items: string[]): string {
+  return items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} e ${items[items.length - 1]}`;
+}
 
 const SECTIONS = [
   { id: "semana", t: "Semana" },
@@ -38,6 +46,12 @@ function Sec({ id, title, children }: { id: string; title: string; children: Rea
 }
 
 export function Guide() {
+  const program = useProgram();
+  const [settings] = useSettings();
+  const seq = program.days.map((d) => d.name).join(" → ");
+  const n = program.days.length;
+  const trainDays = [...settings.trainingDays].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => weekdayShort(d).toLowerCase());
+  const upNames = [...new Set(program.days.flatMap((d) => d.exercises.filter((e) => e.up).map((e) => shortName(e).toLowerCase())))];
   const vol = plannedVolume(3);
   const frac = plannedVolume(3, true);
   const temas = [...new Set(PRINCIPLES.map((p) => p.tema))];
@@ -63,12 +77,15 @@ export function Guide() {
       </nav>
 
       <Sec id="semana" title="Como rodar a semana">
-        <p>Segunda Push A, terça Pull A, quarta Lower A, quinta Upper B, sexta Lower B. Sábado e domingo são descanso.</p>
         <p>
-          <strong>Perdeu um dia?</strong> Não pule o treino: empurre a sequência. Push A → Pull A → Lower A → Upper B → Lower B e recomeça.
-          Cada grupo cai ~2× a cada 7–8 dias. A aba Histórico já mostra a agenda recalculada.
+          O programa em uso, {program.name}, tem {n} {n === 1 ? "treino" : "treinos"}: {seq}. Eles caem nos dias marcados em Ajustes (
+          {listPt(trainDays)}); os outros dias são descanso.
         </p>
-        <p>Use o sábado como recuperação, não como sexto treino. Cada sessão leva 70–80 minutos.</p>
+        <p>
+          <strong>Perdeu um dia?</strong> Não pule o treino: empurre a sequência ({seq}) e recomece. A aba Histórico já mostra a agenda
+          recalculada.
+        </p>
+        <p>Use os dias de descanso para recuperar, não para encaixar um treino extra.</p>
       </Sec>
 
       <Sec id="carga" title="Carga: como espalhar o peso">
@@ -146,7 +163,7 @@ export function Guide() {
             Suba com intenção de ser rápido, sem impulso. Nas últimas reps a carga vai subir devagar mesmo assim: é o sinal de que está
             perto da falha.
           </li>
-          <li>Não trave nem descanse no topo, exceto onde a ficha pede pausa (encolhimento, elevação pélvica, panturrilha sentada).</li>
+          <li>Não trave nem descanse no topo, exceto onde o exercício pede pausa (ex.: encolhimento, elevação pélvica, panturrilha).</li>
         </ul>
         <p>Reps de 0,5 a 8 s de duração total dão hipertrofia parecida (Schoenfeld 2015). Só o superlento (mais de 10 s) se sai pior.</p>
         <p>
@@ -275,8 +292,11 @@ export function Guide() {
           </table>
         </div>
         <p>
-          ▲ = ganham +1 série nas semanas 4–6: supino na máquina, crucifixo no cabo, pullover, remada baixa e a elevação lateral do Lower B.
-          Nenhum exercício passa de 4 séries e o braço não ganha séries. Compostos livres nunca abaixo de 1 RIR.
+          ▲ = ganham +1 série nas semanas 4–6.{" "}
+          {upNames.length
+            ? `No programa em uso: ${listPt(upNames)}.`
+            : "Nenhum exercício do programa em uso está marcado com ▲ (dá para marcar no editor)."}{" "}
+          Nenhum exercício passa de 4 séries. Compostos livres nunca abaixo de 1 RIR.
         </p>
         <p>A semana atual é calculada pela data de início em Ajustes, e o app ajusta séries, selos e intensificadores sozinho.</p>
       </Sec>
@@ -329,8 +349,7 @@ export function Guide() {
           {SCIENCE.volume.minEffective} fracionadas na semana o relatório avisa.
         </p>
         <p className="small muted">
-          Deltoide lateral e dorsal ficam no topo de propósito. Bíceps e tríceps recebem muito volume indireto (~16–17 séries efetivas
-          contando puxadas e supinos), por isso o braço não ganha séries nas semanas 4–6.
+          Bíceps e tríceps recebem muito volume indireto de puxadas e supinos: conte isso antes de somar séries diretas de braço.
         </p>
       </Sec>
 
@@ -397,7 +416,7 @@ export function Guide() {
       <Sec id="recuperacao" title="Recuperação">
         <ul>
           <li>
-            <strong>Sono:</strong> 7 a 9 horas. Em déficit, com 5 treinos por semana, é a diferença entre progredir e estagnar.
+            <strong>Sono:</strong> 7 a 9 horas. Em déficit e treinando várias vezes por semana, é a diferença entre progredir e estagnar.
           </li>
           <li>
             <strong>Cardio:</strong> 2–3 sessões de 30–40 min em zona 2, em dias separados ou depois da musculação, nunca antes. Mais 8–10

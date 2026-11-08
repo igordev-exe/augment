@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { EXERCISE_BY_ID } from "../data/program";
+import { exById } from "../data/program";
 import type { Session, SessionExercise } from "../data/types";
 import {
   db,
@@ -79,7 +79,7 @@ describe("montar treino e encerrar", () => {
   it("semana 1 tira uma série dos isolados e o deload corta pela metade", () => {
     const w1 = buildSession("lower-a", "2026-09-21", 1, DEFAULT_SETTINGS, []);
     const ext = w1.exercises.find((e) => e.exId === "lower-a.extensora")!;
-    expect(ext.sets.filter((x) => x.kind === "work")).toHaveLength(EXERCISE_BY_ID["lower-a.extensora"].sets - 1);
+    expect(ext.sets.filter((x) => x.kind === "work")).toHaveLength(exById("lower-a.extensora").sets - 1);
     const d = buildSession("lower-a", "2026-11-02", 7, DEFAULT_SETTINGS, []);
     expect(d.exercises[0].sets.filter((x) => x.kind === "work")).toHaveLength(2);
   });

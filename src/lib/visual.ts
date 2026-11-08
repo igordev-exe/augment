@@ -1,4 +1,4 @@
-import { EXERCISE_BY_ID, MUSCLE_ORDER, PROGRAM } from "../data/program";
+import { MUSCLE_ORDER, programDays, exOf } from "../data/program";
 import type { BodyEntry, BodyGoal, MuscleId, Session } from "../data/types";
 import { addDays, daysBetween, mondayOf } from "./dates";
 import { e1rm, historyOf, toKg, workSets } from "./progression";
@@ -59,7 +59,7 @@ export function muscleStatus(sessions: Session[], week: number, today: string, n
     const at = s.finishedAt ?? Date.parse(`${s.date}T12:00:00`);
     const perMuscle = new Map<MuscleId, number>();
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (!ex) continue;
       const n = workSets(e).length;
       if (!n) continue;
@@ -348,7 +348,7 @@ export interface RelativeStrength {
 export function relativeStrength(sessions: Session[], entries: BodyEntry[]): RelativeStrength[] {
   const done = sessions.filter((s) => s.status === "done");
   const out: RelativeStrength[] = [];
-  for (const day of PROGRAM) {
+  for (const day of programDays()) {
     for (const ex of day.exercises) {
       if (ex.iso) continue;
       const hist = historyOf(done, ex.id);

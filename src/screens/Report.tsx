@@ -6,7 +6,7 @@ import { EngineLab } from "../components/EngineLab";
 import { HoldButton } from "../components/HoldButton";
 import { RecordList } from "../components/RecordList";
 import { Icon } from "../components/Icon";
-import { EXERCISE_BY_ID, MUSCLE_LABEL, shortName } from "../data/program";
+import { exById, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
 import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { whyLabel } from "../components/NudgeList";
@@ -71,12 +71,12 @@ export function Report() {
 
   /** Ajustes ativos que o relatório deste ciclo não está sugerindo (vindos de outro ciclo ou do treinador). */
   const extraAdjust = Object.entries(settings.setAdjust ?? {}).filter(
-    ([exId]) => EXERCISE_BY_ID[exId] && !m.volumeAdvice.some((v) => v.exId === exId),
+    ([exId]) => exById(exId) && !m.volumeAdvice.some((v) => v.exId === exId),
   );
 
   function setAdjustFor(exId: string, valor: number, name: string) {
     updateSettings({ setAdjust: withSetAdjust(settings.setAdjust, exId, valor) });
-    const ex = EXERCISE_BY_ID[exId];
+    const ex = exById(exId);
     toast(
       valor ? `${name}: ${ex.sets + valor} séries por treino a partir do próximo.` : `${name}: de volta às ${ex.sets} séries da ficha.`,
       "ok",
@@ -109,7 +109,11 @@ export function Report() {
           ) : (
             <>
               {shortDate(weekStart)} a {shortDate(addDays(weekStart, 6))}.{" "}
-              {r.mesoWeek == null ? "Antes do mesociclo atual." : `${WEEK_RULES[r.mesoWeek].label} do mesociclo.`}
+              {r.mesoWeek == null
+                ? "Antes do mesociclo atual."
+                : r.mesoWeek === 0
+                  ? "Programa fixo (sem mesociclo)."
+                  : `${WEEK_RULES[r.mesoWeek].label} do mesociclo.`}
               {open ? " Semana em andamento." : ""}
             </>
           )
@@ -321,7 +325,7 @@ export function Report() {
                 {extraAdjust.map(([exId, n]) => (
                   <li key={exId} className="list-item small" style={{ gap: 8 }}>
                     <span className="grow">
-                      <strong>{shortName(EXERCISE_BY_ID[exId])}</strong>{" "}
+                      <strong>{shortName(exById(exId))}</strong>{" "}
                       <span className="muted">
                         · ajuste ativo: {n > 0 ? "+" : "−"}
                         {Math.abs(n)} série{Math.abs(n) > 1 ? "s" : ""}
@@ -332,7 +336,7 @@ export function Report() {
                       data-augmented-ui="tl-clip br-clip border"
                       className="toggle-chip"
                       style={{ fontSize: "var(--fs-2)", textTransform: "none" }}
-                      onClick={() => setAdjustFor(exId, 0, shortName(EXERCISE_BY_ID[exId]))}
+                      onClick={() => setAdjustFor(exId, 0, shortName(exById(exId)))}
                     >
                       Voltar à ficha
                     </button>
@@ -485,7 +489,7 @@ export function Report() {
                 {r.shortfalls.map((s) => (
                   <li key={s.date + s.exId} className="list-item small">
                     <span className="grow">
-                      {shortName(EXERCISE_BY_ID[s.exId])} <span className="faint">{shortDate(s.date)}</span>
+                      {shortName(exById(s.exId))} <span className="faint">{shortDate(s.date)}</span>
                     </span>
                     <span className="num" style={{ color: "var(--amber)" }}>
                       {s.done === 0 ? "pulado" : `${s.done}/${s.planned}`}
@@ -540,7 +544,7 @@ export function Report() {
                       {r.rir.harder.map((m) => (
                         <li key={"h" + m.date + m.exId} className="list-item small">
                           <span className="grow">
-                            {shortName(EXERCISE_BY_ID[m.exId])} <span className="faint">{shortDate(m.date)}</span>
+                            {shortName(exById(m.exId))} <span className="faint">{shortDate(m.date)}</span>
                           </span>
                           <span style={{ color: "var(--red-hi)" }}>
                             {m.rir === 0 ? "falha" : `sobra ${m.rir}`}, meta {rirLabel(m.target)}
@@ -550,7 +554,7 @@ export function Report() {
                       {r.rir.easier.map((m) => (
                         <li key={"e" + m.date + m.exId} className="list-item small">
                           <span className="grow">
-                            {shortName(EXERCISE_BY_ID[m.exId])} <span className="faint">{shortDate(m.date)}</span>
+                            {shortName(exById(m.exId))} <span className="faint">{shortDate(m.date)}</span>
                           </span>
                           <span style={{ color: "var(--amber)" }}>
                             sobra {m.rir >= 4 ? "4+" : m.rir}, meta {rirLabel(m.target)}
@@ -570,7 +574,7 @@ export function Report() {
                 {r.stalls.map((s) => (
                   <li key={s.exId} className="list-item small">
                     <span className="grow">
-                      <strong>{shortName(EXERCISE_BY_ID[s.exId])}</strong>
+                      <strong>{shortName(exById(s.exId))}</strong>
                       <br />
                       <span className="faint">{s.trail.join(" → ")}</span>
                     </span>
@@ -589,8 +593,7 @@ export function Report() {
               ))}
               {r.joints.map((j) => (
                 <div key={j.exId} className="callout warn">
-                  {shortName(EXERCISE_BY_ID[j.exId])}: articulação incomodou{" "}
-                  {j.times === 1 ? "nesta semana" : `${j.times} vezes em 3 semanas`}.
+                  {shortName(exById(j.exId))}: articulação incomodou {j.times === 1 ? "nesta semana" : `${j.times} vezes em 3 semanas`}.
                   {j.alternatives.length ? ` Alternativas: ${j.alternatives.join(", ")}.` : ""}
                 </div>
               ))}

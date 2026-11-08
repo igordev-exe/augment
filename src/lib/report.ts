@@ -1,5 +1,5 @@
 import { LIB_BY_ID } from "../data/library";
-import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_LABEL, MUSCLE_ORDER, PROGRAM, shortName } from "../data/program";
+import { dayById, exById, MUSCLE_LABEL, MUSCLE_ORDER, programDays, shortName, exOf } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
@@ -88,13 +88,17 @@ export function weeklyReport(
   // Frequência
   const doneDays = new Set(sessions.map((s) => s.dayId));
   const missingDays =
-    planned >= PROGRAM.length && sessions.length < planned ? PROGRAM.map((d) => d.id).filter((id) => !doneDays.has(id)) : [];
+    planned >= programDays().length && sessions.length < planned
+      ? programDays()
+          .map((d) => d.id)
+          .filter((id) => !doneDays.has(id))
+      : [];
 
   // Séries a menos que o planejado. O treino guarda todo exercício do dia; o pulado fica com 0 séries.
   const shortfalls: Shortfall[] = [];
   for (const s of sessions) {
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (!ex) continue;
       const want = setsFor(ex, s.week, setAdjust[ex.id]);
       const got = workSets(e).length;
@@ -127,7 +131,7 @@ export function weeklyReport(
   const rir = { logged: 0, inTarget: 0, harder: [] as RirMiss[], easier: [] as RirMiss[] };
   for (const s of sessions) {
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (!ex) continue;
       const target = rirRange(ex.stop, s.week);
       const marked = workSets(e, false).filter((x) => x.rir != null);
@@ -179,7 +183,7 @@ export function weeklyReport(
   const restById = new Map<string, number[]>();
   for (const s of sessions) {
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (!ex || ex.superset || ex.rest[0] < 60) continue;
       const rs = restsBefore(e)
         .map((r) => r.rest)
@@ -190,7 +194,7 @@ export function weeklyReport(
   for (const [exId, rs] of restById) {
     if (rs.length < 2) continue;
     const median = [...rs].sort((a, b) => a - b)[Math.floor(rs.length / 2)];
-    const ex = EXERCISE_BY_ID[exId];
+    const ex = exById(exId);
     if (median < ex.rest[0] * 0.6) shortRest.push(`${shortName(ex)} (~${median} s, ficha ${ex.restLabel})`);
   }
   if (shortRest.length) {
@@ -213,7 +217,7 @@ export function weeklyReport(
     const hurtThisWeek = sessions.some((s) => s.exercises.some((e) => e.exId === exId && e.feedback?.joint === "incomodou"));
     if (!hurtThisWeek) continue;
     const times = recent.filter((s) => s.exercises.some((e) => e.exId === exId && e.feedback?.joint === "incomodou")).length;
-    joints.push({ exId, times, alternatives: LIB_BY_ID[EXERCISE_BY_ID[exId]?.lib]?.alternatives ?? [] });
+    joints.push({ exId, times, alternatives: LIB_BY_ID[exById(exId)?.lib]?.alternatives ?? [] });
   }
 
   // Cardio e passos na semana (F10)
@@ -259,7 +263,7 @@ export function weeklyReport(
 export function focusOf(r: WeekReport): { title: string; detail: string } {
   const joint = r.joints.find((j) => j.times >= 2);
   if (joint) {
-    const name = shortName(EXERCISE_BY_ID[joint.exId]);
+    const name = shortName(exById(joint.exId));
     const alt = joint.alternatives.length ? ` Alternativas: ${list(joint.alternatives)}.` : "";
     return { title: `Trocar ${name}`, detail: `Incomodou a articulação ${joint.times} vezes em 3 semanas.${alt}` };
   }
@@ -267,7 +271,7 @@ export function focusOf(r: WeekReport): { title: string; detail: string } {
     return { title: "Cuidar da dor", detail: "Teve dor forte nesta semana. Pule o que dói e, se continuar, procure avaliação." };
   }
   if (r.done < Math.ceil(r.planned / 2)) {
-    const miss = r.missingDays.length ? ` Ficaram de fora: ${list(r.missingDays.map((d) => DAY_BY_ID[d].name))}.` : "";
+    const miss = r.missingDays.length ? ` Ficaram de fora: ${list(r.missingDays.map((d) => dayById(d).name))}.` : "";
     return {
       title: "Frequência",
       detail: `${r.done} de ${r.planned} treinos.${miss} A agenda não pula treino: o próximo é o que ficou para trás. Meta: ${Math.ceil(r.planned / 2)}+ na semana que vem.`,
@@ -278,7 +282,7 @@ export function focusOf(r: WeekReport): { title: string; detail: string } {
     const worst = [...r.shortfalls].sort((a, b) => b.planned - b.done - (a.planned - a.done)).slice(0, 3);
     return {
       title: "Completar as séries",
-      detail: `Faltaram ${missingSets} séries: ${list(worst.map((s) => `${shortName(EXERCISE_BY_ID[s.exId])} (${s.done}/${s.planned})`))}.`,
+      detail: `Faltaram ${missingSets} séries: ${list(worst.map((s) => `${shortName(exById(s.exId))} (${s.done}/${s.planned})`))}.`,
     };
   }
   if (r.rir.harder.length >= 2 && r.mesoWeek != null && r.mesoWeek <= 2) {
@@ -294,7 +298,7 @@ export function focusOf(r: WeekReport): { title: string; detail: string } {
     };
   }
   if (r.stalls.length) {
-    const names = r.stalls.map((s) => shortName(EXERCISE_BY_ID[s.exId]));
+    const names = r.stalls.map((s) => shortName(exById(s.exId)));
     return {
       title: `Destravar ${names[0]}`,
       detail: `${list(names)} sem 1RM estimado novo em 3 sessões. Confira sono e descanso; se continuar, troque no deload.`,
@@ -383,7 +387,7 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
   }
 
   const exercises: MesoExerciseProgress[] = [];
-  const allProgramEx = PROGRAM.flatMap((d) => d.exercises);
+  const allProgramEx = programDays().flatMap((d) => d.exercises);
 
   for (const ex of allProgramEx) {
     // Considera sessões do ciclo; para comparar o pico, prefere última sessão fora do deload quando disponível.
@@ -437,7 +441,7 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
   // Prioridade: 1) incomodou articulação, 2) isolado/acessório estagnado (sessions >= 2 e deltaE1rmPct <= 0), 3) isolados para variar estímulo.
   const swapCandidates: AccessorySwapCandidate[] = [];
   for (const ep of exercises) {
-    const ex = EXERCISE_BY_ID[ep.exId];
+    const ex = exById(ep.exId);
     const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
     if (!alts.length) continue;
 
@@ -466,11 +470,11 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
   if (swapCandidates.length < 3) {
     const already = new Set(swapCandidates.map((c) => c.exId));
     const more = exercises
-      .filter((ep) => !ep.compound && !already.has(ep.exId) && (LIB_BY_ID[EXERCISE_BY_ID[ep.exId].lib]?.alternatives?.length ?? 0) > 0)
+      .filter((ep) => !ep.compound && !already.has(ep.exId) && (LIB_BY_ID[exById(ep.exId).lib]?.alternatives?.length ?? 0) > 0)
       .sort((a, b) => a.deltaE1rmPct - b.deltaE1rmPct);
     for (const ep of more) {
       if (swapCandidates.length >= 3) break;
-      const alts = LIB_BY_ID[EXERCISE_BY_ID[ep.exId].lib]?.alternatives ?? [];
+      const alts = LIB_BY_ID[exById(ep.exId).lib]?.alternatives ?? [];
       swapCandidates.push({
         exId: ep.exId,
         name: ep.name,
@@ -496,7 +500,7 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
     exercises,
     swapCandidates,
     volumeAdvice: volumeAdvice(inCycle, Object.fromEntries(exercises.map((e) => [e.exId, e.deltaE1rmPct])), (id) =>
-      EXERCISE_BY_ID[id] ? setsFor(EXERCISE_BY_ID[id], 3) : 0,
-    ).map((v) => ({ ...v, name: shortName(EXERCISE_BY_ID[v.exId]) })),
+      exById(id) ? setsFor(exById(id), 3) : 0,
+    ).map((v) => ({ ...v, name: shortName(exById(v.exId)) })),
   };
 }

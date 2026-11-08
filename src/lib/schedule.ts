@@ -1,11 +1,14 @@
-import { PROGRAM } from "../data/program";
+import { programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, fromISO } from "./dates";
 
-// Agenda: a sequência Push A → Pull A → Lower A → Upper B → Lower B nunca pula um treino.
-// Dia perdido: o próximo dia de treino recebe o treino que ficou para trás (ficha, página 1).
+// Agenda: os dias do programa ativo seguem em rotação, na ordem do programa, e nunca pulam um treino.
+// Dia perdido: o próximo dia de treino recebe o treino que ficou para trás.
 
-export const ORDER = PROGRAM.map((d) => d.id);
+/** Ids dos dias do programa ativo, na ordem da rotação (lido a cada chamada: o programa pode mudar). */
+export function dayOrder(): string[] {
+  return programDays().map((d) => d.id);
+}
 
 export interface PlannedDay {
   date: string;
@@ -14,6 +17,7 @@ export interface PlannedDay {
 
 /** Índice do próximo treino na sequência, com base na última sessão concluída. */
 export function nextIndex(sessions: Session[], refDate: string, trainingDays: number[]): number {
+  const ORDER = dayOrder();
   const done = sessions
     .filter((s) => s.status === "done" && s.date <= refDate)
     .sort((a, b) => (a.date === b.date ? b.startedAt - a.startedAt : a.date < b.date ? 1 : -1));
@@ -25,7 +29,7 @@ export function nextIndex(sessions: Session[], refDate: string, trainingDays: nu
   for (let i = 0; i < 7; i++) {
     const wd = fromISO(d).getDay();
     if (trainingDays.includes(wd)) {
-      const idx = PROGRAM.findIndex((p) => p.weekday === wd);
+      const idx = programDays().findIndex((p) => p.weekday === wd);
       return idx >= 0 ? idx : 0;
     }
     d = addDays(d, 1);
@@ -38,6 +42,7 @@ export function nextIndex(sessions: Session[], refDate: string, trainingDays: nu
  * Se já houver sessão concluída em `from`, o plano começa no dia seguinte.
  */
 export function planAhead(sessions: Session[], from: string, days: number, trainingDays: number[]): PlannedDay[] {
+  const ORDER = dayOrder();
   const doneToday = sessions.some((s) => s.status === "done" && s.date === from);
   const active = sessions.find((s) => s.status === "active");
   let idx = nextIndex(sessions, from, trainingDays);

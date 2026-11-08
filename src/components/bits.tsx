@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
-import { DAY_BY_ID } from "../data/program";
+import { dayById } from "../data/program";
 import type { StopKind } from "../data/types";
 import { stopFor, WEEK_RULES } from "../lib/mesocycle";
 import { Icon } from "./Icon";
@@ -82,9 +82,9 @@ export function WeekStrip({ week, onPick }: { week: number; onPick?: (w: number)
 }
 
 export function dayName(dayId: string): string {
-  return DAY_BY_ID[dayId]?.name ?? dayId;
+  return dayById(dayId)?.name ?? dayId;
 }
 
 export function dayCode(dayId: string): string {
-  return DAY_BY_ID[dayId]?.code ?? "?";
+  return dayById(dayId)?.code ?? "?";
 }

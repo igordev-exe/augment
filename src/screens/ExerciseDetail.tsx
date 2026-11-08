@@ -4,9 +4,9 @@ import { dayName, PageHead, StopBadge } from "../components/bits";
 import { ExerciseDemo } from "../components/ExerciseDemo";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
-import { LIB_BY_ID } from "../data/library";
+import { useLibraryEntry } from "../data/library-extended";
 import { dayOfExercise, usesOfLibrary } from "../data/program";
-import type { ProgramExercise, Session, Unit } from "../data/types";
+import type { LibraryEntry, ProgramExercise, Session, Unit } from "../data/types";
 import { shortDate } from "../lib/dates";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
 import { setsFor, weekFor } from "../lib/mesocycle";
@@ -31,8 +31,25 @@ const yt = (q: string) => `https://www.youtube.com/results?search_query=${encode
 
 export function ExerciseDetail() {
   const { libId = "" } = useParams();
-  const lib = LIB_BY_ID[libId];
   const uses = usesOfLibrary(libId);
+  // Exercício personalizado (fora da biblioteca): ficha mínima a partir do programa.
+  const fromLibrary = useLibraryEntry(libId);
+  const lib: LibraryEntry | undefined =
+    fromLibrary ??
+    (uses[0]
+      ? {
+          id: libId,
+          name: uses[0].name,
+          primary: uses[0].muscleLabel,
+          equipment: "Exercício personalizado",
+          setup: [],
+          execution: [],
+          errors: [],
+          why: "",
+          videoPt: uses[0].name,
+          videoEn: uses[0].name,
+        }
+      : undefined);
   const sessions = useSessions();
   const [settings, update] = useSettings();
   const today = useToday();
@@ -65,6 +82,11 @@ export function ExerciseDetail() {
 
       <section className="stack">
         <h2 className="h-sec">Na sua ficha</h2>
+        {uses.length === 0 && (
+          <p className="small muted" style={{ margin: 0 }}>
+            Não está no programa em uso. Para incluir, edite o programa em Ajustes → Programa de treino.
+          </p>
+        )}
         {uses.map((ex) => (
           <div key={ex.id} data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 8 }}>
             <div className="spread">

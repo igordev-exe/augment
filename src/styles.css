@@ -67,8 +67,8 @@
     O lint (scripts/lint.ts) recusa font-size pequeno fora desta escala.
   */
   --fs-1: 11px; /* rótulos, legendas, mono pequeno: mínimo do app */
-  --fs-2: 12.5px; /* texto secundário */
-  --fs-3: 14px; /* corpo compacto */
+  --fs-2: 12px; /* texto secundário (.tiny e .label de sempre; 12,5 quebrava rótulos em 360 px) */
+  --fs-3: 13.5px; /* corpo compacto (o .small de sempre; 14 quebrava listas em 360 px) */
   --fs-4: 15.5px; /* corpo */
   --fs-5: 20px; /* subtítulo */
   --fs-6: 30px; /* número de destaque */
@@ -942,7 +942,7 @@ p {
     linear-gradient(135deg, #e3342e 0%, #c3221d 55%, #8f1714 100%);
   color: #fff;
   padding: 16px 16px 18px;
-  min-height: 380px;
+  /* Composição aprovada (comparativo de 5/nov, tela de 360 px): altura pelo conteúdo, sem regra de "tela baixa". */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -992,11 +992,13 @@ p {
   background: repeating-linear-gradient(135deg, #f1d8d5 0 5px, transparent 5px 10px);
   opacity: 0.7;
 }
+/* Altura de uma linha de etiqueta: a segunda linha (dia de descanso) desce sobre o fundo sem empurrar o texto. */
 .mission-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  height: 28px;
 }
 .mission-tag {
   display: inline-flex;
@@ -1006,26 +1008,36 @@ p {
   color: #fff;
   padding: 7px 10px;
   font-family: var(--mono);
-  font-size: var(--fs-1);
+  font-size: 11.5px; /* lint-ok: medida original do banner */
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+/* Nunca passa do meio do card: à direita começa o capacete. */
+.mission-tag {
+  max-width: 52%;
+  line-height: 1.25;
+  letter-spacing: 0.06em;
+}
 .mission-tag::before {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 3px;
   content: "";
   width: 7px;
   height: 7px;
   background: var(--red);
 }
 .mission-code {
+  padding-top: 7px;
   font-family: var(--mono);
-  font-size: var(--fs-1);
+  font-size: 10.5px; /* lint-ok: medida original do banner (a escala apertava o texto sobre o robô) */
   letter-spacing: 0.06em;
   color: #ffd9d4;
   text-transform: uppercase;
 }
 .mission-label {
   font-family: var(--mono);
-  font-size: var(--fs-2);
+  font-size: 12px; /* lint-ok: medida original do banner; com 12,5 a linha quebra em 360 px */
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #ffe1dc;
@@ -1045,16 +1057,8 @@ p {
 }
 .mission-body {
   margin-top: auto;
+  /* Espaço da cabeça do robô; o texto entra sobre o pescoço, que some no degradê. */
   padding-top: 130px;
-}
-/* Telas baixas: o "Iniciar protocolo" cabe na primeira dobra. */
-@media (max-height: 760px) {
-  .mission {
-    min-height: 0 !important;
-  }
-  .mission-body {
-    padding-top: 96px;
-  }
 }
 .h-hero.h-hero-sm {
   font-size: clamp(26px, 8vw, 34px);
@@ -1064,7 +1068,7 @@ p {
   flex-wrap: wrap;
   gap: 6px 14px;
   font-family: var(--mono);
-  font-size: var(--fs-2);
+  font-size: 12px; /* lint-ok: medida original do banner */
   color: #ffe1dc;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2182,7 +2186,7 @@ table.t a {
   padding-top: 14px;
   border-top: 1px solid var(--line);
   font-family: var(--mono);
-  font-size: var(--fs-1);
+  font-size: 9.5px; /* lint-ok: rodapé decorativo (aria-hidden), medida original */
   color: var(--ink-3);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2528,7 +2532,7 @@ table.t a {
   width: min(94%, 450px);
   aspect-ratio: 1;
   left: 50%;
-  top: 96px;
+  top: 136px;
   transform: translateX(-50%);
   border: 1px solid rgba(63, 216, 224, 0.1);
   border-radius: 50%;
@@ -2615,7 +2619,7 @@ table.t a {
   width: 100%;
   height: auto;
   max-height: 620px;
-  margin-top: 44px;
+  margin-top: 84px;
   overflow: visible;
   filter: drop-shadow(0 16px 25px rgba(0, 0, 0, 0.5));
 }
@@ -5965,6 +5969,7 @@ table.t a {
 
 /* ---------- Treinador: paleta de terminal (verde-limão) e varredura enquanto pensa ---------- */
 .mode-terminal {
+  --action-fill: #cfe800;
   --red: #cfe800;
   --red-hi: #e4ff3d;
   --red-deep: #98ab00;
@@ -6628,4 +6633,290 @@ table.t a {
   color: var(--ink-2);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Programas e montador de treino
+   ========================================================================== */
+.pg-entry {
+  text-decoration: none;
+  gap: 4px;
+}
+.pg-entry strong {
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  letter-spacing: 0.04em;
+}
+.pg-card.on {
+  --aug-border-bg: var(--cyan);
+}
+.pg-name {
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  letter-spacing: 0.04em;
+}
+.pg-tag {
+  padding: 3px 8px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--bg);
+  background: var(--cyan);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.pg-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pg-days span {
+  min-width: 34px;
+  padding: 3px 6px;
+  text-align: center;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  border: 1px solid var(--field-border);
+}
+
+/* Montador */
+.pe-chips {
+  gap: 6px;
+}
+.pe-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--field-border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: var(--fs-2) var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.pe-chip small {
+  font-size: var(--fs-1);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+.pe-chip[aria-pressed="true"] {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--cyan);
+}
+.pe-day-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 64px;
+  gap: 8px;
+  align-items: center;
+}
+.pe-day-idx {
+  font: 900 var(--fs-5) var(--tech);
+  color: var(--red-hi);
+}
+.pe-day-name {
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.pe-day-code {
+  text-align: center;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.pe-exs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pe-ex {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+}
+.pe-ex.open {
+  border-color: var(--cyan);
+}
+.pe-ex > .btn {
+  margin: 0 10px 10px;
+}
+.pe-ex-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+}
+.pe-ex-idx {
+  font: var(--fs-2) var(--mono);
+  color: var(--cyan);
+}
+.pe-ex-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.pe-ex-main strong {
+  font-size: var(--fs-3);
+  font-weight: 600;
+}
+.pe-ex-tools {
+  display: flex;
+  gap: 4px;
+}
+.pe-ex-tools button,
+.pe-num-row button {
+  width: 40px;
+  height: 44px;
+  border: 1px solid var(--field-border);
+  background: var(--bg);
+  color: var(--ink-2);
+  font: 700 var(--fs-4) var(--mono);
+}
+.pe-ex-tools button:disabled {
+  opacity: 0.35;
+}
+.pe-form {
+  gap: 12px;
+  padding: 10px 10px 12px;
+  border-top: 1px solid var(--line-2);
+}
+.pe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px 8px;
+}
+.pe-num {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pe-num-row {
+  display: grid;
+  grid-template-columns: 40px minmax(36px, 1fr) 40px;
+  gap: 3px;
+}
+.pe-num-row .input {
+  min-height: 44px;
+  padding: 0 4px;
+  text-align: center;
+  font-family: var(--tech);
+  font-weight: 800;
+  border-color: var(--field-border);
+}
+.pe-add {
+  gap: 10px;
+}
+.pe-lib {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pe-lib button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 44px 6px 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+.pe-lib button:active {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.pe-lib strong {
+  font-size: var(--fs-3);
+  font-weight: 600;
+}
+.pe-plus {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 700 var(--fs-5) var(--mono);
+  color: var(--cyan);
+}
+
+/* Séries por semana no montador */
+.pv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pv-row {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-2);
+}
+.pv-row b {
+  text-align: right;
+  font: 700 var(--fs-3) var(--tech);
+}
+.pv-row.warn b {
+  color: var(--warn);
+}
+.pv-row.ok b {
+  color: var(--ok);
+}
+.pv-track {
+  position: relative;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, var(--track-empty) 0 4px, transparent 4px 6px);
+  opacity: 0.9;
+}
+.pv-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(90deg, var(--cyan) 0 4px, transparent 4px 6px);
+}
+.pv-row.warn .pv-track i {
+  background: repeating-linear-gradient(90deg, var(--warn) 0 4px, transparent 4px 6px);
+}
+.pv-track u {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--warn);
+}
+.pv-track u.eff {
+  background: var(--cyan);
+}
+@media (max-width: 380px) {
+  .pv-row {
+    grid-template-columns: 104px minmax(0, 1fr) 36px;
+  }
+}
+
+/* Exercícios: os que não estão no programa ficam um pouco apagados. */
+.ws-card.off-program {
+  opacity: 0.72;
 }

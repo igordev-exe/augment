@@ -1,11 +1,28 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { BodyEntry, Session, Settings } from "../data/types";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { activeProgram, programVersion, rememberSessions, subscribeProgram } from "../data/program";
+import type { BodyEntry, Program, Session, Settings } from "../data/types";
 import { db, DEFAULT_SETTINGS, loadBodyLog, loadSettings, saveSettings } from "./db";
 import { todayISO } from "./dates";
 
 export function useSessions(): Session[] | undefined {
-  return useLiveQuery(() => db.sessions.toArray(), []);
+  return useLiveQuery(async () => {
+    const list = await db.sessions.toArray();
+    // Exercícios que já saíram do programa continuam resolvendo pelo retrato salvo na sessão.
+    rememberSessions(list);
+    return list;
+  }, []);
+}
+
+/** Todos os programas salvos (lista em Programas). */
+export function usePrograms(): Program[] | undefined {
+  return useLiveQuery(() => db.programs.toArray(), []);
+}
+
+/** Programa ativo; a tela renderiza de novo quando ele muda (import de backup, edição do programa). */
+export function useProgram(): Program {
+  useSyncExternalStore(subscribeProgram, programVersion);
+  return activeProgram();
 }
 
 export function useSession(id: string | undefined): Session | null | undefined {

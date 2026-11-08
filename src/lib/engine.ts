@@ -1,4 +1,4 @@
-import { EXERCISE_BY_ID, shortName } from "../data/program";
+import { exById, shortName } from "../data/program";
 import type { BodyEntry, BodyGoal, ProgramExercise, Session, SessionExercise, SetEntry } from "../data/types";
 import { addDays, daysBetween } from "./dates";
 import { fatigueDeloadFor, isLowDay, rirRange, WEEK_RULES, type FatigueDeloadAlert } from "./mesocycle";
@@ -328,7 +328,7 @@ export function regressingExercises(sessions: Session[], today: string): string[
   );
   const out: string[] = [];
   for (const id of recentIds) {
-    const ex = EXERCISE_BY_ID[id];
+    const ex = exById(id);
     if (ex && regressionOf(historyOf(done, id))) out.push(shortName(ex));
   }
   return out;

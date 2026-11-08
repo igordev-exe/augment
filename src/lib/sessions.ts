@@ -1,6 +1,6 @@
-import { DAY_BY_ID, EXERCISE_BY_ID, MUSCLE_ORDER } from "../data/program";
-import { SCIENCE, SYNERGISTS } from "../data/science";
-import type { MuscleId, ProgramExercise, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
+import { dayById, exById, MUSCLE_ORDER, programDays, exOf, synergistsOf } from "../data/program";
+import { SCIENCE } from "../data/science";
+import type { MuscleId, ProgramDay, ProgramExercise, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
 import { historyOf, increaseStep, loadRef, suggestNext, toKg, workSets } from "./progression";
@@ -11,10 +11,15 @@ function emptySet(kind: SetEntry["kind"], weight: number | null = null): SetEntr
 }
 
 export function unitFor(exId: string, settings: Settings, last?: SessionExercise): Unit {
-  return settings.units[exId] ?? last?.unit ?? EXERCISE_BY_ID[exId]?.defaultUnit ?? "kg";
+  return settings.units[exId] ?? last?.unit ?? exById(exId)?.defaultUnit ?? "kg";
 }
 
 /** Monta uma sessão nova do dia, já com aquecimentos, séries da semana e cargas sugeridas. */
+/** Retrato do exercício como está no programa agora (vai junto com a sessão; ver `SessionExercise.snap`). */
+export function snapOf(ex: ProgramExercise): ProgramExercise {
+  return structuredClone(ex);
+}
+
 export function buildSession(
   dayId: string,
   date: string,
@@ -23,7 +28,7 @@ export function buildSession(
   allSessions: Session[],
   repeatFrom?: Session,
 ): Session {
-  const day = DAY_BY_ID[dayId];
+  const day = dayById(dayId);
   const exercises: SessionExercise[] = day.exercises.map((ex, i) => {
     const defaultAlt = settings.swaps?.[ex.id] || undefined;
     const hist = historyOf(allSessions, ex.id, defaultAlt);
@@ -40,7 +45,7 @@ export function buildSession(
       const main = workSets(source, false);
       const ref = main.length ? loadRef(main) : { load: workSets(source)[0].weight!, anchor: false, volumeLoad: undefined };
       for (let k = 0; k < planned; k++) sets.push(emptySet("work", k > 0 && ref.anchor ? (ref.volumeLoad ?? ref.load) : ref.load));
-      return { exId: ex.id, unit: source.unit, alt: source.alt ?? defaultAlt, sets };
+      return { exId: ex.id, snap: snapOf(ex), unit: source.unit, alt: source.alt ?? defaultAlt, sets };
     }
 
     const step = increaseStep(ex, unit, settings.increments[ex.id]);
@@ -48,12 +53,13 @@ export function buildSession(
     const s = suggestNext(ex, hist, planned, week, step, available);
     // Formato série-âncora: a 1ª com a carga da âncora, as de volume com a carga mais leve.
     for (let k = 0; k < planned; k++) sets.push(emptySet("work", k > 0 && s.volumeWeight != null ? s.volumeWeight : s.weight));
-    return { exId: ex.id, unit, alt: defaultAlt, sets };
+    return { exId: ex.id, snap: snapOf(ex), unit, alt: defaultAlt, sets };
   });
 
   return {
     id: uid(),
     dayId,
+    day: { name: day.name, code: day.code, focus: day.focus || undefined },
     date,
     week,
     startedAt: Date.now(),
@@ -105,7 +111,7 @@ function emptyVolume(): Record<MuscleId, number> {
 function addSets(out: Record<MuscleId, number>, ex: ProgramExercise, n: number, fractional: boolean) {
   for (const m of ex.muscles) out[m] += n;
   if (!fractional) return;
-  for (const m of SYNERGISTS[ex.lib] ?? []) if (!ex.muscles.includes(m)) out[m] += n * SCIENCE.indirectSetWeight;
+  for (const m of synergistsOf(ex)) if (!ex.muscles.includes(m)) out[m] += n * SCIENCE.indirectSetWeight;
 }
 
 /**
@@ -119,7 +125,7 @@ export function weeklyVolume(sessions: Session[], date: string, fractional = fal
   for (const s of sessions) {
     if (s.date < start || s.date >= end) continue;
     for (const e of s.exercises) {
-      const ex = EXERCISE_BY_ID[e.exId];
+      const ex = exOf(e);
       if (ex) addSets(out, ex, workSets(e).length, fractional);
     }
   }
@@ -130,9 +136,14 @@ export function weeklyVolume(sessions: Session[], date: string, fractional = fal
  * Séries planejadas por músculo para uma semana do mesociclo (diretas, ou fracionadas com `fractional`).
  * `adjust`: ajuste de séries por exercício (Ajustes → setAdjust).
  */
-export function plannedVolume(week: number, fractional = false, adjust?: Record<string, number>): Record<MuscleId, number> {
+export function plannedVolume(
+  week: number,
+  fractional = false,
+  adjust?: Record<string, number>,
+  days: ProgramDay[] = programDays(),
+): Record<MuscleId, number> {
   const out = emptyVolume();
-  for (const d of Object.values(DAY_BY_ID)) {
+  for (const d of days) {
     for (const ex of d.exercises) addSets(out, ex, setsFor(ex, week, adjust?.[ex.id]), fractional);
   }
   return out;

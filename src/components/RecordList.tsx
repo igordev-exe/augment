@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { EXERCISE_BY_ID, shortName } from "../data/program";
+import { exById, shortName } from "../data/program";
 import { shortDate } from "../lib/dates";
 import type { PRKind } from "../lib/progression";
 import { Icon } from "./Icon";
@@ -38,7 +38,7 @@ export function RecordList({ items, show = 3, linkToExercise = false }: { items:
         </span>
       </div>
       {visible.map((g) => {
-        const ex = EXERCISE_BY_ID[g.exId];
+        const ex = exById(g.exId);
         const kinds = [...new Set(g.items.map((i) => i.kind))];
         return (
           <details key={g.key} className="rec-row">

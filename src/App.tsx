@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
 import { TimerBar } from "./components/TimerBar";
-import { setToastVibrate, ToastProvider, useSettings, useToday } from "./lib/hooks";
+import { loadActiveProgram } from "./lib/db";
+import { setToastVibrate, ToastProvider, useProgram, useSettings, useToday } from "./lib/hooks";
 import { applyFxLevel, bootBeam, installTapFx } from "./lib/fx";
 import { weekFor } from "./lib/mesocycle";
 import { TimerProvider, useTimer } from "./lib/timer";
@@ -13,6 +14,8 @@ import { History } from "./screens/History";
 import { Progress } from "./screens/Progress";
 import { Report } from "./screens/Report";
 import { SessionScreen } from "./screens/SessionScreen";
+import { ProgramEditor } from "./screens/ProgramEditor";
+import { Programs } from "./screens/Programs";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { Today } from "./screens/Today";
 
@@ -30,6 +33,8 @@ function ScrollTop() {
 function Shell() {
   const { pathname } = useLocation();
   const { state, configure } = useTimer();
+  // Re-renderiza o app inteiro quando o programa ativo muda.
+  useProgram();
   const [settings] = useSettings();
   const today = useToday();
   // Semana de deload: paleta mais calma no app inteiro (o vermelho de ação vira um azul-aço).
@@ -64,6 +69,8 @@ function Shell() {
           <Route path="/exercicios/:libId" element={<ExerciseDetail />} />
           <Route path="/guia" element={<Guide />} />
           <Route path="/ajustes" element={<SettingsScreen />} />
+          <Route path="/programas" element={<Programs />} />
+          <Route path="/programas/:id" element={<ProgramEditor />} />
           <Route
             path="/treinador"
             element={
@@ -105,6 +112,16 @@ function Shell() {
 }
 
 export default function App() {
+  // O programa vem do banco: as telas só montam depois que ele carrega (é rápido, IndexedDB local).
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    loadActiveProgram()
+      .catch(() => {
+        /* banco indisponível: segue com o modelo PPL que o registro já tem */
+      })
+      .finally(() => setReady(true));
+  }, []);
+  if (!ready) return null;
   return (
     <HashRouter>
       <ToastProvider>

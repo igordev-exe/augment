@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LIB_BY_ID } from "../data/library";
+import { useLibraryEntry } from "../data/library-extended";
 import { shortName } from "../data/program";
 import type { ExerciseFeedback, ProgramExercise, SessionExercise, SetEntry, Unit } from "../data/types";
 import { shortDate } from "../lib/dates";
@@ -73,7 +73,7 @@ export function ExerciseBlock({
   onClearReminder: () => void;
   onUnit: (u: Unit) => void;
 }) {
-  const lib = LIB_BY_ID[ex.lib];
+  const lib = useLibraryEntry(ex.lib);
   const alts = lib?.alternatives ?? [];
   const planned = setsFor(ex, week, setAdjust);
   const workAll = entry.sets.filter((s) => s.kind !== "warmup");

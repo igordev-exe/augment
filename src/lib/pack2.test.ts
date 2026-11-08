@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { EXERCISE_BY_ID } from "../data/program";
+import { exById } from "../data/program";
 import type { Session, SessionExercise } from "../data/types";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup } from "./db";
 import { historyOf, stallOf, suggestNext } from "./progression";
@@ -14,7 +14,7 @@ import {
   restoreFrom,
 } from "./restore";
 
-const hack = EXERCISE_BY_ID["lower-a.hack"]; // 6–10 reps, incremento 5
+const hack = exById("lower-a.hack"); // 6–10 reps, incremento 5
 
 function entry(sets: [number, number, number?][]): SessionExercise {
   return {

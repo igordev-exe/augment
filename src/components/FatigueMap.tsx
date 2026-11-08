@@ -39,7 +39,7 @@ function advice(s: MuscleStatus, pct: number): { title: string; text: string } {
   if (stale(s))
     return {
       title: "SEM ESTÍMULO",
-      text: `${s.daysSince} dias sem treino. A ficha bate cada músculo ~2× por semana: não deixe passar no próximo treino.`,
+      text: `${s.daysSince} dias sem treino. Não deixe passar no próximo treino que pegar esse músculo.`,
     };
   if (s.state === "pronto") return { title: "LIBERADO", text: "Recuperado. Pode treinar pesado quando a ficha mandar." };
   if (pct >= 75)

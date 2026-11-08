@@ -4,7 +4,7 @@ import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
 import { SysModule } from "../components/SysModule";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
-import { DAY_BY_ID, PROGRAM } from "../data/program";
+import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
@@ -30,7 +30,7 @@ export function BrandMark() {
 
 /** Duração estimada: séries × (descanso + ~40 s de execução). */
 function estimateMinutes(dayId: string, week: number, adjust: Record<string, number> = {}): number {
-  const d = DAY_BY_ID[dayId];
+  const d = dayById(dayId);
   let sec = 0;
   for (const ex of d.exercises) {
     const n = setsFor(ex, week, adjust[ex.id]);
@@ -55,9 +55,9 @@ export function Today() {
   const active = sessions.find((s) => s.status === "active");
   const plan = planAhead(sessions, today, 14, settings.trainingDays);
   const next = plan[0];
-  const dayId = picked ?? next?.dayId ?? PROGRAM[0].id;
-  const day = DAY_BY_ID[dayId];
-  const dayIdx = PROGRAM.findIndex((d) => d.id === dayId) + 1;
+  const dayId = picked ?? next?.dayId ?? programDays()[0].id;
+  const day = dayById(dayId);
+  const dayIdx = programDays().findIndex((d) => d.id === dayId) + 1;
   const isToday = next?.date === today;
   const doneAll = sessions.filter((s) => s.status === "done");
   const doneToday = doneAll.filter((s) => s.date === today);
@@ -76,14 +76,17 @@ export function Today() {
 
   const monday = mondayOf(today);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  const reentry = reentryFor(
-    doneAll.map((s) => s.date),
-    settings.mesoStart,
-    today,
-    settings.trainingDays,
-    settings.reentryDismissed,
-  );
-  const fatigue = !reentry ? fatigueAlert(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
+  const fixed = week === 0;
+  const reentry = fixed
+    ? null
+    : reentryFor(
+        doneAll.map((s) => s.date),
+        settings.mesoStart,
+        today,
+        settings.trainingDays,
+        settings.reentryDismissed,
+      );
+  const fatigue = !reentry && !fixed ? fatigueAlert(doneAll, settings.mesoStart, today, settings.reentryDismissed) : null;
   const lastWeek = addDays(monday, -7);
   const report =
     settings.reportSeen === monday
@@ -94,13 +97,14 @@ export function Today() {
   const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;
   const showBackupReminder =
     !active && doneAll.length >= 5 && settings.backupDismissed !== monday && (backupAge == null || backupAge >= 14);
-  const missionLabel = doneToday.length
-    ? `Hoje já foi ${dayName(doneToday[0].dayId)}. Próxima missão`
+  // Etiqueta do banner em até duas linhas curtas: não pode avançar sobre o capacete do robô.
+  const missionLabel: [string, string?] = doneToday.length
+    ? [`Feito hoje: ${dayCode(doneToday[0].dayId)}`, "Próxima missão"]
     : picked
-      ? "Missão escolhida"
+      ? ["Missão escolhida"]
       : isToday
-        ? "Missão do dia"
-        : `Descanso hoje. Próxima: ${next ? `${weekdayName(next.date)}, ${shortDate(next.date)}` : "—"}`;
+        ? ["Missão do dia"]
+        : ["Descanso hoje", next ? `Próx. ${weekdayShort(fromISO(next.date).getDay()).toLowerCase()}, ${shortDate(next.date)}` : "Próx. —"];
 
   // Retomada e fadiga mudam o treino da semana: ficam sempre à vista. Relatório e backup vão para a barra de avisos.
   const warnItems = [!active && showReport ? "relatório" : null, showBackupReminder ? "backup" : null].filter((x): x is string => !!x);
@@ -296,7 +300,17 @@ export function Today() {
             <span className="shade" aria-hidden="true" />
             <span className="hatch" aria-hidden="true" />
             <div className="mission-top">
-              <span className="mission-tag">{missionLabel}</span>
+              <span className="mission-tag">
+                <span>
+                  {missionLabel[0]}
+                  {missionLabel[1] && (
+                    <>
+                      <br />
+                      {missionLabel[1]}
+                    </>
+                  )}
+                </span>
+              </span>
               <span className="mission-code">EXO.PROTOCOL / {day.code}</span>
             </div>
             <div className="mission-body">
@@ -334,14 +348,24 @@ export function Today() {
           </div>
 
           {!picking ? (
-            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => setPicking(true)}>
-              Trocar o protocolo de hoje
-            </button>
+            <div className="row-wrap">
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-ghost grow"
+                onClick={() => setPicking(true)}
+              >
+                Trocar o protocolo de hoje
+              </button>
+              <Link to="/programas" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost grow">
+                Editar programa <span className="arrow">&gt;</span>
+              </Link>
+            </div>
           ) : (
             <div data-augmented-ui="tl-clip br-clip border" className="card flat stack">
               <div className="small muted">A sequência não pula treino: se faltar um dia, o próximo continua de onde parou.</div>
               <div className="row-wrap">
-                {PROGRAM.map((d) => (
+                {programDays().map((d) => (
                   <button
                     key={d.id}
                     type="button"
@@ -408,16 +432,16 @@ export function Today() {
       <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
         <div className="spread">
           <div>
-            <h2 className="h-sec">Ciclo do mesociclo</h2>
+            <h2 className="h-sec">{fixed ? "Programa fixo" : "Ciclo do mesociclo"}</h2>
             <p className="small muted" style={{ marginTop: 4 }}>
               {rule.summary}
             </p>
           </div>
           <span className="display" style={{ fontSize: 26, color: "var(--red-hi)" }}>
-            {week === 7 ? "D" : `0${week}`}
+            {fixed ? "FX" : week === 7 ? "D" : `0${week}`}
           </span>
         </div>
-        <WeekStrip week={week} />
+        {!fixed && <WeekStrip week={week} />}
         <div data-augmented-ui="br-clip border" className="stats">
           <div className="stat">
             <span className="label">Compostos</span>
@@ -438,9 +462,15 @@ export function Today() {
             </span>
           </div>
         </div>
-        <Link to="/relatorio?tab=meso" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost">
-          Resumo do mesociclo e rotação de acessórios <span className="arrow">&gt;</span>
-        </Link>
+        {fixed ? (
+          <Link to="/programas" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost">
+            Ligar o mesociclo no programa <span className="arrow">&gt;</span>
+          </Link>
+        ) : (
+          <Link to="/relatorio?tab=meso" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm btn-ghost">
+            Resumo do mesociclo e rotação de acessórios <span className="arrow">&gt;</span>
+          </Link>
+        )}
       </section>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
@@ -529,7 +559,7 @@ export function Today() {
         <span>AUGMENT // human performance division</span>
         <span className="barcode" />
         <span>
-          生体 / 0{week === 7 ? "D" : week}
+          生体 / {week === 0 ? "FX" : `0${week === 7 ? "D" : week}`}
           <br />
           Access granted
         </span>

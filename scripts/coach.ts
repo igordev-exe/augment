@@ -33,7 +33,7 @@ Arquivo gerado por \`npm run coach\` a partir de \`${file.split(/[\\/]/).pop()}\
 
 ## Instruções do treinador
 
-${coachSystem(data.settings.operator || "Igor")}
+${coachSystem(data.settings.operator)}
 
 ## Plano atual
 
