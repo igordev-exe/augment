@@ -148,3 +148,21 @@ export function plannedVolume(
   }
   return out;
 }
+
+/**
+ * Dias em que um músculo passa do teto prático por sessão (~11 séries fracionadas; Remmert 2025): a partir daí a série
+ * extra no mesmo treino quase não rende. O montador mostra para sugerir dividir o volume entre dois dias.
+ */
+export function sessionPeaks(
+  week: number,
+  adjust?: Record<string, number>,
+  days: ProgramDay[] = programDays(),
+  ceiling: number = SCIENCE.perSessionCeiling,
+): { dayId: string; dayName: string; muscle: MuscleId; sets: number }[] {
+  const out: { dayId: string; dayName: string; muscle: MuscleId; sets: number }[] = [];
+  for (const d of days) {
+    const vol = plannedVolume(week, true, adjust, [d]);
+    for (const m of MUSCLE_ORDER) if (vol[m] > ceiling) out.push({ dayId: d.id, dayName: d.name, muscle: m, sets: vol[m] });
+  }
+  return out;
+}

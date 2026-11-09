@@ -7317,3 +7317,9 @@ button.chip {
     filter: none;
   }
 }
+
+.pv-ceiling {
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+  color: var(--ink-2);
+}

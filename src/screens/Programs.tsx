@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
-import { TEMPLATES } from "../data/templates";
+import { TEMPLATE_GROUPS, TEMPLATES, type TemplateGroup } from "../data/templates";
 import type { Program } from "../data/types";
 import { activateProgram, deleteProgram, saveProgram } from "../lib/db";
 import { usePrograms, useProgram, useSessions, useToast } from "../lib/hooks";
@@ -113,29 +113,38 @@ export function Programs() {
         <p className="small muted" style={{ margin: 0 }}>
           Um modelo vira uma cópia sua: dá para trocar exercícios, séries e dias depois.
         </p>
-        {TEMPLATES.map((t) => (
-          <article key={t.id} data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
-            <div className="spread">
-              <strong>{t.name}</strong>
-              <span className="tiny faint">
-                {t
-                  .make(0)
-                  .days.map((d) => d.code)
-                  .join(" · ")}
-              </span>
-            </div>
-            <p className="small muted" style={{ margin: 0 }}>
-              {t.pitch}
+        {(Object.keys(TEMPLATE_GROUPS) as TemplateGroup[]).map((g) => (
+          <div key={g} className="stack" style={{ gap: 10 }}>
+            <h3 className="label">{TEMPLATE_GROUPS[g].title}</h3>
+            <p className="tiny faint" style={{ margin: 0 }}>
+              {TEMPLATE_GROUPS[g].note}
             </p>
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-sm"
-              onClick={() => create(fromTemplate(t.make()))}
-            >
-              Usar este modelo <span className="arrow">&gt;</span>
-            </button>
-          </article>
+            {TEMPLATES.filter((t) => t.group === g).map((t) => (
+              <article key={t.id} data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
+                <div className="spread" style={{ alignItems: "baseline" }}>
+                  <strong>{t.name}</strong>
+                  <span className="tiny faint">
+                    {t
+                      .make(0)
+                      .days.map((d) => d.code)
+                      .join(" · ")}
+                  </span>
+                </div>
+                <span className="tiny faint">{t.level}</span>
+                <p className="small muted" style={{ margin: 0 }}>
+                  {t.pitch}
+                </p>
+                <button
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="btn btn-sm"
+                  onClick={() => create(fromTemplate(t.make()))}
+                >
+                  Usar este modelo <span className="arrow">&gt;</span>
+                </button>
+              </article>
+            ))}
+          </div>
         ))}
         <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => create(blankProgram())}>
           Começar do zero

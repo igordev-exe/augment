@@ -27,7 +27,7 @@ import {
   updateExercise,
   type ExercisePatch,
 } from "../lib/program-edit";
-import { plannedVolume } from "../lib/sessions";
+import { plannedVolume, sessionPeaks } from "../lib/sessions";
 
 // Montador de treino: dias em ordem de rotação, exercícios de cada dia e os campos que o motor usa.
 // Tudo salva sozinho (300 ms depois da última mudança). O histórico não muda: cada treino guarda o retrato dos
@@ -497,6 +497,8 @@ function DayCard({
 function PlanVolume({ program, adjust }: { program: Program; adjust?: Record<string, number> }) {
   const week = program.periodization === "fixed" ? 0 : 2;
   const vol = plannedVolume(week, true, adjust, program.days);
+  // Semana de pico (4–6) é onde os ▲ ganham série: é ela que testa o teto por sessão.
+  const peaks = sessionPeaks(week === 0 ? 0 : 5, adjust, program.days);
   const min = SCIENCE.volume.minEffective;
   const eff = SCIENCE.volume.efficient[0];
   const max = Math.max(20, ...MUSCLE_ORDER.map((m) => vol[m]));
@@ -527,6 +529,16 @@ function PlanVolume({ program, adjust }: { program: Program; adjust?: Record<str
           );
         })}
       </div>
+      {peaks.length > 0 && (
+        <p className="tiny pv-ceiling" style={{ margin: 0 }}>
+          {week === 0 ? "Acima" : "Nas semanas 4–6, acima"} do teto por sessão (~{SCIENCE.perSessionCeiling} séries fracionadas do mesmo
+          músculo num treino; daí em diante a série extra quase não rende):{" "}
+          {peaks
+            .map((p) => `${MUSCLE_LABEL[p.muscle]} em ${p.dayName} (${String(Math.round(p.sets * 10) / 10).replace(".", ",")})`)
+            .join("; ")}
+          . Divida esse volume entre dois dias.
+        </p>
+      )}
     </section>
   );
 }

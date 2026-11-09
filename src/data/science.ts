@@ -1,8 +1,9 @@
 import type { MuscleId } from "./types";
 
 // Base científica do app: uma fonte só para o motor de regras, o Guia e o prompt do treinador (IA).
-// Sintetizada de dois relatórios (nov/2026): "Pesquisa Profunda: Ciências do Exercício" (revisão com
-// separação epistêmica e auditoria CoVe) e "Treino Hipertrofia Cinco Dias" (prescrição PPLUL para o perfil dele).
+// Sintetizada de três documentos (nov/2026): "Pesquisa Profunda: Ciências do Exercício" (revisão com
+// separação epistêmica e auditoria CoVe), "Treino Hipertrofia Cinco Dias" (prescrição PPLUL) e "Treino de força e
+// hipertrofia baseado em evidências — banco de fontes" (ACSM 2026, divisões, diferenças entre os sexos, programas modelo).
 // Quando os dois discordam, vale o nível de evidência mais alto. Texto fixo: entra no prefixo em cache do prompt.
 
 /** evidencia = meta-análises/ECRs; consenso = posicionamentos e revisões; campo = prática sem teste formal; hipotese = mecanismo proposto. */
@@ -39,6 +40,8 @@ export const SCIENCE = {
     /** Acima disso ainda há ganho, com retorno cada vez menor; acima de 42 não há dados. */
     upperData: 42,
   },
+  /** Teto prático por sessão: acima de ~11 séries fracionadas de um músculo no mesmo treino o ganho extra some (Remmert 2025). */
+  perSessionCeiling: 11,
   /** Descanso mínimo recomendado (s) para preservar o volume-carga. */
   rest: { isolation: 90, compound: 120 },
 } as const;
@@ -91,12 +94,30 @@ export const PRINCIPLES: Principle[] = [
     fontes: ["IUSCA Position Stand, Schoenfeld et al. 2021", "Scarpelli et al. 2022 (intra-sujeito, 16 homens treinados)"],
   },
   {
+    id: "acsm-2026",
+    tema: "Volume",
+    nivel: "consenso",
+    texto:
+      "O posicionamento do ACSM de 2026 (o primeiro desde 2009; 137 revisões sistemáticas, mais de 30 mil participantes, GRADE) recomenda ~10 séries por músculo por semana para hipertrofia e ~80% de 1RM em 2–3 séries para força. Treinar até a falha, o tipo de equipamento e periodização complexa não mudaram o resultado de forma consistente no adulto médio. São mínimos eficazes para a população geral; quem busca hipertrofia máxima usa 10–20 séries.",
+    app: "O piso dos modelos prontos fica perto de 10 séries fracionadas por músculo; os de mais volume chegam a 12–16.",
+    fontes: ["Currier et al., ACSM Position Stand, MSSE 2026"],
+  },
+  {
     id: "volume-marcos",
     tema: "Volume",
     nivel: "campo",
     texto:
       "Marcos de volume (manutenção ~4–6, mínimo efetivo ~8–10, adaptativo ~12–18, máximo recuperável ~20–22 séries) são heurísticas de treinadores para planejar o mesociclo, não limites medidos. Blocos de choque >30 séries num músculo atrasado também não foram testados formalmente.",
     fontes: ["Israetel, Scientific Principles of Hypertrophy Training"],
+  },
+  {
+    id: "teto-sessao",
+    tema: "Volume",
+    nivel: "evidencia",
+    texto:
+      "Por sessão, o benefício extra quase some perto de ~11 séries fracionadas de um músculo (hipertrofia) e ~2 séries diretas (força). É um preprint, ainda sem revisão por pares, com poucos estudos de volume alto: use como regra prática (até ~10 séries de um músculo por treino; para mais volume, aumente a frequência).",
+    app: "O montador de programas avisa quando um dia passa de ~11 séries fracionadas para o mesmo músculo.",
+    fontes: ["Remmert et al., SportRxiv 2025 (meta-regressão, preprint)"],
   },
   // ---------- Frequência ----------
   {
@@ -107,6 +128,20 @@ export const PRINCIPLES: Principle[] = [
       "Com o volume semanal igualado, a frequência tem efeito desprezível na hipertrofia; ela importa como veículo para encaixar mais séries de qualidade. Para força máxima, mais frequência ajuda.",
     app: "Cada músculo cai 2× por semana para dividir o volume (5–8 séries por músculo por sessão).",
     fontes: ["Schoenfeld, Grgic e Krieger, J Sports Sci 2019", "Pelland et al. 2026", "Currier et al., Br J Sports Med 2023 (n = 5.097)"],
+  },
+  {
+    id: "divisao",
+    tema: "Frequência",
+    nivel: "evidencia",
+    texto:
+      "Com volume igualado, Fullbody, Upper/Lower e PPL dão hipertrofia e força equivalentes (14 estudos, 4–12 semanas). Estudos isolados apontam para lados opostos (Bartolomei 2021: fullbody mais força, divisão mais hipertrofia; Schoenfeld 2015: o contrário no bíceps), e a meta-análise dilui essas diferenças. Escolha pela agenda e pela aderência: fullbody perdoa faltas melhor; evite treinar um músculo só 1×/semana se isso passar de ~10 séries numa sessão.",
+    app: "Os modelos prontos cobrem Fullbody 3×, Upper/Lower 4× e PPL 6× com o mesmo volume-alvo; o que muda é a agenda.",
+    fontes: [
+      "Ramos-Campo et al., JSCR 2024 (14 estudos)",
+      "Bartolomei et al., JSCR 2021 (21 treinados)",
+      "Schoenfeld et al., JSCR 2015",
+      "Currier et al., ACSM 2026",
+    ],
   },
   // ---------- Carga ----------
   {
@@ -156,6 +191,15 @@ export const PRINCIPLES: Principle[] = [
       "Maioria das séries a 1–2 RIR; 0 RIR seletivo em isolados, máquinas, últimas séries ou cargas leves (<60% 1RM, onde a falha ajuda mais). Compostos pesados param na falha técnica. A estimativa de RIR melhora perto da falha e com reps baixas/moderadas.",
     fontes: ["Refalo et al. 2023/2024", "Lasevicius et al. 2022", "Zourdos et al. 2021", "Halperin et al., Sports Med 2022"],
   },
+  {
+    id: "inicio-bloco",
+    tema: "Falha e RIR",
+    nivel: "campo",
+    texto:
+      "Nas 2 primeiras semanas de um bloco (ou depois de uma pausa), fique 1 repetição mais longe da falha do que o planejado: a técnica e as cargas se acertam sem acumular fadiga logo no começo.",
+    app: "Na semana 1 do mesociclo ninguém vai à falha e os isolados têm 1 série a menos.",
+    fontes: ["Banco de fontes (nov/2026), regras comuns aos programas"],
+  },
   // ---------- Comprimento muscular ----------
   {
     id: "biarticulares",
@@ -184,6 +228,14 @@ export const PRINCIPLES: Principle[] = [
       "Kassiano et al., JSCR 2023",
       "Larsen et al. 2025",
     ],
+  },
+  {
+    id: "parciais-pos-falha",
+    tema: "Comprimento muscular",
+    nivel: "campo",
+    texto:
+      "Parciais depois da falha (continuar com meia amplitude quando a completa não sai mais) são técnica comum de intensificação. Num ensaio em treinados, séries dedicadas de parciais alongadas na panturrilha deram +9,5% contra +6,7% de amplitude completa seguida de parciais pós-falha, com suporte estatístico incerto. Não há prova de vantagem sobre séries normais.",
+    fontes: ["Larsen, Falch, Wolf et al. 2025 (PMC12375417)"],
   },
   {
     id: "pausa-alongamento",
@@ -235,6 +287,23 @@ export const PRINCIPLES: Principle[] = [
     texto:
       "Para hipertrofia, máquinas, cabos e apoio de peito permitem chegar perto da falha com menos fadiga sistêmica e carga axial (útil num corpo pesado); barras livres pesadas valem mais para força.",
     fontes: ["Relatório 'Treino Hipertrofia Cinco Dias' (prescrição, sem ECR direto)"],
+  },
+  {
+    id: "equipamento",
+    tema: "Seleção de exercícios",
+    nivel: "consenso",
+    texto:
+      "Máquinas e pesos livres não deram diferença consistente de hipertrofia ou força no adulto médio. Qualquer exercício pode ser trocado por outro do mesmo padrão de movimento (agachamento livre → hack ou leg press; supino com barra → halteres ou máquina).",
+    app: "As trocas sugeridas pelo app são as alternativas da biblioteca, do mesmo padrão de movimento.",
+    fontes: ["Currier et al., ACSM Position Stand, MSSE 2026"],
+  },
+  {
+    id: "bfr",
+    tema: "Seleção de exercícios",
+    nivel: "evidencia",
+    texto:
+      "Restrição do fluxo sanguíneo (oclusão parcial com manguito) com cargas de 20–40% de 1RM gera hipertrofia parecida com cargas altas e menos edema nas primeiras semanas. É opção para quem não tolera carga pesada (dor articular, volta de lesão), com equipamento e orientação adequados.",
+    fontes: ["Lixandrão et al., Sports Med 2018", "Shiromaru et al. 2019"],
   },
   // ---------- Descanso e cadência ----------
   {
@@ -289,9 +358,13 @@ export const PRINCIPLES: Principle[] = [
     tema: "Periodização e técnicas",
     nivel: "campo",
     texto:
-      "Deload fixo a cada 4–6 semanas é convenção prática. Pausas curtas (≤3 semanas) não prejudicam ganhos, mas a supercompensação não é automática: o que importa é não acumular overreaching. Deload típico: mesma carga, menos séries, 3–4 RIR.",
+      "Deload fixo a cada 4–6 semanas é convenção prática. Num ensaio com treinados, uma semana sem treino no meio de 9 semanas não mudou a hipertrofia e reduziu um pouco o ganho de força: o deload é opcional, uma ferramenta para quando a fadiga acumulada derruba o desempenho. Pausas curtas (≤3 semanas) não prejudicam ganhos, mas a supercompensação não é automática. Deload típico: mesma carga, menos séries, 3–4 RIR.",
     app: "O app combina deload fixo na semana 7 com antecipação por fadiga (check-in e queda de desempenho).",
-    fontes: ["Pesquisa Profunda: Ciências do Exercício, seção 7", "Israetel, Scientific Principles of Hypertrophy Training"],
+    fontes: [
+      "Coleman et al., PeerJ 2024 (39 treinados)",
+      "Pesquisa Profunda: Ciências do Exercício, seção 7",
+      "Israetel, Scientific Principles of Hypertrophy Training",
+    ],
   },
   // ---------- Volume celular ----------
   {
@@ -355,6 +428,58 @@ export const PRINCIPLES: Principle[] = [
     app: "No fim do mesociclo o relatório sugere +1 ou −1 série por músculo para o próximo, nunca passando de 4 séries por exercício.",
     fontes: ["Israetel, Scientific Principles of Hypertrophy Training", "Scarpelli et al. 2022"],
   },
+  // ---------- Sexo e populações ----------
+  {
+    id: "sexos-hipertrofia",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "Mulheres e homens ganham músculo na mesma proporção (29 estudos); em valor absoluto há leve vantagem masculina pelo ponto de partida. Mulheres iniciantes ganham proporcionalmente mais força no tronco superior. As mesmas variáveis (volume, esforço, carga, frequência) valem para os dois: não há motivo para treinar menos membros superiores.",
+    app: "Os modelos com ênfase em pernas e glúteos usam o mesmo volume e RIR dos demais; a ênfase é escolha de objetivo, não necessidade fisiológica.",
+    fontes: ["Refalo et al., PeerJ 2025 (meta-análise bayesiana, 29 estudos)", "Roberts, Nuckols e Krieger, JSCR 2020"],
+  },
+  {
+    id: "sexos-fadiga",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "Mulheres cansam mais devagar dentro do treino e recuperam no mesmo ritmo entre sessões: com a mesma % de 1RM costumam fazer mais repetições. Prescreva por RIR, não por %. Descanso de 1,5–2,5 min nos compostos e 60–90 s nos isoladores costuma bastar.",
+    app: "O app prescreve por faixa de reps e RIR, que já se ajusta a isso; os modelos com ênfase em glúteos usam descanso um pouco menor nos compostos.",
+    fontes: ["Nuckols et al., PeerJ 2026 (42 treinados)", "Hunter, Exerc Sport Sci Rev 2009"],
+  },
+  {
+    id: "ciclo-menstrual",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "A evidência atual não mostra influência da fase do ciclo menstrual no desempenho nem nos ganhos, e a pílula anticoncepcional não afeta hipertrofia, força ou potência (8 estudos, 325 participantes). Não é preciso periodizar pelo ciclo: ajuste pelo bem-estar do dia.",
+    app: "O check-in (sono, energia, dor) é o ajuste do dia, para qualquer pessoa.",
+    fontes: ["Colenso-Semple et al., Front Sports Act Living 2023 (revisão guarda-chuva)", "Nolan et al., Sports Med 2023"],
+  },
+  {
+    id: "mulheres-volume",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "Na meta-análise só com mulheres (24 estudos), frequência e volume moderaram os ganhos de força: treinar cada músculo 2–3×/semana. Em 50 iniciantes, fullbody 2× e upper/lower 4× deram a mesma força, massa e potência. Cuidado: a maioria dos estudos ainda é masculina (79% em Pelland 2026), então as faixas de volume para mulheres são extrapolação razoável, não dado direto.",
+    fontes: ["Hagstrom et al., Sports Med 2020 (24 estudos)", "Pedersen et al., BMC Sports Sci Med Rehabil 2022", "Pelland et al. 2026"],
+  },
+  {
+    id: "idosos",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "Em idosos (151 ECRs), volumes baixos já melhoram função física e saúde; o volume alto serve a quem busca hipertrofia máxima, não é pré-requisito para os benefícios do treino.",
+    fontes: ["Radaelli et al. 2025 (151 ECRs)"],
+  },
+  {
+    id: "dor-femoropatelar",
+    tema: "Sexo e populações",
+    nivel: "evidencia",
+    texto:
+      "Com dor femoropatelar, ajuste a amplitude da cadeira extensora aos sintomas: 70°–25° de flexão provocou mais dor, e 45°–0° gerou menor torque na articulação. Amplitude sem dor vem antes de amplitude máxima.",
+    fontes: ["PMID 42852459 (2026)"],
+  },
   // ---------- Recomposição e recuperação ----------
   {
     id: "ritmo-perda",
@@ -409,6 +534,27 @@ export const AUDITS: { crenca: string; veredito: string }[] = [
   {
     crenca: "Parciais alongadas sempre dão 10–15% a mais que a ROM completa.",
     veredito: "Só em destreinados; em treinados empatam (Wolf 2025).",
+  },
+  {
+    crenca: "Mulher precisa treinar diferente: mais leve, mais repetições e menos tronco.",
+    veredito:
+      "Falso: a hipertrofia relativa é igual entre os sexos e as mesmas variáveis valem (Refalo 2025; Roberts 2020). Muda o ponto de partida, não o método.",
+  },
+  {
+    crenca: "É preciso periodizar o treino pelas fases do ciclo menstrual.",
+    veredito: "A evidência atual não mostra efeito da fase nos ganhos (Colenso-Semple 2023). Ajuste pelo bem-estar do dia.",
+  },
+  {
+    crenca: "Fullbody (ou PPL) é a divisão que mais faz crescer.",
+    veredito: "Com volume igual, as divisões empatam (Ramos-Campo 2024). A melhor é a que cabe na agenda e você cumpre.",
+  },
+  {
+    crenca: "Máquina não constrói músculo como peso livre.",
+    veredito: "Sem diferença consistente no adulto médio (ACSM 2026). Escolha pelo conforto, pela progressão e pelo que a academia tem.",
+  },
+  {
+    crenca: "Deload a cada poucas semanas é obrigatório para crescer.",
+    veredito: "Uma semana parada no meio de 9 não mudou a hipertrofia (Coleman 2024). Deload é ferramenta para fadiga, não regra.",
   },
   {
     crenca: "A meta-regressão de RIR mediu o RIR de todo mundo.",

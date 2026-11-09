@@ -120,7 +120,7 @@ describe("montador: exercícios", () => {
 });
 
 describe("modelos e cópias", () => {
-  it("os três modelos são programas válidos, com ids únicos e todo exercício com músculo", () => {
+  it("todos os modelos são programas válidos, com ids únicos e todo exercício com músculo", () => {
     for (const t of TEMPLATES) {
       const p = t.make(1);
       expect(isProgram(p)).toBe(true);
@@ -162,10 +162,10 @@ describe("salvar, ativar e apagar programas", () => {
     await saveProgram(ul);
     await activateProgram("meu-ul");
     expect((await loadSettings()).activeProgramId).toBe("meu-ul");
-    expect(exById("ul-ua.supino-inclinado-halteres")?.sets).toBe(3);
+    expect(exById("ul-ub.supino-inclinado-halteres")?.sets).toBe(3);
 
-    await saveProgram(updateExercise(ul, "ul-ua.supino-inclinado-halteres", { sets: 4 }));
-    expect(exById("ul-ua.supino-inclinado-halteres").sets).toBe(4);
+    await saveProgram(updateExercise(ul, "ul-ub.supino-inclinado-halteres", { sets: 4 }));
+    expect(exById("ul-ub.supino-inclinado-halteres").sets).toBe(4);
 
     await expect(deleteProgram("meu-ul")).rejects.toThrow();
     await deleteProgram("ppl-v2");
@@ -196,12 +196,12 @@ describe("histórico ao trocar de programa", () => {
     const ul = fromTemplate(TEMPLATES.find((x) => x.id === "ul-4")!.make(1));
     setActiveProgram(ul);
     const sessions = [done("a", "2026-10-01", old.id, old.lib)];
-    // O supino do Upper A nunca foi feito: herda o histórico do supino do PPL (mesma biblioteca).
-    expect(historyOf(sessions, "ul-ua.supino-inclinado-halteres").map((h) => h.session.id)).toEqual(["a"]);
+    // O supino do Upper B nunca foi feito: herda o histórico do supino do PPL (mesma biblioteca).
+    expect(historyOf(sessions, "ul-ub.supino-inclinado-halteres").map((h) => h.session.id)).toEqual(["a"]);
     // Depois do primeiro treino com o id novo, o histórico próprio vale sozinho.
-    const own = [...sessions, done("b", "2026-11-02", "ul-ua.supino-inclinado-halteres", old.lib)];
-    expect(historyOf(own, "ul-ua.supino-inclinado-halteres").map((h) => h.session.id)).toEqual(["b"]);
+    const own = [...sessions, done("b", "2026-11-02", "ul-ub.supino-inclinado-halteres", old.lib)];
+    expect(historyOf(own, "ul-ub.supino-inclinado-halteres").map((h) => h.session.id)).toEqual(["b"]);
     // Outro exercício da biblioteca não herda nada.
-    expect(historyOf(sessions, "ul-ua.remada-apoio-peito")).toEqual([]);
+    expect(historyOf(sessions, "ul-ub.remada-baixa-neutra")).toEqual([]);
   });
 });
