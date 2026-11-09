@@ -1,7 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { BootScreen } from "./components/Brand";
 import { Icon } from "./components/Icon";
 import { TimerBar } from "./components/TimerBar";
+import { markBootDone, readBootMode, type BootMode } from "./lib/brand";
+import { todayISO } from "./lib/dates";
 import { loadActiveProgram } from "./lib/db";
 import { setToastVibrate, ToastProvider, useProgram, useSettings, useToday } from "./lib/hooks";
 import { applyFxLevel, bootBeam, installTapFx } from "./lib/fx";
@@ -114,6 +117,8 @@ function Shell() {
 export default function App() {
   // O programa vem do banco: as telas só montam depois que ele carrega (é rápido, IndexedDB local).
   const [ready, setReady] = useState(false);
+  // Boot do sistema por cima de tudo enquanto o app carrega por baixo: completo na 1ª abertura do dia, curto nas outras.
+  const [boot, setBoot] = useState<BootMode>(() => readBootMode(todayISO()));
   useEffect(() => {
     loadActiveProgram()
       .catch(() => {
@@ -121,14 +126,26 @@ export default function App() {
       })
       .finally(() => setReady(true));
   }, []);
-  if (!ready) return null;
   return (
-    <HashRouter>
-      <ToastProvider>
-        <TimerProvider>
-          <Shell />
-        </TimerProvider>
-      </ToastProvider>
-    </HashRouter>
+    <>
+      {ready && (
+        <HashRouter>
+          <ToastProvider>
+            <TimerProvider>
+              <Shell />
+            </TimerProvider>
+          </ToastProvider>
+        </HashRouter>
+      )}
+      {boot !== "none" && (
+        <BootScreen
+          mode={boot}
+          onDone={() => {
+            markBootDone(todayISO());
+            setBoot("none");
+          }}
+        />
+      )}
+    </>
   );
 }

@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nova logo do AUGMENT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Mundo único da marca (escuro). Layout: prancha de estudo, um bloco por decisão, sempre com o desenho ao lado da razão. */
+      :root {
+        --bg: #0c0e11;
+        --panel: #12161b;
+        --line: #2a3038;
+        --ink: #e6e7e5;
+        --ink-2: #a0a8b2;
+        --red: #ef302c;
+        --cyan: #3fd8e0;
+        --amber: #f5b83d;
+        --display: "Orbitron", "Arial Black", sans-serif;
+        --mono: "Share Tech Mono", ui-monospace, Menlo, monospace;
+        --body: "Exo 2", "Segoe UI", system-ui, sans-serif;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background:
+          linear-gradient(#ffffff06 1px, transparent 1px) 0 0 / 100% 32px,
+          var(--bg);
+        color: var(--ink);
+        font: 16px/1.55 var(--body);
+      }
+      :focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+      }
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 32px 20px 72px;
+        display: grid;
+        gap: 56px;
+      }
+      .eyebrow {
+        font: 13px var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--cyan);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin: 0;
+        text-wrap: balance;
+      }
+      h1 {
+        font-size: clamp(28px, 5vw, 46px);
+        line-height: 1.05;
+      }
+      h2 {
+        font-size: clamp(20px, 3vw, 26px);
+      }
+      h3 {
+        font-size: 16px;
+      }
+      p {
+        margin: 0;
+        max-width: 68ch;
+        color: var(--ink-2);
+      }
+      p strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      a {
+        color: var(--cyan);
+      }
+      section {
+        display: grid;
+        gap: 20px;
+      }
+      .head {
+        display: grid;
+        gap: 12px;
+      }
+
+      /* Pesquisa */
+      .rules {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .rule {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 16px;
+        display: grid;
+        gap: 8px;
+        align-content: start;
+      }
+      .rule b {
+        font: 13px var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--amber);
+      }
+      .rule p {
+        font-size: 15px;
+      }
+      .rule small {
+        font: 12px var(--mono);
+        color: var(--ink-2);
+      }
+
+      /* Conceitos */
+      .concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        gap: 16px;
+      }
+      .concept {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+      }
+      .concept.pick {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 1px var(--cyan) inset;
+      }
+      .stage {
+        aspect-ratio: 4 / 3;
+        display: grid;
+        place-items: center;
+        position: relative;
+        border-bottom: 1px solid var(--line);
+        background: radial-gradient(circle at 50% 45%, #ef302c1f, transparent 60%);
+      }
+      .stage svg {
+        width: 46%;
+        height: auto;
+      }
+      .stage .tag {
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        font: 12px var(--mono);
+        letter-spacing: 0.1em;
+        color: var(--ink-2);
+      }
+      .stage .tag.r {
+        left: auto;
+        right: 12px;
+        color: var(--cyan);
+      }
+      .sizes {
+        display: flex;
+        align-items: end;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+      .sizes figure {
+        margin: 0;
+        display: grid;
+        gap: 4px;
+        justify-items: center;
+      }
+      .sizes figcaption {
+        font: 11px var(--mono);
+        color: var(--ink-2);
+      }
+      .chip-light {
+        background: #e9ecef;
+        color: #0c0e11;
+        padding: 6px;
+        display: grid;
+      }
+      .mono {
+        color: var(--ink);
+        --mk-main: currentColor;
+        --mk-acc: currentColor;
+      }
+      .chip-light.mono {
+        color: #0c0e11;
+      }
+      .appicon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: #0c0e11;
+        border: 1px solid var(--line);
+        display: grid;
+        place-items: center;
+      }
+      .appicon.round {
+        border-radius: 50%;
+      }
+      .appicon svg {
+        width: 66%;
+      }
+      .copy {
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+      .copy ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ink-2);
+        font-size: 15px;
+        display: grid;
+        gap: 4px;
+      }
+      .copy li b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .score {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .score span {
+        font: 12px var(--mono);
+        letter-spacing: 0.06em;
+        border: 1px solid var(--line);
+        padding: 3px 8px;
+        color: var(--ink-2);
+      }
+      .score span.good {
+        color: var(--cyan);
+        border-color: #3fd8e066;
+      }
+      .score span.warn {
+        color: var(--amber);
+        border-color: #f5b83d66;
+      }
+
+      /* Logotipo */
+      .wordmark-board {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 28px 20px;
+        display: grid;
+        gap: 24px;
+        justify-items: center;
+      }
+      .lockup {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .lockup .mk {
+        width: 72px;
+      }
+      .lockup .wm {
+        width: min(420px, 70vw);
+      }
+      .wm,
+      .construct {
+        color: var(--ink);
+      }
+      .construct {
+        width: min(640px, 100%);
+      }
+      .construct .grid line {
+        stroke: #3fd8e033;
+        stroke-width: 0.3;
+      }
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        width: 100%;
+      }
+      .notes div {
+        border-left: 2px solid var(--red);
+        padding: 4px 12px;
+        font-size: 15px;
+        color: var(--ink-2);
+      }
+      .notes b {
+        color: var(--ink);
+        font-weight: 600;
+        display: block;
+      }
+
+      /* Boot */
+      .boot-wrap {
+        display: grid;
+        grid-template-columns: minmax(280px, 340px) 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+      @media (max-width: 760px) {
+        .boot-wrap {
+          grid-template-columns: 1fr;
+          justify-items: center;
+        }
+      }
+      .phone {
+        width: 100%;
+        max-width: 340px;
+        aspect-ratio: 9 / 17;
+        background: #07080a;
+        border: 1px solid var(--line);
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 16px;
+      }
+      .phone::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(0deg, #ffffff07 0 1px, transparent 1px 3px);
+      }
+      .ph-top,
+      .ph-bottom {
+        display: flex;
+        justify-content: space-between;
+        font: 11px var(--mono);
+        letter-spacing: 0.1em;
+        color: var(--ink-2);
+      }
+      .ph-center {
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 14px;
+      }
+      .ph-center .mk {
+        width: 46%;
+        overflow: visible;
+      }
+      .ph-center .wm {
+        width: 78%;
+      }
+      .tagline {
+        font: 11px var(--mono);
+        letter-spacing: 0.32em;
+        color: var(--ink-2);
+        opacity: 0;
+      }
+      .modlist {
+        width: 100%;
+        display: grid;
+        gap: 3px;
+        margin-top: 6px;
+        font: 11px var(--mono);
+        letter-spacing: 0.06em;
+      }
+      .modlist div {
+        display: flex;
+        justify-content: space-between;
+        color: var(--ink-2);
+        opacity: 0;
+      }
+      .modlist div b {
+        color: var(--cyan);
+        font-weight: 400;
+      }
+      .bar {
+        width: 100%;
+        height: 3px;
+        background: #ffffff14;
+        position: relative;
+      }
+      .bar i {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0;
+        background: var(--red);
+        box-shadow: 0 0 10px var(--red);
+      }
+      .pct {
+        font: 12px var(--mono);
+        color: var(--ink);
+      }
+      .online {
+        font: 13px var(--mono);
+        letter-spacing: 0.2em;
+        color: var(--cyan);
+        opacity: 0;
+      }
+
+      .seg,
+      .wl {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+      }
+      .core-a,
+      .bb {
+        opacity: 0;
+      }
+      .run .seg {
+        animation: draw 0.22s ease-out var(--d) forwards;
+      }
+      .run .modlist div {
+        animation: show 0.01s linear var(--d) forwards;
+      }
+      .run .core-a {
+        animation:
+          reveal 0.3s steps(6, end) 1.75s forwards,
+          glitch 0.32s steps(2, end) 2.05s 1;
+      }
+      .run .bb {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: bar 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) 1.95s forwards;
+      }
+      .run .wl {
+        animation: draw 0.3s ease-out var(--d) forwards;
+      }
+      .run .tagline {
+        animation: show 0.4s ease 3s forwards;
+      }
+      .run .online {
+        animation:
+          blink 0.5s steps(2, end) 3.25s 2 forwards,
+          show 0.01s linear 3.25s forwards;
+      }
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @keyframes show {
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes reveal {
+        0% {
+          opacity: 1;
+          clip-path: inset(100% 0 0 0);
+        }
+        100% {
+          opacity: 1;
+          clip-path: inset(0 0 0 0);
+        }
+      }
+      @keyframes bar {
+        0% {
+          opacity: 1;
+          transform: scaleX(0);
+        }
+        100% {
+          opacity: 1;
+          transform: scaleX(1);
+        }
+      }
+      @keyframes glitch {
+        0% {
+          transform: translateX(-3px);
+          filter: drop-shadow(3px 0 0 var(--cyan)) drop-shadow(-3px 0 0 #ff2bd6);
+        }
+        50% {
+          transform: translateX(2px);
+          filter: drop-shadow(-2px 0 0 var(--cyan));
+        }
+        100% {
+          transform: none;
+          filter: none;
+        }
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0.2;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .seg,
+        .wl {
+          stroke-dashoffset: 0;
+        }
+        .core-a,
+        .bb,
+        .tagline,
+        .online,
+        .modlist div {
+          opacity: 1;
+        }
+        .run * {
+          animation: none !important;
+        }
+        .bar i {
+          width: 100% !important;
+        }
+      }
+      .boot-side {
+        display: grid;
+        gap: 14px;
+      }
+      .btn {
+        justify-self: start;
+        font: 14px var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--bg);
+        background: var(--cyan);
+        border: 0;
+        padding: 12px 18px;
+        min-height: 44px;
+        cursor: pointer;
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      }
+      .timeline {
+        display: grid;
+        gap: 6px;
+        font-size: 15px;
+        color: var(--ink-2);
+      }
+      .timeline div {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 10px;
+      }
+      .timeline span {
+        font: 13px var(--mono);
+        color: var(--amber);
+        font-variant-numeric: tabular-nums;
+      }
+      .src {
+        font-size: 14px;
+        color: var(--ink-2);
+        display: grid;
+        gap: 4px;
+      }
+      .src a {
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Desenhos da marca. As cores vêm de variáveis: --mk-main (vermelho), --mk-acc (ciano). Na versão de uma cor, as duas viram currentColor. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <!-- 1. NÚCLEO: anilha/mostrador de 8 módulos + A cujo travessão é uma barra com anilhas -->
+        <symbol id="m-core" viewBox="0 0 120 120">
+          <g fill="none" stroke="var(--mk-main, #ef302c)" stroke-width="8">
+            <path d="M108 44V76" stroke="var(--mk-acc, #3fd8e0)" />
+            <path d="M105.2 82.7 82.7 105.2" />
+            <path d="M76 108H44" />
+            <path d="M37.3 105.2 14.8 82.7" />
+            <path d="M12 76V44" />
+            <path d="M14.8 37.3 37.3 14.8" />
+            <path d="M44 12H76" />
+            <path d="M82.7 14.8 105.2 37.3" />
+          </g>
+          <g fill="var(--mk-main, #ef302c)">
+            <path d="M55 24h10l23 68H77L60 42 43 92H32z" />
+            <rect x="26" y="63" width="68" height="6" />
+            <rect x="24" y="55" width="6" height="22" />
+            <rect x="90" y="55" width="6" height="22" />
+            <rect x="31" y="59" width="3" height="14" />
+            <rect x="86" y="59" width="3" height="14" />
+          </g>
+        </symbol>
+
+        <!-- 2. VISOR: capacete de exoesqueleto; o visor é um A em espaço negativo -->
+        <mask id="visor-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+          <rect width="120" height="120" fill="#fff" />
+          <path d="M60 32 92 70H80L60 46 40 70H28z" fill="#000" />
+          <rect x="44" y="78" width="32" height="6" fill="#000" />
+          <rect x="18" y="46" width="9" height="3" fill="#000" />
+          <rect x="93" y="46" width="9" height="3" fill="#000" />
+          <rect x="54" y="97" width="12" height="3" fill="#000" />
+        </mask>
+        <symbol id="m-visor" viewBox="0 0 120 120">
+          <path d="M38 8h44l18 16 6 34-10 32-22 20H46L24 90 14 58l6-34z" fill="var(--mk-main, #ef302c)" mask="url(#visor-cut)" />
+          <path d="M60 52l4 4-4 4-4-4z" fill="var(--mk-acc, #3fd8e0)" />
+        </symbol>
+
+        <!-- 3. ASCENSÃO: três divisas de patente subindo; a de cima tem o travessão do A -->
+        <symbol id="m-rise" viewBox="0 0 120 120">
+          <g fill="none" stroke-width="10" stroke-miterlimit="8">
+            <path d="M28 48 60 16l32 32" stroke="var(--mk-main, #ef302c)" />
+            <path d="M22 78 60 42l38 36" stroke="var(--mk-main, #ef302c)" />
+            <path d="M16 106 60 68l44 38" stroke="var(--mk-acc, #3fd8e0)" />
+          </g>
+          <path d="M47 38h26" stroke="var(--mk-main, #ef302c)" stroke-width="6" />
+        </symbol>
+
+        <!-- Logotipo AUGMENT: traço único de 6, cantos chanfrados a 45°, A sem ponta (topo reto) e com o travessão-barra -->
+        <symbol id="wordmark" viewBox="-3 -3 252 46">
+          <g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter">
+            <path d="M3 37 12 3h6l9 34M8.5 26h13" />
+            <path d="M39 3v28l6 6h12l6-6V3" />
+            <path d="M99 3H81l-6 6v22l6 6h18V21H89" />
+            <path d="M111 37V3l12 14 12-14v34" />
+            <path d="M171 3h-24v34h24M147 19h17" />
+            <path d="M183 37V3l24 34V3" />
+            <path d="M216 3h30M231 3v34" />
+          </g>
+        </symbol>
+      </defs>
+    </svg>
+
+    <main>
+      <header class="head">
+        <span class="eyebrow">AUG.OS // Identidade 2.0 // Estudo de marca</span>
+        <h1>Uma logo para o AUGMENT</h1>
+        <p>
+          Três caminhos para trocar o "A" simples por um símbolo que carrega a marca: um app de treino que se comporta como o sistema
+          operacional de um corpo aumentado. Cada proposta aparece grande, nos tamanhos reais de uso (ícone do celular, 48 e 24 px) e em uma
+          cor só, porque é aí que logo boa e logo ruim se separam. No fim, a animação de inicialização com a proposta recomendada.
+        </p>
+      </header>
+
+      <section>
+        <div class="head">
+          <span class="eyebrow">01 // O que a pesquisa diz</span>
+          <h2>Regras que guiaram o desenho</h2>
+        </div>
+        <div class="rules">
+          <div class="rule">
+            <b>Natural e moderadamente elaborada</b>
+            <p>
+              No estudo com 195 logos de Henderson e Cote, as que passam imagem forte e profissional representam um objeto conhecido e têm
+              detalhe moderado. O "A" sozinho é abstrato demais; uma cena cheia de detalhes não se lembra.
+            </p>
+            <small>Henderson &amp; Cote, Journal of Marketing, 1998</small>
+          </div>
+          <div class="rule">
+            <b>Ângulos dizem força e durabilidade</b>
+            <p>
+              Formas angulosas ativam a ideia de dureza; redondas, de conforto. Num tênis, o logo anguloso fez o produto parecer mais
+              durável. Para uma academia de força, as três propostas são todas em ângulos de 45°.
+            </p>
+            <small>Jiang, Gorn, Galli &amp; Chattopadhyay, Journal of Consumer Research, 2016</small>
+          </div>
+          <div class="rule">
+            <b>Movimento implícito engaja</b>
+            <p>
+              Logos parados que sugerem movimento aumentam o engajamento com a marca, desde que a marca combine com dinamismo. Progressão de
+              carga é movimento: o símbolo deve parecer que sobe, carrega ou liga.
+            </p>
+            <small>Cian, Krishna &amp; Elder, Journal of Marketing Research, 2014</small>
+          </div>
+          <div class="rule">
+            <b>Desenhe para o menor tamanho</b>
+            <p>
+              O ícone do app tem uns 48 px. Se o símbolo vira borrão nesse tamanho, não serve. Por isso cada proposta é mostrada em 48 e 24
+              px e em uma cor.
+            </p>
+            <small>Prática de redução de marca (ícones de app)</small>
+          </div>
+          <div class="rule">
+            <b>A logo é um sistema, não um desenho</b>
+            <p>
+              Nas referências que você mandou (emblemas de facção, adesivos tech, logofolio cyberpunk), a força vem da construção em grade,
+              do traço único e dos rótulos de sistema em volta. Peguei a técnica, não as formas: nada aqui copia logo de jogo ou estúdio.
+            </p>
+            <small>Referências do usuário e o acervo de Valency Graphics</small>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <span class="eyebrow">02 // Propostas</span>
+          <h2>Três símbolos</h2>
+          <p>
+            Mesmo vermelho, mesmo ciano e mesmo ângulo do app. Em cada uma: o desenho grande, os tamanhos reais, a versão de uma cor sobre
+            claro e o ícone do celular (quadrado do iPhone e círculo do Android).
+          </p>
+        </div>
+        <div class="concepts">
+          <article class="concept pick">
+            <div class="stage">
+              <span class="tag">01 // NÚCLEO</span><span class="tag r">RECOMENDADA</span>
+              <svg viewBox="0 0 120 120" role="img" aria-label="Símbolo Núcleo"><use href="#m-core" /></svg>
+            </div>
+            <div class="sizes">
+              <figure>
+                <svg width="96" height="96"><use href="#m-core" /></svg>
+                <figcaption>96</figcaption>
+              </figure>
+              <figure>
+                <svg width="48" height="48"><use href="#m-core" /></svg>
+                <figcaption>48</figcaption>
+              </figure>
+              <figure>
+                <svg width="24" height="24"><use href="#m-core" /></svg>
+                <figcaption>24</figcaption>
+              </figure>
+              <figure>
+                <span class="chip-light mono"
+                  ><svg width="40" height="40"><use href="#m-core" /></svg
+                ></span>
+                <figcaption>1 cor</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon"
+                  ><svg viewBox="0 0 120 120"><use href="#m-core" /></svg
+                ></span>
+                <figcaption>iOS</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon round"
+                  ><svg viewBox="0 0 120 120"><use href="#m-core" /></svg
+                ></span>
+                <figcaption>Android</figcaption>
+              </figure>
+            </div>
+            <div class="copy">
+              <h3>Anilha de 8 módulos + A de barra</h3>
+              <ul>
+                <li>
+                  <b>O objeto:</b> uma anilha vista de frente, que também é um mostrador. Os 8 segmentos são os módulos do sistema; o ciano
+                  é o que está ativo.
+                </li>
+                <li><b>O A:</b> o travessão é uma barra com anilhas atravessando a letra. Lê "A" e lê "academia" ao mesmo tempo.</li>
+                <li><b>Animação natural:</b> cada segmento acende quando um módulo carrega. A logo é a própria barra de carregamento.</li>
+              </ul>
+              <div class="score">
+                <span class="good">Legível em 24 px</span><span class="good">Conta a marca</span><span class="good">Anima sozinha</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept">
+            <div class="stage">
+              <span class="tag">02 // VISOR</span>
+              <svg viewBox="0 0 120 120" role="img" aria-label="Símbolo Visor"><use href="#m-visor" /></svg>
+            </div>
+            <div class="sizes">
+              <figure>
+                <svg width="96" height="96"><use href="#m-visor" /></svg>
+                <figcaption>96</figcaption>
+              </figure>
+              <figure>
+                <svg width="48" height="48"><use href="#m-visor" /></svg>
+                <figcaption>48</figcaption>
+              </figure>
+              <figure>
+                <svg width="24" height="24"><use href="#m-visor" /></svg>
+                <figcaption>24</figcaption>
+              </figure>
+              <figure>
+                <span class="chip-light mono"
+                  ><svg width="40" height="40"><use href="#m-visor" /></svg
+                ></span>
+                <figcaption>1 cor</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon"
+                  ><svg viewBox="0 0 120 120"><use href="#m-visor" /></svg
+                ></span>
+                <figcaption>iOS</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon round"
+                  ><svg viewBox="0 0 120 120"><use href="#m-visor" /></svg
+                ></span>
+                <figcaption>Android</figcaption>
+              </figure>
+            </div>
+            <div class="copy">
+              <h3>Capacete com o A no visor</h3>
+              <ul>
+                <li><b>O objeto:</b> o capacete do exoesqueleto, o mesmo robô do banner da tela inicial. É o mais "natural" dos três.</li>
+                <li><b>O A:</b> aparece no vazio do visor (divisa + travessão). O cérebro fecha a forma sozinho.</li>
+                <li><b>Animação natural:</b> uma varredura acende o visor, como um capacete ligando.</li>
+              </ul>
+              <div class="score">
+                <span class="good">Forte em 48 px</span><span class="warn">Pode ler como "jogo"</span
+                ><span class="warn">Menos "academia"</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept">
+            <div class="stage">
+              <span class="tag">03 // ASCENSÃO</span>
+              <svg viewBox="0 0 120 120" role="img" aria-label="Símbolo Ascensão"><use href="#m-rise" /></svg>
+            </div>
+            <div class="sizes">
+              <figure>
+                <svg width="96" height="96"><use href="#m-rise" /></svg>
+                <figcaption>96</figcaption>
+              </figure>
+              <figure>
+                <svg width="48" height="48"><use href="#m-rise" /></svg>
+                <figcaption>48</figcaption>
+              </figure>
+              <figure>
+                <svg width="24" height="24"><use href="#m-rise" /></svg>
+                <figcaption>24</figcaption>
+              </figure>
+              <figure>
+                <span class="chip-light mono"
+                  ><svg width="40" height="40"><use href="#m-rise" /></svg
+                ></span>
+                <figcaption>1 cor</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon"
+                  ><svg viewBox="0 0 120 120"><use href="#m-rise" /></svg
+                ></span>
+                <figcaption>iOS</figcaption>
+              </figure>
+              <figure>
+                <span class="appicon round"
+                  ><svg viewBox="0 0 120 120"><use href="#m-rise" /></svg
+                ></span>
+                <figcaption>Android</figcaption>
+              </figure>
+            </div>
+            <div class="copy">
+              <h3>Três divisas subindo</h3>
+              <ul>
+                <li><b>O objeto:</b> divisas de patente: subir de nível, a progressão de carga do app.</li>
+                <li><b>O A:</b> a divisa de cima com o travessão.</li>
+                <li><b>Animação natural:</b> as divisas acendem de baixo para cima.</li>
+              </ul>
+              <div class="score">
+                <span class="good">O mais simples</span><span class="good">Movimento claro</span
+                ><span class="warn">Comum em outras marcas</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <span class="eyebrow">03 // Logotipo</span>
+          <h2>"AUGMENT" desenhado, não digitado</h2>
+          <p>
+            Em vez de usar uma fonte pronta, o nome foi construído numa grade de 6 unidades, com o mesmo traço e o mesmo chanfro de 45° do
+            símbolo. Assim símbolo e nome parecem feitos pela mesma máquina, e cada letra pode ser "desenhada" na animação.
+          </p>
+        </div>
+        <div class="wordmark-board">
+          <div class="lockup">
+            <svg class="mk" viewBox="0 0 120 120" role="img" aria-label="Símbolo Núcleo"><use href="#m-core" /></svg>
+            <svg class="wm" viewBox="-3 -3 252 46" role="img" aria-label="AUGMENT"><use href="#wordmark" /></svg>
+          </div>
+          <svg class="construct" viewBox="-6 -8 258 56" aria-hidden="true">
+            <g class="grid">
+              <line x1="-6" x2="252" y1="0" y2="0" />
+              <line x1="-6" x2="252" y1="20" y2="20" />
+              <line x1="-6" x2="252" y1="40" y2="40" />
+              <line x1="-6" x2="252" y1="3" y2="3" />
+              <line x1="-6" x2="252" y1="37" y2="37" />
+            </g>
+            <use href="#wordmark" x="-3" y="-3" width="252" height="46" />
+          </svg>
+          <div class="notes">
+            <div><b>A sem ponta</b>Topo reto, como o "A" do símbolo; o travessão é a mesma barra.</div>
+            <div><b>Cantos a 45°</b>G e U com chanfro, o mesmo corte dos cards do app.</div>
+            <div><b>Traço único</b>Espessura igual em todas as letras: lê bem pequeno e anima traço a traço.</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <span class="eyebrow">04 // Inicialização</span>
+          <h2>O boot do sistema</h2>
+          <p>
+            Ao abrir o app, os módulos carregam um a um e cada um acende um segmento da anilha. Quando os 8 ficam online, o A entra com um
+            glitch, o nome se desenha e o sistema libera o acesso. São 3,6 segundos na primeira abertura do dia; nas outras, uma versão
+            curta, e um toque pula tudo.
+          </p>
+        </div>
+        <div class="boot-wrap">
+          <div class="phone" id="boot">
+            <div class="ph-top"><span>AUG.OS // BOOT 2.0</span><span>SEC 7A</span></div>
+            <div class="ph-center">
+              <svg class="mk" viewBox="0 0 120 120" role="img" aria-label="Símbolo AUGMENT carregando">
+                <g fill="none" stroke="#ef302c" stroke-width="8">
+                  <path class="seg" pathLength="1" style="--d: 0.3s" d="M108 44V76" stroke="#3fd8e0" />
+                  <path class="seg" pathLength="1" style="--d: 0.47s" d="M105.2 82.7 82.7 105.2" />
+                  <path class="seg" pathLength="1" style="--d: 0.64s" d="M76 108H44" />
+                  <path class="seg" pathLength="1" style="--d: 0.81s" d="M37.3 105.2 14.8 82.7" />
+                  <path class="seg" pathLength="1" style="--d: 0.98s" d="M12 76V44" />
+                  <path class="seg" pathLength="1" style="--d: 1.15s" d="M14.8 37.3 37.3 14.8" />
+                  <path class="seg" pathLength="1" style="--d: 1.32s" d="M44 12H76" />
+                  <path class="seg" pathLength="1" style="--d: 1.49s" d="M82.7 14.8 105.2 37.3" />
+                </g>
+                <path class="core-a" fill="#ef302c" d="M55 24h10l23 68H77L60 42 43 92H32z" />
+                <g class="bb" fill="#ef302c">
+                  <rect x="26" y="63" width="68" height="6" />
+                  <rect x="24" y="55" width="6" height="22" />
+                  <rect x="90" y="55" width="6" height="22" />
+                  <rect x="31" y="59" width="3" height="14" />
+                  <rect x="86" y="59" width="3" height="14" />
+                </g>
+              </svg>
+              <svg class="wm" viewBox="-3 -3 252 46" role="img" aria-label="AUGMENT">
+                <g fill="none" stroke="#e6e7e5" stroke-width="6">
+                  <path class="wl" pathLength="1" style="--d: 2.25s" d="M3 37 12 3h6l9 34M8.5 26h13" />
+                  <path class="wl" pathLength="1" style="--d: 2.34s" d="M39 3v28l6 6h12l6-6V3" />
+                  <path class="wl" pathLength="1" style="--d: 2.43s" d="M99 3H81l-6 6v22l6 6h18V21H89" />
+                  <path class="wl" pathLength="1" style="--d: 2.52s" d="M111 37V3l12 14 12-14v34" />
+                  <path class="wl" pathLength="1" style="--d: 2.61s" d="M171 3h-24v34h24M147 19h17" />
+                  <path class="wl" pathLength="1" style="--d: 2.7s" d="M183 37V3l24 34V3" />
+                  <path class="wl" pathLength="1" style="--d: 2.79s" d="M216 3h30M231 3v34" />
+                </g>
+              </svg>
+              <span class="tagline">HUMAN PERFORMANCE SYSTEM</span>
+              <div class="modlist" aria-hidden="true">
+                <div style="--d: 0.3s"><span>01 BIOCORE</span><b>ONLINE</b></div>
+                <div style="--d: 0.47s"><span>02 MOTOR DE CARGA</span><b>ONLINE</b></div>
+                <div style="--d: 0.64s"><span>03 PROGRESSÃO</span><b>ONLINE</b></div>
+                <div style="--d: 0.81s"><span>04 MESOCICLO</span><b>ONLINE</b></div>
+                <div style="--d: 0.98s"><span>05 RECUPERAÇÃO</span><b>ONLINE</b></div>
+                <div style="--d: 1.15s"><span>06 TREINADOR IA</span><b>ONLINE</b></div>
+                <div style="--d: 1.32s"><span>07 COFRE LOCAL</span><b>ONLINE</b></div>
+                <div style="--d: 1.49s"><span>08 HUD DE TREINO</span><b>ONLINE</b></div>
+              </div>
+            </div>
+            <div class="ph-bottom" style="display: grid; gap: 8px; justify-content: stretch">
+              <div class="bar"><i id="bar"></i></div>
+              <div style="display: flex; justify-content: space-between">
+                <span class="online">SISTEMA ONLINE</span><span class="pct" id="pct">000%</span>
+              </div>
+            </div>
+          </div>
+          <div class="boot-side">
+            <button class="btn" id="replay" type="button">Rodar o boot de novo</button>
+            <div class="timeline">
+              <div>
+                <span>0,3–1,7 s</span>8 módulos carregam; cada um acende um segmento da anilha (o primeiro em ciano: o módulo ativo).
+              </div>
+              <div><span>1,75 s</span>O A sobe de baixo para cima e dá um glitch de RGB por um terço de segundo.</div>
+              <div><span>1,95 s</span>A barra com anilhas abre do centro para os lados.</div>
+              <div><span>2,25 s</span>As 7 letras se desenham traço a traço.</div>
+              <div><span>3,25 s</span>"Sistema online" pisca e o app abre.</div>
+            </div>
+            <p>
+              Com "reduzir movimento" ligado no celular, o boot aparece já pronto, sem animação. Os nomes dos módulos são os sistemas reais
+              do app.
+            </p>
+            <div class="src">
+              <b style="color: var(--ink)">Fontes da pesquisa</b>
+              <a href="https://doi.org/10.1177/002224299806200202"
+                >Henderson &amp; Cote (1998), Guidelines for Selecting or Modifying Logos</a
+              >
+              <a href="https://research.polyu.edu.hk/en/publications/does-your-company-have-the-right-logo-how-and-why-circular-and-an/"
+                >Jiang et al. (2016), Does Your Company Have the Right Logo?</a
+              >
+              <a href="https://scholarsarchive.byu.edu/facpub/8436/">Cian, Krishna &amp; Elder (2014), This Logo Moves Me</a>
+              <a href="https://www.valencygraphics.com/cyberpunk-2077">Valency Graphics, acervo de logos de Cyberpunk 2077</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        var boot = document.getElementById("boot");
+        var pct = document.getElementById("pct");
+        var bar = document.getElementById("bar");
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var raf = 0;
+        function run() {
+          boot.classList.remove("run");
+          void boot.offsetWidth;
+          boot.classList.add("run");
+          cancelAnimationFrame(raf);
+          if (reduce) {
+            pct.textContent = "100%";
+            bar.style.width = "100%";
+            return;
+          }
+          var t0 = performance.now();
+          var total = 3250;
+          (function tick(now) {
+            var p = Math.min(1, (now - t0) / total);
+            var eased = 1 - Math.pow(1 - p, 2);
+            pct.textContent = String(Math.round(eased * 100)).padStart(3, "0") + "%";
+            bar.style.width = (eased * 100).toFixed(1) + "%";
+            if (p < 1) raf = requestAnimationFrame(tick);
+          })(t0);
+        }
+        document.getElementById("replay").addEventListener("click", run);
+        run();
+      })();
+    </script>
+  </body>
+</html>

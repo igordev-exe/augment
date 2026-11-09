@@ -31,6 +31,7 @@
   --amber: #f5b83d;
   --amber-soft: #382a0d;
   --cyan: #3fd8e0;
+  --magenta: #ff2bd6; /* só no glitch do boot */
   --cyan-soft: #0e2a2e;
   --info-bg: #111f2d;
   --violet: #d580ff;
@@ -369,9 +370,16 @@ p {
   text-decoration: none;
 }
 .brand-mark {
-  width: 30px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+}
+/* Logotipo desenhado (src/components/Brand.tsx): mesma cor do texto. */
+.brand-word {
+  display: block;
+  height: 17px;
+  width: auto;
+  color: var(--ink);
 }
 .brand-name {
   font-family: var(--tech);
@@ -7108,4 +7116,204 @@ button.chip {
 }
 .sysmod-quick {
   min-height: 44px;
+}
+
+/* ==========================================================================
+   Boot do sistema (src/components/Brand.tsx): módulos acendem a anilha, o A entra com glitch, o nome se desenha.
+   --k comprime a linha do tempo (1 no boot completo, 0,36 no curto); --d é o atraso de cada peça.
+   ========================================================================== */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.boot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 3px);
+}
+.boot.leaving {
+  opacity: 0;
+  transform: scale(1.02);
+}
+.boot-top,
+.boot-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.boot-top,
+.boot-center,
+.boot-bottom {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.boot-center {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  min-height: 0;
+}
+.boot-mark {
+  width: min(46vw, 190px, 26vh);
+  height: auto;
+  overflow: visible;
+}
+.boot-word {
+  width: min(76vw, 320px);
+  height: auto;
+  color: var(--ink);
+}
+.boot-tag {
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--ink-3);
+  opacity: 0;
+  animation: boot-show calc(0.4s * var(--k)) ease var(--d) forwards;
+}
+.boot-modules {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.boot-modules div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-3);
+  opacity: 0;
+  animation: boot-show 0.01s linear var(--d) forwards;
+}
+.boot-modules b {
+  color: var(--cyan);
+  font-weight: 400;
+}
+/* Tela baixa (celular deitado): só o símbolo, o nome e a barra. */
+@media (max-height: 560px) {
+  .boot-modules {
+    display: none;
+  }
+}
+.boot-seg,
+.boot-letter {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: boot-draw calc(0.22s * var(--k)) ease-out var(--d) forwards;
+}
+.boot-letter {
+  animation-duration: calc(0.3s * var(--k));
+}
+.boot-a {
+  opacity: 0;
+  animation:
+    boot-reveal calc(0.3s * var(--k)) steps(6, end) var(--d) forwards,
+    boot-glitch calc(0.32s * var(--k)) steps(2, end) calc(var(--d) + 0.3s * var(--k)) 1;
+}
+.boot-bar {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-bar calc(0.28s * var(--k)) cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) forwards;
+}
+.boot-bottom {
+  display: grid;
+  gap: 8px;
+}
+.boot-progress {
+  position: relative;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.boot-progress i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+}
+.boot-online {
+  color: var(--cyan);
+  opacity: 0;
+  animation: boot-show 0.01s linear var(--d) forwards;
+}
+.boot-pct {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.boot-skip {
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink-3);
+  font: var(--fs-2) var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+@keyframes boot-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes boot-show {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-reveal {
+  0% {
+    opacity: 1;
+    clip-path: inset(100% 0 0 0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes boot-bar {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@keyframes boot-glitch {
+  0% {
+    transform: translateX(-3px);
+    filter: drop-shadow(3px 0 0 var(--cyan)) drop-shadow(-3px 0 0 var(--magenta));
+  }
+  50% {
+    transform: translateX(2px);
+    filter: drop-shadow(-2px 0 0 var(--cyan));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
 }

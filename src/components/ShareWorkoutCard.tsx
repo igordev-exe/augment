@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MUSCLE_LABEL, shortName, exOf, dayOf } from "../data/program";
 import type { MuscleId, Session } from "../data/types";
 import { shortDate } from "../lib/dates";
+import { drawBrandMark, drawWordmark } from "../lib/brand";
 import { useToast } from "../lib/hooks";
 import { isNative, shareFileNative } from "../lib/native";
 import { WEEK_RULES } from "../lib/mesocycle";
@@ -217,20 +218,9 @@ export function ShareWorkoutCard({
     ctx.fillStyle = "#ef302c";
     ctx.fillRect(72, 43, 140, 5);
 
-    // Marca AUGMENT.
-    ctx.fillStyle = "#ef302c";
-    drawClippedRect(ctx, 84, 88, 44, 48, 0, 10);
-    ctx.fill();
-    ctx.fillStyle = "#0b0d11";
-    ctx.font = "900 30px Orbitron, sans-serif";
-    ctx.fillText("A", 95, 123);
-
-    ctx.fillStyle = "#f3f4f6";
-    ctx.font = "900 34px Orbitron, sans-serif";
-    ctx.fillText("AUGMENT", 144, 124);
-    const brandW = ctx.measureText("AUGMENT").width;
-    ctx.fillStyle = "#ef302c";
-    ctx.fillText(".", 144 + brandW + 2, 124);
+    // Marca AUGMENT: símbolo Núcleo + logotipo desenhado (mesma geometria do app, src/lib/brand.ts).
+    drawBrandMark(ctx, 80, 84, 56);
+    drawWordmark(ctx, 146, 94, 34, "#f3f4f6");
 
     // Código de telemetria à direita
     ctx.textAlign = "right";

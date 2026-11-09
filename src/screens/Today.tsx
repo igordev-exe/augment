@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BrandMark, Wordmark } from "../components/Brand";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
 import { SysModule } from "../components/SysModule";
@@ -16,17 +17,6 @@ import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/me
 import { weeklyReport } from "../lib/report";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
-
-/** Marca do AUGMENT (a mesma do ícone). */
-export function BrandMark() {
-  return (
-    <svg className="brand-mark" viewBox="96 64 352 384" aria-hidden="true">
-      <path d="M96 64h300l52 52v332H148l-52-52z" fill="#ef302c" />
-      <path d="M256 128l-92 256h52l18-56h44l18 56h52zm0 92l14 64h-28z" fill="#0c0e11" />
-      <circle cx="396" cy="404" r="12" fill="#3fd8e0" />
-    </svg>
-  );
-}
 
 /** Duração estimada: séries × (descanso + ~40 s de execução). */
 function estimateMinutes(dayId: string, week: number, adjust: Record<string, number> = {}): number {
@@ -120,9 +110,7 @@ export function Today() {
       <header className="topbar">
         <Link to="/" className="brand" aria-label="AUGMENT">
           <BrandMark />
-          <span className="brand-name">
-            AUGMENT<i>.</i>
-          </span>
+          <Wordmark />
         </Link>
         <div className="row" style={{ gap: 10 }}>
           <span className="status">

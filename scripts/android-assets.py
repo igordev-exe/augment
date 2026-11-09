@@ -37,8 +37,8 @@ for d, size in LEGACY.items():
     round_icon(size).save(os.path.join(folder, "ic_launcher_round.png"))
     maskable.resize((FOREGROUND[d], FOREGROUND[d]), Image.LANCZOS).save(os.path.join(folder, "ic_launcher_foreground.png"))
 
-# Tela de abertura: só o bloco vermelho do ícone, centrado, sobre o fundo do app.
-mark = maskable.crop((120, 96, 416, 416))
+# Tela de abertura: só o símbolo (anilha + A), centrado, sobre o fundo do app.
+mark = maskable.crop((108, 108, 404, 404))
 for dirpath, _dirs, files in os.walk(RES):
     if "splash.png" not in files:
         continue

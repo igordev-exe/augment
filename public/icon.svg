@@ -1,10 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#0c0e11"/>
   <g id="mark">
-    <path d="M96 64h300l52 52v332H148l-52-52z" fill="#ef302c"/>
-    <path d="M256 128l-92 256h52l18-56h44l18 56h52zm0 92l14 64h-28z" fill="#0c0e11"/>
-    <path d="M118 96h40M400 432h-52" stroke="#0c0e11" stroke-width="10"/>
-    <rect x="356" y="96" width="44" height="10" fill="#0c0e11"/>
-    <circle cx="396" cy="404" r="9" fill="#3fd8e0"/>
+    <g transform="translate(56 56) scale(3.3333)">
+      <g fill="none" stroke="#ef302c" stroke-width="8">
+        <path d="M108 44V76" stroke="#3fd8e0"/>
+        <path d="M105.2 82.7 82.7 105.2"/>
+        <path d="M76 108H44"/>
+        <path d="M37.3 105.2 14.8 82.7"/>
+        <path d="M12 76V44"/>
+        <path d="M14.8 37.3 37.3 14.8"/>
+        <path d="M44 12H76"/>
+        <path d="M82.7 14.8 105.2 37.3"/>
+      </g>
+      <g fill="#ef302c">
+        <path d="M55 24h10l23 68H77L60 42 43 92H32z"/>
+        <rect x="26" y="63" width="68" height="6"/>
+        <rect x="24" y="55" width="6" height="22"/>
+        <rect x="90" y="55" width="6" height="22"/>
+        <rect x="31" y="59" width="3" height="14"/>
+        <rect x="86" y="59" width="3" height="14"/>
+      </g>
+    </g>
   </g>
 </svg>
