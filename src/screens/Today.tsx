@@ -463,7 +463,7 @@ export function Today() {
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="spread">
           <h2 className="h-sec">Ciclo semanal</h2>
-          <Link to="/historico" className="label" style={{ color: "var(--red-hi)", textDecoration: "none" }}>
+          <Link to="/historico" className="label tap" style={{ color: "var(--red-hi)", textDecoration: "none" }}>
             Agenda &gt;
           </Link>
         </div>

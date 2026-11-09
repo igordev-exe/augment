@@ -312,7 +312,9 @@ function ExerciseProgress({ ex, sessions, showDay }: { ex: ProgramExercise; sess
               .map((h) => (
                 <tr key={h.session.id}>
                   <td style={{ whiteSpace: "nowrap" }}>
-                    <Link to={`/treino/${h.session.id}`}>{shortDate(h.session.date)}</Link>
+                    <Link className="tap" to={`/treino/${h.session.id}`}>
+                      {shortDate(h.session.date)}
+                    </Link>
                   </td>
                   <td>
                     {workSets(h.entry)

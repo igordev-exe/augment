@@ -4,6 +4,7 @@ import App from "./App";
 import { todayISO } from "./lib/dates";
 import { isNative, setupBackButton } from "./lib/native";
 import { ensureWeeklyRestorePoint } from "./lib/restore";
+import { applyTextZoom } from "./lib/textZoom";
 // Fontes empacotadas com o app: funcionam offline na academia.
 import "@fontsource/orbitron/latin-600.css";
 import "@fontsource/orbitron/latin-800.css";
@@ -36,6 +37,8 @@ if ("serviceWorker" in navigator && import.meta.env.PROD && !isNative) {
 }
 
 setupBackButton();
+applyTextZoom();
+window.addEventListener("resize", applyTextZoom);
 
 // Pede ao navegador para não apagar os dados do IndexedDB por falta de espaço.
 navigator.storage?.persist?.().catch(() => {});

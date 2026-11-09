@@ -1049,7 +1049,7 @@ p {
 .mission-code {
   padding-top: 7px;
   font-family: var(--mono);
-  font-size: 10.5px; /* lint-ok: medida original do banner (a escala apertava o texto sobre o robô) */
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   color: #ffd9d4;
   text-transform: uppercase;
@@ -4743,7 +4743,7 @@ table.t a {
   pointer-events: none;
 }
 .aw-name {
-  font: 700 clamp(10px, 3.3cqw, 15px) / 1.1 var(--fm-display);
+  font: 700 clamp(11px, 3.3cqw, 15px) / 1.1 var(--fm-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -6947,4 +6947,165 @@ table.t a {
 /* Exercícios: os que não estão no programa ficam um pouco apagados. */
 .ws-card.off-program {
   opacity: 0.72;
+}
+
+/* ==========================================================================
+   Toque e leitura em qualquer tela (varredura de 320 px a tablet)
+   ========================================================================== */
+/* Botões e links de texto: área de toque de ~44 px. O padding cresce e a margem negativa devolve o espaço, então o
+   desenho da tela não muda. */
+.link-btn {
+  padding-block: 13px;
+  margin-block: -9px;
+}
+.link-btn.x-btn {
+  min-width: 44px;
+  padding-inline: 14px;
+  margin-inline: -10px;
+  font-size: var(--fs-5);
+  line-height: 1;
+  text-decoration: none;
+}
+/* Links dentro do texto (datas, "Agenda"): só o alvo cresce; padding vertical em elemento em linha não mexe na linha. */
+.tap {
+  padding-block: 10px;
+}
+.timer .timer-clock {
+  padding-block: 10px;
+  margin-block: -10px;
+}
+/* Chips que são botão ou link (atalhos do Guia, dias do relatório): 40 px de altura. */
+a.chip,
+button.chip {
+  min-height: 40px;
+}
+.unit-toggle button {
+  min-height: 40px;
+  min-width: 44px;
+}
+/* Nomes de exercício nas listas de cargas e recordes: quebram linha em vez de virar "…". */
+.rec-name {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+/* Subtítulo dos módulos recolhíveis: quebra linha em telas estreitas. */
+.sysmod-title small,
+.sysmod-head:has(.sysmod-quick) .sysmod-title small {
+  white-space: normal;
+}
+/* "Séries da semana": linha de evidência no mínimo do app. */
+.vb-detail small {
+  font-size: var(--fs-1);
+}
+/* Timer em 320 px: o rótulo da próxima série cabe sem cortar. */
+@media (max-width: 340px) {
+  .timer-next {
+    font-size: var(--fs-1);
+  }
+  .timer .timer-clock {
+    font-size: 22px;
+  }
+  .timer button {
+    min-width: 40px;
+    padding: 0 6px;
+  }
+  .timer-row {
+    gap: 4px;
+  }
+  .timer .timer-skip {
+    margin-left: 2px;
+  }
+  .timer .timer-skip::before {
+    left: -3px;
+  }
+  /* Barra de baixo: os cinco nomes inteiros, cada um na sua coluna (seletor mais forte que o do fim do arquivo). */
+  .nav .nav-inner a {
+    letter-spacing: 0;
+    padding-inline: 1px;
+  }
+  /* Módulo com atalho ao lado do título: menos espaçamento para a palavra caber inteira. */
+  .sysmod-title strong {
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Letra grande do sistema (Android "Tamanho da fonte", iOS "Texto maior"): o layout se reorganiza em vez de cortar. */
+/* Barra de baixo: cada nome fica na sua coluna; se não couber, termina com "…" em vez de encostar no vizinho. */
+.nav a {
+  min-width: 0;
+  padding-inline: 3px;
+}
+.nav-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Timer: o rótulo nunca corta; se faltar espaço, os botões descem juntos para a linha de baixo. */
+.timer-row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.timer-next {
+  flex: 1 1 0;
+  min-width: min-content;
+}
+.timer-next span {
+  white-space: normal;
+  overflow: visible;
+}
+.timer-actions {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+  margin-left: auto;
+}
+/* Séries da semana: nome do músculo quebra em duas linhas em vez de cortar. */
+.vb-name {
+  white-space: normal;
+  overflow: visible;
+}
+/* Montador: nome de exercício longo quebra dentro da sua coluna em vez de encostar nas setas. */
+.pe-ex-main {
+  min-width: 0;
+}
+.pe-ex-main strong,
+.pe-ex-main span {
+  overflow-wrap: anywhere;
+}
+/* Carga do dia: nunca corta (com letra grande, quebra linha). */
+.plan-head strong {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+/* Linha de cima do timer: com letra grande, quebra em vez de cortar o nome do exercício. */
+.timer-top {
+  white-space: normal;
+  overflow: visible;
+}
+/* Letra grande do sistema: como nos apps nativos, o nome das abas não cresce (o conteúdo cresce normalmente).
+   --text-zoom vem de src/lib/textZoom.ts. */
+.nav-label {
+  font-size: calc(var(--fs-1) / var(--text-zoom, 1));
+  /* em do próprio rótulo (o do link herdaria o espaçamento da letra aumentada) */
+  letter-spacing: 0.05em;
+}
+@media (max-width: 340px) {
+  .nav .nav-inner .nav-label {
+    letter-spacing: 0;
+  }
+}
+/* Módulo com atalho ao lado: se o título não couber (tela estreita com letra grande), o atalho desce para a linha
+   de baixo em vez de cortar o título. 13em cabe ao lado do atalho em 320 px com letra normal. */
+.sysmod-head {
+  flex-wrap: wrap;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-bar {
+  flex: 1 1 0;
+  min-width: min(100%, 13em);
+}
+.sysmod-quick {
+  min-height: 44px;
 }

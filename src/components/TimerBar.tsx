@@ -75,19 +75,22 @@ export function TimerBar() {
               <span key={p}>{p}</span>
             ))}
           </span>
-          {!over && (
-            <>
-              <button type="button" onClick={() => add(-15)} aria-label="Menos 15 segundos">
-                −15
-              </button>
-              <button type="button" onClick={() => add(15)} aria-label="Mais 15 segundos">
-                +15
-              </button>
-            </>
-          )}
-          <button type="button" className="timer-skip" onClick={stop}>
-            {over ? "Ok" : "Pular"}
-          </button>
+          {/* Botões juntos: com letra grande, descem inteiros para a linha de baixo em vez de cortar o rótulo. */}
+          <span className="timer-actions">
+            {!over && (
+              <>
+                <button type="button" onClick={() => add(-15)} aria-label="Menos 15 segundos">
+                  −15
+                </button>
+                <button type="button" onClick={() => add(15)} aria-label="Mais 15 segundos">
+                  +15
+                </button>
+              </>
+            )}
+            <button type="button" className="timer-skip" onClick={stop}>
+              {over ? "Ok" : "Pular"}
+            </button>
+          </span>
         </div>
         <div className="timer-progress" style={{ width: `${pct}%` }} />
       </div>

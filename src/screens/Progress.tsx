@@ -444,7 +444,12 @@ export function Progress() {
                             {viewPhotoId === entry.id ? "Ocultar foto" : "Ver foto"}
                           </button>
                         )}
-                        <button type="button" className="link-btn" aria-label="Excluir medição" onClick={() => deleteBodyEntry(entry.id)}>
+                        <button
+                          type="button"
+                          className="link-btn x-btn"
+                          aria-label="Excluir medição"
+                          onClick={() => deleteBodyEntry(entry.id)}
+                        >
                           ×
                         </button>
                       </div>

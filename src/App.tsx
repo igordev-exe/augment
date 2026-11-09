@@ -87,23 +87,23 @@ function Shell() {
         <div className="nav-inner">
           <NavLink to="/" end className={({ isActive }) => (isActive || pathname.startsWith("/treino") ? "active" : "")}>
             <Icon name="barbell" />
-            Treino
+            <span className="nav-label">Treino</span>
           </NavLink>
           <NavLink to="/historico">
             <Icon name="calendar" />
-            Histórico
+            <span className="nav-label">Histórico</span>
           </NavLink>
           <NavLink to="/progresso">
             <Icon name="chart" />
-            Progresso
+            <span className="nav-label">Progresso</span>
           </NavLink>
           <NavLink to="/exercicios">
             <Icon name="book" />
-            Exercícios
+            <span className="nav-label">Exercícios</span>
           </NavLink>
           <NavLink to="/guia">
             <Icon name="guide" />
-            Guia
+            <span className="nav-label">Guia</span>
           </NavLink>
         </div>
       </nav>
