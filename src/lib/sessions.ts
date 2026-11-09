@@ -7,7 +7,8 @@ import { historyOf, increaseStep, loadRef, suggestNext, toKg, workSets } from ".
 import { uid } from "./db";
 
 function emptySet(kind: SetEntry["kind"], weight: number | null = null): SetEntry {
-  return { id: uid(), kind, weight, reps: null, done: false };
+  // Carga pré-preenchida é sugestão: o ✓ grava, mas a tela só mostra na próxima série, em cinza.
+  return { id: uid(), kind, weight, reps: null, done: false, ...(weight != null ? { suggested: true } : {}) };
 }
 
 export function unitFor(exId: string, settings: Settings, last?: SessionExercise): Unit {

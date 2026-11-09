@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { MUSCLE_LABEL, MUSCLE_ORDER, shortName } from "../data/program";
 import { whyLabel } from "../components/NudgeList";
-import { AUDITS, LEVEL_LABEL, PRINCIPLES, SCIENCE, type EvidenceLevel } from "../data/science";
+import { AUDITS, EXERCISE_EVIDENCE, LEVEL_LABEL, PRINCIPLES, SCIENCE, type EvidenceLevel } from "../data/science";
+import { LIB_BY_ID } from "../data/library";
 import { ENGINE_RULES } from "../lib/engine";
 import { weekdayShort } from "../lib/dates";
 import { useProgram, useSettings } from "../lib/hooks";
@@ -33,6 +35,13 @@ const SECTIONS = [
   { id: "ciencia", t: "Evidências" },
   { id: "fontes", t: "Fontes" },
 ];
+
+/** Exercícios da biblioteca ligados a um princípio (a etiqueta de evidência da oficina). */
+function exercisesFor(principleId: string): string[] {
+  return Object.entries(EXERCISE_EVIDENCE)
+    .filter(([, v]) => v.why === principleId)
+    .map(([lib]) => lib);
+}
 
 const LEVEL_TONE: Record<EvidenceLevel, string> = { evidencia: "go", consenso: "int", campo: "warn", hipotese: "changed" };
 
@@ -500,6 +509,16 @@ export function Guide() {
                 <p className="small muted" style={{ margin: 0 }}>
                   {p.fontes.join(" · ")}
                 </p>
+                {/* Exercícios que este princípio recomenda: abre a página do exercício, onde dá para adicionar ao programa. */}
+                {exercisesFor(p.id).length > 0 && (
+                  <div className="row-wrap" style={{ gap: 6 }}>
+                    {exercisesFor(p.id).map((lib) => (
+                      <Link key={lib} to={`/exercicios/${lib}`} data-augmented-ui="br-clip border" className="chip go">
+                        {LIB_BY_ID[lib]?.name ?? lib} · adicionar
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

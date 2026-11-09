@@ -4,11 +4,14 @@ import { dayName, PageHead, StopBadge } from "../components/bits";
 import { ExerciseDemo } from "../components/ExerciseDemo";
 import { Icon } from "../components/Icon";
 import { LineChart } from "../components/LineChart";
-import { useLibraryEntry } from "../data/library-extended";
+import { LIB_BY_ID } from "../data/library";
+import { EXT_BY_ID, useLibraryEntry } from "../data/library-extended";
 import { dayOfExercise, usesOfLibrary } from "../data/program";
-import type { LibraryEntry, ProgramExercise, Session, Unit } from "../data/types";
+import type { LibraryEntry, ProgramDay, ProgramExercise, Session, Unit } from "../data/types";
 import { shortDate } from "../lib/dates";
-import { useSessions, useSettings, useToday } from "../lib/hooks";
+import { saveProgram } from "../lib/db";
+import { useProgram, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { addExercise, exerciseFromLibrary } from "../lib/program-edit";
 import { setsFor, weekFor } from "../lib/mesocycle";
 import { e1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, recordsOf, toKg, workSets } from "../lib/progression";
 
@@ -28,6 +31,60 @@ function youtubeId(url: string): string | null {
 }
 
 const yt = (q: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+
+/**
+ * "Adicionar ao meu programa": escolhe o dia e inclui o exercício com séries, reps e descanso padrão (dá para ajustar
+ * depois no montador). Só para exercícios da biblioteca.
+ */
+function AddToProgram({ libId }: { libId: string }) {
+  const program = useProgram();
+  const toast = useToast();
+  const [dayId, setDayId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!LIB_BY_ID[libId] && !EXT_BY_ID[libId]) return null;
+  const has = (d: ProgramDay) => d.exercises.some((e) => e.lib === libId);
+  const day = program.days.find((d) => d.id === dayId);
+  async function add() {
+    if (!day) return;
+    setBusy(true);
+    try {
+      await saveProgram(addExercise(program, day.id, (taken) => exerciseFromLibrary(libId, day.id, taken)));
+      toast(`Entrou no ${day.name} do programa "${program.name}". Ajuste séries e reps no montador, se quiser.`, "ok");
+      setDayId(null);
+    } catch {
+      toast("Não deu para salvar o programa. Tente de novo.", "warn");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section data-augmented-ui="tl-clip br-clip border" className="card stack add-to-program">
+      <h2 className="h-sec">Adicionar ao meu programa</h2>
+      <p className="tiny faint" style={{ margin: 0 }}>
+        Em qual dia de "{program.name}"?
+      </p>
+      <div className="row-wrap" role="group" aria-label="Dia do programa">
+        {program.days.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            className="toggle-chip"
+            data-augmented-ui="tl-clip br-clip border"
+            aria-pressed={dayId === d.id}
+            disabled={has(d)}
+            onClick={() => setDayId(d.id)}
+          >
+            {d.name}
+            {has(d) ? " · já tem" : ""}
+          </button>
+        ))}
+      </div>
+      <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary" disabled={!day || busy} onClick={add}>
+        {day ? `Adicionar ao ${day.name}` : "Escolha um dia"}
+      </button>
+    </section>
+  );
+}
 
 export function ExerciseDetail() {
   const { libId = "" } = useParams();
@@ -84,7 +141,7 @@ export function ExerciseDetail() {
         <h2 className="h-sec">Na sua ficha</h2>
         {uses.length === 0 && (
           <p className="small muted" style={{ margin: 0 }}>
-            Não está no programa em uso. Para incluir, edite o programa em Ajustes → Programa de treino.
+            Não está no programa em uso. Escolha um dia abaixo para incluir.
           </p>
         )}
         {uses.map((ex) => (
@@ -106,6 +163,8 @@ export function ExerciseDetail() {
           </div>
         ))}
       </section>
+
+      <AddToProgram libId={libId} />
 
       <section className="stack">
         <h2 className="h-sec">Vídeo de execução</h2>

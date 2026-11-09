@@ -13,8 +13,8 @@ import { Icon } from "./Icon";
 
 /** Músculos de cada vista, de cima para baixo. Deltoide lateral e panturrilha aparecem nas duas. */
 const VIEW_MUSCLES: Record<View, MuscleId[]> = {
-  front: ["peito", "deltAnterior", "deltLateral", "biceps", "abdomen", "quadriceps", "panturrilha"],
-  back: ["trapezio", "deltLateral", "deltPosterior", "costas", "triceps", "gluteo", "posterior", "panturrilha"],
+  front: ["peito", "deltAnterior", "deltLateral", "biceps", "antebraco", "abdomen", "quadriceps", "panturrilha"],
+  back: ["trapezio", "deltLateral", "deltPosterior", "costas", "triceps", "antebraco", "gluteo", "posterior", "panturrilha"],
 };
 
 const LEVEL_TAG: Record<FatigueLevel, string> = { critico: "CRÍTICO", atencao: "ATENÇÃO", estavel: "ESTÁVEL" };

@@ -17,6 +17,7 @@ export function SetRow({
   active,
   weightPh,
   repsPh,
+  hint = true,
   askRir,
   rirTarget,
   onWeight,
@@ -31,6 +32,8 @@ export function SetRow({
   active: boolean;
   weightPh?: number | null;
   repsPh?: number;
+  /** Mostra a sugestão como exemplo no campo. Só a próxima série a fazer mostra; as outras ficam com "–". */
+  hint?: boolean;
   askRir: boolean;
   rirTarget: [number, number];
   onWeight: (w: number | null) => void;
@@ -40,7 +43,10 @@ export function SetRow({
   /** Tocar (ou segurar) o número da série abre o menu circular de ações. */
   onMenu?: () => void;
 }) {
-  const [w, setW] = useState(set.weight != null ? formatWeight(set.weight) : "");
+  // Carga sugerida e ainda não confirmada: fica fora do campo (vira o exemplo cinza da próxima série).
+  const ghost = !set.done && !!set.suggested;
+  const shownWeight = (x: SetEntry) => (x.weight != null && !(!x.done && x.suggested) ? formatWeight(x.weight) : "");
+  const [w, setW] = useState(shownWeight(set));
   const [r, setR] = useState(set.reps != null ? String(set.reps) : "");
   const editing = useRef<"w" | "r" | null>(null);
   const saveW = useRef<number>();
@@ -48,8 +54,9 @@ export function SetRow({
 
   // Sincroniza se o peso ou reps mudaram por fora (−15% na última série, sugestão, desfazer), mas não enquanto digita.
   useEffect(() => {
-    if (editing.current !== "w") setW(set.weight != null ? formatWeight(set.weight) : "");
-  }, [set.weight]);
+    if (editing.current !== "w") setW(shownWeight(set));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set.weight, set.suggested, set.done]);
   useEffect(() => {
     if (editing.current !== "r") setR(set.reps != null ? String(set.reps) : "");
   }, [set.reps]);
@@ -119,7 +126,9 @@ export function SetRow({
           inputMode="decimal"
           enterKeyHint="next"
           aria-label={`Peso da série ${label} em ${unit}`}
-          placeholder={weightPh != null ? formatWeight(weightPh) : "–"}
+          placeholder={
+            hint ? (ghost && set.weight != null ? formatWeight(set.weight) : weightPh != null ? formatWeight(weightPh) : "–") : "–"
+          }
           value={w}
           onFocus={() => (editing.current = "w")}
           onChange={(e) => {
@@ -139,7 +148,7 @@ export function SetRow({
           inputMode="numeric"
           enterKeyHint="done"
           aria-label={`Repetições da série ${label}`}
-          placeholder={repsPh != null ? String(repsPh) : "–"}
+          placeholder={hint && repsPh != null ? String(repsPh) : "–"}
           value={r}
           onFocus={() => (editing.current = "r")}
           onChange={(e) => {

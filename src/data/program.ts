@@ -133,6 +133,7 @@ export const MUSCLE_LABEL: Record<MuscleId, string> = {
   abdomen: "Abdômen",
   deltAnterior: "Deltoide anterior",
   trapezio: "Trapézio",
+  antebraco: "Antebraço",
 };
 
 /** Ordem de exibição dos músculos (como na tabela de volume da ficha). */
@@ -150,6 +151,7 @@ export const MUSCLE_ORDER: MuscleId[] = [
   "abdomen",
   "deltAnterior",
   "trapezio",
+  "antebraco",
 ];
 
 /** Sinergistas do exercício (0,5 série cada): os do próprio exercício ou os da tabela da biblioteca. */

@@ -8,7 +8,7 @@ Gera dois arquivos em src/data/:
 
 Regras:
   - só categorias de força (strength, powerlifting);
-  - músculos do banco viram os 13 do app; quem só treina antebraço, pescoço, lombar ou adutor fica de fora;
+  - músculos do banco viram os 14 do app; quem só treina pescoço, lombar ou adutor fica de fora;
   - ombro vira deltoide anterior, lateral ou posterior pelo nome do exercício;
   - sinergistas (0,5 série) só em compostos, a partir dos músculos secundários;
   - exercícios que já existem na biblioteca curada (src/data/exercise-images.json) não entram de novo.
@@ -37,7 +37,8 @@ MUSCLE = {
     "quadriceps": "quadriceps",
     "traps": "trapezio",
     "triceps": "triceps",
-    # sem equivalente no app: forearms, neck, lower back, adductors
+    "forearms": "antebraco",
+    # sem equivalente no app: neck, lower back, adductors
 }
 
 EQUIP = {

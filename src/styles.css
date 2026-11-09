@@ -1494,9 +1494,10 @@ button.set-kind:active {
   -webkit-appearance: none;
   margin: 0;
 }
-/* Sugestão do sistema (o que o ✓ grava se o campo ficar vazio): ciano "fantasma", 5,9:1. */
+/* Sugestão do sistema (o que o ✓ grava se o campo ficar vazio): cinza-claro translúcido, com cara de exemplo a
+   preencher. Só a próxima série mostra o número; as outras mostram "–". */
 .field input::placeholder {
-  color: #3fd8e0b3;
+  color: rgba(230, 231, 229, 0.36);
   opacity: 1;
 }
 .field input:focus {
@@ -2555,12 +2556,11 @@ table.t a {
     0 18px
   );
 }
-.fm-body::before {
-  width: 115px;
-  opacity: 0.7;
-}
+/* O painel do corpo tem os 4 cantos chanfrados: o recorte comia o começo do traço de canto e sobrava uma linha
+   ciano solta entre os números e o painel. Sem traço aqui. */
+.fm-body::before,
 .fm-body::after {
-  width: 95px;
+  display: none;
 }
 .fm-orbit {
   position: absolute;

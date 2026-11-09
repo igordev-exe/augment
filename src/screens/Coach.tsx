@@ -19,7 +19,9 @@ import {
 } from "../lib/coach/chat";
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
-import { useBodyLog, useSessions, useSettings, useToday } from "../lib/hooks";
+import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { coachHandoffText } from "../lib/coach/handoff";
+import { shareOrDownload } from "../lib/files";
 
 const QUICK = [
   "Analise minha semana passada",
@@ -392,11 +394,64 @@ export function Coach() {
   );
 }
 
+/**
+ * Treinador sem chave: monta o documento com instruções + dados e entrega pela folha de compartilhar (no celular dá
+ * para escolher o app do Claude ou do Gemini) ou copia o texto. Usa a conta de IA que a pessoa já tem, sem API.
+ */
+function CoachHandoff() {
+  const sessions = useSessions();
+  const bodyLog = useBodyLog();
+  const [settings] = useSettings();
+  const today = useToday();
+  const toast = useToast();
+  const text = () => coachHandoffText({ sessions: sessions ?? [], settings, today, bodyLog: bodyLog ?? [] });
+  async function share() {
+    try {
+      const how = await shareOrDownload(`augment-treinador-${today}.md`, text(), "Treinador AUGMENT", "text/markdown");
+      toast(
+        how === "shared"
+          ? "Escolha o app do Claude ou do Gemini para abrir a conversa."
+          : "Arquivo salvo: anexe numa conversa do Claude ou do Gemini.",
+        "ok",
+      );
+    } catch {
+      toast("Não deu para compartilhar. Use “Copiar texto”.", "warn");
+    }
+  }
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text());
+      toast("Copiado. Cole numa conversa nova do Claude ou do Gemini.", "ok");
+    } catch {
+      toast("O navegador bloqueou a cópia. Use “Enviar”.", "warn");
+    }
+  }
+  return (
+    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
+      <h2 className="h-sec">Sem chave: use sua conta do Claude ou do Gemini</h2>
+      <p className="small muted" style={{ margin: 0 }}>
+        O app monta um documento com as instruções do treinador, a base científica e os seus treinos. Envie para o app do Claude ou do
+        Gemini (ou qualquer chat de IA) e converse por lá, na conta que você já tem. Não precisa de chave nem paga nada a mais. A diferença:
+        por lá a IA não aplica mudanças no app; ela diz o que ajustar e você aplica.
+      </p>
+      <div className="row-wrap">
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary" disabled={!sessions} onClick={share}>
+          Enviar para Claude / Gemini
+        </button>
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" disabled={!sessions} onClick={copy}>
+          Copiar texto
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function CoachSetup({ config, onSave, onCancel }: { config: CoachConfig; onSave: (c: CoachConfig) => void; onCancel?: () => void }) {
   const [c, setC] = useState<CoachConfig>(config.apiKey ? config : { ...DEFAULT_CONFIG, ...config });
   return (
     <div className="stack-lg mode-terminal">
       <PageHead back="/" code="AUG.OS // TREINADOR" title="Configurar treinador" />
+      <CoachHandoff />
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <h2 className="h-sec">Chave da API</h2>
         <p className="small muted" style={{ margin: 0 }}>

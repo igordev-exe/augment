@@ -88,7 +88,7 @@ function NumField({
   );
 }
 
-function MusclePicker({
+export function MusclePicker({
   value,
   onChange,
   label = "Músculos (série direta)",
@@ -232,7 +232,8 @@ function ExerciseForm({
   );
 }
 
-function AddExercise({
+/** Seletor de exercício (biblioteca curada, completa ou personalizado). Usado no montador e no treino em andamento. */
+export function AddExercise({
   onAdd,
   onClose,
 }: {

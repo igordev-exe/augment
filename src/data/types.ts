@@ -18,7 +18,8 @@ export type MuscleId =
   | "gluteo"
   | "abdomen"
   | "deltAnterior"
-  | "trapezio";
+  | "trapezio"
+  | "antebraco";
 
 /** Conteúdo de biblioteca: como executar, erros, ciência. Um por exercício físico. */
 export interface LibraryEntry {
@@ -121,6 +122,11 @@ export interface SetEntry {
   /** Reps que sobraram (RIR), marcado depois da série. 4 = "4 ou mais". */
   rir?: number;
   doneAt?: number;
+  /**
+   * A carga foi pré-preenchida pelo app (sugestão) e ainda não foi confirmada: a tela mostra como sugestão, não como
+   * valor digitado. Sai quando a pessoa digita a carga ou o app define uma carga de verdade (−15%).
+   */
+  suggested?: boolean;
 }
 
 /** Como o exercício bateu, respondido ao terminar as séries (estilo RP). */
@@ -144,6 +150,8 @@ export interface SessionExercise {
   alt?: string;
   sets: SetEntry[];
   feedback?: ExerciseFeedback;
+  /** Adicionado durante o treino (só neste dia; o programa não muda). */
+  extra?: boolean;
 }
 
 /** Check-in rápido antes do treino. `skipped` = respondeu "pular". */

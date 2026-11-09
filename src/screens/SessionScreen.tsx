@@ -11,7 +11,7 @@ import { Choice } from "../components/SetRow";
 import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
 import { SysModule } from "../components/SysModule";
 import { exById, shortName, exOf, dayOf } from "../data/program";
-import type { CardioEntry, Checkin, Session, SessionExercise } from "../data/types";
+import type { CardioEntry, Checkin, ProgramExercise, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
@@ -31,8 +31,9 @@ import {
 } from "../lib/progression";
 import { intensifierPlan, liveNudges, NUDGE_TONE, type Nudge } from "../lib/engine";
 import { finishLogLines } from "../lib/hud";
-import { buildSession, effectiveEndAt, sessionStats } from "../lib/sessions";
+import { buildSession, effectiveEndAt, newSet, sessionStats, snapOf } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
+import { AddExercise } from "./ProgramEditor";
 
 export { checkinAdvice };
 
@@ -107,6 +108,26 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   }
 
   /** Lê o treino fresco do banco, localiza o exercício pelo `exId`, aplica a mudança e salva. */
+  // Exercício extra só neste treino (máquina diferente no dia, por exemplo). Leva o próprio retrato, então
+  // histórico, sugestão de carga e volume funcionam sem mexer no programa.
+  const [adding, setAdding] = useState(false);
+  async function addExtra(make: (taken: Set<string>, dayId: string) => ProgramExercise) {
+    const taken = new Set(session.exercises.map((e) => e.exId));
+    const ex = make(taken, session.dayId);
+    const sets = Array.from({ length: Math.max(1, setsFor(ex, week)) }, () => newSet("work", null));
+    let index = -1;
+    await db.transaction("rw", db.sessions, async () => {
+      const cur = await db.sessions.get(session.id);
+      if (!cur) return;
+      cur.exercises.push({ exId: ex.id, snap: snapOf(ex), unit: "kg", sets, extra: true });
+      index = cur.exercises.length - 1;
+      await db.sessions.put(cur);
+    });
+    setAdding(false);
+    if (index >= 0) setOpen(index);
+    toast(`${ex.name} entrou no treino de hoje. O programa não muda.`, "ok");
+  }
+
   async function mutateEntry(exId: string, fn: (e: SessionExercise) => void): Promise<SessionExercise | undefined> {
     let out: SessionExercise | undefined;
     await db.transaction("rw", db.sessions, async () => {
@@ -185,6 +206,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             if (t) {
               t.kind = "drop";
               t.weight = w;
+              t.suggested = undefined;
             }
           })) ?? entry;
         toast(`${set.reps} reps, abaixo de ${ex.reps[0]}: a última série vai com −15% (${formatWeight(w)} ${entry.unit}).`, "warn");
@@ -534,7 +556,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           const ex = exOf(entry);
           if (!ex) return null;
           if (!isActive && !entry.sets.length) return null;
-          const hist = historyOf(before, ex.id, entry.alt);
+          const hist = historyOf(before, ex.id, entry.alt, ex.lib);
           const step = increaseStep(ex, entry.unit, settings.increments[ex.id]);
           const available = settings.machineWeights?.[ex.id];
           return (
@@ -561,12 +583,15 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               mutate={(fn) => mutateEntry(entry.exId, fn)}
               onSetDone={(e, setId) => onSetDone(i, e, setId)}
               onAlt={(alt) => {
-                const altHist = historyOf(before, ex.id, alt);
+                const altHist = historyOf(before, ex.id, alt, ex.lib);
                 const altSug = suggestNext(ex, altHist, setsFor(ex, week, settings.setAdjust?.[ex.id]), week, step, available);
                 mutateEntry(entry.exId, (e) => {
                   e.alt = alt;
                   for (const s of e.sets) {
-                    if (s.kind === "work" && !s.done) s.weight = altSug.weight;
+                    if (s.kind === "work" && !s.done) {
+                      s.weight = altSug.weight;
+                      s.suggested = altSug.weight != null || undefined;
+                    }
                   }
                 });
               }}
@@ -584,6 +609,14 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
             />
           );
         })}
+        {isActive &&
+          (adding ? (
+            <AddExercise onClose={() => setAdding(false)} onAdd={(make) => addExtra(make)} />
+          ) : (
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => setAdding(true)}>
+              <Icon name="plus" size={18} /> Adicionar exercício hoje
+            </button>
+          ))}
       </div>
 
       {!isActive && session.exercises.some((e) => !e.sets.length) && (

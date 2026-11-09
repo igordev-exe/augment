@@ -115,13 +115,13 @@ const posteriorShapes: Partial<Record<Group, string[]>> = {
 
 // Músculo da ficha dono de cada região em cada vista. Na frente o deltoide se divide em
 // anterior (porção clavicular) e lateral (acromial); atrás, na calota lateral (acromial) e
-// na porção escapular (posterior). null fica neutro (antebraço não está na ficha).
+// na porção escapular (posterior). null fica neutro.
 const OWNERS: Record<View, Partial<Record<Group, MuscleId | null | MuscleId[]>>> = {
   front: {
     chest: "peito",
     shoulders: ["deltAnterior", "deltLateral", "deltLateral"],
     biceps: "biceps",
-    forearms: null,
+    forearms: "antebraco",
     core: "abdomen",
     quads: "quadriceps",
     calves: "panturrilha",
@@ -131,7 +131,7 @@ const OWNERS: Record<View, Partial<Record<Group, MuscleId | null | MuscleId[]>>>
     shoulders: ["deltLateral", "deltPosterior"],
     lats: "costas",
     triceps: "triceps",
-    forearms: null,
+    forearms: "antebraco",
     glutes: "gluteo",
     hamstrings: "posterior",
     calves: "panturrilha",
@@ -252,6 +252,7 @@ const CALLOUTS: Record<View, Partial<Record<MuscleId, [number, number, "left" | 
     deltAnterior: [140, 138, "left"],
     deltLateral: [113, 162, "left"],
     biceps: [115, 214, "left"],
+    antebraco: [108, 281, "left"],
     abdomen: [224, 266, "right"],
     quadriceps: [176, 414, "left"],
     panturrilha: [260, 560, "right"],
@@ -262,6 +263,7 @@ const CALLOUTS: Record<View, Partial<Record<MuscleId, [number, number, "left" | 
     deltPosterior: [135, 162, "left"],
     costas: [166, 244, "left"],
     triceps: [310, 215, "right"],
+    antebraco: [310, 281, "right"],
     gluteo: [178, 365, "left"],
     posterior: [239, 440, "right"],
     panturrilha: [244, 556, "right"],

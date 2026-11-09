@@ -391,6 +391,7 @@ export function revertBackoff(entry: SessionExercise, floor: number, step = 2.5,
       if (s.kind === "drop" && !s.done) {
         s.kind = "work";
         if (refWeight != null) s.weight = refWeight;
+        s.suggested = undefined;
         changed = true;
       }
     }
@@ -403,6 +404,7 @@ export function revertBackoff(entry: SessionExercise, floor: number, step = 2.5,
     for (const s of entry.sets) {
       if (s.kind === "drop" && !s.done && (s.weight == null || s.weight >= lastDone.weight - 1e-6)) {
         s.weight = targetDrop;
+        s.suggested = undefined;
         changed = true;
       }
     }
@@ -431,7 +433,11 @@ export interface ExerciseHistoryItem {
  * Histórico (mais antigo → mais novo) de sessões concluídas que têm o exercício com séries feitas.
  * Por padrão (`alt` omitido), traz apenas sessões feitas no exercício titular (sem alternativa).
  */
-export function historyOf(sessions: Session[], exId: string, alt?: string): ExerciseHistoryItem[] {
+/**
+ * `libId` informa a biblioteca quando o exercício não está no programa ativo (exercício extra adicionado no treino);
+ * sem ele, a biblioteca vem do programa.
+ */
+export function historyOf(sessions: Session[], exId: string, alt?: string, libId?: string): ExerciseHistoryItem[] {
   const targetAlt = alt || undefined;
   const pick = (match: (e: SessionExercise) => boolean) =>
     sessions
@@ -443,7 +449,7 @@ export function historyOf(sessions: Session[], exId: string, alt?: string): Exer
   if (own.length) return own;
   // Exercício que nunca foi feito com este id (programa novo, dia novo): continua do mesmo exercício da biblioteca
   // feito em outro dia ou programa. Quem já tem histórico próprio fica separado (a flexora de dois dias, por exemplo).
-  const lib = exById(exId)?.lib;
+  const lib = libId ?? exById(exId)?.lib;
   if (!lib) return own;
   return pick((e) => e.exId !== exId && (e.snap?.lib ?? exById(e.exId)?.lib) === lib);
 }

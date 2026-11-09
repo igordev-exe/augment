@@ -117,7 +117,7 @@
     "equip": "kettlebell",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["biceps", "panturrilha", "gluteo", "trapezio"],
+    "synergists": ["biceps", "panturrilha", "antebraco", "gluteo", "trapezio"],
     "images": 2
   },
   {
@@ -227,7 +227,7 @@
     "equip": "outro",
     "level": "beginner",
     "muscles": ["costas"],
-    "synergists": ["abdomen"],
+    "synergists": ["abdomen", "antebraco"],
     "images": 2
   },
   {
@@ -370,7 +370,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["quadriceps"],
-    "synergists": ["panturrilha", "posterior"],
+    "synergists": ["panturrilha", "antebraco", "posterior"],
     "images": 2
   },
   {
@@ -546,7 +546,7 @@
     "equip": "outro",
     "level": "beginner",
     "muscles": ["deltAnterior"],
-    "synergists": ["peito"],
+    "synergists": ["peito", "antebraco"],
     "images": 2
   },
   {
@@ -568,7 +568,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["triceps"],
-    "synergists": ["peito", "costas", "deltAnterior"],
+    "synergists": ["peito", "antebraco", "costas", "deltAnterior"],
     "images": 2
   },
   {
@@ -722,7 +722,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["triceps"],
-    "synergists": ["peito", "costas", "deltAnterior"],
+    "synergists": ["peito", "antebraco", "costas", "deltAnterior"],
     "images": 2
   },
   {
@@ -811,6 +811,17 @@
     "level": "beginner",
     "muscles": ["abdomen"],
     "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Bottoms-Up_Clean_From_The_Hang_Position",
+    "src": "Bottoms-Up_Clean_From_The_Hang_Position",
+    "name": "Bottoms-Up Clean From The Hang Position",
+    "compound": true,
+    "equip": "kettlebell",
+    "level": "intermediate",
+    "muscles": ["antebraco"],
+    "synergists": ["biceps", "deltAnterior"],
     "images": 2
   },
   {
@@ -920,7 +931,7 @@
     "equip": "polia",
     "level": "beginner",
     "muscles": ["quadriceps"],
-    "synergists": ["gluteo", "posterior"],
+    "synergists": ["antebraco", "gluteo", "posterior"],
     "images": 2
   },
   {
@@ -1100,6 +1111,17 @@
     "images": 2
   },
   {
+    "id": "db-Cable_Wrist_Curl",
+    "src": "Cable_Wrist_Curl",
+    "name": "Cable Wrist Curl",
+    "compound": false,
+    "equip": "polia",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Calf_Press",
     "src": "Calf_Press",
     "name": "Calf Press",
@@ -1206,7 +1228,7 @@
     "equip": "corporal",
     "level": "beginner",
     "muscles": ["costas"],
-    "synergists": ["biceps"],
+    "synergists": ["biceps", "antebraco"],
     "images": 2
   },
   {
@@ -1602,7 +1624,7 @@
     "equip": "kettlebell",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["biceps", "panturrilha", "gluteo", "quadriceps", "trapezio"],
+    "synergists": ["biceps", "panturrilha", "antebraco", "gluteo", "quadriceps", "trapezio"],
     "images": 2
   },
   {
@@ -1668,7 +1690,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["biceps"],
-    "synergists": [],
+    "synergists": ["antebraco"],
     "images": 2
   },
   {
@@ -1723,7 +1745,7 @@
     "equip": "halteres",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["panturrilha", "gluteo", "quadriceps", "deltAnterior", "trapezio"],
+    "synergists": ["panturrilha", "antebraco", "gluteo", "quadriceps", "deltAnterior", "trapezio"],
     "images": 2
   },
   {
@@ -1756,7 +1778,7 @@
     "equip": "halteres",
     "level": "beginner",
     "muscles": ["costas"],
-    "synergists": ["biceps", "deltAnterior"],
+    "synergists": ["biceps", "antebraco", "deltAnterior"],
     "images": 2
   },
   {
@@ -1793,6 +1815,17 @@
     "images": 2
   },
   {
+    "id": "db-Dumbbell_Lying_Pronation",
+    "src": "Dumbbell_Lying_Pronation",
+    "name": "Dumbbell Lying Pronation",
+    "compound": false,
+    "equip": "halteres",
+    "level": "intermediate",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Dumbbell_Lying_Rear_Lateral_Raise",
     "src": "Dumbbell_Lying_Rear_Lateral_Raise",
     "name": "Dumbbell Lying Rear Lateral Raise",
@@ -1800,6 +1833,17 @@
     "equip": "halteres",
     "level": "intermediate",
     "muscles": ["deltPosterior"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Dumbbell_Lying_Supination",
+    "src": "Dumbbell_Lying_Supination",
+    "name": "Dumbbell Lying Supination",
+    "compound": false,
+    "equip": "halteres",
+    "level": "intermediate",
+    "muscles": ["antebraco"],
     "synergists": [],
     "images": 2
   },
@@ -2075,6 +2119,17 @@
     "equip": "barra-w",
     "level": "beginner",
     "muscles": ["triceps"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Finger_Curls",
+    "src": "Finger_Curls",
+    "name": "Finger Curls",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
     "synergists": [],
     "images": 2
   },
@@ -2955,7 +3010,7 @@
     "equip": "outro",
     "level": "intermediate",
     "muscles": ["costas"],
-    "synergists": ["abdomen", "biceps", "deltAnterior", "trapezio", "triceps"],
+    "synergists": ["abdomen", "biceps", "antebraco", "deltAnterior", "trapezio", "triceps"],
     "images": 2
   },
   {
@@ -3197,7 +3252,7 @@
     "equip": "outro",
     "level": "intermediate",
     "muscles": ["costas"],
-    "synergists": ["biceps"],
+    "synergists": ["biceps", "antebraco"],
     "images": 2
   },
   {
@@ -3439,7 +3494,7 @@
     "equip": "outro",
     "level": "intermediate",
     "muscles": ["costas"],
-    "synergists": ["abdomen", "biceps", "deltAnterior", "trapezio", "triceps"],
+    "synergists": ["abdomen", "biceps", "antebraco", "deltAnterior", "trapezio", "triceps"],
     "images": 2
   },
   {
@@ -3516,7 +3571,7 @@
     "equip": "outro",
     "level": "expert",
     "muscles": ["costas"],
-    "synergists": ["biceps"],
+    "synergists": ["biceps", "antebraco"],
     "images": 2
   },
   {
@@ -3791,7 +3846,7 @@
     "equip": "kettlebell",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["gluteo", "quadriceps", "deltAnterior"],
+    "synergists": ["antebraco", "gluteo", "quadriceps", "deltAnterior"],
     "images": 2
   },
   {
@@ -3894,6 +3949,50 @@
     "images": 2
   },
   {
+    "id": "db-Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
+    "src": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
+    "name": "Palms-Down Dumbbell Wrist Curl Over A Bench",
+    "compound": false,
+    "equip": "halteres",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Palms-Down_Wrist_Curl_Over_A_Bench",
+    "src": "Palms-Down_Wrist_Curl_Over_A_Bench",
+    "name": "Palms-Down Wrist Curl Over A Bench",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
+    "src": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
+    "name": "Palms-Up Barbell Wrist Curl Over A Bench",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
+    "src": "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
+    "name": "Palms-Up Dumbbell Wrist Curl Over A Bench",
+    "compound": false,
+    "equip": "halteres",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Parallel_Bar_Dip",
     "src": "Parallel_Bar_Dip",
     "name": "Parallel Bar Dip",
@@ -3923,7 +4022,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["triceps"],
-    "synergists": ["peito", "costas", "deltAnterior"],
+    "synergists": ["peito", "antebraco", "costas", "deltAnterior"],
     "images": 2
   },
   {
@@ -3934,6 +4033,17 @@
     "equip": "corporal",
     "level": "beginner",
     "muscles": ["abdomen"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Plate_Pinch",
+    "src": "Plate_Pinch",
+    "name": "Plate Pinch",
+    "compound": false,
+    "equip": "outro",
+    "level": "intermediate",
+    "muscles": ["antebraco"],
     "synergists": [],
     "images": 2
   },
@@ -3989,7 +4099,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["panturrilha", "gluteo", "costas", "quadriceps", "deltAnterior", "trapezio", "triceps"],
+    "synergists": ["panturrilha", "antebraco", "gluteo", "costas", "quadriceps", "deltAnterior", "trapezio", "triceps"],
     "images": 2
   },
   {
@@ -4154,7 +4264,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["triceps"],
-    "synergists": ["peito", "costas", "deltAnterior"],
+    "synergists": ["peito", "antebraco", "costas", "deltAnterior"],
     "images": 2
   },
   {
@@ -4165,7 +4275,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["quadriceps"],
-    "synergists": ["gluteo", "panturrilha", "posterior"],
+    "synergists": ["gluteo", "panturrilha", "antebraco", "posterior"],
     "images": 2
   },
   {
@@ -4187,7 +4297,7 @@
     "equip": "barra",
     "level": "expert",
     "muscles": ["posterior"],
-    "synergists": ["gluteo", "panturrilha", "quadriceps", "trapezio"],
+    "synergists": ["gluteo", "panturrilha", "antebraco", "quadriceps", "trapezio"],
     "images": 2
   },
   {
@@ -4352,7 +4462,7 @@
     "equip": "outro",
     "level": "intermediate",
     "muscles": ["costas"],
-    "synergists": ["biceps", "deltAnterior"],
+    "synergists": ["biceps", "antebraco", "deltAnterior"],
     "images": 2
   },
   {
@@ -4499,6 +4609,28 @@
     "images": 2
   },
   {
+    "id": "db-Seated_Dumbbell_Palms-Down_Wrist_Curl",
+    "src": "Seated_Dumbbell_Palms-Down_Wrist_Curl",
+    "name": "Seated Dumbbell Palms-Down Wrist Curl",
+    "compound": false,
+    "equip": "halteres",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Seated_Dumbbell_Palms-Up_Wrist_Curl",
+    "src": "Seated_Dumbbell_Palms-Up_Wrist_Curl",
+    "name": "Seated Dumbbell Palms-Up Wrist Curl",
+    "compound": false,
+    "equip": "halteres",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Seated_Flat_Bench_Leg_Pull-In",
     "src": "Seated_Flat_Bench_Leg_Pull-In",
     "name": "Seated Flat Bench Leg Pull-In",
@@ -4532,6 +4664,50 @@
     "images": 2
   },
   {
+    "id": "db-Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
+    "src": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
+    "name": "Seated One-Arm Dumbbell Palms-Down Wrist Curl",
+    "compound": false,
+    "equip": "halteres",
+    "level": "intermediate",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
+    "src": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
+    "name": "Seated One-Arm Dumbbell Palms-Up Wrist Curl",
+    "compound": false,
+    "equip": "halteres",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Seated_Palm-Up_Barbell_Wrist_Curl",
+    "src": "Seated_Palm-Up_Barbell_Wrist_Curl",
+    "name": "Seated Palm-Up Barbell Wrist Curl",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Seated_Palms-Down_Barbell_Wrist_Curl",
+    "src": "Seated_Palms-Down_Barbell_Wrist_Curl",
+    "name": "Seated Palms-Down Barbell Wrist Curl",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Seated_Side_Lateral_Raise",
     "src": "Seated_Side_Lateral_Raise",
     "name": "Seated Side Lateral Raise",
@@ -4550,6 +4726,17 @@
     "equip": "halteres",
     "level": "beginner",
     "muscles": ["triceps"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl",
+    "src": "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl",
+    "name": "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl",
+    "compound": false,
+    "equip": "polia",
+    "level": "beginner",
+    "muscles": ["antebraco"],
     "synergists": [],
     "images": 2
   },
@@ -4627,7 +4814,7 @@
     "equip": "outro",
     "level": "intermediate",
     "muscles": ["costas"],
-    "synergists": ["biceps", "deltAnterior"],
+    "synergists": ["biceps", "antebraco", "deltAnterior"],
     "images": 2
   },
   {
@@ -5335,6 +5522,17 @@
     "images": 2
   },
   {
+    "id": "db-Standing_Olympic_Plate_Hand_Squeeze",
+    "src": "Standing_Olympic_Plate_Hand_Squeeze",
+    "name": "Standing Olympic Plate Hand Squeeze",
+    "compound": false,
+    "equip": "outro",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
     "id": "db-Standing_One-Arm_Cable_Curl",
     "src": "Standing_One-Arm_Cable_Curl",
     "name": "Standing One-Arm Cable Curl",
@@ -5398,6 +5596,17 @@
     "level": "intermediate",
     "muscles": ["deltAnterior"],
     "synergists": ["triceps"],
+    "images": 2
+  },
+  {
+    "id": "db-Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
+    "src": "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
+    "name": "Standing Palms-Up Barbell Behind The Back Wrist Curl",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
     "images": 2
   },
   {
@@ -5507,7 +5716,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["gluteo", "costas", "quadriceps", "trapezio"],
+    "synergists": ["antebraco", "gluteo", "costas", "quadriceps", "trapezio"],
     "images": 2
   },
   {
@@ -5518,7 +5727,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["gluteo", "costas", "quadriceps", "trapezio"],
+    "synergists": ["antebraco", "gluteo", "costas", "quadriceps", "trapezio"],
     "images": 2
   },
   {
@@ -5529,7 +5738,7 @@
     "equip": "barra",
     "level": "intermediate",
     "muscles": ["posterior"],
-    "synergists": ["gluteo", "costas", "quadriceps", "trapezio"],
+    "synergists": ["gluteo", "antebraco", "costas", "quadriceps", "trapezio"],
     "images": 2
   },
   {
@@ -5595,7 +5804,7 @@
     "equip": "outro",
     "level": "beginner",
     "muscles": ["peito"],
-    "synergists": ["deltAnterior", "triceps"],
+    "synergists": ["antebraco", "deltAnterior", "triceps"],
     "images": 2
   },
   {
@@ -5991,6 +6200,28 @@
     "equip": "corporal",
     "level": "beginner",
     "muscles": ["abdomen"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Wrist_Roller",
+    "src": "Wrist_Roller",
+    "name": "Wrist Roller",
+    "compound": false,
+    "equip": "outro",
+    "level": "beginner",
+    "muscles": ["antebraco"],
+    "synergists": [],
+    "images": 2
+  },
+  {
+    "id": "db-Wrist_Rotations_with_Straight_Bar",
+    "src": "Wrist_Rotations_with_Straight_Bar",
+    "name": "Wrist Rotations with Straight Bar",
+    "compound": false,
+    "equip": "barra",
+    "level": "beginner",
+    "muscles": ["antebraco"],
     "synergists": [],
     "images": 2
   },

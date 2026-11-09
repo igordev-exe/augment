@@ -198,6 +198,7 @@ export function ExerciseBlock({
         if (s.reps == null) return;
         s.done = true;
         s.doneAt = Date.now();
+        s.suggested = undefined;
         becameDone = true;
       } else {
         s.done = false;
@@ -225,6 +226,9 @@ export function ExerciseBlock({
       e.sets = e.sets.filter((x) => x.id !== setId);
     });
   }
+
+  // Último aquecimento ainda não feito: o botão "− Aquecimento" tira ele (sem precisar descobrir o menu da série).
+  const lastPendingWarmup = [...entry.sets].reverse().find((x) => x.kind === "warmup" && !x.done);
 
   const radialSet = radial ? entry.sets.find((x) => x.id === radial) : undefined;
   const radialN = radialSet && radialSet.kind !== "warmup" ? workSetsAll.indexOf(radialSet) + 1 : 0;
@@ -260,7 +264,13 @@ export function ExerciseBlock({
           disabled: !radialSet.done || radialSet.kind === "warmup",
           onPick: () => setRirEdit(radialSet.id),
         },
-        { id: "remover", label: "Remover série", tone: "warn", disabled: radialSet.done, onPick: () => removeSet(radialSet.id) },
+        {
+          id: "remover",
+          label: radialSet.kind === "warmup" ? "Tirar aquecimento" : "Remover série",
+          tone: "warn",
+          disabled: radialSet.done,
+          onPick: () => removeSet(radialSet.id),
+        },
         ...(alts.length > 0 ? [{ id: "trocar", label: "Trocar hoje", onPick: () => setPickAlt(true) }] : []),
         { id: "anotar", label: "Anotar", onPick: () => setShowNote(true) },
       ]
@@ -273,6 +283,7 @@ export function ExerciseBlock({
         <span className="grow">
           <span className="ex-name">
             {entry.alt ?? ex.name.replace(/^A[12] · /, "")}
+            {entry.extra && <span className="plus">extra hoje</span>}
             {ex.up && week >= 4 && week <= 6 && <span className="plus">▲ +1 série</span>}
             {setAdjust !== 0 && week !== 7 && (
               <span className="plus" title="Ajuste do fim do mesociclo">
@@ -524,8 +535,10 @@ export function ExerciseBlock({
               <span className="center">Reps</span>
               <span className="center">Feita</span>
             </div>
-            {entry.sets.map((s) => {
+            {entry.sets.map((s, i) => {
               const isWork = s.kind !== "warmup";
+              // A sugestão aparece só na próxima série a fazer: deixa claro que é um exemplo, não um valor já preenchido.
+              const isNext = !s.done && entry.sets.findIndex((x) => !x.done) === i;
               const n = isWork ? ++workCounter : 0;
               const wm = isWork ? null : warmupSpec(sug.weight, warmupCounter++, totalWarmups, step, availableWeights);
               const ph = isWork ? workPlaceholder(n) : null;
@@ -540,13 +553,14 @@ export function ExerciseBlock({
                   active={active}
                   weightPh={weightPh}
                   repsPh={repsPh}
+                  hint={isNext}
                   askRir={s.id === askRirId || s.id === rirEdit}
                   rirTarget={rirTarget}
                   onRir={(v) => {
                     setRirEdit(null);
                     setSet(s.id, { rir: v });
                   }}
-                  onWeight={(w) => setSet(s.id, { weight: w })}
+                  onWeight={(w) => setSet(s.id, { weight: w, suggested: undefined })}
                   onReps={(r) => setSet(s.id, { reps: r })}
                   onToggle={(wv, rv) => toggleDone(s.id, wv, rv, weightPh, repsPh)}
                   onMenu={active ? () => setRadial(s.id) : undefined}
@@ -566,6 +580,17 @@ export function ExerciseBlock({
                 >
                   <Icon name="plus" size={16} /> Aquecimento
                 </button>
+                {lastPendingWarmup && (
+                  <button
+                    type="button"
+                    data-augmented-ui="tl-clip br-clip border"
+                    className="btn btn-sm btn-ghost"
+                    aria-label="Tirar um aquecimento"
+                    onClick={() => removeSet(lastPendingWarmup.id)}
+                  >
+                    − Aquecimento
+                  </button>
+                )}
                 <button
                   type="button"
                   data-augmented-ui="tl-clip br-clip border"

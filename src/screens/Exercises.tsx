@@ -22,7 +22,7 @@ const GROUPS: { id: Group; label: string; muscles: MuscleId[] }[] = [
   { id: "peito", label: "Peito", muscles: ["peito"] },
   { id: "costas", label: "Costas", muscles: ["costas", "trapezio"] },
   { id: "ombros", label: "Ombros", muscles: ["deltLateral", "deltAnterior", "deltPosterior"] },
-  { id: "bracos", label: "Braços", muscles: ["biceps", "triceps"] },
+  { id: "bracos", label: "Braços", muscles: ["biceps", "triceps", "antebraco"] },
   { id: "pernas", label: "Pernas", muscles: ["quadriceps", "posterior", "gluteo", "panturrilha"] },
   { id: "core", label: "Core", muscles: ["abdomen"] },
 ];
