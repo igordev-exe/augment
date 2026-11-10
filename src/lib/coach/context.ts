@@ -8,6 +8,7 @@ import { formatWeight, historyOf, increaseStep, recordsOf, suggestNext, workSets
 import { bodyAdvice, ENGINE_RULES, fatigueAlert, intensifierPlan } from "../engine";
 import { mesoReport, weeklyReport } from "../report";
 import { planAhead } from "../schedule";
+import { EMPTY_OPERATOR_MEMORY, learnedRecoveryMultipliers, operatorBrief, operatorState, type OperatorMemory } from "../core/operator";
 import { goalStatus, weightTrend } from "../visual";
 import { unitFor } from "../sessions";
 
@@ -19,6 +20,7 @@ export interface CoachData {
   settings: Settings;
   today: string;
   bodyLog?: BodyEntry[];
+  memory?: OperatorMemory;
 }
 
 /** A ficha inteira em texto, com os ids que as ferramentas aceitam. Determinístico (bom para cache). */
@@ -197,6 +199,8 @@ export function toolPlan(data: CoachData) {
     settings.reentryDismissed,
   );
   const fatigue = fatigueAlert(all, settings.mesoStart, today, settings.reentryDismissed);
+  const op = operatorState(all, data.bodyLog ?? [], settings, data.memory ?? EMPTY_OPERATOR_MEMORY, today);
+  const brief = operatorBrief(op);
   return {
     hoje: today,
     dia_semana: weekdayName(today),
@@ -209,6 +213,14 @@ export function toolPlan(data: CoachData) {
     ultimo_treino: last ? { data: last.date, treino: dayById(last.dayId)?.name, dias_atras: daysBetween(last.date, today) } : null,
     aviso_retomada: reentry,
     alerta_fadiga: fatigue,
+    gemeo_digital: {
+      estagio: op.calibration.stage,
+      confianca: op.calibration.confidence,
+      resumo: `${brief.headline}: ${brief.detail}`,
+      multiplicadores_recuperacao: learnedRecoveryMultipliers(op),
+      razao_descanso_real: op.behavior.restConfidence >= 0.5 ? op.behavior.restRatio : undefined,
+      dia_semana_vulneravel: op.behavior.vulnerableWeekday,
+    },
     agenda_7_dias: plan.map((p) => ({ data: p.date, dia_semana: weekdayName(p.date), treino: dayById(p.dayId).name })),
     proximo_treino: nextDay
       ? {

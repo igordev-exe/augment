@@ -3,8 +3,8 @@
 import { TEMPLATES, type TemplateInfo } from "../data/templates";
 import { PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { Program } from "../data/types";
-import { mondayOf, todayISO } from "./dates";
-import { activateProgram, db, saveProgram, saveSettings } from "./db";
+import { addDays, mondayOf, todayISO } from "./dates";
+import { activateProgram, db, saveOperatorMemory, saveProgram, saveSettings } from "./db";
 import { fromTemplate } from "./program-edit";
 
 export type Level = "iniciante" | "intermediario" | "avancado";
@@ -72,7 +72,9 @@ export async function applyOnboarding(templateId: string, operator?: string): Pr
     await saveSettings({ trainingDays: t.trainingDays, onboarded: true });
     return program;
   }
-  await saveSettings({ operator: operator.trim(), trainingDays: t.trainingDays, mesoStart: mondayOf(todayISO()), onboarded: true });
+  const today = todayISO();
+  await saveSettings({ operator: operator.trim(), trainingDays: t.trainingDays, mesoStart: mondayOf(today), onboarded: true });
+  await saveOperatorMemory({ calibrationUntil: addDays(today, 7) });
   if (program.id !== PPL_PROGRAM_ID && (await db.sessions.count()) === 0) await db.programs.delete(PPL_PROGRAM_ID);
   return program;
 }

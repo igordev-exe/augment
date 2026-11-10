@@ -1,6 +1,7 @@
 import { dayById, exById, MUSCLE_ORDER, programDays, exOf, synergistsOf } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { MuscleId, ProgramDay, ProgramExercise, Session, SessionExercise, SetEntry, Settings, Unit } from "../data/types";
+import type { SessionAdaptation } from "./core/planner";
 import { addDays, mondayOf } from "./dates";
 import { setsFor, warmupsFor } from "./mesocycle";
 import { historyOf, increaseStep, loadRef, suggestNext, toKg, workSets } from "./progression";
@@ -28,15 +29,17 @@ export function buildSession(
   settings: Settings,
   allSessions: Session[],
   repeatFrom?: Session,
+  adaptation?: SessionAdaptation,
 ): Session {
   const day = dayById(dayId);
   const exercises: SessionExercise[] = day.exercises.map((ex, i) => {
-    const defaultAlt = settings.swaps?.[ex.id] || undefined;
+    const exAdapt = adaptation?.exercises[ex.id];
+    const defaultAlt = exAdapt?.adaptedAlt ?? (settings.swaps?.[ex.id] || undefined);
     const hist = historyOf(allSessions, ex.id, defaultAlt);
     const lastItem = hist[hist.length - 1];
     const last = lastItem?.entry;
     const unit = unitFor(ex.id, settings, last);
-    const planned = setsFor(ex, week, settings.setAdjust?.[ex.id]);
+    const planned = exAdapt ? exAdapt.adaptedSets : setsFor(ex, week, settings.setAdjust?.[ex.id]);
     const sets: SetEntry[] = [];
     for (let w = 0; w < warmupsFor(i); w++) sets.push(emptySet("warmup"));
 
@@ -54,7 +57,10 @@ export function buildSession(
     const s = suggestNext(ex, hist, planned, week, step, available);
     // Formato série-âncora: a 1ª com a carga da âncora, as de volume com a carga mais leve.
     for (let k = 0; k < planned; k++) sets.push(emptySet("work", k > 0 && s.volumeWeight != null ? s.volumeWeight : s.weight));
-    return { exId: ex.id, snap: snapOf(ex), unit, alt: defaultAlt, sets };
+    // Proteção articular do AUG.CORE: o "até onde" de hoje vai no retrato da sessão (a tela lê `exOf`, que prefere o retrato).
+    // O programa salvo não muda.
+    const snap = exAdapt?.adaptedStop ? { ...snapOf(ex), stop: exAdapt.adaptedStop } : snapOf(ex);
+    return { exId: ex.id, snap, unit, alt: defaultAlt, sets };
   });
 
   return {

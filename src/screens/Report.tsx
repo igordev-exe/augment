@@ -8,7 +8,7 @@ import { RecordList } from "../components/RecordList";
 import { Icon } from "../components/Icon";
 import { exById, MUSCLE_LABEL, shortName } from "../data/program";
 import { addDays, mondayOf, shortDate } from "../lib/dates";
-import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { whyLabel } from "../components/NudgeList";
 import { fatigueAlert } from "../lib/engine";
 import { WEEK_RULES, withSetAdjust } from "../lib/mesocycle";
@@ -48,6 +48,7 @@ export function Report() {
   const tabParam = searchParams.get("tab");
   const [tab, setTab] = useState<LaudoTab>(LAUDO_TABS.some((t) => t.id === tabParam) ? (tabParam as LaudoTab) : "week");
   const bodyLog = useBodyLog();
+  const [operatorMemory] = useOperatorMemory();
 
   if (!sessions) return null;
 
@@ -193,7 +194,7 @@ export function Report() {
       {tab === "corpo" ? (
         <BodyLab entries={bodyLog ?? []} goal={settings.bodyGoal} sessions={sessions} today={today} />
       ) : tab === "motor" ? (
-        <EngineLab items={engineDiagnostics({ sessions, settings, bodyLog: bodyLog ?? [], today })} />
+        <EngineLab items={engineDiagnostics({ sessions, settings, bodyLog: bodyLog ?? [], today, memory: operatorMemory })} />
       ) : tab === "meso" ? (
         <>
           <div className="tiles">

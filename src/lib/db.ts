@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import { rememberPrograms, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
+import { mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
 import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
 
@@ -375,6 +376,42 @@ export function uid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+// ---------- Memória do Operador (AUG.CORE) ----------
+
+export async function loadOperatorMemory(): Promise<OperatorMemory> {
+  const row = await db.kv.get("operator-memory");
+  return sanitizeOperatorMemory(row?.value);
+}
+
+export async function saveOperatorMemory(patch: Partial<OperatorMemory>): Promise<OperatorMemory> {
+  return db.transaction("rw", db.kv, async () => {
+    const row = await db.kv.get("operator-memory");
+    const cur = sanitizeOperatorMemory(row?.value);
+    const next = sanitizeOperatorMemory({ ...cur, ...patch });
+    await db.kv.put({ key: "operator-memory", value: next });
+    return next;
+  });
+}
+
+export async function upsertConstraint(c: Constraint): Promise<OperatorMemory> {
+  return db.transaction("rw", db.kv, async () => {
+    const cur = await loadOperatorMemory();
+    const rest = cur.constraints.filter((x) => x.id !== c.id && x.kind !== c.kind);
+    const next = sanitizeOperatorMemory({ ...cur, constraints: [...rest, c] });
+    await db.kv.put({ key: "operator-memory", value: next });
+    return next;
+  });
+}
+
+export async function removeConstraint(id: string): Promise<OperatorMemory> {
+  return db.transaction("rw", db.kv, async () => {
+    const cur = await loadOperatorMemory();
+    const next = sanitizeOperatorMemory({ ...cur, constraints: cur.constraints.filter((x) => x.id !== id) });
+    await db.kv.put({ key: "operator-memory", value: next });
+    return next;
+  });
+}
+
 // ---------- Backup ----------
 
 export interface Backup {
@@ -387,14 +424,17 @@ export interface Backup {
   bodyLog?: BodyEntry[];
   /** Programas salvos (a partir da versão 2 do banco). Backup antigo não tem: o import cria o PPL. */
   programs?: Program[];
+  /** Memória declarada do gêmeo digital (restrições temporárias, janela de calibração e histórico de ciclos). */
+  operatorMemory?: OperatorMemory;
 }
 
 export async function exportBackup(): Promise<Backup> {
-  const [settings, sessions, bodyLog, programs] = await Promise.all([
+  const [settings, sessions, bodyLog, programs, operatorMemory] = await Promise.all([
     loadSettings(),
     db.sessions.toArray(),
     loadBodyLog(),
     db.programs.toArray(),
+    loadOperatorMemory(),
   ]);
   return {
     app: "augment",
@@ -404,6 +444,7 @@ export async function exportBackup(): Promise<Backup> {
     sessions,
     bodyLog,
     programs,
+    operatorMemory,
   };
 }
 
@@ -453,6 +494,10 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
         key: "body-log",
         value: incomingBody,
       });
+      await db.kv.put({
+        key: "operator-memory",
+        value: sanitizeOperatorMemory(b.operatorMemory),
+      });
     } else {
       const cur = await loadSettings();
       const merged = sanitizeSettings({
@@ -490,6 +535,11 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
           a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date),
         );
         await db.kv.put({ key: "body-log", value: mergedBody });
+      }
+      if (b.operatorMemory) {
+        const curMem = await loadOperatorMemory();
+        const mergedMem = mergeOperatorMemory(curMem, sanitizeOperatorMemory(b.operatorMemory));
+        await db.kv.put({ key: "operator-memory", value: mergedMem });
       }
     }
     await db.sessions.bulkPut(sessions);

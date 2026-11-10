@@ -1,5 +1,6 @@
 import { dayById, exById, MUSCLE_LABEL, shortName } from "../data/program";
 import type { BodyEntry, Session, Settings } from "../data/types";
+import { EMPTY_OPERATOR_MEMORY, operatorBrief, operatorState, type OperatorMemory, type OperatorState } from "./core/operator";
 import { addDays, mondayOf } from "./dates";
 import { bodyAdvice, fatigueAlert, regressingExercises, type NudgeTone } from "./engine";
 import { setsFor, weekFor } from "./mesocycle";
@@ -12,7 +13,7 @@ import { unitFor } from "./sessions";
 
 export interface Diagnostic {
   /** Código curto da área, como num laudo. */
-  area: "FADIGA" | "PROGR" | "VOLUME" | "CORPO" | "AJUSTE";
+  area: "FADIGA" | "PROGR" | "VOLUME" | "CORPO" | "AJUSTE" | "GÊMEO";
   tone: NudgeTone;
   title: string;
   text: string;
@@ -22,10 +23,28 @@ export interface Diagnostic {
 
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} e ${xs[xs.length - 1]}`);
 
-export function engineDiagnostics(input: { sessions: Session[]; settings: Settings; bodyLog: BodyEntry[]; today: string }): Diagnostic[] {
+export function engineDiagnostics(input: {
+  sessions: Session[];
+  settings: Settings;
+  bodyLog: BodyEntry[];
+  today: string;
+  memory?: OperatorMemory;
+  operator?: OperatorState;
+}): Diagnostic[] {
   const { sessions, settings, bodyLog, today } = input;
   const done = sessions.filter((s) => s.status === "done");
   const out: Diagnostic[] = [];
+  const op = input.operator ?? operatorState(sessions, bodyLog, settings, input.memory ?? EMPTY_OPERATOR_MEMORY, today);
+  if (done.length > 0 || op.activeConstraints.length > 0) {
+    const brief = operatorBrief(op);
+    out.push({
+      area: "GÊMEO",
+      tone: brief.tone,
+      title: brief.headline,
+      text: brief.detail,
+      why: "feedback-volume",
+    });
+  }
 
   // Fadiga: alerta de deload antecipado e queda de reps na mesma carga.
   const fatigue = fatigueAlert(sessions, settings.mesoStart, today, settings.reentryDismissed);

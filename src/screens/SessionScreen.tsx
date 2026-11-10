@@ -15,7 +15,7 @@ import type { CardioEntry, Checkin, ProgramExercise, Session, SessionExercise } 
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
-import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
+import { useBodyLog, useOperatorState, useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
 import { syncNow } from "../lib/online/sync";
 import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import {
@@ -64,6 +64,7 @@ export function SessionScreen() {
 
 function SessionView({ session, sessions, onGone }: { session: Session; sessions: Session[]; onGone: () => void }) {
   const [settings, updateSettings] = useSettings();
+  const bodyLog = useBodyLog();
   const timer = useTimer();
   const toast = useToast();
   const navigate = useNavigate();
@@ -83,6 +84,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       ),
     [sessions, session.id, session.date, session.startedAt],
   );
+  const operator = useOperatorState(before, bodyLog, settings, session.date);
 
   const firstOpen = session.exercises.findIndex((e) => {
     const ex = exOf(e);
@@ -584,6 +586,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               availableWeights={available}
               intensifierToday={intensifiers.has(ex.id)}
               setAdjust={settings.setAdjust?.[ex.id] ?? 0}
+              operator={operator}
               onRirMarked={(e) => {
                 const n = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
                 if (n) toast(n.text, NUDGE_TONE[n.tone]);

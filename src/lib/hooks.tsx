@@ -1,8 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { activeProgram, programVersion, rememberSessions, subscribeProgram } from "../data/program";
 import type { BodyEntry, Program, Session, Settings } from "../data/types";
-import { db, DEFAULT_SETTINGS, loadBodyLog, loadSettings, saveSettings } from "./db";
+import { EMPTY_OPERATOR_MEMORY, operatorState, type OperatorMemory, type OperatorState } from "./core/operator";
+import { db, DEFAULT_SETTINGS, loadBodyLog, loadOperatorMemory, loadSettings, saveOperatorMemory, saveSettings } from "./db";
 import { todayISO } from "./dates";
 import { isNative, keepAwake, vibrate } from "./native";
 
@@ -40,6 +41,27 @@ export function useSettings(): [Settings, (patch: Partial<Settings>) => Promise<
 
 export function useBodyLog(): BodyEntry[] | undefined {
   return useLiveQuery(() => loadBodyLog(), []);
+}
+
+export function useOperatorMemory(): [OperatorMemory, (patch: Partial<OperatorMemory>) => Promise<void>] {
+  const m = useLiveQuery(() => loadOperatorMemory(), []);
+  const update = useCallback(async (patch: Partial<OperatorMemory>) => {
+    await saveOperatorMemory(patch);
+  }, []);
+  return [m ?? EMPTY_OPERATOR_MEMORY, update];
+}
+
+export function useOperatorState(
+  sessions: Session[] | undefined,
+  bodyLog: BodyEntry[] | undefined,
+  settings: Settings,
+  today: string,
+): OperatorState | undefined {
+  const [memory] = useOperatorMemory();
+  return useMemo(
+    () => (sessions ? operatorState(sessions, bodyLog ?? [], settings, memory, today) : undefined),
+    [sessions, bodyLog, settings, memory, today],
+  );
 }
 
 export function useToday(): string {

@@ -10,9 +10,11 @@ import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
+import { operatorBrief } from "../lib/core/operator";
+import { planDay } from "../lib/core/planner";
 import { bootBeam } from "../lib/fx";
 import { shareOrDownload } from "../lib/files";
-import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { fatigueAlert } from "../lib/engine";
 import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import { weeklyReport } from "../lib/report";
@@ -39,6 +41,7 @@ export function Today() {
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const status = useOnlineStatus();
+  const operator = useOperatorState(sessions, undefined, settings, today);
 
   if (!sessions) return null;
 
@@ -54,6 +57,8 @@ export function Today() {
   const doneAll = sessions.filter((s) => s.status === "done");
   const doneToday = doneAll.filter((s) => s.date === today);
   const lastDone = [...doneAll].sort(bySessionDesc)[0];
+  const adaptation = planDay(dayId, week, settings, sessions, operator);
+  const coreBrief = operator ? operatorBrief(operator) : null;
 
   async function start(from?: Session) {
     bootBeam();
@@ -61,7 +66,9 @@ export function Today() {
       navigate(`/treino/${active.id}`);
       return;
     }
-    const s = buildSession(from?.dayId ?? dayId, today, week, settings, sessions!, from);
+    const targetDayId = from?.dayId ?? dayId;
+    const targetAdapt = from ? undefined : targetDayId === dayId ? adaptation : planDay(targetDayId, week, settings, sessions!, operator);
+    const s = buildSession(targetDayId, today, week, settings, sessions!, from, targetAdapt);
     await db.sessions.add(s);
     navigate(`/treino/${s.id}`);
   }
@@ -300,7 +307,8 @@ export function Today() {
                   <Icon name="barbell" size={15} /> {day.exercises.length} módulos
                 </span>
                 <span>
-                  <Icon name="clock" size={15} /> ~{estimateMinutes(day.id, week, settings.setAdjust)} min
+                  <Icon name="clock" size={15} /> ~
+                  {adaptation.adapted ? adaptation.estimatedMinutes : estimateMinutes(day.id, week, settings.setAdjust)} min
                 </span>
                 <span>
                   <Icon name="chart" size={15} /> {rule.label}
@@ -402,7 +410,8 @@ export function Today() {
           limits<span style={{ color: "var(--red)" }}>.</span>
         </p>
         <p className="small muted">
-          {settings.operator ? `Operador: ${settings.operator}. ` : ""}Seu corpo é o hardware. Cada série registrada é uma atualização.
+          {settings.operator ? `Operador: ${settings.operator}. ` : ""}
+          {coreBrief ? `${coreBrief.headline} — ${coreBrief.detail}` : "Seu corpo é o hardware. Cada série registrada é uma atualização."}
         </p>
       </div>
 

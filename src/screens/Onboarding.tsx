@@ -177,8 +177,8 @@ export function Onboarding({ inApp = false }: { inApp?: boolean }) {
           <p>{chosen.pitch}</p>
           {rec.note && chosen.id === rec.template.id && <p className="strong-note small">{rec.note}</p>}
           <p className="small muted">
-            O app organiza as semanas sozinho: começa leve, sobe aos poucos e, a cada 7 semanas, faz uma semana de descanso ativo. Em cada
-            treino ele sugere a carga a partir do que você fez da última vez.
+            O app organiza as semanas sozinho: a 1ª semana calibra o seu perfil individual de recuperação e cargas, sobe aos poucos até a
+            semana 6 e fecha com uma semana de descanso ativo.
           </p>
           <button
             type="button"

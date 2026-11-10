@@ -19,7 +19,9 @@ import {
 } from "../lib/coach/chat";
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
-import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { handleIntent, type IntentProposal } from "../lib/core/intents";
+import { upsertConstraint } from "../lib/db";
+import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
 import { shareOrDownload } from "../lib/files";
 
@@ -94,6 +96,7 @@ export function Coach() {
   const sessions = useSessions();
   const bodyLog = useBodyLog();
   const [settings, updateSettings] = useSettings();
+  const [operatorMemory] = useOperatorMemory();
   const today = useToday();
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<CoachConfig | null>(null);
@@ -105,6 +108,7 @@ export function Coach() {
   const [tool, setTool] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<IntentProposal | null>(null);
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const autoSent = useRef(false);
@@ -140,7 +144,7 @@ export function Coach() {
   }, [chatLoaded, sessions, config, editing, busy, params]);
 
   if (!sessions || !config) return null;
-  const data: CoachData = { sessions, settings, today, bodyLog };
+  const data: CoachData = { sessions, settings, today, bodyLog, memory: operatorMemory };
 
   function updateChat(next: CoachChat) {
     setChat(next);
@@ -149,11 +153,27 @@ export function Coach() {
 
   async function send(text: string) {
     const t = text.trim();
-    if (!t || busy || !config?.apiKey) return;
+    if (!t || busy) return;
     setError(null);
     setDraft("");
     if (params.get("q") || params.get("auto")) setParams({}, { replace: true });
     const notes = chat.notes?.length ? `\n[${chat.notes.join(" ")}]` : "";
+    const localIntent = handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
+    if (localIntent.matched) {
+      setPendingIntent(localIntent.proposal ?? null);
+      const nextChat: CoachChat = {
+        ...chat,
+        notes: [],
+        messages: [
+          ...chat.messages,
+          { role: "user", content: [{ type: "text", text: `${turnContext(data)}${notes}\n\n${t}` }] },
+          { role: "assistant", content: [{ type: "text", text: localIntent.reply }] },
+        ],
+      };
+      updateChat(nextChat);
+      return;
+    }
+    if (!config?.apiKey) return;
     let cur: CoachChat = {
       ...chat,
       notes: [],
@@ -337,6 +357,45 @@ export function Coach() {
         {busy && !live && (
           <div className="thinking small scan-beam">
             <span className="status-dot ok" /> {tool ? `${TOOL_LABEL[tool] ?? tool}…` : "Pensando…"}
+          </div>
+        )}
+        {pendingIntent && (
+          <div data-augmented-ui="tl-clip br-clip border" className="card stack proposal" style={{ gap: 8 }}>
+            <span className="label">Proposta do núcleo</span>
+            <strong>{pendingIntent.confirmLabel}</strong>
+            <div className="row">
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm btn-primary grow"
+                onClick={async () => {
+                  const p = pendingIntent;
+                  setPendingIntent(null);
+                  await upsertConstraint(p.constraint);
+                  updateChat({
+                    ...chat,
+                    notes: [...(chat.notes ?? []), `Aplicou proposta do núcleo: ${p.confirmLabel}.`],
+                  });
+                }}
+              >
+                Aplicar
+              </button>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm btn-ghost"
+                onClick={() => {
+                  const p = pendingIntent;
+                  setPendingIntent(null);
+                  updateChat({
+                    ...chat,
+                    notes: [...(chat.notes ?? []), `Recusou proposta do núcleo: ${p.confirmLabel}.`],
+                  });
+                }}
+              >
+                Recusar
+              </button>
+            </div>
           </div>
         )}
         {error && <div className="callout warn">{error}</div>}

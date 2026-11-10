@@ -20,8 +20,9 @@ import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
 import { addDays, bySessionDesc, mondayOf, shortDate } from "../lib/dates";
 import { deleteBodyEntry, uid, upsertBodyEntry } from "../lib/db";
+import { learnedRecoveryMultipliers } from "../lib/core/operator";
 import { resizeImageFile } from "../lib/files";
-import { useBodyLog, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useBodyLog, useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "../lib/progression";
 import { planAhead } from "../lib/schedule";
@@ -54,9 +55,11 @@ export function Progress() {
     [sessions, settings, bodyLog],
   );
   const week = weekFor(settings.mesoStart, today);
+  const operator = useOperatorState(sessions, bodyLog, settings, today);
+  const recoveryMultipliers = useMemo(() => learnedRecoveryMultipliers(operator), [operator]);
   const muscles = useMemo(
-    () => muscleStatus(sessions ?? [], week, today, Date.now(), settings.setAdjust),
-    [sessions, week, today, settings.setAdjust],
+    () => muscleStatus(sessions ?? [], week, today, Date.now(), settings.setAdjust, recoveryMultipliers),
+    [sessions, week, today, settings.setAdjust, recoveryMultipliers],
   );
   const grid = useMemo(
     () => activityGrid(sessions ?? [], today, settings.trainingDays.length),

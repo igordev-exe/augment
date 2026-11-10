@@ -83,7 +83,7 @@ export function PlanCard({
 
       <details className="plan-more">
         <summary>
-          <span>Plano e histórico</span>
+          <span>Por que essa carga · histórico</span>
           {alerts > 0 && <em>{alerts} obs.</em>}
         </summary>
         <div className="plan-more-body">{children}</div>

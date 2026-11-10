@@ -11,7 +11,6 @@ import {
   mainLoad,
   platesForBarbell,
   revertBackoff,
-  suggestNext,
   summarizeSets,
   toKg,
   warmupSpec,
@@ -20,6 +19,8 @@ import {
 } from "../lib/progression";
 import { newSet } from "../lib/sessions";
 import { liveNudges } from "../lib/engine";
+import { predictFirstSetReps, type OperatorState } from "../lib/core/operator";
+import { explainLoad } from "../lib/core/planner";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
 import { PlanCard, type SetPlan } from "./PlanCard";
@@ -41,6 +42,7 @@ export function ExerciseBlock({
   availableWeights,
   intensifierToday,
   setAdjust = 0,
+  operator,
   onToggle,
   mutate,
   onSetDone,
@@ -64,6 +66,7 @@ export function ExerciseBlock({
   intensifierToday: boolean;
   /** Séries a mais/menos do ajuste de fim de mesociclo. */
   setAdjust?: number;
+  operator?: OperatorState;
   onToggle: () => void;
   mutate: (fn: (e: SessionExercise) => void) => Promise<SessionExercise | undefined>;
   onSetDone: (e: SessionExercise, setId: string) => void;
@@ -80,7 +83,9 @@ export function ExerciseBlock({
   const workDone = workAll.filter((s) => s.done).length;
   const complete = workAll.length > 0 && workDone >= workAll.length;
   const last = recentHistory[recentHistory.length - 1];
-  const sug = suggestNext(ex, recentHistory, planned, week, step, availableWeights);
+  const trace = explainLoad(ex, recentHistory, planned, week, step, availableWeights, operator);
+  const sug = trace.suggestion;
+  const twinFactors = trace.factors.filter((f) => f.tag === "articular" || f.tag === "descanso" || f.tag === "fadiga-muscular");
   const stop = stopFor(ex.stop, week);
   const showInt = !!ex.intensifier && intensifierToday && WEEK_RULES[week].intensifiers > 0;
   const nudges = active
@@ -119,6 +124,7 @@ export function ExerciseBlock({
     !entry.alt && !!lib?.equipment && /barra/i.test(lib.equipment) && !/barra w|barra fixa|polia|guiada/i.test(lib.equipment);
   const refLoad = sug.weight ?? mainLoad(entry.sets);
   const plateBreakdown = isOlympicBarbell ? platesForBarbell(refLoad, entry.unit) : null;
+  const pred1 = refLoad != null && refLoad > 0 ? predictFirstSetReps(ex, refLoad, recentHistory, operator) : null;
 
   // F7: Mini-histórico das últimas 5 sessões
   const miniPoints = recentHistory.slice(-5).map((h) => {
@@ -401,9 +407,19 @@ export function ExerciseBlock({
               unit={entry.unit}
               rir={rirLabel}
               reason={nextReason}
-              alerts={sug.notes.length + (lowDay ? 1 : 0)}
+              alerts={sug.notes.length + twinFactors.length + (lowDay ? 1 : 0)}
             >
               <span className="small muted">{sug.detail}</span>
+              {pred1 != null && (
+                <span className="tiny" style={{ color: "var(--cyan)" }}>
+                  Previsão do gêmeo na 1ª série ({formatWeight(refLoad)} {entry.unit}): ~{pred1.predictedReps} reps
+                </span>
+              )}
+              {twinFactors.map((f) => (
+                <span key={f.tag} className="small sug-note">
+                  <strong>{f.label}:</strong> {f.detail}
+                </span>
+              ))}
               {plateBreakdown && (
                 <span className="tiny" style={{ color: "var(--cyan)" }}>
                   Montagem ({formatWeight(refLoad)} {entry.unit}): {plateBreakdown}

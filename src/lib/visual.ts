@@ -43,6 +43,8 @@ export function muscleStatus(
   today: string,
   now = Date.now(),
   setAdjust?: Record<string, number>,
+  /** Multiplicadores individuais de recuperação aprendidos pelo gêmeo digital (quando confiança >= 0.5). */
+  recoveryMultipliers?: Partial<Record<MuscleId, number>>,
 ): Record<MuscleId, MuscleStatus> {
   const done = sessions.filter((s) => s.status === "done" && s.date <= today);
   const vol = weeklyVolume(done, today);
@@ -77,7 +79,9 @@ export function muscleStatus(
     }
     const daysSince = daysBetween(l.date, today);
     const hours = Math.max(0, (now - l.at) / 3600_000);
-    const recovery = Math.min(1, hours / recoveryHours(l.sets));
+    const mult = recoveryMultipliers?.[m] ?? 1;
+    const neededHours = Math.max(18, recoveryHours(l.sets) * mult);
+    const recovery = Math.min(1, hours / neededHours);
     const state: MuscleState =
       daysSince >= UNTRAINED_DAYS ? "sem-treino" : daysSince >= LATE_DAYS ? "atrasado" : recovery < 1 ? "recuperando" : "pronto";
     out[m] = { muscle: m, sets: vol[m], target: plan[m], lastDate: l.date, daysSince, lastSets: l.sets, recovery, state };
