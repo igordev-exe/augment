@@ -13,6 +13,7 @@ import { saveProgram } from "../lib/db";
 import { useProgram, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { addExercise, exerciseFromLibrary } from "../lib/program-edit";
 import { setsFor, weekFor } from "../lib/mesocycle";
+import { CommunityCard } from "../components/CommunityCard";
 import { e1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, recordsOf, toKg, workSets } from "../lib/progression";
 
 function youtubeId(url: string): string | null {
@@ -258,6 +259,8 @@ export function ExerciseDetail() {
       </section>
 
       {sessions && uses.map((ex) => <ExerciseProgress key={ex.id} ex={ex} sessions={sessions} showDay={uses.length > 1} />)}
+
+      <CommunityCard libId={libId} />
     </div>
   );
 }

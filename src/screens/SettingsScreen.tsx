@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
 import { RestorePoints } from "../components/RestorePoints";
+import { apiUrl } from "../lib/online/client";
+import { useOnline } from "../lib/online/sync";
 import { LIB_BY_ID } from "../data/library";
 import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
@@ -24,6 +26,7 @@ export function SettingsScreen() {
   const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [wipe, setWipe] = useState(false);
   const week = weekFor(settings.mesoStart, today);
+  const online = useOnline();
 
   async function doExport() {
     await update({ lastBackupAt: today, backupDismissed: mondayOf(today) });
@@ -105,6 +108,21 @@ export function SettingsScreen() {
         </span>
         <span className="tiny faint">{program.days.map((d) => d.code).join(" · ")} · montar, trocar ou criar outro</span>
       </Link>
+
+      {apiUrl() && (
+        <Link to="/online" data-augmented-ui="tl-clip br-clip border" className="card stack pg-entry">
+          <span className="label">Conta online</span>
+          <span className="spread">
+            <strong>{online?.user ? `@${online.user.username}` : "Sem conta (opcional)"}</strong>
+            <span className="arrow">&gt;</span>
+          </span>
+          <span className="tiny faint">
+            {online?.user
+              ? "Backup automático, amigos e comparação"
+              : "Backup automático na nuvem, amigos e comparação com outros usuários"}
+          </span>
+        </Link>
+      )}
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="row" style={{ gap: 12 }}>
@@ -433,6 +451,9 @@ export function SettingsScreen() {
         <p className="dz-text">
           Apaga todos os treinos, medidas e ajustes deste aparelho. Um ponto de restauração com tudo fica guardado antes: exclua-o em Pontos
           de restauração se quiser limpar de vez.
+          {online?.user
+            ? " Com a conta online conectada, os treinos voltam da nuvem na próxima sincronização: saia da conta antes se quiser o aparelho vazio."
+            : ""}
         </p>
         {wipe ? (
           <div className="row">

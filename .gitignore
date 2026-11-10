@@ -7,3 +7,13 @@ coach/saida
 
 # Referência de design (kit da Figma, só local)
 Sci-fi UI Kit (Free) (Community)*/
+
+# graphify: grafo gerado localmente (refazer com `graphify update .`)
+graphify-out/
+server/data
+
+# Cloudflare (estado local do wrangler dev)
+server/.wrangler/
+
+# Saída das ferramentas de verificação
+tools/verify/out/

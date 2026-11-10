@@ -186,6 +186,8 @@ export function sanitizeSettings(raw: unknown): Settings {
     backupDismissed: typeof s.backupDismissed === "string" && ISO_DATE_RE.test(s.backupDismissed) ? s.backupDismissed : undefined,
     reentryDismissed: typeof s.reentryDismissed === "string" && ISO_DATE_RE.test(s.reentryDismissed) ? s.reentryDismissed : undefined,
     reportSeen: typeof s.reportSeen === "string" && ISO_DATE_RE.test(s.reportSeen) ? s.reportSeen : undefined,
+    onboarded: s.onboarded === true ? true : undefined,
+    cloudPhotos: s.cloudPhotos === true ? true : undefined,
   };
 }
 
@@ -410,7 +412,7 @@ export function isBackup(x: unknown): x is Backup {
   return !!b && b.app === "augment" && b.version === 1 && Array.isArray(b.sessions) && !!b.settings && typeof b.settings === "object";
 }
 
-function isSession(x: unknown): x is Session {
+export function isSession(x: unknown): x is Session {
   const s = x as Session;
   return (
     !!s &&

@@ -5,8 +5,8 @@ import RAW from "./library-extended.json";
 import type { LibraryEntry, MuscleId } from "./types";
 
 // Biblioteca ampliada: ~550 exercícios de força do free-exercise-db (domínio público), importados por
-// scripts/import-exercise-db.py. Nome e passo a passo ficam em inglês (como no banco original); músculos e equipamento
-// já vêm no formato do app. O índice carrega com o app; o passo a passo só quando um exercício é aberto.
+// scripts/import-exercise-db.py. O nome vem traduzido (scripts/exercise-names-pt.json) e o original em inglês fica em
+// `en`, para a busca e o vídeo; o passo a passo segue em inglês. Músculos e equipamento já vêm no formato do app. O índice carrega com o app; o passo a passo só quando um exercício é aberto.
 // Imagens: baixadas do repositório na primeira vez e guardadas em cache pelo service worker (vite.config.ts).
 
 export interface ExtendedEntry {
@@ -15,6 +15,8 @@ export interface ExtendedEntry {
   /** Id no free-exercise-db (pasta das imagens). */
   src: string;
   name: string;
+  /** Nome original em inglês: a busca aceita os dois. */
+  en: string;
   compound: boolean;
   equip: string;
   level: string;
@@ -81,7 +83,7 @@ export function extendedAsLibrary(e: ExtendedEntry, steps: string[] = []): Libra
     errors: [],
     why: "",
     videoPt: e.name,
-    videoEn: e.name,
+    videoEn: e.en,
   };
 }
 

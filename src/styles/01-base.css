@@ -1,0 +1,494 @@
+/* Tokens (:root), reset, layout, tipografia, topo e cabeçalho de página. */
+
+/*
+  AUGMENT — design tokens
+  Direção: "cyberdeck" — grafite com grade de 64 px, vermelho de sinal para ação, ciano para
+  sistema, roxo para dados; botões e tags com cantos cortados, avisos com trilho lateral,
+  molduras HUD, barras listradas e telemetria em fonte mono.
+  Um mundo só, escuro de propósito: não há tema claro.
+  Cantos chanfrados com borda: augmented-ui (data-augmented-ui="tl-clip br-clip border").
+  Tipos: Orbitron (marca, títulos, números grandes), Share Tech Mono (telemetria),
+  Exo 2 (texto corrido e nomes de exercício).
+*/
+:root {
+  --bg: #0c0e11;
+  --surface: #15181c;
+  --surface-2: #1c2025;
+  --surface-3: #252a30;
+  --ink: #e6e7e5;
+  --ink-2: #b5b8be;
+  /* Texto terciário: 8:1 e APCA ~Lc 55 em 11–12 px (era #8b919a, Lc 42). */
+  --ink-3: #a0a8b2;
+  --line: #393c40;
+  --line-2: #272a2f;
+  --red: #ef302c;
+  --red-hi: #ff5a4f;
+  --red-deep: #b81f1b;
+  --red-soft: #3b1513;
+  --red-ink: #ffffff;
+  --purple: #a88aff;
+  --purple-soft: #251d3d;
+  --blue: #6b8cff;
+  --blue-soft: #18213f;
+  --amber: #f5b83d;
+  --amber-soft: #382a0d;
+  --cyan: #3fd8e0;
+  --magenta: #ff2bd6; /* só no glitch do boot */
+  --cyan-soft: #0e2a2e;
+  --info-bg: #111f2d;
+  --violet: #d580ff;
+  /* Verde de sinal (Fase 0): concluído, aplicado, recorde. */
+  --green: #4ff08f;
+  --green-soft: #0d2a1a;
+  /* Aliases que as telas já usavam (antes indefinidos). */
+  --fg: var(--ink);
+  --muted: var(--ink-3);
+  /*
+    Papéis das cores (Fase 0). Uma cor, um significado:
+    vermelho = ação e marca · ciano = sistema e seleção · verde = ok (feito, aplicado, recorde)
+    âmbar = atenção · vermelho-alto = perigo. Roxo, azul e violeta ficam para gráficos e dados.
+  */
+  --ok: var(--green);
+  --ok-soft: var(--green-soft);
+  --warn: var(--amber);
+  --warn-soft: var(--amber-soft);
+  /* Perigo é sempre vermelho, mesmo no deload (que troca só o vermelho de ação). */
+  --danger-line: #ef302c;
+  --danger: #ff5a4f;
+  --danger-soft: #3b1513;
+  --danger-fill: #d42a26;
+  /* Preenchimento de ação com texto branco em cima: 5,05:1. O #ef302c neon fica na borda e no brilho. */
+  --action-fill: #d42a26;
+  /*
+    Componentes (terceira camada): só referenciam os semânticos acima ou valores com papel único.
+  */
+  --field-border: #6b717b; /* borda de campo: 3,9:1 (WCAG 1.4.11) */
+  --track-empty: #5a606a; /* casa/segmento a fazer: 3,05:1 */
+  --focus-ring: var(--cyan);
+  /*
+    Escala tipográfica (6 passos). Tamanhos de título (≥ 17 px) ficam fora: são de cada tela.
+    O lint (scripts/lint.ts) recusa font-size pequeno fora desta escala.
+  */
+  --fs-1: 11px; /* rótulos, legendas, mono pequeno: mínimo do app */
+  --fs-2: 12px; /* texto secundário (.tiny e .label de sempre; 12,5 quebrava rótulos em 360 px) */
+  --fs-3: 13.5px; /* corpo compacto (o .small de sempre; 14 quebrava listas em 360 px) */
+  --fs-4: 15.5px; /* corpo */
+  --fs-5: 20px; /* subtítulo */
+  --fs-6: 30px; /* número de destaque */
+  --sel: var(--cyan);
+  --sel-soft: var(--cyan-soft);
+  /*
+    Brilho em camadas (núcleo forte + halo largo), só nos pontos focais.
+    É filter: drop-shadow porque o recorte dos cantos (clip-path do augmented-ui) apaga box-shadow:
+    aplique num wrapper (.glow) em volta do elemento recortado.
+  */
+  --glow-red: drop-shadow(0 0 3px #ef302cb3) drop-shadow(0 0 12px #ef302c59) drop-shadow(0 0 28px #ef302c26);
+  --glow-cyan: drop-shadow(0 0 3px #3fd8e0a6) drop-shadow(0 0 12px #3fd8e04d) drop-shadow(0 0 28px #3fd8e01f);
+  --glow-green: drop-shadow(0 0 3px #4ff08fa6) drop-shadow(0 0 12px #4ff08f4d) drop-shadow(0 0 28px #4ff08f1f);
+  --glow-amber: drop-shadow(0 0 3px #f5b83da6) drop-shadow(0 0 12px #f5b83d40);
+  --chart-1: #ef302c;
+  --chart-2: #1f9fab;
+  --grid: #2a2e34;
+  --tech: "Orbitron", "Eurostile", "Arial Black", sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --body: "Exo 2", "Segoe UI", Roboto, system-ui, sans-serif;
+  --nav-h: 66px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+}
+html {
+  background: var(--bg);
+}
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(#43485117 1px, transparent 1px), linear-gradient(90deg, #43485117 1px, transparent 1px);
+  background-size: 64px 64px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--fs-4);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Ruído de filme por cima de tudo. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.84' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.7' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+a {
+  color: inherit;
+}
+img,
+svg {
+  max-width: 100%;
+}
+::selection {
+  background: var(--action-fill);
+  color: #fff;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+/*
+  Cantos chanfrados cortam o outline de fora (o augmented-ui e o clip-path recortam o próprio elemento).
+  No augmented-ui, o foco vira a própria borda chanfrada, em ciano e com 2 px.
+*/
+[data-augmented-ui]:focus-visible {
+  outline: none;
+  --aug-border-all: 2px !important;
+  --aug-border-bg: var(--focus-ring) !important;
+}
+/* Nos outros recortados, o anel vai para dentro da borda. */
+:is(
+    .sysmod-bar,
+    .sysmod-quick,
+    .panel-act,
+    .laudo-tabs button,
+    .sys-brief-row,
+    .vb-row,
+    .fm-zone-list button,
+    button.set-kind,
+    .rir-ask button,
+    .choice button,
+    .timer button,
+    .toast-act,
+    .toast-close,
+    .hm-nav button
+  ):focus-visible {
+  outline-offset: -3px;
+}
+/* O que recebe foco não fica escondido atrás da navegação e do timer fixos (WCAG 2.4.11). */
+html {
+  scroll-padding-top: 12px;
+  scroll-padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+}
+html:has(.timer) {
+  scroll-padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 140px);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Layout ---------- */
+.app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 28px);
+  min-height: 100vh;
+}
+.app.has-timer {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 124px);
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stack-lg {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.muted {
+  color: var(--ink-2);
+}
+.faint {
+  color: var(--ink-3);
+}
+.small {
+  font-size: var(--fs-3);
+}
+.tiny {
+  font-size: var(--fs-2);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.center {
+  text-align: center;
+}
+.mono {
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Type ---------- */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  text-wrap: balance;
+}
+p {
+  margin: 0;
+}
+.display,
+.h-hero,
+.h-page,
+.h-sec {
+  font-family: var(--tech);
+  text-transform: uppercase;
+}
+.display {
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.h-hero {
+  font-weight: 900;
+  font-size: 46px;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+.h-page {
+  font-weight: 900;
+  font-size: var(--fs-6);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+.h-sec {
+  font-weight: 800;
+  font-size: var(--fs-4);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+.h-card {
+  font-size: var(--fs-4);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.label {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  box-shadow: 0 0 8px #3fd8e088;
+  flex-shrink: 0;
+}
+.prose p + p {
+  margin-top: 8px;
+}
+.prose ul,
+.prose ol {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.prose li::marker {
+  color: var(--red);
+  font-family: var(--mono);
+}
+.prose strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+/* Logotipo desenhado (src/components/Brand.tsx): mesma cor do texto. */
+.brand-word {
+  display: block;
+  height: 17px;
+  width: auto;
+  color: var(--ink);
+}
+.brand-name {
+  font-family: var(--tech);
+  font-weight: 900;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.brand-name i {
+  color: var(--red);
+  font-style: normal;
+}
+.status {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  color: var(--ink-3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--red);
+  box-shadow: 0 0 9px #ef302c99;
+}
+.status-dot.ok {
+  background: var(--cyan);
+  box-shadow: 0 0 9px #3fd8e099;
+}
+.status-dot.warn {
+  background: var(--amber);
+  box-shadow: 0 0 9px var(--amber);
+}
+/* Avatar do operador, com anel ciano. */
+.avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--avatar-size, 56px);
+  height: var(--avatar-size, 56px);
+  border-radius: 50%;
+  border: 1px solid #d580ff99;
+  background: #171717;
+  box-shadow: 0 0 18px #d580ff33;
+}
+.avatar::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid #3fd8e066;
+}
+.avatar img {
+  width: calc(var(--avatar-size, 56px) - 8px);
+  height: calc(var(--avatar-size, 56px) - 8px);
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- Page header ---------- */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.page-head .sub {
+  color: var(--ink-2);
+  font-size: var(--fs-3);
+  margin-top: 8px;
+}
+.page-head .eyebrow {
+  margin-bottom: 10px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  color: var(--ink-3);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.icon-btn {
+  --aug-tl: 7px;
+  --aug-br: 7px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--surface);
+  border: 0;
+  color: var(--ink-2);
+  flex-shrink: 0;
+  text-decoration: none;
+}

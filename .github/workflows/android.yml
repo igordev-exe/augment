@@ -26,12 +26,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
       - name: Build web (base relativa) e cópia para o Android
         run: npm run build:android
+        env:
+          # Endereço do servidor online (variável do repositório). Vazio = app só offline.
+          VITE_API_URL: ${{ vars.AUGMENT_API_URL }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

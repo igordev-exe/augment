@@ -1,0 +1,508 @@
+/* Treino: cartão do exercício e linhas de série. */
+
+/* ---------- Exercise card (sessão) ---------- */
+.ex {
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  background: var(--surface);
+}
+.ex.open {
+  --aug-border-bg: #6a6f78;
+}
+.ex.complete {
+  --aug-border-bg: #4ff08f66;
+  background: linear-gradient(90deg, #4ff08f12, transparent 60%), var(--surface);
+}
+.ex-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 14px;
+  width: 100%;
+  background: none;
+  border: 0;
+  text-align: left;
+}
+.ex-num {
+  font-family: var(--tech);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 0.9;
+  color: var(--ink-3);
+  min-width: 30px;
+}
+.ex.open .ex-num {
+  color: var(--red-hi);
+}
+.ex.complete .ex-num {
+  color: var(--ok);
+}
+.ex-name {
+  font-weight: 600;
+  font-size: var(--fs-4);
+  line-height: 1.25;
+}
+.ex-sub {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  color: var(--ink-3);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+.ex-count {
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: var(--fs-4);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.ex.complete .ex-count {
+  color: var(--ok);
+}
+.ex-body {
+  padding: 0 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plus {
+  color: var(--purple);
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-2);
+  margin-left: 6px;
+}
+
+.stats {
+  --aug-br: 10px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.25fr;
+  background: var(--bg);
+}
+.stat {
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.stat + .stat {
+  border-left: 1px solid var(--line-2);
+}
+.stat .v {
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: var(--fs-4);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat.toned {
+  background: var(--tone-soft);
+}
+.stat.toned .v {
+  color: var(--tone);
+}
+
+.suggest {
+  --aug-tl: 10px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  padding: 11px 13px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 3px solid var(--ink-3);
+}
+.suggest.up {
+  --aug-border-bg: #4ff08f66;
+  border-left-color: var(--ok);
+  background: var(--ok-soft);
+}
+.suggest.down {
+  --aug-border-bg: #f5b83d66;
+  border-left-color: var(--amber);
+  background: var(--amber-soft);
+}
+.suggest strong {
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: var(--fs-3);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.suggest.up strong {
+  color: var(--ok);
+}
+.suggest.down strong {
+  color: var(--amber);
+}
+
+/* ---------- Set rows ---------- */
+.sets {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sets-head {
+  display: grid;
+  grid-template-columns: 56px 1.3fr 0.7fr 54px;
+  gap: 8px;
+  padding: 0 2px;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.set {
+  display: grid;
+  grid-template-columns: 56px 1.3fr 0.7fr 54px;
+  gap: 8px;
+  align-items: center;
+}
+.set-kind {
+  height: 50px;
+  width: 100%;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  position: relative;
+  font-family: var(--tech);
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.set-kind.warmup {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border-style: dashed;
+}
+.set-kind.drop {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-3);
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-color: #f5b83d66;
+}
+/* Número da série é um botão: abre o menu circular. O "⋯" no canto mostra que dá para tocar. */
+button.set-kind {
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+button.set-kind:active {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.set-more {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 11px;
+  height: 3px;
+  background: radial-gradient(circle, var(--cyan) 1.2px, transparent 1.6px) 0 0 / 4px 3px repeat-x;
+  opacity: 0.85;
+}
+.field {
+  position: relative;
+}
+.field input {
+  width: 100%;
+  height: 50px;
+  border: 1px solid var(--field-border);
+  background: var(--bg);
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: clamp(16px, 5.2vw, 20px);
+  text-align: center;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  border-radius: 0;
+}
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Sugestão do sistema (o que o ✓ grava se o campo ficar vazio): cinza-claro translúcido, com cara de exemplo a
+   preencher. Só a próxima série mostra o número; as outras mostram "–". */
+.field input::placeholder {
+  color: rgba(230, 231, 229, 0.36);
+  opacity: 1;
+}
+.field input:focus {
+  border-color: var(--red);
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--red),
+    0 0 14px #ef302c44;
+}
+.field .suffix {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.set.done .field input {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--ink-2);
+}
+.check {
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  --aug-border-all: 1px;
+  --aug-border-bg: #5b616b;
+  height: 50px;
+  border: 0;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+}
+.check[aria-pressed="true"] {
+  --aug-border-bg: var(--red-hi);
+  background: var(--action-fill);
+  color: #fff;
+}
+.set.warmup .check[aria-pressed="true"] {
+  --aug-border-bg: #8b919a;
+  background: #3a3e45;
+  color: #fff;
+}
+.check-wrap {
+  display: grid;
+}
+.check-wrap > .check {
+  width: 100%;
+}
+.set.work.done .check-wrap,
+.set.drop.done .check-wrap {
+  filter: var(--glow-red);
+}
+
+/* RIR: quantas reps sobraram, perguntado logo depois da série (durante o descanso). */
+.set .rir-tag {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-1);
+  letter-spacing: 0 !important;
+  letter-spacing: 0.02em;
+  color: var(--cyan);
+}
+.set-kind:has(.rir-tag) {
+  padding-bottom: 12px;
+}
+.rir-ask {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--cyan-soft);
+  border-left: 3px solid var(--cyan);
+}
+.rir-ask .label {
+  margin-right: auto;
+  color: var(--cyan);
+}
+.rir-ask {
+  gap: 8px;
+}
+.rir-ask button {
+  position: relative;
+  flex: 1;
+  max-width: 54px;
+  min-width: 42px;
+  height: 48px;
+  border: 1px solid var(--field-border);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: var(--fs-4);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+}
+.rir-ask button small {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.rir-ask button.target {
+  border-color: var(--cyan);
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--cyan);
+}
+.rir-ask button[aria-pressed="true"] small {
+  color: var(--bg);
+}
+.rir-ask button[aria-pressed="true"] {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: var(--bg);
+}
+
+/* Perguntas de um toque: check-in e "como bateu?". */
+.ask {
+  margin: 0 14px 14px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--purple);
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.choice-label {
+  flex: 0 0 84px;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.choice button {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.choice button[aria-pressed="true"] {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: underline;
+}
+.sug-note {
+  color: var(--ink);
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+}
+
+.unit-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+.unit-toggle button {
+  border: 0;
+  background: none;
+  padding: 4px 11px;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+.unit-toggle button[aria-pressed="true"] {
+  background: var(--action-fill);
+  color: #fff;
+}
+
+details.how {
+  border-top: 1px dashed var(--line);
+  padding-top: 11px;
+}
+details.how summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+details.how summary::-webkit-details-marker {
+  display: none;
+}
+details.how summary::before {
+  content: "[+]";
+  color: var(--red-hi);
+}
+details.how[open] summary::before {
+  content: "[−]";
+}
+details.how .prose {
+  margin-top: 10px;
+  font-size: var(--fs-3);
+}
+
+textarea.note {
+  width: 100%;
+  min-height: 68px;
+  resize: vertical;
+  border-radius: 0;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 9px 11px;
+  font-size: var(--fs-4);
+}
+textarea.note:focus {
+  outline: none;
+  border-color: var(--red);
+}
+
+/* "Tudo ok": responde as perguntas de um toque com o padrão (sem bloquear o treino). */
+.btn.quick-ok {
+  --aug-border-bg: var(--cyan);
+  color: var(--cyan);
+  background: var(--cyan-soft);
+  min-height: 44px;
+}
+.finish-confirm {
+  --aug-border-bg: var(--warn);
+  gap: 10px;
+  animation: aw-panel-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}

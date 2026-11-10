@@ -247,11 +247,11 @@ export function AddExercise({
   const [compound, setCompound] = useState(false);
   const [full, setFull] = useState(false);
   const query = norm(q.trim());
-  // Curada primeiro (português, com execução); com "Completa", a ampliada (inglês) entra depois.
+  // Curada primeiro (português, com execução); com "Completa", a ampliada entra depois (a busca aceita o nome em inglês).
   const all = [
     ...LIBRARY.map((l) => ({ id: l.id, name: l.name, muscles: LIB_MUSCLES[l.id] ?? [], equip: l.equipment, extra: l.primary })),
     ...(full
-      ? EXTENDED.map((e) => ({ id: e.id, name: e.name, muscles: e.muscles, equip: EQUIP_LABEL[e.equip] ?? "Outro", extra: "" }))
+      ? EXTENDED.map((e) => ({ id: e.id, name: e.name, muscles: e.muscles, equip: EQUIP_LABEL[e.equip] ?? "Outro", extra: e.en }))
       : []),
   ];
   const matches = all.filter(
@@ -309,9 +309,7 @@ export function AddExercise({
             ))}
             {items.length === 0 && (
               <li className="small muted">
-                {full
-                  ? "Nada com esse nome. Use “Personalizado”."
-                  : "Nada na curada. Tente “Completa” (nomes em inglês) ou “Personalizado”."}
+                {full ? "Nada com esse nome. Use “Personalizado”." : "Nada na curada. Tente “Completa” ou “Personalizado”."}
               </li>
             )}
             {matches.length > items.length && <li className="tiny faint">Mostrando 60 de {matches.length}. Refine a busca.</li>}

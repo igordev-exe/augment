@@ -6,7 +6,10 @@ import { TimerBar } from "./components/TimerBar";
 import { markBootDone, readBootMode, type BootMode } from "./lib/brand";
 import { todayISO } from "./lib/dates";
 import { loadActiveProgram } from "./lib/db";
-import { setToastVibrate, ToastProvider, useProgram, useSettings, useToday } from "./lib/hooks";
+import { setToastVibrate, ToastProvider, useProgram, useSessions, useSettings, useToday } from "./lib/hooks";
+import { Onboarding } from "./screens/Onboarding";
+import { PrivacyPolicy } from "./screens/PrivacyPolicy";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { applyFxLevel, bootBeam, installTapFx } from "./lib/fx";
 import { weekFor } from "./lib/mesocycle";
 import { TimerProvider, useTimer } from "./lib/timer";
@@ -21,6 +24,8 @@ import { ProgramEditor } from "./screens/ProgramEditor";
 import { Programs } from "./screens/Programs";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { Today } from "./screens/Today";
+import { Online } from "./screens/Online";
+import { Friends } from "./screens/Friends";
 
 // O treinador carrega o SDK da Anthropic: só baixa quando a tela abre.
 const Coach = lazy(() => import("./screens/Coach").then((m) => ({ default: m.Coach })));
@@ -38,7 +43,8 @@ function Shell() {
   const { state, configure } = useTimer();
   // Re-renderiza o app inteiro quando o programa ativo muda.
   useProgram();
-  const [settings] = useSettings();
+  const [settings, , settingsLoaded] = useSettings();
+  const sessions = useSessions();
   const today = useToday();
   // Semana de deload: paleta mais calma no app inteiro (o vermelho de ação vira um azul-aço).
   const deload = weekFor(settings.mesoStart, today) === 7;
@@ -57,33 +63,48 @@ function Shell() {
     [settings.sound, settings.vibrate, settings.notify, configure],
   );
 
+  // Instalação nova (sem treinos e sem ter passado pelo assistente): primeiro uso no lugar das telas.
+  if (settingsLoaded && sessions && sessions.length === 0 && !settings.onboarded && !/^\/(online|ajustes|privacidade)/.test(pathname)) {
+    return (
+      <ErrorBoundary resetKey="primeiro-uso">
+        <Onboarding />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <>
       <ScrollTop />
       <main className={`app${state ? " has-timer" : ""}`}>
-        <Routes>
-          <Route path="/" element={<Today />} />
-          <Route path="/treino/:id" element={<SessionScreen />} />
-          <Route path="/historico" element={<History />} />
-          <Route path="/progresso" element={<Progress />} />
-          <Route path="/relatorio" element={<Report />} />
-          <Route path="/relatorio/:week" element={<Report />} />
-          <Route path="/exercicios" element={<Exercises />} />
-          <Route path="/exercicios/:libId" element={<ExerciseDetail />} />
-          <Route path="/guia" element={<Guide />} />
-          <Route path="/ajustes" element={<SettingsScreen />} />
-          <Route path="/programas" element={<Programs />} />
-          <Route path="/programas/:id" element={<ProgramEditor />} />
-          <Route
-            path="/treinador"
-            element={
-              <Suspense fallback={null}>
-                <Coach />
-              </Suspense>
-            }
-          />
-          <Route path="*" element={<Today />} />
-        </Routes>
+        <ErrorBoundary resetKey={pathname}>
+          <Routes>
+            <Route path="/" element={<Today />} />
+            <Route path="/treino/:id" element={<SessionScreen />} />
+            <Route path="/historico" element={<History />} />
+            <Route path="/progresso" element={<Progress />} />
+            <Route path="/relatorio" element={<Report />} />
+            <Route path="/relatorio/:week" element={<Report />} />
+            <Route path="/exercicios" element={<Exercises />} />
+            <Route path="/exercicios/:libId" element={<ExerciseDetail />} />
+            <Route path="/guia" element={<Guide />} />
+            <Route path="/ajustes" element={<SettingsScreen />} />
+            <Route path="/programas" element={<Programs />} />
+            <Route path="/programas/:id" element={<ProgramEditor />} />
+            <Route path="/online" element={<Online />} />
+            <Route path="/primeiro-uso" element={<Onboarding inApp />} />
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
+            <Route path="/amigos" element={<Friends />} />
+            <Route
+              path="/treinador"
+              element={
+                <Suspense fallback={null}>
+                  <Coach />
+                </Suspense>
+              }
+            />
+            <Route path="*" element={<Today />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
       <TimerBar />
       <nav className="nav" aria-label="Seções">

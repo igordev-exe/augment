@@ -17,7 +17,7 @@ describe("antebraço", () => {
   it("é um músculo do app, com nome, e a biblioteca completa tem exercícios para ele", () => {
     expect(MUSCLE_ORDER).toContain("antebraco");
     expect(MUSCLE_LABEL.antebraco).toBe("Antebraço");
-    const wrist = EXTENDED.find((e) => e.muscles.includes("antebraco") && /Wrist Curl/.test(e.name));
+    const wrist = EXTENDED.find((e) => e.muscles.includes("antebraco") && /Wrist Curl/.test(e.en));
     expect(wrist).toBeTruthy();
     expect(exerciseFromLibrary(wrist!.id, "d1", new Set()).muscles).toEqual(["antebraco"]);
   });

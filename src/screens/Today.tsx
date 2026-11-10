@@ -5,6 +5,7 @@ import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
 import { SysModule } from "../components/SysModule";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
+import { OnlineStrip, useOnlineStatus } from "../components/OnlineStrip";
 import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
@@ -37,6 +38,7 @@ export function Today() {
   const navigate = useNavigate();
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
+  const status = useOnlineStatus();
 
   if (!sessions) return null;
 
@@ -114,7 +116,7 @@ export function Today() {
         </Link>
         <div className="row" style={{ gap: 10 }}>
           <span className="status">
-            <span className="status-dot ok" /> Local / ativo
+            <span className={`status-dot ${status.tone}`} /> {status.text}
           </span>
           <Link to="/ajustes" className="avatar" aria-label="Ajustes e perfil">
             <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={48} height={48} />
@@ -529,6 +531,8 @@ export function Today() {
           lado e sugere quando subir a carga.
         </div>
       )}
+
+      <OnlineStrip hasHistory={sessions.length > 0} />
 
       <footer className="sysfoot" aria-hidden="true">
         <span>AUGMENT // human performance division</span>

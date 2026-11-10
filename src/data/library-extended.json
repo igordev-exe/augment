@@ -2,7 +2,8 @@
   {
     "id": "db-3_4_Sit-Up",
     "src": "3_4_Sit-Up",
-    "name": "3/4 Sit-Up",
+    "name": "Abdominal 3/4",
+    "en": "3/4 Sit-Up",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -13,7 +14,8 @@
   {
     "id": "db-Ab_Crunch_Machine",
     "src": "Ab_Crunch_Machine",
-    "name": "Ab Crunch Machine",
+    "name": "Abdominal na máquina",
+    "en": "Ab Crunch Machine",
     "compound": false,
     "equip": "maquina",
     "level": "intermediate",
@@ -24,7 +26,8 @@
   {
     "id": "db-Advanced_Kettlebell_Windmill",
     "src": "Advanced_Kettlebell_Windmill",
-    "name": "Advanced Kettlebell Windmill",
+    "name": "Moinho avançado com kettlebell",
+    "en": "Advanced Kettlebell Windmill",
     "compound": false,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -35,7 +38,8 @@
   {
     "id": "db-Air_Bike",
     "src": "Air_Bike",
-    "name": "Air Bike",
+    "name": "Abdominal bicicleta",
+    "en": "Air Bike",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -46,7 +50,8 @@
   {
     "id": "db-Alternate_Hammer_Curl",
     "src": "Alternate_Hammer_Curl",
-    "name": "Alternate Hammer Curl",
+    "name": "Rosca martelo alternada",
+    "en": "Alternate Hammer Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -57,7 +62,8 @@
   {
     "id": "db-Alternate_Heel_Touchers",
     "src": "Alternate_Heel_Touchers",
-    "name": "Alternate Heel Touchers",
+    "name": "Toque alternado nos calcanhares",
+    "en": "Alternate Heel Touchers",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -68,7 +74,8 @@
   {
     "id": "db-Alternate_Incline_Dumbbell_Curl",
     "src": "Alternate_Incline_Dumbbell_Curl",
-    "name": "Alternate Incline Dumbbell Curl",
+    "name": "Rosca alternada no banco inclinado",
+    "en": "Alternate Incline Dumbbell Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -79,7 +86,8 @@
   {
     "id": "db-Alternating_Cable_Shoulder_Press",
     "src": "Alternating_Cable_Shoulder_Press",
-    "name": "Alternating Cable Shoulder Press",
+    "name": "Desenvolvimento alternado na polia",
+    "en": "Alternating Cable Shoulder Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -90,7 +98,8 @@
   {
     "id": "db-Alternating_Deltoid_Raise",
     "src": "Alternating_Deltoid_Raise",
-    "name": "Alternating Deltoid Raise",
+    "name": "Elevação alternada de deltoide",
+    "en": "Alternating Deltoid Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -101,7 +110,8 @@
   {
     "id": "db-Alternating_Floor_Press",
     "src": "Alternating_Floor_Press",
-    "name": "Alternating Floor Press",
+    "name": "Supino no chão alternado",
+    "en": "Alternating Floor Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "beginner",
@@ -112,7 +122,8 @@
   {
     "id": "db-Alternating_Hang_Clean",
     "src": "Alternating_Hang_Clean",
-    "name": "Alternating Hang Clean",
+    "name": "Hang clean alternado",
+    "en": "Alternating Hang Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -123,7 +134,8 @@
   {
     "id": "db-Alternating_Kettlebell_Press",
     "src": "Alternating_Kettlebell_Press",
-    "name": "Alternating Kettlebell Press",
+    "name": "Desenvolvimento alternado com kettlebell",
+    "en": "Alternating Kettlebell Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -134,7 +146,8 @@
   {
     "id": "db-Alternating_Kettlebell_Row",
     "src": "Alternating_Kettlebell_Row",
-    "name": "Alternating Kettlebell Row",
+    "name": "Remada alternada com kettlebell",
+    "en": "Alternating Kettlebell Row",
     "compound": false,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -145,7 +158,8 @@
   {
     "id": "db-Alternating_Renegade_Row",
     "src": "Alternating_Renegade_Row",
-    "name": "Alternating Renegade Row",
+    "name": "Remada renegada alternada",
+    "en": "Alternating Renegade Row",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -156,7 +170,8 @@
   {
     "id": "db-Anti-Gravity_Press",
     "src": "Anti-Gravity_Press",
-    "name": "Anti-Gravity Press",
+    "name": "Desenvolvimento antigravidade",
+    "en": "Anti-Gravity Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -167,7 +182,8 @@
   {
     "id": "db-Arnold_Dumbbell_Press",
     "src": "Arnold_Dumbbell_Press",
-    "name": "Arnold Dumbbell Press",
+    "name": "Desenvolvimento Arnold",
+    "en": "Arnold Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -178,7 +194,8 @@
   {
     "id": "db-Around_The_Worlds",
     "src": "Around_The_Worlds",
-    "name": "Around The Worlds",
+    "name": "Volta ao mundo com halteres",
+    "en": "Around The Worlds",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -189,7 +206,8 @@
   {
     "id": "db-Back_Flyes_-_With_Bands",
     "src": "Back_Flyes_-_With_Bands",
-    "name": "Back Flyes - With Bands",
+    "name": "Crucifixo inverso com elástico",
+    "en": "Back Flyes - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -200,7 +218,8 @@
   {
     "id": "db-Balance_Board",
     "src": "Balance_Board",
-    "name": "Balance Board",
+    "name": "Prancha de equilíbrio",
+    "en": "Balance Board",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -211,7 +230,8 @@
   {
     "id": "db-Ball_Leg_Curl",
     "src": "Ball_Leg_Curl",
-    "name": "Ball Leg Curl",
+    "name": "Flexão de pernas na bola",
+    "en": "Ball Leg Curl",
     "compound": false,
     "equip": "bola",
     "level": "beginner",
@@ -222,7 +242,8 @@
   {
     "id": "db-Band_Assisted_Pull-Up",
     "src": "Band_Assisted_Pull-Up",
-    "name": "Band Assisted Pull-Up",
+    "name": "Barra fixa com auxílio de elástico",
+    "en": "Band Assisted Pull-Up",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -233,7 +254,8 @@
   {
     "id": "db-Band_Good_Morning",
     "src": "Band_Good_Morning",
-    "name": "Band Good Morning",
+    "name": "Bom-dia com elástico",
+    "en": "Band Good Morning",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -244,7 +266,8 @@
   {
     "id": "db-Band_Good_Morning_Pull_Through",
     "src": "Band_Good_Morning_Pull_Through",
-    "name": "Band Good Morning (Pull Through)",
+    "name": "Bom-dia com elástico (pull through)",
+    "en": "Band Good Morning (Pull Through)",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -255,7 +278,8 @@
   {
     "id": "db-Band_Pull_Apart",
     "src": "Band_Pull_Apart",
-    "name": "Band Pull Apart",
+    "name": "Abertura de elástico (pull apart)",
+    "en": "Band Pull Apart",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -266,7 +290,8 @@
   {
     "id": "db-Band_Skull_Crusher",
     "src": "Band_Skull_Crusher",
-    "name": "Band Skull Crusher",
+    "name": "Tríceps testa com elástico",
+    "en": "Band Skull Crusher",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -277,7 +302,8 @@
   {
     "id": "db-Barbell_Ab_Rollout",
     "src": "Barbell_Ab_Rollout",
-    "name": "Barbell Ab Rollout",
+    "name": "Rolamento abdominal com barra",
+    "en": "Barbell Ab Rollout",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -288,7 +314,8 @@
   {
     "id": "db-Barbell_Ab_Rollout_-_On_Knees",
     "src": "Barbell_Ab_Rollout_-_On_Knees",
-    "name": "Barbell Ab Rollout - On Knees",
+    "name": "Rolamento abdominal com barra, de joelhos",
+    "en": "Barbell Ab Rollout - On Knees",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -299,7 +326,8 @@
   {
     "id": "db-Barbell_Bench_Press_-_Medium_Grip",
     "src": "Barbell_Bench_Press_-_Medium_Grip",
-    "name": "Barbell Bench Press - Medium Grip",
+    "name": "Supino reto com barra, pegada média",
+    "en": "Barbell Bench Press - Medium Grip",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -310,7 +338,8 @@
   {
     "id": "db-Barbell_Curl",
     "src": "Barbell_Curl",
-    "name": "Barbell Curl",
+    "name": "Rosca direta com barra",
+    "en": "Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -321,7 +350,8 @@
   {
     "id": "db-Barbell_Curls_Lying_Against_An_Incline",
     "src": "Barbell_Curls_Lying_Against_An_Incline",
-    "name": "Barbell Curls Lying Against An Incline",
+    "name": "Rosca com barra deitado no banco inclinado",
+    "en": "Barbell Curls Lying Against An Incline",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -332,7 +362,8 @@
   {
     "id": "db-Barbell_Full_Squat",
     "src": "Barbell_Full_Squat",
-    "name": "Barbell Full Squat",
+    "name": "Agachamento completo com barra",
+    "en": "Barbell Full Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -343,7 +374,8 @@
   {
     "id": "db-Barbell_Glute_Bridge",
     "src": "Barbell_Glute_Bridge",
-    "name": "Barbell Glute Bridge",
+    "name": "Ponte de glúteos com barra",
+    "en": "Barbell Glute Bridge",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -354,7 +386,8 @@
   {
     "id": "db-Barbell_Guillotine_Bench_Press",
     "src": "Barbell_Guillotine_Bench_Press",
-    "name": "Barbell Guillotine Bench Press",
+    "name": "Supino guilhotina com barra",
+    "en": "Barbell Guillotine Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -365,7 +398,8 @@
   {
     "id": "db-Barbell_Hack_Squat",
     "src": "Barbell_Hack_Squat",
-    "name": "Barbell Hack Squat",
+    "name": "Agachamento hack com barra",
+    "en": "Barbell Hack Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -376,7 +410,8 @@
   {
     "id": "db-Barbell_Incline_Bench_Press_-_Medium_Grip",
     "src": "Barbell_Incline_Bench_Press_-_Medium_Grip",
-    "name": "Barbell Incline Bench Press - Medium Grip",
+    "name": "Supino inclinado com barra, pegada média",
+    "en": "Barbell Incline Bench Press - Medium Grip",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -387,7 +422,8 @@
   {
     "id": "db-Barbell_Incline_Shoulder_Raise",
     "src": "Barbell_Incline_Shoulder_Raise",
-    "name": "Barbell Incline Shoulder Raise",
+    "name": "Elevação de ombros com barra no banco inclinado",
+    "en": "Barbell Incline Shoulder Raise",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -398,7 +434,8 @@
   {
     "id": "db-Barbell_Lunge",
     "src": "Barbell_Lunge",
-    "name": "Barbell Lunge",
+    "name": "Afundo com barra",
+    "en": "Barbell Lunge",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -409,7 +446,8 @@
   {
     "id": "db-Barbell_Rear_Delt_Row",
     "src": "Barbell_Rear_Delt_Row",
-    "name": "Barbell Rear Delt Row",
+    "name": "Remada para deltoide posterior com barra",
+    "en": "Barbell Rear Delt Row",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -420,7 +458,8 @@
   {
     "id": "db-Barbell_Rollout_from_Bench",
     "src": "Barbell_Rollout_from_Bench",
-    "name": "Barbell Rollout from Bench",
+    "name": "Rolamento com barra a partir do banco",
+    "en": "Barbell Rollout from Bench",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -431,7 +470,8 @@
   {
     "id": "db-Barbell_Seated_Calf_Raise",
     "src": "Barbell_Seated_Calf_Raise",
-    "name": "Barbell Seated Calf Raise",
+    "name": "Panturrilha sentado com barra",
+    "en": "Barbell Seated Calf Raise",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -442,7 +482,8 @@
   {
     "id": "db-Barbell_Shoulder_Press",
     "src": "Barbell_Shoulder_Press",
-    "name": "Barbell Shoulder Press",
+    "name": "Desenvolvimento com barra",
+    "en": "Barbell Shoulder Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -453,7 +494,8 @@
   {
     "id": "db-Barbell_Shrug",
     "src": "Barbell_Shrug",
-    "name": "Barbell Shrug",
+    "name": "Encolhimento com barra",
+    "en": "Barbell Shrug",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -464,7 +506,8 @@
   {
     "id": "db-Barbell_Shrug_Behind_The_Back",
     "src": "Barbell_Shrug_Behind_The_Back",
-    "name": "Barbell Shrug Behind The Back",
+    "name": "Encolhimento com barra por trás",
+    "en": "Barbell Shrug Behind The Back",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -475,7 +518,8 @@
   {
     "id": "db-Barbell_Side_Bend",
     "src": "Barbell_Side_Bend",
-    "name": "Barbell Side Bend",
+    "name": "Flexão lateral do tronco com barra",
+    "en": "Barbell Side Bend",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -486,7 +530,8 @@
   {
     "id": "db-Barbell_Side_Split_Squat",
     "src": "Barbell_Side_Split_Squat",
-    "name": "Barbell Side Split Squat",
+    "name": "Agachamento lateral com barra",
+    "en": "Barbell Side Split Squat",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -497,7 +542,8 @@
   {
     "id": "db-Barbell_Squat",
     "src": "Barbell_Squat",
-    "name": "Barbell Squat",
+    "name": "Agachamento com barra",
+    "en": "Barbell Squat",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -508,7 +554,8 @@
   {
     "id": "db-Barbell_Squat_To_A_Bench",
     "src": "Barbell_Squat_To_A_Bench",
-    "name": "Barbell Squat To A Bench",
+    "name": "Agachamento com barra até o banco",
+    "en": "Barbell Squat To A Bench",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -519,7 +566,8 @@
   {
     "id": "db-Barbell_Step_Ups",
     "src": "Barbell_Step_Ups",
-    "name": "Barbell Step Ups",
+    "name": "Subida no banco com barra",
+    "en": "Barbell Step Ups",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -530,7 +578,8 @@
   {
     "id": "db-Barbell_Walking_Lunge",
     "src": "Barbell_Walking_Lunge",
-    "name": "Barbell Walking Lunge",
+    "name": "Afundo caminhando com barra",
+    "en": "Barbell Walking Lunge",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -541,7 +590,8 @@
   {
     "id": "db-Battling_Ropes",
     "src": "Battling_Ropes",
-    "name": "Battling Ropes",
+    "name": "Cordas navais",
+    "en": "Battling Ropes",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -552,7 +602,8 @@
   {
     "id": "db-Bench_Dips",
     "src": "Bench_Dips",
-    "name": "Bench Dips",
+    "name": "Mergulho no banco",
+    "en": "Bench Dips",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -563,7 +614,8 @@
   {
     "id": "db-Bench_Press_-_Powerlifting",
     "src": "Bench_Press_-_Powerlifting",
-    "name": "Bench Press - Powerlifting",
+    "name": "Supino estilo powerlifting",
+    "en": "Bench Press - Powerlifting",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -574,7 +626,8 @@
   {
     "id": "db-Bench_Press_-_With_Bands",
     "src": "Bench_Press_-_With_Bands",
-    "name": "Bench Press - With Bands",
+    "name": "Supino com elástico",
+    "en": "Bench Press - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -585,7 +638,8 @@
   {
     "id": "db-Bench_Press_with_Chains",
     "src": "Bench_Press_with_Chains",
-    "name": "Bench Press with Chains",
+    "name": "Supino com correntes",
+    "en": "Bench Press with Chains",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -596,7 +650,8 @@
   {
     "id": "db-Bent_Over_Barbell_Row",
     "src": "Bent_Over_Barbell_Row",
-    "name": "Bent Over Barbell Row",
+    "name": "Remada curvada com barra",
+    "en": "Bent Over Barbell Row",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -607,7 +662,8 @@
   {
     "id": "db-Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
     "src": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
-    "name": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+    "name": "Elevação posterior curvada com halteres, testa no banco",
+    "en": "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -618,7 +674,8 @@
   {
     "id": "db-Bent_Over_Low-Pulley_Side_Lateral",
     "src": "Bent_Over_Low-Pulley_Side_Lateral",
-    "name": "Bent Over Low-Pulley Side Lateral",
+    "name": "Elevação lateral curvada na polia baixa",
+    "en": "Bent Over Low-Pulley Side Lateral",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -629,7 +686,8 @@
   {
     "id": "db-Bent_Over_One-Arm_Long_Bar_Row",
     "src": "Bent_Over_One-Arm_Long_Bar_Row",
-    "name": "Bent Over One-Arm Long Bar Row",
+    "name": "Remada curvada unilateral com barra longa",
+    "en": "Bent Over One-Arm Long Bar Row",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -640,7 +698,8 @@
   {
     "id": "db-Bent_Over_Two-Arm_Long_Bar_Row",
     "src": "Bent_Over_Two-Arm_Long_Bar_Row",
-    "name": "Bent Over Two-Arm Long Bar Row",
+    "name": "Remada curvada com barra longa, duas mãos",
+    "en": "Bent Over Two-Arm Long Bar Row",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -651,7 +710,8 @@
   {
     "id": "db-Bent_Over_Two-Dumbbell_Row",
     "src": "Bent_Over_Two-Dumbbell_Row",
-    "name": "Bent Over Two-Dumbbell Row",
+    "name": "Remada curvada com dois halteres",
+    "en": "Bent Over Two-Dumbbell Row",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -662,7 +722,8 @@
   {
     "id": "db-Bent_Over_Two-Dumbbell_Row_With_Palms_In",
     "src": "Bent_Over_Two-Dumbbell_Row_With_Palms_In",
-    "name": "Bent Over Two-Dumbbell Row With Palms In",
+    "name": "Remada curvada com dois halteres, pegada neutra",
+    "en": "Bent Over Two-Dumbbell Row With Palms In",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -673,7 +734,8 @@
   {
     "id": "db-Bent_Press",
     "src": "Bent_Press",
-    "name": "Bent Press",
+    "name": "Bent press",
+    "en": "Bent Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -684,7 +746,8 @@
   {
     "id": "db-Bent-Arm_Barbell_Pullover",
     "src": "Bent-Arm_Barbell_Pullover",
-    "name": "Bent-Arm Barbell Pullover",
+    "name": "Pullover com barra, braços flexionados",
+    "en": "Bent-Arm Barbell Pullover",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -695,7 +758,8 @@
   {
     "id": "db-Bent-Arm_Dumbbell_Pullover",
     "src": "Bent-Arm_Dumbbell_Pullover",
-    "name": "Bent-Arm Dumbbell Pullover",
+    "name": "Pullover com halter, braços flexionados",
+    "en": "Bent-Arm Dumbbell Pullover",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -706,7 +770,8 @@
   {
     "id": "db-Bent-Knee_Hip_Raise",
     "src": "Bent-Knee_Hip_Raise",
-    "name": "Bent-Knee Hip Raise",
+    "name": "Elevação de quadril com joelhos flexionados",
+    "en": "Bent-Knee Hip Raise",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -717,7 +782,8 @@
   {
     "id": "db-Board_Press",
     "src": "Board_Press",
-    "name": "Board Press",
+    "name": "Supino com tábua (board press)",
+    "en": "Board Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -728,7 +794,8 @@
   {
     "id": "db-Body_Tricep_Press",
     "src": "Body_Tricep_Press",
-    "name": "Body Tricep Press",
+    "name": "Tríceps com o peso do corpo",
+    "en": "Body Tricep Press",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -739,7 +806,8 @@
   {
     "id": "db-Body-Up",
     "src": "Body-Up",
-    "name": "Body-Up",
+    "name": "Body-up (tríceps no chão)",
+    "en": "Body-Up",
     "compound": false,
     "equip": "corporal",
     "level": "intermediate",
@@ -750,7 +818,8 @@
   {
     "id": "db-Bodyweight_Flyes",
     "src": "Bodyweight_Flyes",
-    "name": "Bodyweight Flyes",
+    "name": "Crucifixo com o peso do corpo",
+    "en": "Bodyweight Flyes",
     "compound": false,
     "equip": "barra-w",
     "level": "intermediate",
@@ -761,7 +830,8 @@
   {
     "id": "db-Bodyweight_Mid_Row",
     "src": "Bodyweight_Mid_Row",
-    "name": "Bodyweight Mid Row",
+    "name": "Remada média com o peso do corpo",
+    "en": "Bodyweight Mid Row",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -772,7 +842,8 @@
   {
     "id": "db-Bodyweight_Squat",
     "src": "Bodyweight_Squat",
-    "name": "Bodyweight Squat",
+    "name": "Agachamento livre sem carga",
+    "en": "Bodyweight Squat",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -783,7 +854,8 @@
   {
     "id": "db-Bodyweight_Walking_Lunge",
     "src": "Bodyweight_Walking_Lunge",
-    "name": "Bodyweight Walking Lunge",
+    "name": "Afundo caminhando sem carga",
+    "en": "Bodyweight Walking Lunge",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -794,7 +866,8 @@
   {
     "id": "db-Bosu_Ball_Cable_Crunch_With_Side_Bends",
     "src": "Bosu_Ball_Cable_Crunch_With_Side_Bends",
-    "name": "Bosu Ball Cable Crunch With Side Bends",
+    "name": "Abdominal na polia sobre o bosu com flexão lateral",
+    "en": "Bosu Ball Cable Crunch With Side Bends",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -805,7 +878,8 @@
   {
     "id": "db-Bottoms_Up",
     "src": "Bottoms_Up",
-    "name": "Bottoms Up",
+    "name": "Bottoms up (elevação de pernas e quadril)",
+    "en": "Bottoms Up",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -816,7 +890,8 @@
   {
     "id": "db-Bottoms-Up_Clean_From_The_Hang_Position",
     "src": "Bottoms-Up_Clean_From_The_Hang_Position",
-    "name": "Bottoms-Up Clean From The Hang Position",
+    "name": "Clean com kettlebell invertido, saindo do hang",
+    "en": "Bottoms-Up Clean From The Hang Position",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -827,7 +902,8 @@
   {
     "id": "db-Box_Squat",
     "src": "Box_Squat",
-    "name": "Box Squat",
+    "name": "Agachamento no caixote",
+    "en": "Box Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -838,7 +914,8 @@
   {
     "id": "db-Box_Squat_with_Bands",
     "src": "Box_Squat_with_Bands",
-    "name": "Box Squat with Bands",
+    "name": "Agachamento no caixote com elástico",
+    "en": "Box Squat with Bands",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -849,7 +926,8 @@
   {
     "id": "db-Box_Squat_with_Chains",
     "src": "Box_Squat_with_Chains",
-    "name": "Box Squat with Chains",
+    "name": "Agachamento no caixote com correntes",
+    "en": "Box Squat with Chains",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -860,7 +938,8 @@
   {
     "id": "db-Bradford_Rocky_Presses",
     "src": "Bradford_Rocky_Presses",
-    "name": "Bradford/Rocky Presses",
+    "name": "Desenvolvimento Bradford/Rocky",
+    "en": "Bradford/Rocky Presses",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -871,7 +950,8 @@
   {
     "id": "db-Butt_Lift_Bridge",
     "src": "Butt_Lift_Bridge",
-    "name": "Butt Lift (Bridge)",
+    "name": "Elevação de quadril (ponte)",
+    "en": "Butt Lift (Bridge)",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -882,7 +962,8 @@
   {
     "id": "db-Butt-Ups",
     "src": "Butt-Ups",
-    "name": "Butt-Ups",
+    "name": "Elevação de quadril em prancha",
+    "en": "Butt-Ups",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -893,7 +974,8 @@
   {
     "id": "db-Butterfly",
     "src": "Butterfly",
-    "name": "Butterfly",
+    "name": "Voador (peck deck)",
+    "en": "Butterfly",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -904,7 +986,8 @@
   {
     "id": "db-Cable_Chest_Press",
     "src": "Cable_Chest_Press",
-    "name": "Cable Chest Press",
+    "name": "Supino na polia",
+    "en": "Cable Chest Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -915,7 +998,8 @@
   {
     "id": "db-Cable_Crossover",
     "src": "Cable_Crossover",
-    "name": "Cable Crossover",
+    "name": "Crossover na polia",
+    "en": "Cable Crossover",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -926,7 +1010,8 @@
   {
     "id": "db-Cable_Deadlifts",
     "src": "Cable_Deadlifts",
-    "name": "Cable Deadlifts",
+    "name": "Levantamento terra na polia",
+    "en": "Cable Deadlifts",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -937,7 +1022,8 @@
   {
     "id": "db-Cable_Hip_Adduction",
     "src": "Cable_Hip_Adduction",
-    "name": "Cable Hip Adduction",
+    "name": "Adução de quadril na polia",
+    "en": "Cable Hip Adduction",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -948,7 +1034,8 @@
   {
     "id": "db-Cable_Incline_Pushdown",
     "src": "Cable_Incline_Pushdown",
-    "name": "Cable Incline Pushdown",
+    "name": "Tríceps na polia no banco inclinado",
+    "en": "Cable Incline Pushdown",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -959,7 +1046,8 @@
   {
     "id": "db-Cable_Incline_Triceps_Extension",
     "src": "Cable_Incline_Triceps_Extension",
-    "name": "Cable Incline Triceps Extension",
+    "name": "Extensão de tríceps inclinado na polia",
+    "en": "Cable Incline Triceps Extension",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -970,7 +1058,8 @@
   {
     "id": "db-Cable_Internal_Rotation",
     "src": "Cable_Internal_Rotation",
-    "name": "Cable Internal Rotation",
+    "name": "Rotação interna na polia",
+    "en": "Cable Internal Rotation",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -981,7 +1070,8 @@
   {
     "id": "db-Cable_Iron_Cross",
     "src": "Cable_Iron_Cross",
-    "name": "Cable Iron Cross",
+    "name": "Crucifixo de ferro na polia",
+    "en": "Cable Iron Cross",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -992,7 +1082,8 @@
   {
     "id": "db-Cable_Judo_Flip",
     "src": "Cable_Judo_Flip",
-    "name": "Cable Judo Flip",
+    "name": "Giro de judô na polia",
+    "en": "Cable Judo Flip",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -1003,7 +1094,8 @@
   {
     "id": "db-Cable_Lying_Triceps_Extension",
     "src": "Cable_Lying_Triceps_Extension",
-    "name": "Cable Lying Triceps Extension",
+    "name": "Extensão de tríceps deitado na polia",
+    "en": "Cable Lying Triceps Extension",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1014,7 +1106,8 @@
   {
     "id": "db-Cable_One_Arm_Tricep_Extension",
     "src": "Cable_One_Arm_Tricep_Extension",
-    "name": "Cable One Arm Tricep Extension",
+    "name": "Extensão de tríceps unilateral na polia",
+    "en": "Cable One Arm Tricep Extension",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1025,7 +1118,8 @@
   {
     "id": "db-Cable_Preacher_Curl",
     "src": "Cable_Preacher_Curl",
-    "name": "Cable Preacher Curl",
+    "name": "Rosca Scott na polia",
+    "en": "Cable Preacher Curl",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1036,7 +1130,8 @@
   {
     "id": "db-Cable_Rear_Delt_Fly",
     "src": "Cable_Rear_Delt_Fly",
-    "name": "Cable Rear Delt Fly",
+    "name": "Crucifixo inverso na polia",
+    "en": "Cable Rear Delt Fly",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1047,7 +1142,8 @@
   {
     "id": "db-Cable_Reverse_Crunch",
     "src": "Cable_Reverse_Crunch",
-    "name": "Cable Reverse Crunch",
+    "name": "Abdominal reverso na polia",
+    "en": "Cable Reverse Crunch",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1058,7 +1154,8 @@
   {
     "id": "db-Cable_Rope_Rear-Delt_Rows",
     "src": "Cable_Rope_Rear-Delt_Rows",
-    "name": "Cable Rope Rear-Delt Rows",
+    "name": "Remada com corda para deltoide posterior",
+    "en": "Cable Rope Rear-Delt Rows",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -1069,7 +1166,8 @@
   {
     "id": "db-Cable_Russian_Twists",
     "src": "Cable_Russian_Twists",
-    "name": "Cable Russian Twists",
+    "name": "Giro russo na polia",
+    "en": "Cable Russian Twists",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -1080,7 +1178,8 @@
   {
     "id": "db-Cable_Seated_Crunch",
     "src": "Cable_Seated_Crunch",
-    "name": "Cable Seated Crunch",
+    "name": "Abdominal sentado na polia",
+    "en": "Cable Seated Crunch",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1091,7 +1190,8 @@
   {
     "id": "db-Cable_Shoulder_Press",
     "src": "Cable_Shoulder_Press",
-    "name": "Cable Shoulder Press",
+    "name": "Desenvolvimento na polia",
+    "en": "Cable Shoulder Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -1102,7 +1202,8 @@
   {
     "id": "db-Cable_Shrugs",
     "src": "Cable_Shrugs",
-    "name": "Cable Shrugs",
+    "name": "Encolhimento na polia",
+    "en": "Cable Shrugs",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1113,7 +1214,8 @@
   {
     "id": "db-Cable_Wrist_Curl",
     "src": "Cable_Wrist_Curl",
-    "name": "Cable Wrist Curl",
+    "name": "Rosca de punho na polia",
+    "en": "Cable Wrist Curl",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -1124,7 +1226,8 @@
   {
     "id": "db-Calf_Press",
     "src": "Calf_Press",
-    "name": "Calf Press",
+    "name": "Panturrilha no leg press",
+    "en": "Calf Press",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -1135,7 +1238,8 @@
   {
     "id": "db-Calf_Press_On_The_Leg_Press_Machine",
     "src": "Calf_Press_On_The_Leg_Press_Machine",
-    "name": "Calf Press On The Leg Press Machine",
+    "name": "Panturrilha no leg press (máquina)",
+    "en": "Calf Press On The Leg Press Machine",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -1146,7 +1250,8 @@
   {
     "id": "db-Calf_Raise_On_A_Dumbbell",
     "src": "Calf_Raise_On_A_Dumbbell",
-    "name": "Calf Raise On A Dumbbell",
+    "name": "Panturrilha em cima de um halter",
+    "en": "Calf Raise On A Dumbbell",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1157,7 +1262,8 @@
   {
     "id": "db-Calf_Raises_-_With_Bands",
     "src": "Calf_Raises_-_With_Bands",
-    "name": "Calf Raises - With Bands",
+    "name": "Panturrilha com elástico",
+    "en": "Calf Raises - With Bands",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -1168,7 +1274,8 @@
   {
     "id": "db-Calf-Machine_Shoulder_Shrug",
     "src": "Calf-Machine_Shoulder_Shrug",
-    "name": "Calf-Machine Shoulder Shrug",
+    "name": "Encolhimento na máquina de panturrilha",
+    "en": "Calf-Machine Shoulder Shrug",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -1179,7 +1286,8 @@
   {
     "id": "db-Car_Drivers",
     "src": "Car_Drivers",
-    "name": "Car Drivers",
+    "name": "Volante (rotação de anilha à frente)",
+    "en": "Car Drivers",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -1190,7 +1298,8 @@
   {
     "id": "db-Chain_Handle_Extension",
     "src": "Chain_Handle_Extension",
-    "name": "Chain Handle Extension",
+    "name": "Extensão com alças de corrente",
+    "en": "Chain Handle Extension",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -1201,7 +1310,8 @@
   {
     "id": "db-Chain_Press",
     "src": "Chain_Press",
-    "name": "Chain Press",
+    "name": "Supino com correntes nas mãos",
+    "en": "Chain Press",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -1212,7 +1322,8 @@
   {
     "id": "db-Chair_Squat",
     "src": "Chair_Squat",
-    "name": "Chair Squat",
+    "name": "Agachamento na cadeira",
+    "en": "Chair Squat",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -1223,7 +1334,8 @@
   {
     "id": "db-Chin-Up",
     "src": "Chin-Up",
-    "name": "Chin-Up",
+    "name": "Barra fixa supinada",
+    "en": "Chin-Up",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1234,7 +1346,8 @@
   {
     "id": "db-Clean_and_Press",
     "src": "Clean_and_Press",
-    "name": "Clean and Press",
+    "name": "Clean e desenvolvimento",
+    "en": "Clean and Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -1245,7 +1358,8 @@
   {
     "id": "db-Clock_Push-Up",
     "src": "Clock_Push-Up",
-    "name": "Clock Push-Up",
+    "name": "Flexão de braços relógio",
+    "en": "Clock Push-Up",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -1256,7 +1370,8 @@
   {
     "id": "db-Close-Grip_Barbell_Bench_Press",
     "src": "Close-Grip_Barbell_Bench_Press",
-    "name": "Close-Grip Barbell Bench Press",
+    "name": "Supino fechado com barra",
+    "en": "Close-Grip Barbell Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -1267,7 +1382,8 @@
   {
     "id": "db-Close-Grip_Dumbbell_Press",
     "src": "Close-Grip_Dumbbell_Press",
-    "name": "Close-Grip Dumbbell Press",
+    "name": "Supino fechado com halteres",
+    "en": "Close-Grip Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1278,7 +1394,8 @@
   {
     "id": "db-Close-Grip_EZ_Bar_Curl",
     "src": "Close-Grip_EZ_Bar_Curl",
-    "name": "Close-Grip EZ Bar Curl",
+    "name": "Rosca fechada com barra W",
+    "en": "Close-Grip EZ Bar Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -1289,7 +1406,8 @@
   {
     "id": "db-Close-Grip_EZ-Bar_Curl_with_Band",
     "src": "Close-Grip_EZ-Bar_Curl_with_Band",
-    "name": "Close-Grip EZ-Bar Curl with Band",
+    "name": "Rosca fechada com barra W e elástico",
+    "en": "Close-Grip EZ-Bar Curl with Band",
     "compound": false,
     "equip": "barra-w",
     "level": "beginner",
@@ -1300,7 +1418,8 @@
   {
     "id": "db-Close-Grip_EZ-Bar_Press",
     "src": "Close-Grip_EZ-Bar_Press",
-    "name": "Close-Grip EZ-Bar Press",
+    "name": "Supino fechado com barra W",
+    "en": "Close-Grip EZ-Bar Press",
     "compound": true,
     "equip": "barra-w",
     "level": "beginner",
@@ -1311,7 +1430,8 @@
   {
     "id": "db-Close-Grip_Front_Lat_Pulldown",
     "src": "Close-Grip_Front_Lat_Pulldown",
-    "name": "Close-Grip Front Lat Pulldown",
+    "name": "Puxada frontal com pegada fechada",
+    "en": "Close-Grip Front Lat Pulldown",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -1322,7 +1442,8 @@
   {
     "id": "db-Close-Grip_Push-Up_off_of_a_Dumbbell",
     "src": "Close-Grip_Push-Up_off_of_a_Dumbbell",
-    "name": "Close-Grip Push-Up off of a Dumbbell",
+    "name": "Flexão de braços fechada sobre um halter",
+    "en": "Close-Grip Push-Up off of a Dumbbell",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -1333,7 +1454,8 @@
   {
     "id": "db-Close-Grip_Standing_Barbell_Curl",
     "src": "Close-Grip_Standing_Barbell_Curl",
-    "name": "Close-Grip Standing Barbell Curl",
+    "name": "Rosca em pé com barra, pegada fechada",
+    "en": "Close-Grip Standing Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -1344,7 +1466,8 @@
   {
     "id": "db-Cocoons",
     "src": "Cocoons",
-    "name": "Cocoons",
+    "name": "Casulo (abdominal grupado)",
+    "en": "Cocoons",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1355,7 +1478,8 @@
   {
     "id": "db-Concentration_Curls",
     "src": "Concentration_Curls",
-    "name": "Concentration Curls",
+    "name": "Rosca concentrada",
+    "en": "Concentration Curls",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1366,7 +1490,8 @@
   {
     "id": "db-Cross_Body_Hammer_Curl",
     "src": "Cross_Body_Hammer_Curl",
-    "name": "Cross Body Hammer Curl",
+    "name": "Rosca martelo cruzada",
+    "en": "Cross Body Hammer Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1377,7 +1502,8 @@
   {
     "id": "db-Cross_Over_-_With_Bands",
     "src": "Cross_Over_-_With_Bands",
-    "name": "Cross Over - With Bands",
+    "name": "Crossover com elástico",
+    "en": "Cross Over - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -1388,7 +1514,8 @@
   {
     "id": "db-Cross-Body_Crunch",
     "src": "Cross-Body_Crunch",
-    "name": "Cross-Body Crunch",
+    "name": "Abdominal cruzado",
+    "en": "Cross-Body Crunch",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1399,7 +1526,8 @@
   {
     "id": "db-Crunch_-_Hands_Overhead",
     "src": "Crunch_-_Hands_Overhead",
-    "name": "Crunch - Hands Overhead",
+    "name": "Abdominal com as mãos acima da cabeça",
+    "en": "Crunch - Hands Overhead",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -1410,7 +1538,8 @@
   {
     "id": "db-Crunch_-_Legs_On_Exercise_Ball",
     "src": "Crunch_-_Legs_On_Exercise_Ball",
-    "name": "Crunch - Legs On Exercise Ball",
+    "name": "Abdominal com as pernas na bola",
+    "en": "Crunch - Legs On Exercise Ball",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -1421,7 +1550,8 @@
   {
     "id": "db-Crunches",
     "src": "Crunches",
-    "name": "Crunches",
+    "name": "Abdominal",
+    "en": "Crunches",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -1432,7 +1562,8 @@
   {
     "id": "db-Cuban_Press",
     "src": "Cuban_Press",
-    "name": "Cuban Press",
+    "name": "Desenvolvimento cubano",
+    "en": "Cuban Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1443,7 +1574,8 @@
   {
     "id": "db-Dead_Bug",
     "src": "Dead_Bug",
-    "name": "Dead Bug",
+    "name": "Dead bug (inseto morto)",
+    "en": "Dead Bug",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1454,7 +1586,8 @@
   {
     "id": "db-Decline_Barbell_Bench_Press",
     "src": "Decline_Barbell_Bench_Press",
-    "name": "Decline Barbell Bench Press",
+    "name": "Supino declinado com barra",
+    "en": "Decline Barbell Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -1465,7 +1598,8 @@
   {
     "id": "db-Decline_Close-Grip_Bench_To_Skull_Crusher",
     "src": "Decline_Close-Grip_Bench_To_Skull_Crusher",
-    "name": "Decline Close-Grip Bench To Skull Crusher",
+    "name": "Supino fechado declinado para tríceps testa",
+    "en": "Decline Close-Grip Bench To Skull Crusher",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -1476,7 +1610,8 @@
   {
     "id": "db-Decline_Crunch",
     "src": "Decline_Crunch",
-    "name": "Decline Crunch",
+    "name": "Abdominal declinado",
+    "en": "Decline Crunch",
     "compound": false,
     "equip": "corporal",
     "level": "intermediate",
@@ -1487,7 +1622,8 @@
   {
     "id": "db-Decline_Dumbbell_Bench_Press",
     "src": "Decline_Dumbbell_Bench_Press",
-    "name": "Decline Dumbbell Bench Press",
+    "name": "Supino declinado com halteres",
+    "en": "Decline Dumbbell Bench Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1498,7 +1634,8 @@
   {
     "id": "db-Decline_Dumbbell_Flyes",
     "src": "Decline_Dumbbell_Flyes",
-    "name": "Decline Dumbbell Flyes",
+    "name": "Crucifixo declinado com halteres",
+    "en": "Decline Dumbbell Flyes",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1509,7 +1646,8 @@
   {
     "id": "db-Decline_Dumbbell_Triceps_Extension",
     "src": "Decline_Dumbbell_Triceps_Extension",
-    "name": "Decline Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps declinado com halteres",
+    "en": "Decline Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1520,7 +1658,8 @@
   {
     "id": "db-Decline_EZ_Bar_Triceps_Extension",
     "src": "Decline_EZ_Bar_Triceps_Extension",
-    "name": "Decline EZ Bar Triceps Extension",
+    "name": "Extensão de tríceps declinado com barra W",
+    "en": "Decline EZ Bar Triceps Extension",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -1531,7 +1670,8 @@
   {
     "id": "db-Decline_Oblique_Crunch",
     "src": "Decline_Oblique_Crunch",
-    "name": "Decline Oblique Crunch",
+    "name": "Abdominal oblíquo declinado",
+    "en": "Decline Oblique Crunch",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1542,7 +1682,8 @@
   {
     "id": "db-Decline_Push-Up",
     "src": "Decline_Push-Up",
-    "name": "Decline Push-Up",
+    "name": "Flexão de braços declinada",
+    "en": "Decline Push-Up",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -1553,7 +1694,8 @@
   {
     "id": "db-Decline_Reverse_Crunch",
     "src": "Decline_Reverse_Crunch",
-    "name": "Decline Reverse Crunch",
+    "name": "Abdominal reverso declinado",
+    "en": "Decline Reverse Crunch",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1564,7 +1706,8 @@
   {
     "id": "db-Decline_Smith_Press",
     "src": "Decline_Smith_Press",
-    "name": "Decline Smith Press",
+    "name": "Supino declinado no Smith",
+    "en": "Decline Smith Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -1575,7 +1718,8 @@
   {
     "id": "db-Dip_Machine",
     "src": "Dip_Machine",
-    "name": "Dip Machine",
+    "name": "Mergulho na máquina",
+    "en": "Dip Machine",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -1586,7 +1730,8 @@
   {
     "id": "db-Dips_-_Chest_Version",
     "src": "Dips_-_Chest_Version",
-    "name": "Dips - Chest Version",
+    "name": "Paralelas com ênfase no peito",
+    "en": "Dips - Chest Version",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -1597,7 +1742,8 @@
   {
     "id": "db-Dips_-_Triceps_Version",
     "src": "Dips_-_Triceps_Version",
-    "name": "Dips - Triceps Version",
+    "name": "Paralelas com ênfase no tríceps",
+    "en": "Dips - Triceps Version",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -1608,7 +1754,8 @@
   {
     "id": "db-Donkey_Calf_Raises",
     "src": "Donkey_Calf_Raises",
-    "name": "Donkey Calf Raises",
+    "name": "Panturrilha burrinho",
+    "en": "Donkey Calf Raises",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -1619,7 +1766,8 @@
   {
     "id": "db-Double_Kettlebell_Alternating_Hang_Clean",
     "src": "Double_Kettlebell_Alternating_Hang_Clean",
-    "name": "Double Kettlebell Alternating Hang Clean",
+    "name": "Hang clean alternado com dois kettlebells",
+    "en": "Double Kettlebell Alternating Hang Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -1630,7 +1778,8 @@
   {
     "id": "db-Double_Kettlebell_Jerk",
     "src": "Double_Kettlebell_Jerk",
-    "name": "Double Kettlebell Jerk",
+    "name": "Jerk com dois kettlebells",
+    "en": "Double Kettlebell Jerk",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -1641,7 +1790,8 @@
   {
     "id": "db-Double_Kettlebell_Push_Press",
     "src": "Double_Kettlebell_Push_Press",
-    "name": "Double Kettlebell Push Press",
+    "name": "Push press com dois kettlebells",
+    "en": "Double Kettlebell Push Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -1652,7 +1802,8 @@
   {
     "id": "db-Double_Kettlebell_Snatch",
     "src": "Double_Kettlebell_Snatch",
-    "name": "Double Kettlebell Snatch",
+    "name": "Arranco com dois kettlebells",
+    "en": "Double Kettlebell Snatch",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -1663,7 +1814,8 @@
   {
     "id": "db-Double_Kettlebell_Windmill",
     "src": "Double_Kettlebell_Windmill",
-    "name": "Double Kettlebell Windmill",
+    "name": "Moinho com dois kettlebells",
+    "en": "Double Kettlebell Windmill",
     "compound": false,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -1674,7 +1826,8 @@
   {
     "id": "db-Downward_Facing_Balance",
     "src": "Downward_Facing_Balance",
-    "name": "Downward Facing Balance",
+    "name": "Equilíbrio de frente para o chão",
+    "en": "Downward Facing Balance",
     "compound": false,
     "equip": "bola",
     "level": "intermediate",
@@ -1685,7 +1838,8 @@
   {
     "id": "db-Drag_Curl",
     "src": "Drag_Curl",
-    "name": "Drag Curl",
+    "name": "Rosca arrastada (drag curl)",
+    "en": "Drag Curl",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -1696,7 +1850,8 @@
   {
     "id": "db-Dumbbell_Alternate_Bicep_Curl",
     "src": "Dumbbell_Alternate_Bicep_Curl",
-    "name": "Dumbbell Alternate Bicep Curl",
+    "name": "Rosca alternada com halteres",
+    "en": "Dumbbell Alternate Bicep Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1707,7 +1862,8 @@
   {
     "id": "db-Dumbbell_Bench_Press",
     "src": "Dumbbell_Bench_Press",
-    "name": "Dumbbell Bench Press",
+    "name": "Supino reto com halteres",
+    "en": "Dumbbell Bench Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1718,7 +1874,8 @@
   {
     "id": "db-Dumbbell_Bench_Press_with_Neutral_Grip",
     "src": "Dumbbell_Bench_Press_with_Neutral_Grip",
-    "name": "Dumbbell Bench Press with Neutral Grip",
+    "name": "Supino com halteres, pegada neutra",
+    "en": "Dumbbell Bench Press with Neutral Grip",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1729,7 +1886,8 @@
   {
     "id": "db-Dumbbell_Bicep_Curl",
     "src": "Dumbbell_Bicep_Curl",
-    "name": "Dumbbell Bicep Curl",
+    "name": "Rosca direta com halteres",
+    "en": "Dumbbell Bicep Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1740,7 +1898,8 @@
   {
     "id": "db-Dumbbell_Clean",
     "src": "Dumbbell_Clean",
-    "name": "Dumbbell Clean",
+    "name": "Clean com halteres",
+    "en": "Dumbbell Clean",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1751,7 +1910,8 @@
   {
     "id": "db-Dumbbell_Floor_Press",
     "src": "Dumbbell_Floor_Press",
-    "name": "Dumbbell Floor Press",
+    "name": "Supino no chão com halteres",
+    "en": "Dumbbell Floor Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1762,7 +1922,8 @@
   {
     "id": "db-Dumbbell_Flyes",
     "src": "Dumbbell_Flyes",
-    "name": "Dumbbell Flyes",
+    "name": "Crucifixo com halteres",
+    "en": "Dumbbell Flyes",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1773,7 +1934,8 @@
   {
     "id": "db-Dumbbell_Incline_Row",
     "src": "Dumbbell_Incline_Row",
-    "name": "Dumbbell Incline Row",
+    "name": "Remada no banco inclinado com halteres",
+    "en": "Dumbbell Incline Row",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1784,7 +1946,8 @@
   {
     "id": "db-Dumbbell_Incline_Shoulder_Raise",
     "src": "Dumbbell_Incline_Shoulder_Raise",
-    "name": "Dumbbell Incline Shoulder Raise",
+    "name": "Elevação de ombros no banco inclinado com halteres",
+    "en": "Dumbbell Incline Shoulder Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1795,7 +1958,8 @@
   {
     "id": "db-Dumbbell_Lunges",
     "src": "Dumbbell_Lunges",
-    "name": "Dumbbell Lunges",
+    "name": "Afundo com halteres",
+    "en": "Dumbbell Lunges",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1806,7 +1970,8 @@
   {
     "id": "db-Dumbbell_Lying_One-Arm_Rear_Lateral_Raise",
     "src": "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise",
-    "name": "Dumbbell Lying One-Arm Rear Lateral Raise",
+    "name": "Elevação posterior unilateral deitado com halter",
+    "en": "Dumbbell Lying One-Arm Rear Lateral Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1817,7 +1982,8 @@
   {
     "id": "db-Dumbbell_Lying_Pronation",
     "src": "Dumbbell_Lying_Pronation",
-    "name": "Dumbbell Lying Pronation",
+    "name": "Pronação deitado com halter",
+    "en": "Dumbbell Lying Pronation",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1828,7 +1994,8 @@
   {
     "id": "db-Dumbbell_Lying_Rear_Lateral_Raise",
     "src": "Dumbbell_Lying_Rear_Lateral_Raise",
-    "name": "Dumbbell Lying Rear Lateral Raise",
+    "name": "Elevação posterior deitado com halteres",
+    "en": "Dumbbell Lying Rear Lateral Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1839,7 +2006,8 @@
   {
     "id": "db-Dumbbell_Lying_Supination",
     "src": "Dumbbell_Lying_Supination",
-    "name": "Dumbbell Lying Supination",
+    "name": "Supinação deitado com halter",
+    "en": "Dumbbell Lying Supination",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1850,7 +2018,8 @@
   {
     "id": "db-Dumbbell_One-Arm_Shoulder_Press",
     "src": "Dumbbell_One-Arm_Shoulder_Press",
-    "name": "Dumbbell One-Arm Shoulder Press",
+    "name": "Desenvolvimento unilateral com halter",
+    "en": "Dumbbell One-Arm Shoulder Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1861,7 +2030,8 @@
   {
     "id": "db-Dumbbell_One-Arm_Triceps_Extension",
     "src": "Dumbbell_One-Arm_Triceps_Extension",
-    "name": "Dumbbell One-Arm Triceps Extension",
+    "name": "Extensão de tríceps unilateral com halter",
+    "en": "Dumbbell One-Arm Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1872,7 +2042,8 @@
   {
     "id": "db-Dumbbell_One-Arm_Upright_Row",
     "src": "Dumbbell_One-Arm_Upright_Row",
-    "name": "Dumbbell One-Arm Upright Row",
+    "name": "Remada alta unilateral com halter",
+    "en": "Dumbbell One-Arm Upright Row",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1883,7 +2054,8 @@
   {
     "id": "db-Dumbbell_Prone_Incline_Curl",
     "src": "Dumbbell_Prone_Incline_Curl",
-    "name": "Dumbbell Prone Incline Curl",
+    "name": "Rosca de bruços no banco inclinado com halteres",
+    "en": "Dumbbell Prone Incline Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -1894,7 +2066,8 @@
   {
     "id": "db-Dumbbell_Raise",
     "src": "Dumbbell_Raise",
-    "name": "Dumbbell Raise",
+    "name": "Elevação com halteres",
+    "en": "Dumbbell Raise",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1905,7 +2078,8 @@
   {
     "id": "db-Dumbbell_Rear_Lunge",
     "src": "Dumbbell_Rear_Lunge",
-    "name": "Dumbbell Rear Lunge",
+    "name": "Afundo para trás com halteres",
+    "en": "Dumbbell Rear Lunge",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1916,7 +2090,8 @@
   {
     "id": "db-Dumbbell_Scaption",
     "src": "Dumbbell_Scaption",
-    "name": "Dumbbell Scaption",
+    "name": "Elevação no plano da escápula com halteres",
+    "en": "Dumbbell Scaption",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1927,7 +2102,8 @@
   {
     "id": "db-Dumbbell_Seated_One-Leg_Calf_Raise",
     "src": "Dumbbell_Seated_One-Leg_Calf_Raise",
-    "name": "Dumbbell Seated One-Leg Calf Raise",
+    "name": "Panturrilha unilateral sentado com halter",
+    "en": "Dumbbell Seated One-Leg Calf Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1938,7 +2114,8 @@
   {
     "id": "db-Dumbbell_Shoulder_Press",
     "src": "Dumbbell_Shoulder_Press",
-    "name": "Dumbbell Shoulder Press",
+    "name": "Desenvolvimento com halteres",
+    "en": "Dumbbell Shoulder Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1949,7 +2126,8 @@
   {
     "id": "db-Dumbbell_Side_Bend",
     "src": "Dumbbell_Side_Bend",
-    "name": "Dumbbell Side Bend",
+    "name": "Flexão lateral do tronco com halter",
+    "en": "Dumbbell Side Bend",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -1960,7 +2138,8 @@
   {
     "id": "db-Dumbbell_Squat",
     "src": "Dumbbell_Squat",
-    "name": "Dumbbell Squat",
+    "name": "Agachamento com halteres",
+    "en": "Dumbbell Squat",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -1971,7 +2150,8 @@
   {
     "id": "db-Dumbbell_Squat_To_A_Bench",
     "src": "Dumbbell_Squat_To_A_Bench",
-    "name": "Dumbbell Squat To A Bench",
+    "name": "Agachamento com halteres até o banco",
+    "en": "Dumbbell Squat To A Bench",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1982,7 +2162,8 @@
   {
     "id": "db-Dumbbell_Step_Ups",
     "src": "Dumbbell_Step_Ups",
-    "name": "Dumbbell Step Ups",
+    "name": "Subida no banco com halteres",
+    "en": "Dumbbell Step Ups",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -1993,7 +2174,8 @@
   {
     "id": "db-Dumbbell_Tricep_Extension_-Pronated_Grip",
     "src": "Dumbbell_Tricep_Extension_-Pronated_Grip",
-    "name": "Dumbbell Tricep Extension -Pronated Grip",
+    "name": "Extensão de tríceps com halter, pegada pronada",
+    "en": "Dumbbell Tricep Extension -Pronated Grip",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2004,7 +2186,8 @@
   {
     "id": "db-Elbow_to_Knee",
     "src": "Elbow_to_Knee",
-    "name": "Elbow to Knee",
+    "name": "Cotovelo no joelho",
+    "en": "Elbow to Knee",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2015,7 +2198,8 @@
   {
     "id": "db-Elevated_Back_Lunge",
     "src": "Elevated_Back_Lunge",
-    "name": "Elevated Back Lunge",
+    "name": "Afundo para trás elevado",
+    "en": "Elevated Back Lunge",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2026,7 +2210,8 @@
   {
     "id": "db-Elevated_Cable_Rows",
     "src": "Elevated_Cable_Rows",
-    "name": "Elevated Cable Rows",
+    "name": "Remada elevada na polia",
+    "en": "Elevated Cable Rows",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -2037,7 +2222,8 @@
   {
     "id": "db-Exercise_Ball_Crunch",
     "src": "Exercise_Ball_Crunch",
-    "name": "Exercise Ball Crunch",
+    "name": "Abdominal na bola",
+    "en": "Exercise Ball Crunch",
     "compound": false,
     "equip": "bola",
     "level": "beginner",
@@ -2048,7 +2234,8 @@
   {
     "id": "db-Exercise_Ball_Pull-In",
     "src": "Exercise_Ball_Pull-In",
-    "name": "Exercise Ball Pull-In",
+    "name": "Encolhida de pernas na bola",
+    "en": "Exercise Ball Pull-In",
     "compound": true,
     "equip": "bola",
     "level": "beginner",
@@ -2059,7 +2246,8 @@
   {
     "id": "db-Extended_Range_One-Arm_Kettlebell_Floor_Press",
     "src": "Extended_Range_One-Arm_Kettlebell_Floor_Press",
-    "name": "Extended Range One-Arm Kettlebell Floor Press",
+    "name": "Supino no chão unilateral com kettlebell, amplitude estendida",
+    "en": "Extended Range One-Arm Kettlebell Floor Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "beginner",
@@ -2070,7 +2258,8 @@
   {
     "id": "db-External_Rotation",
     "src": "External_Rotation",
-    "name": "External Rotation",
+    "name": "Rotação externa",
+    "en": "External Rotation",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2081,7 +2270,8 @@
   {
     "id": "db-External_Rotation_with_Band",
     "src": "External_Rotation_with_Band",
-    "name": "External Rotation with Band",
+    "name": "Rotação externa com elástico",
+    "en": "External Rotation with Band",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -2092,7 +2282,8 @@
   {
     "id": "db-External_Rotation_with_Cable",
     "src": "External_Rotation_with_Cable",
-    "name": "External Rotation with Cable",
+    "name": "Rotação externa na polia",
+    "en": "External Rotation with Cable",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -2103,7 +2294,8 @@
   {
     "id": "db-EZ-Bar_Curl",
     "src": "EZ-Bar_Curl",
-    "name": "EZ-Bar Curl",
+    "name": "Rosca com barra W",
+    "en": "EZ-Bar Curl",
     "compound": false,
     "equip": "barra-w",
     "level": "beginner",
@@ -2114,7 +2306,8 @@
   {
     "id": "db-EZ-Bar_Skullcrusher",
     "src": "EZ-Bar_Skullcrusher",
-    "name": "EZ-Bar Skullcrusher",
+    "name": "Tríceps testa com barra W",
+    "en": "EZ-Bar Skullcrusher",
     "compound": false,
     "equip": "barra-w",
     "level": "beginner",
@@ -2125,7 +2318,8 @@
   {
     "id": "db-Finger_Curls",
     "src": "Finger_Curls",
-    "name": "Finger Curls",
+    "name": "Rosca de dedos",
+    "en": "Finger Curls",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -2136,7 +2330,8 @@
   {
     "id": "db-Flat_Bench_Cable_Flyes",
     "src": "Flat_Bench_Cable_Flyes",
-    "name": "Flat Bench Cable Flyes",
+    "name": "Crucifixo no banco reto na polia",
+    "en": "Flat Bench Cable Flyes",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -2147,7 +2342,8 @@
   {
     "id": "db-Flat_Bench_Leg_Pull-In",
     "src": "Flat_Bench_Leg_Pull-In",
-    "name": "Flat Bench Leg Pull-In",
+    "name": "Encolhida de pernas no banco reto",
+    "en": "Flat Bench Leg Pull-In",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2158,7 +2354,8 @@
   {
     "id": "db-Flat_Bench_Lying_Leg_Raise",
     "src": "Flat_Bench_Lying_Leg_Raise",
-    "name": "Flat Bench Lying Leg Raise",
+    "name": "Elevação de pernas deitado no banco reto",
+    "en": "Flat Bench Lying Leg Raise",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -2169,7 +2366,8 @@
   {
     "id": "db-Flexor_Incline_Dumbbell_Curls",
     "src": "Flexor_Incline_Dumbbell_Curls",
-    "name": "Flexor Incline Dumbbell Curls",
+    "name": "Rosca inclinada com halteres para flexores",
+    "en": "Flexor Incline Dumbbell Curls",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2180,7 +2378,8 @@
   {
     "id": "db-Floor_Glute-Ham_Raise",
     "src": "Floor_Glute-Ham_Raise",
-    "name": "Floor Glute-Ham Raise",
+    "name": "Glute-ham raise no chão",
+    "en": "Floor Glute-Ham Raise",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -2191,7 +2390,8 @@
   {
     "id": "db-Floor_Press",
     "src": "Floor_Press",
-    "name": "Floor Press",
+    "name": "Supino no chão",
+    "en": "Floor Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2202,7 +2402,8 @@
   {
     "id": "db-Floor_Press_with_Chains",
     "src": "Floor_Press_with_Chains",
-    "name": "Floor Press with Chains",
+    "name": "Supino no chão com correntes",
+    "en": "Floor Press with Chains",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2213,7 +2414,8 @@
   {
     "id": "db-Flutter_Kicks",
     "src": "Flutter_Kicks",
-    "name": "Flutter Kicks",
+    "name": "Batida de pernas (flutter kicks)",
+    "en": "Flutter Kicks",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2224,7 +2426,8 @@
   {
     "id": "db-Freehand_Jump_Squat",
     "src": "Freehand_Jump_Squat",
-    "name": "Freehand Jump Squat",
+    "name": "Agachamento com salto sem carga",
+    "en": "Freehand Jump Squat",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -2235,7 +2438,8 @@
   {
     "id": "db-Frog_Sit-Ups",
     "src": "Frog_Sit-Ups",
-    "name": "Frog Sit-Ups",
+    "name": "Abdominal sapo",
+    "en": "Frog Sit-Ups",
     "compound": false,
     "equip": "corporal",
     "level": "intermediate",
@@ -2246,7 +2450,8 @@
   {
     "id": "db-Front_Barbell_Squat",
     "src": "Front_Barbell_Squat",
-    "name": "Front Barbell Squat",
+    "name": "Agachamento frontal com barra",
+    "en": "Front Barbell Squat",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -2257,7 +2462,8 @@
   {
     "id": "db-Front_Barbell_Squat_To_A_Bench",
     "src": "Front_Barbell_Squat_To_A_Bench",
-    "name": "Front Barbell Squat To A Bench",
+    "name": "Agachamento frontal com barra até o banco",
+    "en": "Front Barbell Squat To A Bench",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -2268,7 +2474,8 @@
   {
     "id": "db-Front_Cable_Raise",
     "src": "Front_Cable_Raise",
-    "name": "Front Cable Raise",
+    "name": "Elevação frontal na polia",
+    "en": "Front Cable Raise",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -2279,7 +2486,8 @@
   {
     "id": "db-Front_Dumbbell_Raise",
     "src": "Front_Dumbbell_Raise",
-    "name": "Front Dumbbell Raise",
+    "name": "Elevação frontal com halteres",
+    "en": "Front Dumbbell Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2290,7 +2498,8 @@
   {
     "id": "db-Front_Incline_Dumbbell_Raise",
     "src": "Front_Incline_Dumbbell_Raise",
-    "name": "Front Incline Dumbbell Raise",
+    "name": "Elevação frontal inclinada com halteres",
+    "en": "Front Incline Dumbbell Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2301,7 +2510,8 @@
   {
     "id": "db-Front_Plate_Raise",
     "src": "Front_Plate_Raise",
-    "name": "Front Plate Raise",
+    "name": "Elevação frontal com anilha",
+    "en": "Front Plate Raise",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -2312,7 +2522,8 @@
   {
     "id": "db-Front_Raise_And_Pullover",
     "src": "Front_Raise_And_Pullover",
-    "name": "Front Raise And Pullover",
+    "name": "Elevação frontal com pullover",
+    "en": "Front Raise And Pullover",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -2323,7 +2534,8 @@
   {
     "id": "db-Front_Squat_Clean_Grip",
     "src": "Front_Squat_Clean_Grip",
-    "name": "Front Squat (Clean Grip)",
+    "name": "Agachamento frontal (pegada de clean)",
+    "en": "Front Squat (Clean Grip)",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2334,7 +2546,8 @@
   {
     "id": "db-Front_Squats_With_Two_Kettlebells",
     "src": "Front_Squats_With_Two_Kettlebells",
-    "name": "Front Squats With Two Kettlebells",
+    "name": "Agachamento frontal com dois kettlebells",
+    "en": "Front Squats With Two Kettlebells",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2345,7 +2558,8 @@
   {
     "id": "db-Front_Two-Dumbbell_Raise",
     "src": "Front_Two-Dumbbell_Raise",
-    "name": "Front Two-Dumbbell Raise",
+    "name": "Elevação frontal com dois halteres",
+    "en": "Front Two-Dumbbell Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2356,7 +2570,8 @@
   {
     "id": "db-Full_Range-Of-Motion_Lat_Pulldown",
     "src": "Full_Range-Of-Motion_Lat_Pulldown",
-    "name": "Full Range-Of-Motion Lat Pulldown",
+    "name": "Puxada frontal com amplitude completa",
+    "en": "Full Range-Of-Motion Lat Pulldown",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -2367,7 +2582,8 @@
   {
     "id": "db-Gironda_Sternum_Chins",
     "src": "Gironda_Sternum_Chins",
-    "name": "Gironda Sternum Chins",
+    "name": "Barra fixa Gironda (no esterno)",
+    "en": "Gironda Sternum Chins",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -2378,7 +2594,8 @@
   {
     "id": "db-Glute_Ham_Raise",
     "src": "Glute_Ham_Raise",
-    "name": "Glute Ham Raise",
+    "name": "Glute-ham raise",
+    "en": "Glute Ham Raise",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -2389,7 +2606,8 @@
   {
     "id": "db-Glute_Kickback",
     "src": "Glute_Kickback",
-    "name": "Glute Kickback",
+    "name": "Coice de glúteo",
+    "en": "Glute Kickback",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2400,7 +2618,8 @@
   {
     "id": "db-Goblet_Squat",
     "src": "Goblet_Squat",
-    "name": "Goblet Squat",
+    "name": "Agachamento goblet",
+    "en": "Goblet Squat",
     "compound": true,
     "equip": "kettlebell",
     "level": "beginner",
@@ -2411,7 +2630,8 @@
   {
     "id": "db-Good_Morning",
     "src": "Good_Morning",
-    "name": "Good Morning",
+    "name": "Bom-dia",
+    "en": "Good Morning",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2422,7 +2642,8 @@
   {
     "id": "db-Good_Morning_off_Pins",
     "src": "Good_Morning_off_Pins",
-    "name": "Good Morning off Pins",
+    "name": "Bom-dia a partir dos pinos",
+    "en": "Good Morning off Pins",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2433,7 +2654,8 @@
   {
     "id": "db-Gorilla_Chin_Crunch",
     "src": "Gorilla_Chin_Crunch",
-    "name": "Gorilla Chin/Crunch",
+    "name": "Barra fixa gorila com abdominal",
+    "en": "Gorilla Chin/Crunch",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -2444,7 +2666,8 @@
   {
     "id": "db-Hammer_Curls",
     "src": "Hammer_Curls",
-    "name": "Hammer Curls",
+    "name": "Rosca martelo",
+    "en": "Hammer Curls",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2455,7 +2678,8 @@
   {
     "id": "db-Hammer_Grip_Incline_DB_Bench_Press",
     "src": "Hammer_Grip_Incline_DB_Bench_Press",
-    "name": "Hammer Grip Incline DB Bench Press",
+    "name": "Supino inclinado com halteres, pegada martelo",
+    "en": "Hammer Grip Incline DB Bench Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -2466,7 +2690,8 @@
   {
     "id": "db-Handstand_Push-Ups",
     "src": "Handstand_Push-Ups",
-    "name": "Handstand Push-Ups",
+    "name": "Flexão de braços em parada de mãos",
+    "en": "Handstand Push-Ups",
     "compound": true,
     "equip": "corporal",
     "level": "expert",
@@ -2477,7 +2702,8 @@
   {
     "id": "db-Hanging_Bar_Good_Morning",
     "src": "Hanging_Bar_Good_Morning",
-    "name": "Hanging Bar Good Morning",
+    "name": "Bom-dia com barra suspensa",
+    "en": "Hanging Bar Good Morning",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2488,7 +2714,8 @@
   {
     "id": "db-Hanging_Leg_Raise",
     "src": "Hanging_Leg_Raise",
-    "name": "Hanging Leg Raise",
+    "name": "Elevação de pernas na barra fixa",
+    "en": "Hanging Leg Raise",
     "compound": false,
     "equip": "corporal",
     "level": "expert",
@@ -2499,7 +2726,8 @@
   {
     "id": "db-Hanging_Pike",
     "src": "Hanging_Pike",
-    "name": "Hanging Pike",
+    "name": "Carpado na barra fixa",
+    "en": "Hanging Pike",
     "compound": true,
     "equip": "corporal",
     "level": "expert",
@@ -2510,7 +2738,8 @@
   {
     "id": "db-High_Cable_Curls",
     "src": "High_Cable_Curls",
-    "name": "High Cable Curls",
+    "name": "Rosca na polia alta",
+    "en": "High Cable Curls",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -2521,7 +2750,8 @@
   {
     "id": "db-Hip_Extension_with_Bands",
     "src": "Hip_Extension_with_Bands",
-    "name": "Hip Extension with Bands",
+    "name": "Extensão de quadril com elástico",
+    "en": "Hip Extension with Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -2532,7 +2762,8 @@
   {
     "id": "db-Hip_Flexion_with_Band",
     "src": "Hip_Flexion_with_Band",
-    "name": "Hip Flexion with Band",
+    "name": "Flexão de quadril com elástico",
+    "en": "Hip Flexion with Band",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -2543,7 +2774,8 @@
   {
     "id": "db-Hip_Lift_with_Band",
     "src": "Hip_Lift_with_Band",
-    "name": "Hip Lift with Band",
+    "name": "Elevação de quadril com elástico",
+    "en": "Hip Lift with Band",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -2554,7 +2786,8 @@
   {
     "id": "db-Incline_Barbell_Triceps_Extension",
     "src": "Incline_Barbell_Triceps_Extension",
-    "name": "Incline Barbell Triceps Extension",
+    "name": "Extensão de tríceps inclinado com barra",
+    "en": "Incline Barbell Triceps Extension",
     "compound": false,
     "equip": "barra",
     "level": "intermediate",
@@ -2565,7 +2798,8 @@
   {
     "id": "db-Incline_Bench_Pull",
     "src": "Incline_Bench_Pull",
-    "name": "Incline Bench Pull",
+    "name": "Remada no banco inclinado (pull)",
+    "en": "Incline Bench Pull",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -2576,7 +2810,8 @@
   {
     "id": "db-Incline_Cable_Chest_Press",
     "src": "Incline_Cable_Chest_Press",
-    "name": "Incline Cable Chest Press",
+    "name": "Supino inclinado na polia",
+    "en": "Incline Cable Chest Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -2587,7 +2822,8 @@
   {
     "id": "db-Incline_Cable_Flye",
     "src": "Incline_Cable_Flye",
-    "name": "Incline Cable Flye",
+    "name": "Crucifixo inclinado na polia",
+    "en": "Incline Cable Flye",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -2598,7 +2834,8 @@
   {
     "id": "db-Incline_Dumbbell_Bench_With_Palms_Facing_In",
     "src": "Incline_Dumbbell_Bench_With_Palms_Facing_In",
-    "name": "Incline Dumbbell Bench With Palms Facing In",
+    "name": "Supino inclinado com halteres, palmas para dentro",
+    "en": "Incline Dumbbell Bench With Palms Facing In",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -2609,7 +2846,8 @@
   {
     "id": "db-Incline_Dumbbell_Flyes",
     "src": "Incline_Dumbbell_Flyes",
-    "name": "Incline Dumbbell Flyes",
+    "name": "Crucifixo inclinado com halteres",
+    "en": "Incline Dumbbell Flyes",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -2620,7 +2858,8 @@
   {
     "id": "db-Incline_Dumbbell_Flyes_-_With_A_Twist",
     "src": "Incline_Dumbbell_Flyes_-_With_A_Twist",
-    "name": "Incline Dumbbell Flyes - With A Twist",
+    "name": "Crucifixo inclinado com halteres e giro",
+    "en": "Incline Dumbbell Flyes - With A Twist",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -2631,7 +2870,8 @@
   {
     "id": "db-Incline_Hammer_Curls",
     "src": "Incline_Hammer_Curls",
-    "name": "Incline Hammer Curls",
+    "name": "Rosca martelo inclinada",
+    "en": "Incline Hammer Curls",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2642,7 +2882,8 @@
   {
     "id": "db-Incline_Inner_Biceps_Curl",
     "src": "Incline_Inner_Biceps_Curl",
-    "name": "Incline Inner Biceps Curl",
+    "name": "Rosca inclinada para a porção interna do bíceps",
+    "en": "Incline Inner Biceps Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -2653,7 +2894,8 @@
   {
     "id": "db-Incline_Push-Up",
     "src": "Incline_Push-Up",
-    "name": "Incline Push-Up",
+    "name": "Flexão de braços inclinada",
+    "en": "Incline Push-Up",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2664,7 +2906,8 @@
   {
     "id": "db-Incline_Push-Up_Close-Grip",
     "src": "Incline_Push-Up_Close-Grip",
-    "name": "Incline Push-Up Close-Grip",
+    "name": "Flexão de braços inclinada, pegada fechada",
+    "en": "Incline Push-Up Close-Grip",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2675,7 +2918,8 @@
   {
     "id": "db-Incline_Push-Up_Medium",
     "src": "Incline_Push-Up_Medium",
-    "name": "Incline Push-Up Medium",
+    "name": "Flexão de braços inclinada, pegada média",
+    "en": "Incline Push-Up Medium",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2686,7 +2930,8 @@
   {
     "id": "db-Incline_Push-Up_Reverse_Grip",
     "src": "Incline_Push-Up_Reverse_Grip",
-    "name": "Incline Push-Up Reverse Grip",
+    "name": "Flexão de braços inclinada, pegada inversa",
+    "en": "Incline Push-Up Reverse Grip",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2697,7 +2942,8 @@
   {
     "id": "db-Incline_Push-Up_Wide",
     "src": "Incline_Push-Up_Wide",
-    "name": "Incline Push-Up Wide",
+    "name": "Flexão de braços inclinada, pegada aberta",
+    "en": "Incline Push-Up Wide",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2708,7 +2954,8 @@
   {
     "id": "db-Internal_Rotation_with_Band",
     "src": "Internal_Rotation_with_Band",
-    "name": "Internal Rotation with Band",
+    "name": "Rotação interna com elástico",
+    "en": "Internal Rotation with Band",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -2719,7 +2966,8 @@
   {
     "id": "db-Inverted_Row",
     "src": "Inverted_Row",
-    "name": "Inverted Row",
+    "name": "Remada invertida",
+    "en": "Inverted Row",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -2730,7 +2978,8 @@
   {
     "id": "db-Inverted_Row_with_Straps",
     "src": "Inverted_Row_with_Straps",
-    "name": "Inverted Row with Straps",
+    "name": "Remada invertida com fitas",
+    "en": "Inverted Row with Straps",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -2741,7 +2990,8 @@
   {
     "id": "db-Iron_Cross",
     "src": "Iron_Cross",
-    "name": "Iron Cross",
+    "name": "Crucifixo de ferro",
+    "en": "Iron Cross",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -2752,7 +3002,8 @@
   {
     "id": "db-Isometric_Wipers",
     "src": "Isometric_Wipers",
-    "name": "Isometric Wipers",
+    "name": "Limpador de para-brisa isométrico",
+    "en": "Isometric Wipers",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2763,7 +3014,8 @@
   {
     "id": "db-Jackknife_Sit-Up",
     "src": "Jackknife_Sit-Up",
-    "name": "Jackknife Sit-Up",
+    "name": "Abdominal canivete",
+    "en": "Jackknife Sit-Up",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -2774,7 +3026,8 @@
   {
     "id": "db-Janda_Sit-Up",
     "src": "Janda_Sit-Up",
-    "name": "Janda Sit-Up",
+    "name": "Abdominal Janda",
+    "en": "Janda Sit-Up",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -2785,7 +3038,8 @@
   {
     "id": "db-Jefferson_Squats",
     "src": "Jefferson_Squats",
-    "name": "Jefferson Squats",
+    "name": "Agachamento Jefferson",
+    "en": "Jefferson Squats",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -2796,7 +3050,8 @@
   {
     "id": "db-JM_Press",
     "src": "JM_Press",
-    "name": "JM Press",
+    "name": "Desenvolvimento JM (JM press)",
+    "en": "JM Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -2807,7 +3062,8 @@
   {
     "id": "db-Kettlebell_Arnold_Press",
     "src": "Kettlebell_Arnold_Press",
-    "name": "Kettlebell Arnold Press",
+    "name": "Desenvolvimento Arnold com kettlebell",
+    "en": "Kettlebell Arnold Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2818,7 +3074,8 @@
   {
     "id": "db-Kettlebell_Dead_Clean",
     "src": "Kettlebell_Dead_Clean",
-    "name": "Kettlebell Dead Clean",
+    "name": "Dead clean com kettlebell",
+    "en": "Kettlebell Dead Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2829,7 +3086,8 @@
   {
     "id": "db-Kettlebell_Figure_8",
     "src": "Kettlebell_Figure_8",
-    "name": "Kettlebell Figure 8",
+    "name": "Kettlebell em oito",
+    "en": "Kettlebell Figure 8",
     "compound": false,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2840,7 +3098,8 @@
   {
     "id": "db-Kettlebell_Halo",
     "src": "Kettlebell_Halo",
-    "name": "Kettlebell Halo",
+    "name": "Halo com kettlebell",
+    "en": "Kettlebell Halo",
     "compound": true,
     "equip": "kettlebell",
     "level": "beginner",
@@ -2851,7 +3110,8 @@
   {
     "id": "db-Kettlebell_Halo_With_Overhead_Extension",
     "src": "Kettlebell_Halo_With_Overhead_Extension",
-    "name": "Kettlebell Halo with Overhead Extension",
+    "name": "Halo com kettlebell e extensão acima da cabeça",
+    "en": "Kettlebell Halo with Overhead Extension",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2862,7 +3122,8 @@
   {
     "id": "db-Kettlebell_Hang_Clean",
     "src": "Kettlebell_Hang_Clean",
-    "name": "Kettlebell Hang Clean",
+    "name": "Hang clean com kettlebell",
+    "en": "Kettlebell Hang Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2873,7 +3134,8 @@
   {
     "id": "db-Kettlebell_One-Legged_Deadlift",
     "src": "Kettlebell_One-Legged_Deadlift",
-    "name": "Kettlebell One-Legged Deadlift",
+    "name": "Levantamento terra unilateral com kettlebell",
+    "en": "Kettlebell One-Legged Deadlift",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2884,7 +3146,8 @@
   {
     "id": "db-Kettlebell_Overhead_Triceps_Extension",
     "src": "Kettlebell_Overhead_Triceps_Extension",
-    "name": "Kettlebell Overhead Triceps Extension",
+    "name": "Extensão de tríceps acima da cabeça com kettlebell",
+    "en": "Kettlebell Overhead Triceps Extension",
     "compound": false,
     "equip": "kettlebell",
     "level": "beginner",
@@ -2895,7 +3158,8 @@
   {
     "id": "db-Kettlebell_Pass_Between_The_Legs",
     "src": "Kettlebell_Pass_Between_The_Legs",
-    "name": "Kettlebell Pass Between The Legs",
+    "name": "Passagem de kettlebell entre as pernas",
+    "en": "Kettlebell Pass Between The Legs",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2906,7 +3170,8 @@
   {
     "id": "db-Kettlebell_Pirate_Ships",
     "src": "Kettlebell_Pirate_Ships",
-    "name": "Kettlebell Pirate Ships",
+    "name": "Barco pirata com kettlebell",
+    "en": "Kettlebell Pirate Ships",
     "compound": true,
     "equip": "kettlebell",
     "level": "beginner",
@@ -2917,7 +3182,8 @@
   {
     "id": "db-Kettlebell_Pistol_Squat",
     "src": "Kettlebell_Pistol_Squat",
-    "name": "Kettlebell Pistol Squat",
+    "name": "Agachamento pistol com kettlebell",
+    "en": "Kettlebell Pistol Squat",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -2928,7 +3194,8 @@
   {
     "id": "db-Kettlebell_Seated_Press",
     "src": "Kettlebell_Seated_Press",
-    "name": "Kettlebell Seated Press",
+    "name": "Desenvolvimento sentado com kettlebell",
+    "en": "Kettlebell Seated Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2939,7 +3206,8 @@
   {
     "id": "db-Kettlebell_Seesaw_Press",
     "src": "Kettlebell_Seesaw_Press",
-    "name": "Kettlebell Seesaw Press",
+    "name": "Desenvolvimento gangorra com kettlebell",
+    "en": "Kettlebell Seesaw Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2950,7 +3218,8 @@
   {
     "id": "db-Kettlebell_Sumo_High_Pull",
     "src": "Kettlebell_Sumo_High_Pull",
-    "name": "Kettlebell Sumo High Pull",
+    "name": "Puxada alta sumô com kettlebell",
+    "en": "Kettlebell Sumo High Pull",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2961,7 +3230,8 @@
   {
     "id": "db-Kettlebell_Thruster",
     "src": "Kettlebell_Thruster",
-    "name": "Kettlebell Thruster",
+    "name": "Thruster com kettlebell",
+    "en": "Kettlebell Thruster",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2972,7 +3242,8 @@
   {
     "id": "db-Kettlebell_Turkish_Get-Up_Lunge_style",
     "src": "Kettlebell_Turkish_Get-Up_Lunge_style",
-    "name": "Kettlebell Turkish Get-Up (Lunge style)",
+    "name": "Levantamento turco com kettlebell (estilo afundo)",
+    "en": "Kettlebell Turkish Get-Up (Lunge style)",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2983,7 +3254,8 @@
   {
     "id": "db-Kettlebell_Turkish_Get-Up_Squat_style",
     "src": "Kettlebell_Turkish_Get-Up_Squat_style",
-    "name": "Kettlebell Turkish Get-Up (Squat style)",
+    "name": "Levantamento turco com kettlebell (estilo agachamento)",
+    "en": "Kettlebell Turkish Get-Up (Squat style)",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -2994,7 +3266,8 @@
   {
     "id": "db-Kettlebell_Windmill",
     "src": "Kettlebell_Windmill",
-    "name": "Kettlebell Windmill",
+    "name": "Moinho com kettlebell",
+    "en": "Kettlebell Windmill",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3005,7 +3278,8 @@
   {
     "id": "db-Kipping_Muscle_Up",
     "src": "Kipping_Muscle_Up",
-    "name": "Kipping Muscle Up",
+    "name": "Muscle up com kipping",
+    "en": "Kipping Muscle Up",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -3016,7 +3290,8 @@
   {
     "id": "db-Knee_Hip_Raise_On_Parallel_Bars",
     "src": "Knee_Hip_Raise_On_Parallel_Bars",
-    "name": "Knee/Hip Raise On Parallel Bars",
+    "name": "Elevação de joelhos nas barras paralelas",
+    "en": "Knee/Hip Raise On Parallel Bars",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -3027,7 +3302,8 @@
   {
     "id": "db-Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists",
     "src": "Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists",
-    "name": "Kneeling Cable Crunch With Alternating Oblique Twists",
+    "name": "Abdominal ajoelhado na polia com giro alternado",
+    "en": "Kneeling Cable Crunch With Alternating Oblique Twists",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -3038,7 +3314,8 @@
   {
     "id": "db-Kneeling_Cable_Triceps_Extension",
     "src": "Kneeling_Cable_Triceps_Extension",
-    "name": "Kneeling Cable Triceps Extension",
+    "name": "Extensão de tríceps ajoelhado na polia",
+    "en": "Kneeling Cable Triceps Extension",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -3049,7 +3326,8 @@
   {
     "id": "db-Kneeling_High_Pulley_Row",
     "src": "Kneeling_High_Pulley_Row",
-    "name": "Kneeling High Pulley Row",
+    "name": "Remada ajoelhado na polia alta",
+    "en": "Kneeling High Pulley Row",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -3060,7 +3338,8 @@
   {
     "id": "db-Kneeling_Single-Arm_High_Pulley_Row",
     "src": "Kneeling_Single-Arm_High_Pulley_Row",
-    "name": "Kneeling Single-Arm High Pulley Row",
+    "name": "Remada unilateral ajoelhado na polia alta",
+    "en": "Kneeling Single-Arm High Pulley Row",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -3071,7 +3350,8 @@
   {
     "id": "db-Kneeling_Squat",
     "src": "Kneeling_Squat",
-    "name": "Kneeling Squat",
+    "name": "Agachamento ajoelhado",
+    "en": "Kneeling Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -3082,7 +3362,8 @@
   {
     "id": "db-Landmine_180s",
     "src": "Landmine_180s",
-    "name": "Landmine 180's",
+    "name": "Landmine 180",
+    "en": "Landmine 180's",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -3093,7 +3374,8 @@
   {
     "id": "db-Landmine_Linear_Jammer",
     "src": "Landmine_Linear_Jammer",
-    "name": "Landmine Linear Jammer",
+    "name": "Landmine jammer linear",
+    "en": "Landmine Linear Jammer",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -3104,7 +3386,8 @@
   {
     "id": "db-Lateral_Raise_-_With_Bands",
     "src": "Lateral_Raise_-_With_Bands",
-    "name": "Lateral Raise - With Bands",
+    "name": "Elevação lateral com elástico",
+    "en": "Lateral Raise - With Bands",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -3115,7 +3398,8 @@
   {
     "id": "db-Leg_Lift",
     "src": "Leg_Lift",
-    "name": "Leg Lift",
+    "name": "Elevação de pernas",
+    "en": "Leg Lift",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -3126,7 +3410,8 @@
   {
     "id": "db-Leg_Press",
     "src": "Leg_Press",
-    "name": "Leg Press",
+    "name": "Leg press",
+    "en": "Leg Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3137,7 +3422,8 @@
   {
     "id": "db-Leg_Pull-In",
     "src": "Leg_Pull-In",
-    "name": "Leg Pull-In",
+    "name": "Encolhida de pernas",
+    "en": "Leg Pull-In",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -3148,7 +3434,8 @@
   {
     "id": "db-Leg-Over_Floor_Press",
     "src": "Leg-Over_Floor_Press",
-    "name": "Leg-Over Floor Press",
+    "name": "Supino no chão com perna cruzada",
+    "en": "Leg-Over Floor Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3159,7 +3446,8 @@
   {
     "id": "db-Leverage_Chest_Press",
     "src": "Leverage_Chest_Press",
-    "name": "Leverage Chest Press",
+    "name": "Supino na máquina articulada",
+    "en": "Leverage Chest Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3170,7 +3458,8 @@
   {
     "id": "db-Leverage_Deadlift",
     "src": "Leverage_Deadlift",
-    "name": "Leverage Deadlift",
+    "name": "Levantamento terra na máquina articulada",
+    "en": "Leverage Deadlift",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3181,7 +3470,8 @@
   {
     "id": "db-Leverage_Decline_Chest_Press",
     "src": "Leverage_Decline_Chest_Press",
-    "name": "Leverage Decline Chest Press",
+    "name": "Supino declinado na máquina articulada",
+    "en": "Leverage Decline Chest Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3192,7 +3482,8 @@
   {
     "id": "db-Leverage_High_Row",
     "src": "Leverage_High_Row",
-    "name": "Leverage High Row",
+    "name": "Remada alta na máquina articulada",
+    "en": "Leverage High Row",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3203,7 +3494,8 @@
   {
     "id": "db-Leverage_Incline_Chest_Press",
     "src": "Leverage_Incline_Chest_Press",
-    "name": "Leverage Incline Chest Press",
+    "name": "Supino inclinado na máquina articulada",
+    "en": "Leverage Incline Chest Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3214,7 +3506,8 @@
   {
     "id": "db-Leverage_Iso_Row",
     "src": "Leverage_Iso_Row",
-    "name": "Leverage Iso Row",
+    "name": "Remada unilateral na máquina articulada",
+    "en": "Leverage Iso Row",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3225,7 +3518,8 @@
   {
     "id": "db-Leverage_Shoulder_Press",
     "src": "Leverage_Shoulder_Press",
-    "name": "Leverage Shoulder Press",
+    "name": "Desenvolvimento na máquina articulada",
+    "en": "Leverage Shoulder Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -3236,7 +3530,8 @@
   {
     "id": "db-Leverage_Shrug",
     "src": "Leverage_Shrug",
-    "name": "Leverage Shrug",
+    "name": "Encolhimento na máquina articulada",
+    "en": "Leverage Shrug",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -3247,7 +3542,8 @@
   {
     "id": "db-London_Bridges",
     "src": "London_Bridges",
-    "name": "London Bridges",
+    "name": "London bridges (subida na corda deitado)",
+    "en": "London Bridges",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -3258,7 +3554,8 @@
   {
     "id": "db-Low_Cable_Triceps_Extension",
     "src": "Low_Cable_Triceps_Extension",
-    "name": "Low Cable Triceps Extension",
+    "name": "Extensão de tríceps na polia baixa",
+    "en": "Low Cable Triceps Extension",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -3269,7 +3566,8 @@
   {
     "id": "db-Low_Pulley_Row_To_Neck",
     "src": "Low_Pulley_Row_To_Neck",
-    "name": "Low Pulley Row To Neck",
+    "name": "Remada na polia baixa até o pescoço",
+    "en": "Low Pulley Row To Neck",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -3280,7 +3578,8 @@
   {
     "id": "db-Lunge_Pass_Through",
     "src": "Lunge_Pass_Through",
-    "name": "Lunge Pass Through",
+    "name": "Afundo com passagem de peso",
+    "en": "Lunge Pass Through",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3291,7 +3590,8 @@
   {
     "id": "db-Lunge_Sprint",
     "src": "Lunge_Sprint",
-    "name": "Lunge Sprint",
+    "name": "Afundo com salto (sprint)",
+    "en": "Lunge Sprint",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -3302,7 +3602,8 @@
   {
     "id": "db-Lying_Cable_Curl",
     "src": "Lying_Cable_Curl",
-    "name": "Lying Cable Curl",
+    "name": "Rosca deitado na polia",
+    "en": "Lying Cable Curl",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -3313,7 +3614,8 @@
   {
     "id": "db-Lying_Cambered_Barbell_Row",
     "src": "Lying_Cambered_Barbell_Row",
-    "name": "Lying Cambered Barbell Row",
+    "name": "Remada deitado com barra curva",
+    "en": "Lying Cambered Barbell Row",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -3324,7 +3626,8 @@
   {
     "id": "db-Lying_Close-Grip_Bar_Curl_On_High_Pulley",
     "src": "Lying_Close-Grip_Bar_Curl_On_High_Pulley",
-    "name": "Lying Close-Grip Bar Curl On High Pulley",
+    "name": "Rosca deitado na polia alta, pegada fechada",
+    "en": "Lying Close-Grip Bar Curl On High Pulley",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -3335,7 +3638,8 @@
   {
     "id": "db-Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head",
     "src": "Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head",
-    "name": "Lying Close-Grip Barbell Triceps Extension Behind The Head",
+    "name": "Extensão de tríceps deitado com barra por trás da cabeça, pegada fechada",
+    "en": "Lying Close-Grip Barbell Triceps Extension Behind The Head",
     "compound": false,
     "equip": "barra",
     "level": "intermediate",
@@ -3346,7 +3650,8 @@
   {
     "id": "db-Lying_Close-Grip_Barbell_Triceps_Press_To_Chin",
     "src": "Lying_Close-Grip_Barbell_Triceps_Press_To_Chin",
-    "name": "Lying Close-Grip Barbell Triceps Press To Chin",
+    "name": "Tríceps deitado com barra até o queixo, pegada fechada",
+    "en": "Lying Close-Grip Barbell Triceps Press To Chin",
     "compound": false,
     "equip": "barra-w",
     "level": "intermediate",
@@ -3357,7 +3662,8 @@
   {
     "id": "db-Lying_High_Bench_Barbell_Curl",
     "src": "Lying_High_Bench_Barbell_Curl",
-    "name": "Lying High Bench Barbell Curl",
+    "name": "Rosca com barra deitado no banco alto",
+    "en": "Lying High Bench Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "intermediate",
@@ -3368,7 +3674,8 @@
   {
     "id": "db-Lying_Leg_Curls",
     "src": "Lying_Leg_Curls",
-    "name": "Lying Leg Curls",
+    "name": "Mesa flexora",
+    "en": "Lying Leg Curls",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -3379,7 +3686,8 @@
   {
     "id": "db-Lying_Machine_Squat",
     "src": "Lying_Machine_Squat",
-    "name": "Lying Machine Squat",
+    "name": "Agachamento deitado na máquina",
+    "en": "Lying Machine Squat",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -3390,7 +3698,8 @@
   {
     "id": "db-Lying_One-Arm_Lateral_Raise",
     "src": "Lying_One-Arm_Lateral_Raise",
-    "name": "Lying One-Arm Lateral Raise",
+    "name": "Elevação lateral unilateral deitado",
+    "en": "Lying One-Arm Lateral Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -3401,7 +3710,8 @@
   {
     "id": "db-Lying_Rear_Delt_Raise",
     "src": "Lying_Rear_Delt_Raise",
-    "name": "Lying Rear Delt Raise",
+    "name": "Elevação posterior deitado",
+    "en": "Lying Rear Delt Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -3412,7 +3722,8 @@
   {
     "id": "db-Lying_Supine_Dumbbell_Curl",
     "src": "Lying_Supine_Dumbbell_Curl",
-    "name": "Lying Supine Dumbbell Curl",
+    "name": "Rosca supinada deitado com halteres",
+    "en": "Lying Supine Dumbbell Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3423,7 +3734,8 @@
   {
     "id": "db-Lying_Triceps_Press",
     "src": "Lying_Triceps_Press",
-    "name": "Lying Triceps Press",
+    "name": "Tríceps deitado (press)",
+    "en": "Lying Triceps Press",
     "compound": false,
     "equip": "barra-w",
     "level": "intermediate",
@@ -3434,7 +3746,8 @@
   {
     "id": "db-Machine_Bicep_Curl",
     "src": "Machine_Bicep_Curl",
-    "name": "Machine Bicep Curl",
+    "name": "Rosca na máquina",
+    "en": "Machine Bicep Curl",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -3445,7 +3758,8 @@
   {
     "id": "db-Machine_Triceps_Extension",
     "src": "Machine_Triceps_Extension",
-    "name": "Machine Triceps Extension",
+    "name": "Extensão de tríceps na máquina",
+    "en": "Machine Triceps Extension",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -3456,7 +3770,8 @@
   {
     "id": "db-Middle_Back_Shrug",
     "src": "Middle_Back_Shrug",
-    "name": "Middle Back Shrug",
+    "name": "Encolhimento para o meio das costas",
+    "en": "Middle Back Shrug",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -3467,7 +3782,8 @@
   {
     "id": "db-Mixed_Grip_Chin",
     "src": "Mixed_Grip_Chin",
-    "name": "Mixed Grip Chin",
+    "name": "Barra fixa com pegada mista",
+    "en": "Mixed Grip Chin",
     "compound": true,
     "equip": "outro",
     "level": "expert",
@@ -3478,7 +3794,8 @@
   {
     "id": "db-Monster_Walk",
     "src": "Monster_Walk",
-    "name": "Monster Walk",
+    "name": "Caminhada do monstro (elástico)",
+    "en": "Monster Walk",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -3489,7 +3806,8 @@
   {
     "id": "db-Muscle_Up",
     "src": "Muscle_Up",
-    "name": "Muscle Up",
+    "name": "Muscle up",
+    "en": "Muscle Up",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -3500,7 +3818,8 @@
   {
     "id": "db-Narrow_Stance_Hack_Squats",
     "src": "Narrow_Stance_Hack_Squats",
-    "name": "Narrow Stance Hack Squats",
+    "name": "Agachamento hack com pés juntos",
+    "en": "Narrow Stance Hack Squats",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -3511,7 +3830,8 @@
   {
     "id": "db-Narrow_Stance_Squats",
     "src": "Narrow_Stance_Squats",
-    "name": "Narrow Stance Squats",
+    "name": "Agachamento com pés juntos",
+    "en": "Narrow Stance Squats",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -3522,7 +3842,8 @@
   {
     "id": "db-Natural_Glute_Ham_Raise",
     "src": "Natural_Glute_Ham_Raise",
-    "name": "Natural Glute Ham Raise",
+    "name": "Glute-ham raise natural",
+    "en": "Natural Glute Ham Raise",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -3533,7 +3854,8 @@
   {
     "id": "db-Neck_Press",
     "src": "Neck_Press",
-    "name": "Neck Press",
+    "name": "Supino no pescoço",
+    "en": "Neck Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -3544,7 +3866,8 @@
   {
     "id": "db-Oblique_Crunches",
     "src": "Oblique_Crunches",
-    "name": "Oblique Crunches",
+    "name": "Abdominal oblíquo",
+    "en": "Oblique Crunches",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -3555,7 +3878,8 @@
   {
     "id": "db-Oblique_Crunches_-_On_The_Floor",
     "src": "Oblique_Crunches_-_On_The_Floor",
-    "name": "Oblique Crunches - On The Floor",
+    "name": "Abdominal oblíquo no chão",
+    "en": "Oblique Crunches - On The Floor",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -3566,7 +3890,8 @@
   {
     "id": "db-One_Arm_Chin-Up",
     "src": "One_Arm_Chin-Up",
-    "name": "One Arm Chin-Up",
+    "name": "Barra fixa supinada com um braço",
+    "en": "One Arm Chin-Up",
     "compound": true,
     "equip": "outro",
     "level": "expert",
@@ -3577,7 +3902,8 @@
   {
     "id": "db-One_Arm_Dumbbell_Bench_Press",
     "src": "One_Arm_Dumbbell_Bench_Press",
-    "name": "One Arm Dumbbell Bench Press",
+    "name": "Supino unilateral com halter",
+    "en": "One Arm Dumbbell Bench Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -3588,7 +3914,8 @@
   {
     "id": "db-One_Arm_Dumbbell_Preacher_Curl",
     "src": "One_Arm_Dumbbell_Preacher_Curl",
-    "name": "One Arm Dumbbell Preacher Curl",
+    "name": "Rosca Scott unilateral com halter",
+    "en": "One Arm Dumbbell Preacher Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3599,7 +3926,8 @@
   {
     "id": "db-One_Arm_Floor_Press",
     "src": "One_Arm_Floor_Press",
-    "name": "One Arm Floor Press",
+    "name": "Supino no chão unilateral",
+    "en": "One Arm Floor Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -3610,7 +3938,8 @@
   {
     "id": "db-One_Arm_Pronated_Dumbbell_Triceps_Extension",
     "src": "One_Arm_Pronated_Dumbbell_Triceps_Extension",
-    "name": "One Arm Pronated Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps unilateral com halter, pegada pronada",
+    "en": "One Arm Pronated Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3621,7 +3950,8 @@
   {
     "id": "db-One_Arm_Supinated_Dumbbell_Triceps_Extension",
     "src": "One_Arm_Supinated_Dumbbell_Triceps_Extension",
-    "name": "One Arm Supinated Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps unilateral com halter, pegada supinada",
+    "en": "One Arm Supinated Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3632,7 +3962,8 @@
   {
     "id": "db-One_Leg_Barbell_Squat",
     "src": "One_Leg_Barbell_Squat",
-    "name": "One Leg Barbell Squat",
+    "name": "Agachamento unilateral com barra",
+    "en": "One Leg Barbell Squat",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -3643,7 +3974,8 @@
   {
     "id": "db-One-Arm_Dumbbell_Row",
     "src": "One-Arm_Dumbbell_Row",
-    "name": "One-Arm Dumbbell Row",
+    "name": "Remada unilateral com halter (serrote)",
+    "en": "One-Arm Dumbbell Row",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -3654,7 +3986,8 @@
   {
     "id": "db-One-Arm_Flat_Bench_Dumbbell_Flye",
     "src": "One-Arm_Flat_Bench_Dumbbell_Flye",
-    "name": "One-Arm Flat Bench Dumbbell Flye",
+    "name": "Crucifixo unilateral com halter no banco reto",
+    "en": "One-Arm Flat Bench Dumbbell Flye",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3665,7 +3998,8 @@
   {
     "id": "db-One-Arm_High-Pulley_Cable_Side_Bends",
     "src": "One-Arm_High-Pulley_Cable_Side_Bends",
-    "name": "One-Arm High-Pulley Cable Side Bends",
+    "name": "Flexão lateral do tronco unilateral na polia alta",
+    "en": "One-Arm High-Pulley Cable Side Bends",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -3676,7 +4010,8 @@
   {
     "id": "db-One-Arm_Incline_Lateral_Raise",
     "src": "One-Arm_Incline_Lateral_Raise",
-    "name": "One-Arm Incline Lateral Raise",
+    "name": "Elevação lateral unilateral inclinada",
+    "en": "One-Arm Incline Lateral Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3687,7 +4022,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Clean",
     "src": "One-Arm_Kettlebell_Clean",
-    "name": "One-Arm Kettlebell Clean",
+    "name": "Clean unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3698,7 +4034,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Clean_and_Jerk",
     "src": "One-Arm_Kettlebell_Clean_and_Jerk",
-    "name": "One-Arm Kettlebell Clean and Jerk",
+    "name": "Clean e jerk unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Clean and Jerk",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3709,7 +4046,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Floor_Press",
     "src": "One-Arm_Kettlebell_Floor_Press",
-    "name": "One-Arm Kettlebell Floor Press",
+    "name": "Supino no chão unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Floor Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3720,7 +4058,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Jerk",
     "src": "One-Arm_Kettlebell_Jerk",
-    "name": "One-Arm Kettlebell Jerk",
+    "name": "Jerk unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Jerk",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3731,7 +4070,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Military_Press_To_The_Side",
     "src": "One-Arm_Kettlebell_Military_Press_To_The_Side",
-    "name": "One-Arm Kettlebell Military Press To The Side",
+    "name": "Desenvolvimento militar lateral unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Military Press To The Side",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3742,7 +4082,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Para_Press",
     "src": "One-Arm_Kettlebell_Para_Press",
-    "name": "One-Arm Kettlebell Para Press",
+    "name": "Para press unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Para Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3753,7 +4094,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Push_Press",
     "src": "One-Arm_Kettlebell_Push_Press",
-    "name": "One-Arm Kettlebell Push Press",
+    "name": "Push press unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Push Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3764,7 +4106,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Row",
     "src": "One-Arm_Kettlebell_Row",
-    "name": "One-Arm Kettlebell Row",
+    "name": "Remada unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Row",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3775,7 +4118,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Snatch",
     "src": "One-Arm_Kettlebell_Snatch",
-    "name": "One-Arm Kettlebell Snatch",
+    "name": "Arranco unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Snatch",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -3786,7 +4130,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Split_Jerk",
     "src": "One-Arm_Kettlebell_Split_Jerk",
-    "name": "One-Arm Kettlebell Split Jerk",
+    "name": "Split jerk unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Split Jerk",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3797,7 +4142,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Split_Snatch",
     "src": "One-Arm_Kettlebell_Split_Snatch",
-    "name": "One-Arm Kettlebell Split Snatch",
+    "name": "Arranco em afundo unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Split Snatch",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -3808,7 +4154,8 @@
   {
     "id": "db-One-Arm_Kettlebell_Swings",
     "src": "One-Arm_Kettlebell_Swings",
-    "name": "One-Arm Kettlebell Swings",
+    "name": "Swing unilateral com kettlebell",
+    "en": "One-Arm Kettlebell Swings",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3819,7 +4166,8 @@
   {
     "id": "db-One-Arm_Long_Bar_Row",
     "src": "One-Arm_Long_Bar_Row",
-    "name": "One-Arm Long Bar Row",
+    "name": "Remada unilateral com barra longa",
+    "en": "One-Arm Long Bar Row",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -3830,7 +4178,8 @@
   {
     "id": "db-One-Arm_Medicine_Ball_Slam",
     "src": "One-Arm_Medicine_Ball_Slam",
-    "name": "One-Arm Medicine Ball Slam",
+    "name": "Arremesso de medicine ball ao chão com um braço",
+    "en": "One-Arm Medicine Ball Slam",
     "compound": true,
     "equip": "medicine-ball",
     "level": "beginner",
@@ -3841,7 +4190,8 @@
   {
     "id": "db-One-Arm_Open_Palm_Kettlebell_Clean",
     "src": "One-Arm_Open_Palm_Kettlebell_Clean",
-    "name": "One-Arm Open Palm Kettlebell Clean",
+    "name": "Clean unilateral com kettlebell, palma aberta",
+    "en": "One-Arm Open Palm Kettlebell Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -3852,7 +4202,8 @@
   {
     "id": "db-One-Arm_Overhead_Kettlebell_Squats",
     "src": "One-Arm_Overhead_Kettlebell_Squats",
-    "name": "One-Arm Overhead Kettlebell Squats",
+    "name": "Agachamento com kettlebell acima da cabeça, um braço",
+    "en": "One-Arm Overhead Kettlebell Squats",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -3863,7 +4214,8 @@
   {
     "id": "db-One-Arm_Side_Deadlift",
     "src": "One-Arm_Side_Deadlift",
-    "name": "One-Arm Side Deadlift",
+    "name": "Levantamento terra lateral unilateral",
+    "en": "One-Arm Side Deadlift",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -3874,7 +4226,8 @@
   {
     "id": "db-One-Arm_Side_Laterals",
     "src": "One-Arm_Side_Laterals",
-    "name": "One-Arm Side Laterals",
+    "name": "Elevação lateral unilateral",
+    "en": "One-Arm Side Laterals",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3885,7 +4238,8 @@
   {
     "id": "db-One-Legged_Cable_Kickback",
     "src": "One-Legged_Cable_Kickback",
-    "name": "One-Legged Cable Kickback",
+    "name": "Coice de glúteo unilateral na polia",
+    "en": "One-Legged Cable Kickback",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -3896,7 +4250,8 @@
   {
     "id": "db-Open_Palm_Kettlebell_Clean",
     "src": "Open_Palm_Kettlebell_Clean",
-    "name": "Open Palm Kettlebell Clean",
+    "name": "Clean com kettlebell, palma aberta",
+    "en": "Open Palm Kettlebell Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -3907,7 +4262,8 @@
   {
     "id": "db-Otis-Up",
     "src": "Otis-Up",
-    "name": "Otis-Up",
+    "name": "Otis-up (abdominal com anilha)",
+    "en": "Otis-Up",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -3918,7 +4274,8 @@
   {
     "id": "db-Overhead_Cable_Curl",
     "src": "Overhead_Cable_Curl",
-    "name": "Overhead Cable Curl",
+    "name": "Rosca na polia acima da cabeça",
+    "en": "Overhead Cable Curl",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -3929,7 +4286,8 @@
   {
     "id": "db-Pallof_Press",
     "src": "Pallof_Press",
-    "name": "Pallof Press",
+    "name": "Pallof press",
+    "en": "Pallof Press",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -3940,7 +4298,8 @@
   {
     "id": "db-Pallof_Press_With_Rotation",
     "src": "Pallof_Press_With_Rotation",
-    "name": "Pallof Press With Rotation",
+    "name": "Pallof press com rotação",
+    "en": "Pallof Press With Rotation",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -3951,7 +4310,8 @@
   {
     "id": "db-Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
     "src": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
-    "name": "Palms-Down Dumbbell Wrist Curl Over A Bench",
+    "name": "Rosca de punho inversa com halteres sobre o banco",
+    "en": "Palms-Down Dumbbell Wrist Curl Over A Bench",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3962,7 +4322,8 @@
   {
     "id": "db-Palms-Down_Wrist_Curl_Over_A_Bench",
     "src": "Palms-Down_Wrist_Curl_Over_A_Bench",
-    "name": "Palms-Down Wrist Curl Over A Bench",
+    "name": "Rosca de punho inversa com barra sobre o banco",
+    "en": "Palms-Down Wrist Curl Over A Bench",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -3973,7 +4334,8 @@
   {
     "id": "db-Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
     "src": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
-    "name": "Palms-Up Barbell Wrist Curl Over A Bench",
+    "name": "Rosca de punho com barra sobre o banco",
+    "en": "Palms-Up Barbell Wrist Curl Over A Bench",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -3984,7 +4346,8 @@
   {
     "id": "db-Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
     "src": "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
-    "name": "Palms-Up Dumbbell Wrist Curl Over A Bench",
+    "name": "Rosca de punho com halteres sobre o banco",
+    "en": "Palms-Up Dumbbell Wrist Curl Over A Bench",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -3995,7 +4358,8 @@
   {
     "id": "db-Parallel_Bar_Dip",
     "src": "Parallel_Bar_Dip",
-    "name": "Parallel Bar Dip",
+    "name": "Paralelas",
+    "en": "Parallel Bar Dip",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -4006,7 +4370,8 @@
   {
     "id": "db-Physioball_Hip_Bridge",
     "src": "Physioball_Hip_Bridge",
-    "name": "Physioball Hip Bridge",
+    "name": "Ponte de quadril na bola",
+    "en": "Physioball Hip Bridge",
     "compound": true,
     "equip": "bola",
     "level": "beginner",
@@ -4017,7 +4382,8 @@
   {
     "id": "db-Pin_Presses",
     "src": "Pin_Presses",
-    "name": "Pin Presses",
+    "name": "Supino a partir dos pinos",
+    "en": "Pin Presses",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4028,7 +4394,8 @@
   {
     "id": "db-Plank",
     "src": "Plank",
-    "name": "Plank",
+    "name": "Prancha",
+    "en": "Plank",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4039,7 +4406,8 @@
   {
     "id": "db-Plate_Pinch",
     "src": "Plate_Pinch",
-    "name": "Plate Pinch",
+    "name": "Pinça de anilhas",
+    "en": "Plate Pinch",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -4050,7 +4418,8 @@
   {
     "id": "db-Plate_Twist",
     "src": "Plate_Twist",
-    "name": "Plate Twist",
+    "name": "Giro com anilha",
+    "en": "Plate Twist",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -4061,7 +4430,8 @@
   {
     "id": "db-Platform_Hamstring_Slides",
     "src": "Platform_Hamstring_Slides",
-    "name": "Platform Hamstring Slides",
+    "name": "Deslizamento de posteriores na plataforma",
+    "en": "Platform Hamstring Slides",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4072,7 +4442,8 @@
   {
     "id": "db-Plie_Dumbbell_Squat",
     "src": "Plie_Dumbbell_Squat",
-    "name": "Plie Dumbbell Squat",
+    "name": "Agachamento plié com halter",
+    "en": "Plie Dumbbell Squat",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -4083,7 +4454,8 @@
   {
     "id": "db-Plyo_Kettlebell_Pushups",
     "src": "Plyo_Kettlebell_Pushups",
-    "name": "Plyo Kettlebell Pushups",
+    "name": "Flexão de braços pliométrica com kettlebells",
+    "en": "Plyo Kettlebell Pushups",
     "compound": true,
     "equip": "kettlebell",
     "level": "expert",
@@ -4094,7 +4466,8 @@
   {
     "id": "db-Power_Clean",
     "src": "Power_Clean",
-    "name": "Power Clean",
+    "name": "Power clean",
+    "en": "Power Clean",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4105,7 +4478,8 @@
   {
     "id": "db-Power_Partials",
     "src": "Power_Partials",
-    "name": "Power Partials",
+    "name": "Elevações parciais com carga",
+    "en": "Power Partials",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4116,7 +4490,8 @@
   {
     "id": "db-Preacher_Curl",
     "src": "Preacher_Curl",
-    "name": "Preacher Curl",
+    "name": "Rosca Scott",
+    "en": "Preacher Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4127,7 +4502,8 @@
   {
     "id": "db-Preacher_Hammer_Dumbbell_Curl",
     "src": "Preacher_Hammer_Dumbbell_Curl",
-    "name": "Preacher Hammer Dumbbell Curl",
+    "name": "Rosca Scott martelo com halteres",
+    "en": "Preacher Hammer Dumbbell Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4138,7 +4514,8 @@
   {
     "id": "db-Press_Sit-Up",
     "src": "Press_Sit-Up",
-    "name": "Press Sit-Up",
+    "name": "Abdominal com desenvolvimento",
+    "en": "Press Sit-Up",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -4149,7 +4526,8 @@
   {
     "id": "db-Prone_Manual_Hamstring",
     "src": "Prone_Manual_Hamstring",
-    "name": "Prone Manual Hamstring",
+    "name": "Flexão de posteriores de bruços com resistência manual",
+    "en": "Prone Manual Hamstring",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4160,7 +4538,8 @@
   {
     "id": "db-Pull_Through",
     "src": "Pull_Through",
-    "name": "Pull Through",
+    "name": "Pull through na polia",
+    "en": "Pull Through",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -4171,7 +4550,8 @@
   {
     "id": "db-Pullups",
     "src": "Pullups",
-    "name": "Pullups",
+    "name": "Barra fixa",
+    "en": "Pullups",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4182,7 +4562,8 @@
   {
     "id": "db-Push_Up_to_Side_Plank",
     "src": "Push_Up_to_Side_Plank",
-    "name": "Push Up to Side Plank",
+    "name": "Flexão de braços para prancha lateral",
+    "en": "Push Up to Side Plank",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4193,7 +4574,8 @@
   {
     "id": "db-Push-Up_Wide",
     "src": "Push-Up_Wide",
-    "name": "Push-Up Wide",
+    "name": "Flexão de braços aberta",
+    "en": "Push-Up Wide",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4204,7 +4586,8 @@
   {
     "id": "db-Push-Ups_-_Close_Triceps_Position",
     "src": "Push-Ups_-_Close_Triceps_Position",
-    "name": "Push-Ups - Close Triceps Position",
+    "name": "Flexão de braços fechada para tríceps",
+    "en": "Push-Ups - Close Triceps Position",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -4215,7 +4598,8 @@
   {
     "id": "db-Push-Ups_With_Feet_Elevated",
     "src": "Push-Ups_With_Feet_Elevated",
-    "name": "Push-Ups With Feet Elevated",
+    "name": "Flexão de braços com os pés elevados",
+    "en": "Push-Ups With Feet Elevated",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4226,7 +4610,8 @@
   {
     "id": "db-Push-Ups_With_Feet_On_An_Exercise_Ball",
     "src": "Push-Ups_With_Feet_On_An_Exercise_Ball",
-    "name": "Push-Ups With Feet On An Exercise Ball",
+    "name": "Flexão de braços com os pés na bola",
+    "en": "Push-Ups With Feet On An Exercise Ball",
     "compound": true,
     "equip": "bola",
     "level": "intermediate",
@@ -4237,7 +4622,8 @@
   {
     "id": "db-Pushups",
     "src": "Pushups",
-    "name": "Pushups",
+    "name": "Flexão de braços",
+    "en": "Pushups",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4248,7 +4634,8 @@
   {
     "id": "db-Pushups_Close_and_Wide_Hand_Positions",
     "src": "Pushups_Close_and_Wide_Hand_Positions",
-    "name": "Pushups (Close and Wide Hand Positions)",
+    "name": "Flexão de braços (mãos fechadas e abertas)",
+    "en": "Pushups (Close and Wide Hand Positions)",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4259,7 +4646,8 @@
   {
     "id": "db-Reverse_Band_Bench_Press",
     "src": "Reverse_Band_Bench_Press",
-    "name": "Reverse Band Bench Press",
+    "name": "Supino com elástico invertido",
+    "en": "Reverse Band Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4270,7 +4658,8 @@
   {
     "id": "db-Reverse_Band_Box_Squat",
     "src": "Reverse_Band_Box_Squat",
-    "name": "Reverse Band Box Squat",
+    "name": "Agachamento no caixote com elástico invertido",
+    "en": "Reverse Band Box Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4281,7 +4670,8 @@
   {
     "id": "db-Reverse_Band_Power_Squat",
     "src": "Reverse_Band_Power_Squat",
-    "name": "Reverse Band Power Squat",
+    "name": "Agachamento com elástico invertido",
+    "en": "Reverse Band Power Squat",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -4292,7 +4682,8 @@
   {
     "id": "db-Reverse_Band_Sumo_Deadlift",
     "src": "Reverse_Band_Sumo_Deadlift",
-    "name": "Reverse Band Sumo Deadlift",
+    "name": "Levantamento terra sumô com elástico invertido",
+    "en": "Reverse Band Sumo Deadlift",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -4303,7 +4694,8 @@
   {
     "id": "db-Reverse_Barbell_Curl",
     "src": "Reverse_Barbell_Curl",
-    "name": "Reverse Barbell Curl",
+    "name": "Rosca inversa com barra",
+    "en": "Reverse Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4314,7 +4706,8 @@
   {
     "id": "db-Reverse_Barbell_Preacher_Curls",
     "src": "Reverse_Barbell_Preacher_Curls",
-    "name": "Reverse Barbell Preacher Curls",
+    "name": "Rosca Scott inversa com barra",
+    "en": "Reverse Barbell Preacher Curls",
     "compound": false,
     "equip": "barra-w",
     "level": "intermediate",
@@ -4325,7 +4718,8 @@
   {
     "id": "db-Reverse_Cable_Curl",
     "src": "Reverse_Cable_Curl",
-    "name": "Reverse Cable Curl",
+    "name": "Rosca inversa na polia",
+    "en": "Reverse Cable Curl",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -4336,7 +4730,8 @@
   {
     "id": "db-Reverse_Crunch",
     "src": "Reverse_Crunch",
-    "name": "Reverse Crunch",
+    "name": "Abdominal reverso",
+    "en": "Reverse Crunch",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4347,7 +4742,8 @@
   {
     "id": "db-Reverse_Flyes",
     "src": "Reverse_Flyes",
-    "name": "Reverse Flyes",
+    "name": "Crucifixo inverso",
+    "en": "Reverse Flyes",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4358,7 +4754,8 @@
   {
     "id": "db-Reverse_Flyes_With_External_Rotation",
     "src": "Reverse_Flyes_With_External_Rotation",
-    "name": "Reverse Flyes With External Rotation",
+    "name": "Crucifixo inverso com rotação externa",
+    "en": "Reverse Flyes With External Rotation",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -4369,7 +4766,8 @@
   {
     "id": "db-Reverse_Grip_Bent-Over_Rows",
     "src": "Reverse_Grip_Bent-Over_Rows",
-    "name": "Reverse Grip Bent-Over Rows",
+    "name": "Remada curvada com pegada supinada",
+    "en": "Reverse Grip Bent-Over Rows",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4380,7 +4778,8 @@
   {
     "id": "db-Reverse_Grip_Triceps_Pushdown",
     "src": "Reverse_Grip_Triceps_Pushdown",
-    "name": "Reverse Grip Triceps Pushdown",
+    "name": "Tríceps na polia com pegada inversa",
+    "en": "Reverse Grip Triceps Pushdown",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -4391,7 +4790,8 @@
   {
     "id": "db-Reverse_Hyperextension",
     "src": "Reverse_Hyperextension",
-    "name": "Reverse Hyperextension",
+    "name": "Hiperextensão reversa",
+    "en": "Reverse Hyperextension",
     "compound": false,
     "equip": "maquina",
     "level": "intermediate",
@@ -4402,7 +4802,8 @@
   {
     "id": "db-Reverse_Plate_Curls",
     "src": "Reverse_Plate_Curls",
-    "name": "Reverse Plate Curls",
+    "name": "Rosca inversa com anilhas",
+    "en": "Reverse Plate Curls",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4413,7 +4814,8 @@
   {
     "id": "db-Reverse_Triceps_Bench_Press",
     "src": "Reverse_Triceps_Bench_Press",
-    "name": "Reverse Triceps Bench Press",
+    "name": "Supino inverso para tríceps",
+    "en": "Reverse Triceps Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4424,7 +4826,8 @@
   {
     "id": "db-Ring_Dips",
     "src": "Ring_Dips",
-    "name": "Ring Dips",
+    "name": "Mergulho nas argolas",
+    "en": "Ring Dips",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -4435,7 +4838,8 @@
   {
     "id": "db-Rocking_Standing_Calf_Raise",
     "src": "Rocking_Standing_Calf_Raise",
-    "name": "Rocking Standing Calf Raise",
+    "name": "Panturrilha em pé com balanço",
+    "en": "Rocking Standing Calf Raise",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4446,7 +4850,8 @@
   {
     "id": "db-Rocky_Pull-Ups_Pulldowns",
     "src": "Rocky_Pull-Ups_Pulldowns",
-    "name": "Rocky Pull-Ups/Pulldowns",
+    "name": "Barra fixa/puxada Rocky",
+    "en": "Rocky Pull-Ups/Pulldowns",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -4457,7 +4862,8 @@
   {
     "id": "db-Rope_Climb",
     "src": "Rope_Climb",
-    "name": "Rope Climb",
+    "name": "Subida na corda",
+    "en": "Rope Climb",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -4468,7 +4874,8 @@
   {
     "id": "db-Rope_Crunch",
     "src": "Rope_Crunch",
-    "name": "Rope Crunch",
+    "name": "Abdominal com corda",
+    "en": "Rope Crunch",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -4479,7 +4886,8 @@
   {
     "id": "db-Russian_Twist",
     "src": "Russian_Twist",
-    "name": "Russian Twist",
+    "name": "Giro russo",
+    "en": "Russian Twist",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -4490,7 +4898,8 @@
   {
     "id": "db-Scapular_Pull-Up",
     "src": "Scapular_Pull-Up",
-    "name": "Scapular Pull-Up",
+    "name": "Barra fixa escapular",
+    "en": "Scapular Pull-Up",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4501,7 +4910,8 @@
   {
     "id": "db-Seated_Band_Hamstring_Curl",
     "src": "Seated_Band_Hamstring_Curl",
-    "name": "Seated Band Hamstring Curl",
+    "name": "Flexão de pernas sentado com elástico",
+    "en": "Seated Band Hamstring Curl",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4512,7 +4922,8 @@
   {
     "id": "db-Seated_Barbell_Military_Press",
     "src": "Seated_Barbell_Military_Press",
-    "name": "Seated Barbell Military Press",
+    "name": "Desenvolvimento militar sentado com barra",
+    "en": "Seated Barbell Military Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4523,7 +4934,8 @@
   {
     "id": "db-Seated_Barbell_Twist",
     "src": "Seated_Barbell_Twist",
-    "name": "Seated Barbell Twist",
+    "name": "Giro de tronco sentado com barra",
+    "en": "Seated Barbell Twist",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4534,7 +4946,8 @@
   {
     "id": "db-Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
     "src": "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
-    "name": "Seated Bent-Over One-Arm Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps curvado sentado, unilateral com halter",
+    "en": "Seated Bent-Over One-Arm Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4545,7 +4958,8 @@
   {
     "id": "db-Seated_Bent-Over_Rear_Delt_Raise",
     "src": "Seated_Bent-Over_Rear_Delt_Raise",
-    "name": "Seated Bent-Over Rear Delt Raise",
+    "name": "Elevação posterior curvado sentado",
+    "en": "Seated Bent-Over Rear Delt Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -4556,7 +4970,8 @@
   {
     "id": "db-Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
     "src": "Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
-    "name": "Seated Bent-Over Two-Arm Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps curvado sentado com dois halteres",
+    "en": "Seated Bent-Over Two-Arm Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -4567,7 +4982,8 @@
   {
     "id": "db-Seated_Cable_Shoulder_Press",
     "src": "Seated_Cable_Shoulder_Press",
-    "name": "Seated Cable Shoulder Press",
+    "name": "Desenvolvimento sentado na polia",
+    "en": "Seated Cable Shoulder Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -4578,7 +4994,8 @@
   {
     "id": "db-Seated_Close-Grip_Concentration_Barbell_Curl",
     "src": "Seated_Close-Grip_Concentration_Barbell_Curl",
-    "name": "Seated Close-Grip Concentration Barbell Curl",
+    "name": "Rosca concentrada sentado com barra, pegada fechada",
+    "en": "Seated Close-Grip Concentration Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "intermediate",
@@ -4589,7 +5006,8 @@
   {
     "id": "db-Seated_Dumbbell_Curl",
     "src": "Seated_Dumbbell_Curl",
-    "name": "Seated Dumbbell Curl",
+    "name": "Rosca sentado com halteres",
+    "en": "Seated Dumbbell Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4600,7 +5018,8 @@
   {
     "id": "db-Seated_Dumbbell_Inner_Biceps_Curl",
     "src": "Seated_Dumbbell_Inner_Biceps_Curl",
-    "name": "Seated Dumbbell Inner Biceps Curl",
+    "name": "Rosca sentado com halteres para a porção interna do bíceps",
+    "en": "Seated Dumbbell Inner Biceps Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4611,7 +5030,8 @@
   {
     "id": "db-Seated_Dumbbell_Palms-Down_Wrist_Curl",
     "src": "Seated_Dumbbell_Palms-Down_Wrist_Curl",
-    "name": "Seated Dumbbell Palms-Down Wrist Curl",
+    "name": "Rosca de punho inversa sentado com halteres",
+    "en": "Seated Dumbbell Palms-Down Wrist Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4622,7 +5042,8 @@
   {
     "id": "db-Seated_Dumbbell_Palms-Up_Wrist_Curl",
     "src": "Seated_Dumbbell_Palms-Up_Wrist_Curl",
-    "name": "Seated Dumbbell Palms-Up Wrist Curl",
+    "name": "Rosca de punho sentado com halteres",
+    "en": "Seated Dumbbell Palms-Up Wrist Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4633,7 +5054,8 @@
   {
     "id": "db-Seated_Flat_Bench_Leg_Pull-In",
     "src": "Seated_Flat_Bench_Leg_Pull-In",
-    "name": "Seated Flat Bench Leg Pull-In",
+    "name": "Encolhida de pernas sentado no banco reto",
+    "en": "Seated Flat Bench Leg Pull-In",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4644,7 +5066,8 @@
   {
     "id": "db-Seated_Leg_Tucks",
     "src": "Seated_Leg_Tucks",
-    "name": "Seated Leg Tucks",
+    "name": "Grupado de pernas sentado",
+    "en": "Seated Leg Tucks",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4655,7 +5078,8 @@
   {
     "id": "db-Seated_One-arm_Cable_Pulley_Rows",
     "src": "Seated_One-arm_Cable_Pulley_Rows",
-    "name": "Seated One-arm Cable Pulley Rows",
+    "name": "Remada unilateral sentado na polia",
+    "en": "Seated One-arm Cable Pulley Rows",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -4666,7 +5090,8 @@
   {
     "id": "db-Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
     "src": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
-    "name": "Seated One-Arm Dumbbell Palms-Down Wrist Curl",
+    "name": "Rosca de punho inversa unilateral sentado com halter",
+    "en": "Seated One-Arm Dumbbell Palms-Down Wrist Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -4677,7 +5102,8 @@
   {
     "id": "db-Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
     "src": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
-    "name": "Seated One-Arm Dumbbell Palms-Up Wrist Curl",
+    "name": "Rosca de punho unilateral sentado com halter",
+    "en": "Seated One-Arm Dumbbell Palms-Up Wrist Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4688,7 +5114,8 @@
   {
     "id": "db-Seated_Palm-Up_Barbell_Wrist_Curl",
     "src": "Seated_Palm-Up_Barbell_Wrist_Curl",
-    "name": "Seated Palm-Up Barbell Wrist Curl",
+    "name": "Rosca de punho sentado com barra",
+    "en": "Seated Palm-Up Barbell Wrist Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4699,7 +5126,8 @@
   {
     "id": "db-Seated_Palms-Down_Barbell_Wrist_Curl",
     "src": "Seated_Palms-Down_Barbell_Wrist_Curl",
-    "name": "Seated Palms-Down Barbell Wrist Curl",
+    "name": "Rosca de punho inversa sentado com barra",
+    "en": "Seated Palms-Down Barbell Wrist Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4710,7 +5138,8 @@
   {
     "id": "db-Seated_Side_Lateral_Raise",
     "src": "Seated_Side_Lateral_Raise",
-    "name": "Seated Side Lateral Raise",
+    "name": "Elevação lateral sentado",
+    "en": "Seated Side Lateral Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4721,7 +5150,8 @@
   {
     "id": "db-Seated_Triceps_Press",
     "src": "Seated_Triceps_Press",
-    "name": "Seated Triceps Press",
+    "name": "Desenvolvimento de tríceps sentado",
+    "en": "Seated Triceps Press",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4732,7 +5162,8 @@
   {
     "id": "db-Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl",
     "src": "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl",
-    "name": "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl",
+    "name": "Rosca de punho sentado na polia baixa, duas mãos",
+    "en": "Seated Two-Arm Palms-Up Low-Pulley Wrist Curl",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -4743,7 +5174,8 @@
   {
     "id": "db-See-Saw_Press_Alternating_Side_Press",
     "src": "See-Saw_Press_Alternating_Side_Press",
-    "name": "See-Saw Press (Alternating Side Press)",
+    "name": "Desenvolvimento gangorra (lateral alternado)",
+    "en": "See-Saw Press (Alternating Side Press)",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -4754,7 +5186,8 @@
   {
     "id": "db-Shotgun_Row",
     "src": "Shotgun_Row",
-    "name": "Shotgun Row",
+    "name": "Remada shotgun unilateral",
+    "en": "Shotgun Row",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -4765,7 +5198,8 @@
   {
     "id": "db-Shoulder_Press_-_With_Bands",
     "src": "Shoulder_Press_-_With_Bands",
-    "name": "Shoulder Press - With Bands",
+    "name": "Desenvolvimento com elástico",
+    "en": "Shoulder Press - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -4776,7 +5210,8 @@
   {
     "id": "db-Side_Bridge",
     "src": "Side_Bridge",
-    "name": "Side Bridge",
+    "name": "Prancha lateral",
+    "en": "Side Bridge",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4787,7 +5222,8 @@
   {
     "id": "db-Side_Jackknife",
     "src": "Side_Jackknife",
-    "name": "Side Jackknife",
+    "name": "Canivete lateral",
+    "en": "Side Jackknife",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -4798,7 +5234,8 @@
   {
     "id": "db-Side_Laterals_to_Front_Raise",
     "src": "Side_Laterals_to_Front_Raise",
-    "name": "Side Laterals to Front Raise",
+    "name": "Elevação lateral para elevação frontal",
+    "en": "Side Laterals to Front Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4809,7 +5246,8 @@
   {
     "id": "db-Side_To_Side_Chins",
     "src": "Side_To_Side_Chins",
-    "name": "Side To Side Chins",
+    "name": "Barra fixa de um lado para o outro",
+    "en": "Side To Side Chins",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -4820,7 +5258,8 @@
   {
     "id": "db-Single_Dumbbell_Raise",
     "src": "Single_Dumbbell_Raise",
-    "name": "Single Dumbbell Raise",
+    "name": "Elevação com um halter",
+    "en": "Single Dumbbell Raise",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -4831,7 +5270,8 @@
   {
     "id": "db-Single_Leg_Glute_Bridge",
     "src": "Single_Leg_Glute_Bridge",
-    "name": "Single Leg Glute Bridge",
+    "name": "Ponte de glúteos unilateral",
+    "en": "Single Leg Glute Bridge",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4842,7 +5282,8 @@
   {
     "id": "db-Single-Arm_Cable_Crossover",
     "src": "Single-Arm_Cable_Crossover",
-    "name": "Single-Arm Cable Crossover",
+    "name": "Crossover unilateral na polia",
+    "en": "Single-Arm Cable Crossover",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -4853,7 +5294,8 @@
   {
     "id": "db-Single-Arm_Linear_Jammer",
     "src": "Single-Arm_Linear_Jammer",
-    "name": "Single-Arm Linear Jammer",
+    "name": "Jammer linear unilateral",
+    "en": "Single-Arm Linear Jammer",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -4864,7 +5306,8 @@
   {
     "id": "db-Single-Arm_Push-Up",
     "src": "Single-Arm_Push-Up",
-    "name": "Single-Arm Push-Up",
+    "name": "Flexão de braços com um braço",
+    "en": "Single-Arm Push-Up",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -4875,7 +5318,8 @@
   {
     "id": "db-Single-Leg_High_Box_Squat",
     "src": "Single-Leg_High_Box_Squat",
-    "name": "Single-Leg High Box Squat",
+    "name": "Agachamento unilateral no caixote alto",
+    "en": "Single-Leg High Box Squat",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -4886,7 +5330,8 @@
   {
     "id": "db-Single-Leg_Leg_Extension",
     "src": "Single-Leg_Leg_Extension",
-    "name": "Single-Leg Leg Extension",
+    "name": "Cadeira extensora unilateral",
+    "en": "Single-Leg Leg Extension",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -4897,7 +5342,8 @@
   {
     "id": "db-Sit-Up",
     "src": "Sit-Up",
-    "name": "Sit-Up",
+    "name": "Abdominal completo",
+    "en": "Sit-Up",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -4908,7 +5354,8 @@
   {
     "id": "db-Sled_Overhead_Backward_Walk",
     "src": "Sled_Overhead_Backward_Walk",
-    "name": "Sled Overhead Backward Walk",
+    "name": "Caminhada para trás com trenó acima da cabeça",
+    "en": "Sled Overhead Backward Walk",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -4919,7 +5366,8 @@
   {
     "id": "db-Sled_Overhead_Triceps_Extension",
     "src": "Sled_Overhead_Triceps_Extension",
-    "name": "Sled Overhead Triceps Extension",
+    "name": "Extensão de tríceps acima da cabeça com trenó",
+    "en": "Sled Overhead Triceps Extension",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4930,7 +5378,8 @@
   {
     "id": "db-Sled_Reverse_Flye",
     "src": "Sled_Reverse_Flye",
-    "name": "Sled Reverse Flye",
+    "name": "Crucifixo inverso com trenó",
+    "en": "Sled Reverse Flye",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -4941,7 +5390,8 @@
   {
     "id": "db-Sled_Row",
     "src": "Sled_Row",
-    "name": "Sled Row",
+    "name": "Remada com trenó",
+    "en": "Sled Row",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -4952,7 +5402,8 @@
   {
     "id": "db-Smith_Incline_Shoulder_Raise",
     "src": "Smith_Incline_Shoulder_Raise",
-    "name": "Smith Incline Shoulder Raise",
+    "name": "Elevação de ombros inclinado no Smith",
+    "en": "Smith Incline Shoulder Raise",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -4963,7 +5414,8 @@
   {
     "id": "db-Smith_Machine_Behind_the_Back_Shrug",
     "src": "Smith_Machine_Behind_the_Back_Shrug",
-    "name": "Smith Machine Behind the Back Shrug",
+    "name": "Encolhimento por trás no Smith",
+    "en": "Smith Machine Behind the Back Shrug",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -4974,7 +5426,8 @@
   {
     "id": "db-Smith_Machine_Bench_Press",
     "src": "Smith_Machine_Bench_Press",
-    "name": "Smith Machine Bench Press",
+    "name": "Supino reto no Smith",
+    "en": "Smith Machine Bench Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -4985,7 +5438,8 @@
   {
     "id": "db-Smith_Machine_Bent_Over_Row",
     "src": "Smith_Machine_Bent_Over_Row",
-    "name": "Smith Machine Bent Over Row",
+    "name": "Remada curvada no Smith",
+    "en": "Smith Machine Bent Over Row",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -4996,7 +5450,8 @@
   {
     "id": "db-Smith_Machine_Calf_Raise",
     "src": "Smith_Machine_Calf_Raise",
-    "name": "Smith Machine Calf Raise",
+    "name": "Panturrilha no Smith",
+    "en": "Smith Machine Calf Raise",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -5007,7 +5462,8 @@
   {
     "id": "db-Smith_Machine_Close-Grip_Bench_Press",
     "src": "Smith_Machine_Close-Grip_Bench_Press",
-    "name": "Smith Machine Close-Grip Bench Press",
+    "name": "Supino fechado no Smith",
+    "en": "Smith Machine Close-Grip Bench Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5018,7 +5474,8 @@
   {
     "id": "db-Smith_Machine_Decline_Press",
     "src": "Smith_Machine_Decline_Press",
-    "name": "Smith Machine Decline Press",
+    "name": "Supino declinado no Smith (barra guiada)",
+    "en": "Smith Machine Decline Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5029,7 +5486,8 @@
   {
     "id": "db-Smith_Machine_Hang_Power_Clean",
     "src": "Smith_Machine_Hang_Power_Clean",
-    "name": "Smith Machine Hang Power Clean",
+    "name": "Hang power clean no Smith",
+    "en": "Smith Machine Hang Power Clean",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -5040,7 +5498,8 @@
   {
     "id": "db-Smith_Machine_Hip_Raise",
     "src": "Smith_Machine_Hip_Raise",
-    "name": "Smith Machine Hip Raise",
+    "name": "Elevação de quadril no Smith",
+    "en": "Smith Machine Hip Raise",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -5051,7 +5510,8 @@
   {
     "id": "db-Smith_Machine_Leg_Press",
     "src": "Smith_Machine_Leg_Press",
-    "name": "Smith Machine Leg Press",
+    "name": "Leg press no Smith",
+    "en": "Smith Machine Leg Press",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -5062,7 +5522,8 @@
   {
     "id": "db-Smith_Machine_One-Arm_Upright_Row",
     "src": "Smith_Machine_One-Arm_Upright_Row",
-    "name": "Smith Machine One-Arm Upright Row",
+    "name": "Remada alta unilateral no Smith",
+    "en": "Smith Machine One-Arm Upright Row",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5073,7 +5534,8 @@
   {
     "id": "db-Smith_Machine_Overhead_Shoulder_Press",
     "src": "Smith_Machine_Overhead_Shoulder_Press",
-    "name": "Smith Machine Overhead Shoulder Press",
+    "name": "Desenvolvimento no Smith",
+    "en": "Smith Machine Overhead Shoulder Press",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5084,7 +5546,8 @@
   {
     "id": "db-Smith_Machine_Pistol_Squat",
     "src": "Smith_Machine_Pistol_Squat",
-    "name": "Smith Machine Pistol Squat",
+    "name": "Agachamento pistol no Smith",
+    "en": "Smith Machine Pistol Squat",
     "compound": true,
     "equip": "maquina",
     "level": "intermediate",
@@ -5095,7 +5558,8 @@
   {
     "id": "db-Smith_Machine_Reverse_Calf_Raises",
     "src": "Smith_Machine_Reverse_Calf_Raises",
-    "name": "Smith Machine Reverse Calf Raises",
+    "name": "Panturrilha inversa no Smith",
+    "en": "Smith Machine Reverse Calf Raises",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -5106,7 +5570,8 @@
   {
     "id": "db-Smith_Machine_Squat",
     "src": "Smith_Machine_Squat",
-    "name": "Smith Machine Squat",
+    "name": "Agachamento no Smith",
+    "en": "Smith Machine Squat",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5117,7 +5582,8 @@
   {
     "id": "db-Smith_Machine_Stiff-Legged_Deadlift",
     "src": "Smith_Machine_Stiff-Legged_Deadlift",
-    "name": "Smith Machine Stiff-Legged Deadlift",
+    "name": "Levantamento terra com pernas estendidas no Smith",
+    "en": "Smith Machine Stiff-Legged Deadlift",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5128,7 +5594,8 @@
   {
     "id": "db-Smith_Machine_Upright_Row",
     "src": "Smith_Machine_Upright_Row",
-    "name": "Smith Machine Upright Row",
+    "name": "Remada alta no Smith",
+    "en": "Smith Machine Upright Row",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5139,7 +5606,8 @@
   {
     "id": "db-Smith_Single-Leg_Split_Squat",
     "src": "Smith_Single-Leg_Split_Squat",
-    "name": "Smith Single-Leg Split Squat",
+    "name": "Agachamento búlgaro no Smith",
+    "en": "Smith Single-Leg Split Squat",
     "compound": true,
     "equip": "maquina",
     "level": "beginner",
@@ -5150,7 +5618,8 @@
   {
     "id": "db-Snatch_Pull",
     "src": "Snatch_Pull",
-    "name": "Snatch Pull",
+    "name": "Puxada de arranco",
+    "en": "Snatch Pull",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5161,7 +5630,8 @@
   {
     "id": "db-Speed_Band_Overhead_Triceps",
     "src": "Speed_Band_Overhead_Triceps",
-    "name": "Speed Band Overhead Triceps",
+    "name": "Tríceps acima da cabeça com elástico (velocidade)",
+    "en": "Speed Band Overhead Triceps",
     "compound": false,
     "equip": "elastico",
     "level": "beginner",
@@ -5172,7 +5642,8 @@
   {
     "id": "db-Speed_Box_Squat",
     "src": "Speed_Box_Squat",
-    "name": "Speed Box Squat",
+    "name": "Agachamento no caixote (velocidade)",
+    "en": "Speed Box Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5183,7 +5654,8 @@
   {
     "id": "db-Speed_Squats",
     "src": "Speed_Squats",
-    "name": "Speed Squats",
+    "name": "Agachamento de velocidade",
+    "en": "Speed Squats",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -5194,7 +5666,8 @@
   {
     "id": "db-Spell_Caster",
     "src": "Spell_Caster",
-    "name": "Spell Caster",
+    "name": "Spell caster (giro com halteres)",
+    "en": "Spell Caster",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5205,7 +5678,8 @@
   {
     "id": "db-Spider_Crawl",
     "src": "Spider_Crawl",
-    "name": "Spider Crawl",
+    "name": "Rastejo do homem-aranha",
+    "en": "Spider Crawl",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -5216,7 +5690,8 @@
   {
     "id": "db-Spider_Curl",
     "src": "Spider_Curl",
-    "name": "Spider Curl",
+    "name": "Rosca aranha",
+    "en": "Spider Curl",
     "compound": false,
     "equip": "barra-w",
     "level": "beginner",
@@ -5227,7 +5702,8 @@
   {
     "id": "db-Squat_Jerk",
     "src": "Squat_Jerk",
-    "name": "Squat Jerk",
+    "name": "Squat jerk",
+    "en": "Squat Jerk",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -5238,7 +5714,8 @@
   {
     "id": "db-Squat_with_Bands",
     "src": "Squat_with_Bands",
-    "name": "Squat with Bands",
+    "name": "Agachamento com elástico",
+    "en": "Squat with Bands",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5249,7 +5726,8 @@
   {
     "id": "db-Squat_with_Chains",
     "src": "Squat_with_Chains",
-    "name": "Squat with Chains",
+    "name": "Agachamento com correntes",
+    "en": "Squat with Chains",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5260,7 +5738,8 @@
   {
     "id": "db-Squat_with_Plate_Movers",
     "src": "Squat_with_Plate_Movers",
-    "name": "Squat with Plate Movers",
+    "name": "Agachamento com deslizadores de anilha",
+    "en": "Squat with Plate Movers",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5271,7 +5750,8 @@
   {
     "id": "db-Squats_-_With_Bands",
     "src": "Squats_-_With_Bands",
-    "name": "Squats - With Bands",
+    "name": "Agachamento com elástico sob os pés",
+    "en": "Squats - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -5282,7 +5762,8 @@
   {
     "id": "db-Standing_Alternating_Dumbbell_Press",
     "src": "Standing_Alternating_Dumbbell_Press",
-    "name": "Standing Alternating Dumbbell Press",
+    "name": "Desenvolvimento alternado em pé com halteres",
+    "en": "Standing Alternating Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5293,7 +5774,8 @@
   {
     "id": "db-Standing_Barbell_Calf_Raise",
     "src": "Standing_Barbell_Calf_Raise",
-    "name": "Standing Barbell Calf Raise",
+    "name": "Panturrilha em pé com barra",
+    "en": "Standing Barbell Calf Raise",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -5304,7 +5786,8 @@
   {
     "id": "db-Standing_Barbell_Press_Behind_Neck",
     "src": "Standing_Barbell_Press_Behind_Neck",
-    "name": "Standing Barbell Press Behind Neck",
+    "name": "Desenvolvimento por trás da cabeça em pé com barra",
+    "en": "Standing Barbell Press Behind Neck",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5315,7 +5798,8 @@
   {
     "id": "db-Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
     "src": "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
-    "name": "Standing Bent-Over One-Arm Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps curvado em pé, unilateral com halter",
+    "en": "Standing Bent-Over One-Arm Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5326,7 +5810,8 @@
   {
     "id": "db-Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
     "src": "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
-    "name": "Standing Bent-Over Two-Arm Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps curvado em pé com dois halteres",
+    "en": "Standing Bent-Over Two-Arm Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5337,7 +5822,8 @@
   {
     "id": "db-Standing_Biceps_Cable_Curl",
     "src": "Standing_Biceps_Cable_Curl",
-    "name": "Standing Biceps Cable Curl",
+    "name": "Rosca em pé na polia",
+    "en": "Standing Biceps Cable Curl",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5348,7 +5834,8 @@
   {
     "id": "db-Standing_Bradford_Press",
     "src": "Standing_Bradford_Press",
-    "name": "Standing Bradford Press",
+    "name": "Desenvolvimento Bradford em pé",
+    "en": "Standing Bradford Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -5359,7 +5846,8 @@
   {
     "id": "db-Standing_Cable_Chest_Press",
     "src": "Standing_Cable_Chest_Press",
-    "name": "Standing Cable Chest Press",
+    "name": "Supino em pé na polia",
+    "en": "Standing Cable Chest Press",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -5370,7 +5858,8 @@
   {
     "id": "db-Standing_Cable_Lift",
     "src": "Standing_Cable_Lift",
-    "name": "Standing Cable Lift",
+    "name": "Levantamento diagonal em pé na polia",
+    "en": "Standing Cable Lift",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -5381,7 +5870,8 @@
   {
     "id": "db-Standing_Cable_Wood_Chop",
     "src": "Standing_Cable_Wood_Chop",
-    "name": "Standing Cable Wood Chop",
+    "name": "Lenhador em pé na polia",
+    "en": "Standing Cable Wood Chop",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -5392,7 +5882,8 @@
   {
     "id": "db-Standing_Concentration_Curl",
     "src": "Standing_Concentration_Curl",
-    "name": "Standing Concentration Curl",
+    "name": "Rosca concentrada em pé",
+    "en": "Standing Concentration Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5403,7 +5894,8 @@
   {
     "id": "db-Standing_Dumbbell_Calf_Raise",
     "src": "Standing_Dumbbell_Calf_Raise",
-    "name": "Standing Dumbbell Calf Raise",
+    "name": "Panturrilha em pé com halteres",
+    "en": "Standing Dumbbell Calf Raise",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -5414,7 +5906,8 @@
   {
     "id": "db-Standing_Dumbbell_Press",
     "src": "Standing_Dumbbell_Press",
-    "name": "Standing Dumbbell Press",
+    "name": "Desenvolvimento em pé com halteres",
+    "en": "Standing Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5425,7 +5918,8 @@
   {
     "id": "db-Standing_Dumbbell_Reverse_Curl",
     "src": "Standing_Dumbbell_Reverse_Curl",
-    "name": "Standing Dumbbell Reverse Curl",
+    "name": "Rosca inversa em pé com halteres",
+    "en": "Standing Dumbbell Reverse Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -5436,7 +5930,8 @@
   {
     "id": "db-Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head",
     "src": "Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head",
-    "name": "Standing Dumbbell Straight-Arm Front Delt Raise Above Head",
+    "name": "Elevação frontal em pé com halteres até acima da cabeça",
+    "en": "Standing Dumbbell Straight-Arm Front Delt Raise Above Head",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -5447,7 +5942,8 @@
   {
     "id": "db-Standing_Dumbbell_Triceps_Extension",
     "src": "Standing_Dumbbell_Triceps_Extension",
-    "name": "Standing Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps em pé com halter",
+    "en": "Standing Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5458,7 +5954,8 @@
   {
     "id": "db-Standing_Dumbbell_Upright_Row",
     "src": "Standing_Dumbbell_Upright_Row",
-    "name": "Standing Dumbbell Upright Row",
+    "name": "Remada alta em pé com halteres",
+    "en": "Standing Dumbbell Upright Row",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5469,7 +5966,8 @@
   {
     "id": "db-Standing_Front_Barbell_Raise_Over_Head",
     "src": "Standing_Front_Barbell_Raise_Over_Head",
-    "name": "Standing Front Barbell Raise Over Head",
+    "name": "Elevação frontal em pé com barra até acima da cabeça",
+    "en": "Standing Front Barbell Raise Over Head",
     "compound": false,
     "equip": "barra",
     "level": "intermediate",
@@ -5480,7 +5978,8 @@
   {
     "id": "db-Standing_Inner-Biceps_Curl",
     "src": "Standing_Inner-Biceps_Curl",
-    "name": "Standing Inner-Biceps Curl",
+    "name": "Rosca em pé para a porção interna do bíceps",
+    "en": "Standing Inner-Biceps Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -5491,7 +5990,8 @@
   {
     "id": "db-Standing_Leg_Curl",
     "src": "Standing_Leg_Curl",
-    "name": "Standing Leg Curl",
+    "name": "Flexora em pé",
+    "en": "Standing Leg Curl",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -5502,7 +6002,8 @@
   {
     "id": "db-Standing_Low-Pulley_One-Arm_Triceps_Extension",
     "src": "Standing_Low-Pulley_One-Arm_Triceps_Extension",
-    "name": "Standing Low-Pulley One-Arm Triceps Extension",
+    "name": "Extensão de tríceps unilateral em pé na polia baixa",
+    "en": "Standing Low-Pulley One-Arm Triceps Extension",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -5513,7 +6014,8 @@
   {
     "id": "db-Standing_Military_Press",
     "src": "Standing_Military_Press",
-    "name": "Standing Military Press",
+    "name": "Desenvolvimento militar em pé",
+    "en": "Standing Military Press",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -5524,7 +6026,8 @@
   {
     "id": "db-Standing_Olympic_Plate_Hand_Squeeze",
     "src": "Standing_Olympic_Plate_Hand_Squeeze",
-    "name": "Standing Olympic Plate Hand Squeeze",
+    "name": "Aperto de anilha olímpica em pé",
+    "en": "Standing Olympic Plate Hand Squeeze",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -5535,7 +6038,8 @@
   {
     "id": "db-Standing_One-Arm_Cable_Curl",
     "src": "Standing_One-Arm_Cable_Curl",
-    "name": "Standing One-Arm Cable Curl",
+    "name": "Rosca unilateral em pé na polia",
+    "en": "Standing One-Arm Cable Curl",
     "compound": false,
     "equip": "polia",
     "level": "intermediate",
@@ -5546,7 +6050,8 @@
   {
     "id": "db-Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench",
     "src": "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench",
-    "name": "Standing One-Arm Dumbbell Curl Over Incline Bench",
+    "name": "Rosca unilateral em pé com halter sobre o banco inclinado",
+    "en": "Standing One-Arm Dumbbell Curl Over Incline Bench",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5557,7 +6062,8 @@
   {
     "id": "db-Standing_One-Arm_Dumbbell_Triceps_Extension",
     "src": "Standing_One-Arm_Dumbbell_Triceps_Extension",
-    "name": "Standing One-Arm Dumbbell Triceps Extension",
+    "name": "Extensão de tríceps unilateral em pé com halter",
+    "en": "Standing One-Arm Dumbbell Triceps Extension",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5568,7 +6074,8 @@
   {
     "id": "db-Standing_Overhead_Barbell_Triceps_Extension",
     "src": "Standing_Overhead_Barbell_Triceps_Extension",
-    "name": "Standing Overhead Barbell Triceps Extension",
+    "name": "Extensão de tríceps em pé com barra acima da cabeça",
+    "en": "Standing Overhead Barbell Triceps Extension",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -5579,7 +6086,8 @@
   {
     "id": "db-Standing_Palm-In_One-Arm_Dumbbell_Press",
     "src": "Standing_Palm-In_One-Arm_Dumbbell_Press",
-    "name": "Standing Palm-In One-Arm Dumbbell Press",
+    "name": "Desenvolvimento unilateral em pé com halter, palma para dentro",
+    "en": "Standing Palm-In One-Arm Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5590,7 +6098,8 @@
   {
     "id": "db-Standing_Palms-In_Dumbbell_Press",
     "src": "Standing_Palms-In_Dumbbell_Press",
-    "name": "Standing Palms-In Dumbbell Press",
+    "name": "Desenvolvimento em pé com halteres, palmas para dentro",
+    "en": "Standing Palms-In Dumbbell Press",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -5601,7 +6110,8 @@
   {
     "id": "db-Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
     "src": "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
-    "name": "Standing Palms-Up Barbell Behind The Back Wrist Curl",
+    "name": "Rosca de punho em pé com barra por trás",
+    "en": "Standing Palms-Up Barbell Behind The Back Wrist Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -5612,7 +6122,8 @@
   {
     "id": "db-Standing_Rope_Crunch",
     "src": "Standing_Rope_Crunch",
-    "name": "Standing Rope Crunch",
+    "name": "Abdominal em pé com corda",
+    "en": "Standing Rope Crunch",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5623,7 +6134,8 @@
   {
     "id": "db-Standing_Towel_Triceps_Extension",
     "src": "Standing_Towel_Triceps_Extension",
-    "name": "Standing Towel Triceps Extension",
+    "name": "Extensão de tríceps em pé com toalha",
+    "en": "Standing Towel Triceps Extension",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -5634,7 +6146,8 @@
   {
     "id": "db-Step-up_with_Knee_Raise",
     "src": "Step-up_with_Knee_Raise",
-    "name": "Step-up with Knee Raise",
+    "name": "Subida no banco com elevação de joelho",
+    "en": "Step-up with Knee Raise",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -5645,7 +6158,8 @@
   {
     "id": "db-Stiff-Legged_Barbell_Deadlift",
     "src": "Stiff-Legged_Barbell_Deadlift",
-    "name": "Stiff-Legged Barbell Deadlift",
+    "name": "Levantamento terra com pernas estendidas (stiff) com barra",
+    "en": "Stiff-Legged Barbell Deadlift",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5656,7 +6170,8 @@
   {
     "id": "db-Stiff-Legged_Dumbbell_Deadlift",
     "src": "Stiff-Legged_Dumbbell_Deadlift",
-    "name": "Stiff-Legged Dumbbell Deadlift",
+    "name": "Levantamento terra com pernas estendidas (stiff) com halteres",
+    "en": "Stiff-Legged Dumbbell Deadlift",
     "compound": true,
     "equip": "halteres",
     "level": "beginner",
@@ -5667,7 +6182,8 @@
   {
     "id": "db-Straight_Bar_Bench_Mid_Rows",
     "src": "Straight_Bar_Bench_Mid_Rows",
-    "name": "Straight Bar Bench Mid Rows",
+    "name": "Remada média no banco com barra reta",
+    "en": "Straight Bar Bench Mid Rows",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -5678,7 +6194,8 @@
   {
     "id": "db-Straight_Raises_on_Incline_Bench",
     "src": "Straight_Raises_on_Incline_Bench",
-    "name": "Straight Raises on Incline Bench",
+    "name": "Elevação frontal no banco inclinado",
+    "en": "Straight Raises on Incline Bench",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -5689,7 +6206,8 @@
   {
     "id": "db-Straight-Arm_Dumbbell_Pullover",
     "src": "Straight-Arm_Dumbbell_Pullover",
-    "name": "Straight-Arm Dumbbell Pullover",
+    "name": "Pullover com halter, braços estendidos",
+    "en": "Straight-Arm Dumbbell Pullover",
     "compound": true,
     "equip": "halteres",
     "level": "intermediate",
@@ -5700,7 +6218,8 @@
   {
     "id": "db-Straight-Arm_Pulldown",
     "src": "Straight-Arm_Pulldown",
-    "name": "Straight-Arm Pulldown",
+    "name": "Pulldown com braços estendidos",
+    "en": "Straight-Arm Pulldown",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5711,7 +6230,8 @@
   {
     "id": "db-Sumo_Deadlift",
     "src": "Sumo_Deadlift",
-    "name": "Sumo Deadlift",
+    "name": "Levantamento terra sumô",
+    "en": "Sumo Deadlift",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5722,7 +6242,8 @@
   {
     "id": "db-Sumo_Deadlift_with_Bands",
     "src": "Sumo_Deadlift_with_Bands",
-    "name": "Sumo Deadlift with Bands",
+    "name": "Levantamento terra sumô com elástico",
+    "en": "Sumo Deadlift with Bands",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5733,7 +6254,8 @@
   {
     "id": "db-Sumo_Deadlift_with_Chains",
     "src": "Sumo_Deadlift_with_Chains",
-    "name": "Sumo Deadlift with Chains",
+    "name": "Levantamento terra sumô com correntes",
+    "en": "Sumo Deadlift with Chains",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -5744,7 +6266,8 @@
   {
     "id": "db-Suspended_Fallout",
     "src": "Suspended_Fallout",
-    "name": "Suspended Fallout",
+    "name": "Fallout em suspensão",
+    "en": "Suspended Fallout",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -5755,7 +6278,8 @@
   {
     "id": "db-Suspended_Push-Up",
     "src": "Suspended_Push-Up",
-    "name": "Suspended Push-Up",
+    "name": "Flexão de braços em suspensão",
+    "en": "Suspended Push-Up",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -5766,7 +6290,8 @@
   {
     "id": "db-Suspended_Reverse_Crunch",
     "src": "Suspended_Reverse_Crunch",
-    "name": "Suspended Reverse Crunch",
+    "name": "Abdominal reverso em suspensão",
+    "en": "Suspended Reverse Crunch",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -5777,7 +6302,8 @@
   {
     "id": "db-Suspended_Row",
     "src": "Suspended_Row",
-    "name": "Suspended Row",
+    "name": "Remada em suspensão",
+    "en": "Suspended Row",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -5788,7 +6314,8 @@
   {
     "id": "db-Suspended_Split_Squat",
     "src": "Suspended_Split_Squat",
-    "name": "Suspended Split Squat",
+    "name": "Agachamento búlgaro em suspensão",
+    "en": "Suspended Split Squat",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -5799,7 +6326,8 @@
   {
     "id": "db-Svend_Press",
     "src": "Svend_Press",
-    "name": "Svend Press",
+    "name": "Svend press (aperto de anilhas)",
+    "en": "Svend Press",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -5810,7 +6338,8 @@
   {
     "id": "db-T-Bar_Row_with_Handle",
     "src": "T-Bar_Row_with_Handle",
-    "name": "T-Bar Row with Handle",
+    "name": "Remada cavalinho com puxador",
+    "en": "T-Bar Row with Handle",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -5821,7 +6350,8 @@
   {
     "id": "db-Tate_Press",
     "src": "Tate_Press",
-    "name": "Tate Press",
+    "name": "Tate press",
+    "en": "Tate Press",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -5832,7 +6362,8 @@
   {
     "id": "db-Thigh_Abductor",
     "src": "Thigh_Abductor",
-    "name": "Thigh Abductor",
+    "name": "Cadeira abdutora",
+    "en": "Thigh Abductor",
     "compound": false,
     "equip": "maquina",
     "level": "beginner",
@@ -5843,7 +6374,8 @@
   {
     "id": "db-Trap_Bar_Deadlift",
     "src": "Trap_Bar_Deadlift",
-    "name": "Trap Bar Deadlift",
+    "name": "Levantamento terra com barra hexagonal",
+    "en": "Trap Bar Deadlift",
     "compound": true,
     "equip": "outro",
     "level": "beginner",
@@ -5854,7 +6386,8 @@
   {
     "id": "db-Tricep_Dumbbell_Kickback",
     "src": "Tricep_Dumbbell_Kickback",
-    "name": "Tricep Dumbbell Kickback",
+    "name": "Coice de tríceps com halter",
+    "en": "Tricep Dumbbell Kickback",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5865,7 +6398,8 @@
   {
     "id": "db-Triceps_Overhead_Extension_with_Rope",
     "src": "Triceps_Overhead_Extension_with_Rope",
-    "name": "Triceps Overhead Extension with Rope",
+    "name": "Extensão de tríceps acima da cabeça com corda",
+    "en": "Triceps Overhead Extension with Rope",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5876,7 +6410,8 @@
   {
     "id": "db-Triceps_Pushdown",
     "src": "Triceps_Pushdown",
-    "name": "Triceps Pushdown",
+    "name": "Tríceps na polia",
+    "en": "Triceps Pushdown",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5887,7 +6422,8 @@
   {
     "id": "db-Triceps_Pushdown_-_V-Bar_Attachment",
     "src": "Triceps_Pushdown_-_V-Bar_Attachment",
-    "name": "Triceps Pushdown - V-Bar Attachment",
+    "name": "Tríceps na polia com barra V",
+    "en": "Triceps Pushdown - V-Bar Attachment",
     "compound": false,
     "equip": "polia",
     "level": "beginner",
@@ -5898,7 +6434,8 @@
   {
     "id": "db-Tuck_Crunch",
     "src": "Tuck_Crunch",
-    "name": "Tuck Crunch",
+    "name": "Abdominal grupado",
+    "en": "Tuck Crunch",
     "compound": false,
     "equip": "corporal",
     "level": "beginner",
@@ -5909,7 +6446,8 @@
   {
     "id": "db-Two-Arm_Dumbbell_Preacher_Curl",
     "src": "Two-Arm_Dumbbell_Preacher_Curl",
-    "name": "Two-Arm Dumbbell Preacher Curl",
+    "name": "Rosca Scott com dois halteres",
+    "en": "Two-Arm Dumbbell Preacher Curl",
     "compound": false,
     "equip": "halteres",
     "level": "beginner",
@@ -5920,7 +6458,8 @@
   {
     "id": "db-Two-Arm_Kettlebell_Clean",
     "src": "Two-Arm_Kettlebell_Clean",
-    "name": "Two-Arm Kettlebell Clean",
+    "name": "Clean com kettlebell, duas mãos",
+    "en": "Two-Arm Kettlebell Clean",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -5931,7 +6470,8 @@
   {
     "id": "db-Two-Arm_Kettlebell_Jerk",
     "src": "Two-Arm_Kettlebell_Jerk",
-    "name": "Two-Arm Kettlebell Jerk",
+    "name": "Jerk com kettlebell, duas mãos",
+    "en": "Two-Arm Kettlebell Jerk",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -5942,7 +6482,8 @@
   {
     "id": "db-Two-Arm_Kettlebell_Military_Press",
     "src": "Two-Arm_Kettlebell_Military_Press",
-    "name": "Two-Arm Kettlebell Military Press",
+    "name": "Desenvolvimento militar com dois kettlebells",
+    "en": "Two-Arm Kettlebell Military Press",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -5953,7 +6494,8 @@
   {
     "id": "db-Two-Arm_Kettlebell_Row",
     "src": "Two-Arm_Kettlebell_Row",
-    "name": "Two-Arm Kettlebell Row",
+    "name": "Remada com dois kettlebells",
+    "en": "Two-Arm Kettlebell Row",
     "compound": true,
     "equip": "kettlebell",
     "level": "intermediate",
@@ -5964,7 +6506,8 @@
   {
     "id": "db-Underhand_Cable_Pulldowns",
     "src": "Underhand_Cable_Pulldowns",
-    "name": "Underhand Cable Pulldowns",
+    "name": "Puxada supinada na polia",
+    "en": "Underhand Cable Pulldowns",
     "compound": true,
     "equip": "polia",
     "level": "beginner",
@@ -5975,7 +6518,8 @@
   {
     "id": "db-Upright_Barbell_Row",
     "src": "Upright_Barbell_Row",
-    "name": "Upright Barbell Row",
+    "name": "Remada alta com barra",
+    "en": "Upright Barbell Row",
     "compound": true,
     "equip": "barra",
     "level": "beginner",
@@ -5986,7 +6530,8 @@
   {
     "id": "db-Upright_Cable_Row",
     "src": "Upright_Cable_Row",
-    "name": "Upright Cable Row",
+    "name": "Remada alta na polia",
+    "en": "Upright Cable Row",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -5997,7 +6542,8 @@
   {
     "id": "db-Upright_Row_-_With_Bands",
     "src": "Upright_Row_-_With_Bands",
-    "name": "Upright Row - With Bands",
+    "name": "Remada alta com elástico",
+    "en": "Upright Row - With Bands",
     "compound": true,
     "equip": "elastico",
     "level": "beginner",
@@ -6008,7 +6554,8 @@
   {
     "id": "db-V-Bar_Pulldown",
     "src": "V-Bar_Pulldown",
-    "name": "V-Bar Pulldown",
+    "name": "Puxada com barra V",
+    "en": "V-Bar Pulldown",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -6019,7 +6566,8 @@
   {
     "id": "db-V-Bar_Pullup",
     "src": "V-Bar_Pullup",
-    "name": "V-Bar Pullup",
+    "name": "Barra fixa com barra V",
+    "en": "V-Bar Pullup",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -6030,7 +6578,8 @@
   {
     "id": "db-Weighted_Ball_Side_Bend",
     "src": "Weighted_Ball_Side_Bend",
-    "name": "Weighted Ball Side Bend",
+    "name": "Flexão lateral do tronco na bola com carga",
+    "en": "Weighted Ball Side Bend",
     "compound": false,
     "equip": "bola",
     "level": "intermediate",
@@ -6041,7 +6590,8 @@
   {
     "id": "db-Weighted_Bench_Dip",
     "src": "Weighted_Bench_Dip",
-    "name": "Weighted Bench Dip",
+    "name": "Mergulho no banco com carga",
+    "en": "Weighted Bench Dip",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -6052,7 +6602,8 @@
   {
     "id": "db-Weighted_Crunches",
     "src": "Weighted_Crunches",
-    "name": "Weighted Crunches",
+    "name": "Abdominal com carga",
+    "en": "Weighted Crunches",
     "compound": false,
     "equip": "medicine-ball",
     "level": "beginner",
@@ -6063,7 +6614,8 @@
   {
     "id": "db-Weighted_Jump_Squat",
     "src": "Weighted_Jump_Squat",
-    "name": "Weighted Jump Squat",
+    "name": "Agachamento com salto com carga",
+    "en": "Weighted Jump Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -6074,7 +6626,8 @@
   {
     "id": "db-Weighted_Pull_Ups",
     "src": "Weighted_Pull_Ups",
-    "name": "Weighted Pull Ups",
+    "name": "Barra fixa com carga",
+    "en": "Weighted Pull Ups",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -6085,7 +6638,8 @@
   {
     "id": "db-Weighted_Sissy_Squat",
     "src": "Weighted_Sissy_Squat",
-    "name": "Weighted Sissy Squat",
+    "name": "Agachamento sissy com carga",
+    "en": "Weighted Sissy Squat",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -6096,7 +6650,8 @@
   {
     "id": "db-Weighted_Sit-Ups_-_With_Bands",
     "src": "Weighted_Sit-Ups_-_With_Bands",
-    "name": "Weighted Sit-Ups - With Bands",
+    "name": "Abdominal completo com carga e elástico",
+    "en": "Weighted Sit-Ups - With Bands",
     "compound": false,
     "equip": "outro",
     "level": "intermediate",
@@ -6107,7 +6662,8 @@
   {
     "id": "db-Weighted_Squat",
     "src": "Weighted_Squat",
-    "name": "Weighted Squat",
+    "name": "Agachamento com carga",
+    "en": "Weighted Squat",
     "compound": true,
     "equip": "outro",
     "level": "intermediate",
@@ -6118,7 +6674,8 @@
   {
     "id": "db-Wide_Stance_Barbell_Squat",
     "src": "Wide_Stance_Barbell_Squat",
-    "name": "Wide Stance Barbell Squat",
+    "name": "Agachamento com barra, pés afastados",
+    "en": "Wide Stance Barbell Squat",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -6129,7 +6686,8 @@
   {
     "id": "db-Wide-Grip_Barbell_Bench_Press",
     "src": "Wide-Grip_Barbell_Bench_Press",
-    "name": "Wide-Grip Barbell Bench Press",
+    "name": "Supino reto com barra, pegada aberta",
+    "en": "Wide-Grip Barbell Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -6140,7 +6698,8 @@
   {
     "id": "db-Wide-Grip_Decline_Barbell_Bench_Press",
     "src": "Wide-Grip_Decline_Barbell_Bench_Press",
-    "name": "Wide-Grip Decline Barbell Bench Press",
+    "name": "Supino declinado com barra, pegada aberta",
+    "en": "Wide-Grip Decline Barbell Bench Press",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -6151,7 +6710,8 @@
   {
     "id": "db-Wide-Grip_Decline_Barbell_Pullover",
     "src": "Wide-Grip_Decline_Barbell_Pullover",
-    "name": "Wide-Grip Decline Barbell Pullover",
+    "name": "Pullover declinado com barra, pegada aberta",
+    "en": "Wide-Grip Decline Barbell Pullover",
     "compound": true,
     "equip": "barra",
     "level": "intermediate",
@@ -6162,7 +6722,8 @@
   {
     "id": "db-Wide-Grip_Pulldown_Behind_The_Neck",
     "src": "Wide-Grip_Pulldown_Behind_The_Neck",
-    "name": "Wide-Grip Pulldown Behind The Neck",
+    "name": "Puxada por trás com pegada aberta",
+    "en": "Wide-Grip Pulldown Behind The Neck",
     "compound": true,
     "equip": "polia",
     "level": "intermediate",
@@ -6173,7 +6734,8 @@
   {
     "id": "db-Wide-Grip_Rear_Pull-Up",
     "src": "Wide-Grip_Rear_Pull-Up",
-    "name": "Wide-Grip Rear Pull-Up",
+    "name": "Barra fixa por trás com pegada aberta",
+    "en": "Wide-Grip Rear Pull-Up",
     "compound": true,
     "equip": "corporal",
     "level": "intermediate",
@@ -6184,7 +6746,8 @@
   {
     "id": "db-Wide-Grip_Standing_Barbell_Curl",
     "src": "Wide-Grip_Standing_Barbell_Curl",
-    "name": "Wide-Grip Standing Barbell Curl",
+    "name": "Rosca em pé com barra, pegada aberta",
+    "en": "Wide-Grip Standing Barbell Curl",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -6195,7 +6758,8 @@
   {
     "id": "db-Wind_Sprints",
     "src": "Wind_Sprints",
-    "name": "Wind Sprints",
+    "name": "Tiros de corrida",
+    "en": "Wind Sprints",
     "compound": true,
     "equip": "corporal",
     "level": "beginner",
@@ -6206,7 +6770,8 @@
   {
     "id": "db-Wrist_Roller",
     "src": "Wrist_Roller",
-    "name": "Wrist Roller",
+    "name": "Rolo de punho",
+    "en": "Wrist Roller",
     "compound": false,
     "equip": "outro",
     "level": "beginner",
@@ -6217,7 +6782,8 @@
   {
     "id": "db-Wrist_Rotations_with_Straight_Bar",
     "src": "Wrist_Rotations_with_Straight_Bar",
-    "name": "Wrist Rotations with Straight Bar",
+    "name": "Rotação de punho com barra reta",
+    "en": "Wrist Rotations with Straight Bar",
     "compound": false,
     "equip": "barra",
     "level": "beginner",
@@ -6228,7 +6794,8 @@
   {
     "id": "db-Zercher_Squats",
     "src": "Zercher_Squats",
-    "name": "Zercher Squats",
+    "name": "Agachamento Zercher",
+    "en": "Zercher Squats",
     "compound": true,
     "equip": "barra",
     "level": "expert",
@@ -6239,7 +6806,8 @@
   {
     "id": "db-Zottman_Curl",
     "src": "Zottman_Curl",
-    "name": "Zottman Curl",
+    "name": "Rosca Zottman",
+    "en": "Zottman Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",
@@ -6250,7 +6818,8 @@
   {
     "id": "db-Zottman_Preacher_Curl",
     "src": "Zottman_Preacher_Curl",
-    "name": "Zottman Preacher Curl",
+    "name": "Rosca Scott Zottman",
+    "en": "Zottman Preacher Curl",
     "compound": false,
     "equip": "halteres",
     "level": "intermediate",

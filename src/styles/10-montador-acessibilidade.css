@@ -1,0 +1,695 @@
+/* Montador de programa, alvos de toque, telas estreitas e letra grande do sistema. */
+
+/* ---------- Mapa do ano: foco pelo teclado e navegação de 44 px ---------- */
+.hm-svg:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.hm-holo .hm-cell.lv1 {
+  stroke: #3fd8e0;
+  stroke-opacity: 0.6;
+  stroke-width: 1;
+}
+.hm-nav {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+}
+.hm-nav button {
+  height: 44px;
+  border: 1px solid var(--field-border);
+  background: var(--surface-2);
+  color: var(--cyan);
+  font: 700 var(--fs-5) var(--mono);
+}
+.hm-nav button:disabled {
+  opacity: 0.4;
+}
+.hm-nav span {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Programas e montador de treino
+   ========================================================================== */
+.pg-entry {
+  text-decoration: none;
+  gap: 4px;
+}
+.pg-entry strong {
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  letter-spacing: 0.04em;
+}
+.pg-card.on {
+  --aug-border-bg: var(--cyan);
+}
+.pg-name {
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  letter-spacing: 0.04em;
+}
+.pg-tag {
+  padding: 3px 8px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--bg);
+  background: var(--cyan);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.pg-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pg-days span {
+  min-width: 34px;
+  padding: 3px 6px;
+  text-align: center;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  border: 1px solid var(--field-border);
+}
+
+/* Montador */
+.pe-chips {
+  gap: 6px;
+}
+.pe-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--field-border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: var(--fs-2) var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.pe-chip small {
+  font-size: var(--fs-1);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+.pe-chip[aria-pressed="true"] {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--cyan);
+}
+.pe-day-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 64px;
+  gap: 8px;
+  align-items: center;
+}
+.pe-day-idx {
+  font: 900 var(--fs-5) var(--tech);
+  color: var(--red-hi);
+}
+.pe-day-name {
+  font-family: var(--tech);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.pe-day-code {
+  text-align: center;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.pe-exs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pe-ex {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+}
+.pe-ex.open {
+  border-color: var(--cyan);
+}
+.pe-ex > .btn {
+  margin: 0 10px 10px;
+}
+.pe-ex-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+}
+.pe-ex-idx {
+  font: var(--fs-2) var(--mono);
+  color: var(--cyan);
+}
+.pe-ex-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.pe-ex-main strong {
+  font-size: var(--fs-3);
+  font-weight: 600;
+}
+.pe-ex-tools {
+  display: flex;
+  gap: 4px;
+}
+.pe-ex-tools button,
+.pe-num-row button {
+  width: 40px;
+  height: 44px;
+  border: 1px solid var(--field-border);
+  background: var(--bg);
+  color: var(--ink-2);
+  font: 700 var(--fs-4) var(--mono);
+}
+.pe-ex-tools button:disabled {
+  opacity: 0.35;
+}
+.pe-form {
+  gap: 12px;
+  padding: 10px 10px 12px;
+  border-top: 1px solid var(--line-2);
+}
+.pe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px 8px;
+}
+.pe-num {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pe-num-row {
+  display: grid;
+  grid-template-columns: 40px minmax(36px, 1fr) 40px;
+  gap: 3px;
+}
+.pe-num-row .input {
+  min-height: 44px;
+  padding: 0 4px;
+  text-align: center;
+  font-family: var(--tech);
+  font-weight: 800;
+  border-color: var(--field-border);
+}
+.pe-add {
+  gap: 10px;
+}
+.pe-lib {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pe-lib button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 44px 6px 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+.pe-lib button:active {
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.pe-lib strong {
+  font-size: var(--fs-3);
+  font-weight: 600;
+}
+.pe-plus {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 700 var(--fs-5) var(--mono);
+  color: var(--cyan);
+}
+
+/* Séries por semana no montador */
+.pv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pv-row {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-2);
+}
+.pv-row b {
+  text-align: right;
+  font: 700 var(--fs-3) var(--tech);
+}
+.pv-row.warn b {
+  color: var(--warn);
+}
+.pv-row.ok b {
+  color: var(--ok);
+}
+.pv-track {
+  position: relative;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, var(--track-empty) 0 4px, transparent 4px 6px);
+  opacity: 0.9;
+}
+.pv-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(90deg, var(--cyan) 0 4px, transparent 4px 6px);
+}
+.pv-row.warn .pv-track i {
+  background: repeating-linear-gradient(90deg, var(--warn) 0 4px, transparent 4px 6px);
+}
+.pv-track u {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--warn);
+}
+.pv-track u.eff {
+  background: var(--cyan);
+}
+@media (max-width: 380px) {
+  .pv-row {
+    grid-template-columns: 104px minmax(0, 1fr) 36px;
+  }
+}
+
+/* Exercícios: os que não estão no programa ficam um pouco apagados. */
+.ws-card.off-program {
+  opacity: 0.72;
+}
+
+/* ==========================================================================
+   Toque e leitura em qualquer tela (varredura de 320 px a tablet)
+   ========================================================================== */
+/* Botões e links de texto: área de toque de ~44 px. O padding cresce e a margem negativa devolve o espaço, então o
+   desenho da tela não muda. */
+.link-btn {
+  padding-block: 13px;
+  margin-block: -9px;
+}
+.link-btn.x-btn {
+  min-width: 44px;
+  padding-inline: 14px;
+  margin-inline: -10px;
+  font-size: var(--fs-5);
+  line-height: 1;
+  text-decoration: none;
+}
+/* Links dentro do texto (datas, "Agenda"): só o alvo cresce; padding vertical em elemento em linha não mexe na linha. */
+.tap {
+  padding-block: 10px;
+}
+.timer .timer-clock {
+  padding-block: 10px;
+  margin-block: -10px;
+}
+/* Chips que são botão ou link (atalhos do Guia, dias do relatório): 40 px de altura. */
+a.chip,
+button.chip {
+  min-height: 40px;
+}
+/* Atalho com nome comprido (Guia: "exercício · adicionar"): quebra linha em vez de sair da tela. */
+a.chip {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.unit-toggle button {
+  min-height: 40px;
+  min-width: 44px;
+}
+/* Nomes de exercício nas listas de cargas e recordes: quebram linha em vez de virar "…". */
+.rec-name {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+/* Subtítulo dos módulos recolhíveis: quebra linha em telas estreitas. */
+.sysmod-title small,
+.sysmod-head:has(.sysmod-quick) .sysmod-title small {
+  white-space: normal;
+}
+/* "Séries da semana": linha de evidência no mínimo do app. */
+.vb-detail small {
+  font-size: var(--fs-1);
+}
+/* Timer em 320 px: o rótulo da próxima série cabe sem cortar. */
+@media (max-width: 340px) {
+  .timer-next {
+    font-size: var(--fs-1);
+  }
+  .timer .timer-clock {
+    font-size: 22px;
+  }
+  .timer button {
+    min-width: 40px;
+    padding: 0 6px;
+  }
+  .timer-row {
+    gap: 4px;
+  }
+  .timer .timer-skip {
+    margin-left: 2px;
+  }
+  .timer .timer-skip::before {
+    left: -3px;
+  }
+  /* Barra de baixo: os cinco nomes inteiros, cada um na sua coluna (seletor mais forte que o do fim do arquivo). */
+  .nav .nav-inner a {
+    letter-spacing: 0;
+    padding-inline: 1px;
+  }
+  /* Módulo com atalho ao lado do título: menos espaçamento para a palavra caber inteira. */
+  .sysmod-title strong {
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Letra grande do sistema (Android "Tamanho da fonte", iOS "Texto maior"): o layout se reorganiza em vez de cortar. */
+/* Barra de baixo: cada nome fica na sua coluna; se não couber, termina com "…" em vez de encostar no vizinho. */
+.nav a {
+  min-width: 0;
+  padding-inline: 3px;
+}
+.nav-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Timer: o rótulo nunca corta; se faltar espaço, os botões descem juntos para a linha de baixo. */
+.timer-row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.timer-next {
+  flex: 1 1 0;
+  min-width: min-content;
+}
+.timer-next span {
+  white-space: normal;
+  overflow: visible;
+}
+.timer-actions {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+  margin-left: auto;
+}
+/* Séries da semana: nome do músculo quebra em duas linhas em vez de cortar. */
+.vb-name {
+  white-space: normal;
+  overflow: visible;
+}
+/* Montador: nome de exercício longo quebra dentro da sua coluna em vez de encostar nas setas. */
+.pe-ex-main {
+  min-width: 0;
+}
+.pe-ex-main strong,
+.pe-ex-main span {
+  overflow-wrap: anywhere;
+}
+/* Carga do dia: nunca corta (com letra grande, quebra linha). */
+.plan-head strong {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+/* Linha de cima do timer: com letra grande, quebra em vez de cortar o nome do exercício. */
+.timer-top {
+  white-space: normal;
+  overflow: visible;
+}
+/* Letra grande do sistema: como nos apps nativos, o nome das abas não cresce (o conteúdo cresce normalmente).
+   --text-zoom vem de src/lib/textZoom.ts. */
+.nav-label {
+  font-size: calc(var(--fs-1) / var(--text-zoom, 1));
+  /* em do próprio rótulo (o do link herdaria o espaçamento da letra aumentada) */
+  letter-spacing: 0.05em;
+}
+@media (max-width: 340px) {
+  .nav .nav-inner .nav-label {
+    letter-spacing: 0;
+  }
+}
+/* Módulo com atalho ao lado: se o título não couber (tela estreita com letra grande), o atalho desce para a linha
+   de baixo em vez de cortar o título. 13em cabe ao lado do atalho em 320 px com letra normal. */
+.sysmod-head {
+  flex-wrap: wrap;
+}
+.sysmod-head:has(.sysmod-quick) .sysmod-bar {
+  flex: 1 1 0;
+  min-width: min(100%, 13em);
+}
+.sysmod-quick {
+  min-height: 44px;
+}
+
+/* ==========================================================================
+   Boot do sistema (src/components/Brand.tsx): módulos acendem a anilha, o A entra com glitch, o nome se desenha.
+   --k comprime a linha do tempo (1 no boot completo, 0,36 no curto); --d é o atraso de cada peça.
+   ========================================================================== */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.boot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 3px);
+}
+.boot.leaving {
+  opacity: 0;
+  transform: scale(1.02);
+}
+.boot-top,
+.boot-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.boot-top,
+.boot-center,
+.boot-bottom {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.boot-center {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  min-height: 0;
+}
+.boot-mark {
+  width: min(46vw, 190px, 26vh);
+  height: auto;
+  overflow: visible;
+}
+.boot-word {
+  width: min(76vw, 320px);
+  height: auto;
+  color: var(--ink);
+}
+.boot-tag {
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--ink-3);
+  opacity: 0;
+  animation: boot-show calc(0.4s * var(--k)) ease var(--d) forwards;
+}
+.boot-modules {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+  font: var(--fs-1) var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.boot-modules div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-3);
+  opacity: 0;
+  animation: boot-show 0.01s linear var(--d) forwards;
+}
+.boot-modules b {
+  color: var(--cyan);
+  font-weight: 400;
+}
+/* Tela baixa (celular deitado): só o símbolo, o nome e a barra. */
+@media (max-height: 560px) {
+  .boot-modules {
+    display: none;
+  }
+}
+.boot-seg,
+.boot-letter {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: boot-draw calc(0.22s * var(--k)) ease-out var(--d) forwards;
+}
+.boot-letter {
+  animation-duration: calc(0.3s * var(--k));
+}
+.boot-a {
+  opacity: 0;
+  animation:
+    boot-reveal calc(0.3s * var(--k)) steps(6, end) var(--d) forwards,
+    boot-glitch calc(0.32s * var(--k)) steps(2, end) calc(var(--d) + 0.3s * var(--k)) 1;
+}
+.boot-bar {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-bar calc(0.28s * var(--k)) cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) forwards;
+}
+.boot-bottom {
+  display: grid;
+  gap: 8px;
+}
+.boot-progress {
+  position: relative;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.boot-progress i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+}
+.boot-online {
+  color: var(--cyan);
+  opacity: 0;
+  animation: boot-show 0.01s linear var(--d) forwards;
+}
+.boot-pct {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.boot-skip {
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink-3);
+  font: var(--fs-2) var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+@keyframes boot-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes boot-show {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-reveal {
+  0% {
+    opacity: 1;
+    clip-path: inset(100% 0 0 0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes boot-bar {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@keyframes boot-glitch {
+  0% {
+    transform: translateX(-3px);
+    filter: drop-shadow(3px 0 0 var(--cyan)) drop-shadow(-3px 0 0 var(--magenta));
+  }
+  50% {
+    transform: translateX(2px);
+    filter: drop-shadow(-2px 0 0 var(--cyan));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+.pv-ceiling {
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+  color: var(--ink-2);
+}

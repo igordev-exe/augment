@@ -1,0 +1,43 @@
+name: App iOS
+
+# Compila o app iOS (Capacitor) num Mac do GitHub, para o simulador e sem assinatura: prova que o projeto do Xcode
+# está saudável a cada push. Para instalar num iPhone de verdade ou publicar na App Store é preciso uma conta Apple
+# Developer e assinar o app (passo a passo em docs/online.md). Sem Mac nem conta paga, o iPhone usa a versão web:
+# Safari → Compartilhar → Adicionar à Tela de Início (funciona offline, como app).
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build web (base relativa) e cópia para o iOS
+        run: npm run build:ios
+        env:
+          VITE_API_URL: ${{ vars.AUGMENT_API_URL }}
+      - name: Xcode (simulador, sem assinatura)
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          cd build/Build/Products/Debug-iphonesimulator && zip -qr "$RUNNER_TEMP/augment-ios-simulator.zip" App.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: augment-ios-simulator
+          path: ${{ runner.temp }}/augment-ios-simulator.zip
+          retention-days: 14

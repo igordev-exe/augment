@@ -1,0 +1,16 @@
+# Cloudflare Workers + D1 (plano gratuito). Passo a passo em docs/online.md.
+name = "augment-api"
+main = "src/worker.ts"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "augment"
+# Troque pelo id que o `npx wrangler d1 create augment` mostrar.
+database_id = "COLOQUE-AQUI-O-ID-DO-D1"
+migrations_dir = "migrations"
+
+[vars]
+# Vazio = aceita qualquer origem (login por token, sem cookie). Para restringir, liste as origens separadas por vírgula:
+# ALLOWED_ORIGINS = "https://igordevexe.github.io,https://localhost,capacitor://localhost"
+ALLOWED_ORIGINS = ""

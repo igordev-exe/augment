@@ -16,6 +16,7 @@ import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
+import { syncNow } from "../lib/online/sync";
 import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import {
   backoffWeight,
@@ -304,6 +305,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       });
     setSummary(prsInSession(next, [...before, next]));
     setShowShare(true);
+    // Com conta online: recordes, resumo do treino e backup sobem agora (sem internet, ficam para depois).
+    void syncNow("treino");
     setOpen(-1);
     window.scrollTo(0, 0);
   }

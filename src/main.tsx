@@ -4,6 +4,8 @@ import App from "./App";
 import { todayISO } from "./lib/dates";
 import { isNative, setupBackButton } from "./lib/native";
 import { ensureWeeklyRestorePoint } from "./lib/restore";
+import { installErrorReporting } from "./lib/errors";
+import { startAutoSync } from "./lib/online/sync";
 import { applyTextZoom } from "./lib/textZoom";
 // Fontes empacotadas com o app: funcionam offline na academia.
 import "@fontsource/orbitron/latin-600.css";
@@ -19,7 +21,9 @@ import "@fontsource/rajdhani/latin-600.css";
 import "@fontsource/rajdhani/latin-700.css";
 // augmented-ui: cantos chanfrados com borda (biblioteca cyberpunk de CSS, BSD-2).
 import "augmented-ui/augmented-ui.min.css";
-import "./styles.css";
+import "./styles/index.css";
+
+installErrorReporting();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -45,3 +49,6 @@ navigator.storage?.persist?.().catch(() => {});
 
 // Ponto de restauração semanal (fica no aparelho; o backup exportado continua sendo o seguro de verdade).
 ensureWeeklyRestorePoint(todayISO()).catch(() => {});
+
+// Online (opcional): com conta, sobe recordes, treinos e backup quando há internet. Sem conta, não faz nada.
+startAutoSync();

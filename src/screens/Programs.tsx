@@ -113,6 +113,9 @@ export function Programs() {
         <p className="small muted" style={{ margin: 0 }}>
           Um modelo vira uma cópia sua: dá para trocar exercícios, séries e dias depois.
         </p>
+        <Link to="/primeiro-uso" data-augmented-ui="tl-clip br-clip border" className="btn">
+          Não sei qual escolher: me ajude
+        </Link>
         {(Object.keys(TEMPLATE_GROUPS) as TemplateGroup[]).map((g) => (
           <div key={g} className="stack" style={{ gap: 10 }}>
             <h3 className="label">{TEMPLATE_GROUPS[g].title}</h3>

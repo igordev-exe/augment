@@ -1,0 +1,14 @@
+/* Estilos do AUGMENT, divididos por área. A ORDEM IMPORTA (regras de baixo vencem as de cima): arquivo novo
+   entra no fim, ou no lugar certo da cascata. Cada arquivo começa dizendo o que guarda. */
+@import "./01-base.css";
+@import "./02-componentes.css";
+@import "./03-hoje.css";
+@import "./04-treino.css";
+@import "./05-comuns.css";
+@import "./06-fadiga.css";
+@import "./07-treino-hud.css";
+@import "./08-progresso.css";
+@import "./09-oficina-relatorio.css";
+@import "./10-montador-acessibilidade.css";
+@import "./11-online.css";
+@import "./12-primeiro-uso-erro.css";

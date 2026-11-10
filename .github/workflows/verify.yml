@@ -1,0 +1,43 @@
+name: Verificar layout
+
+# Roda a auditoria de layout (tools/verify/audit.mjs) no app de verdade, em 6 tamanhos de tela, com dados de
+# demonstração: texto cortado, vazamento lateral, letra pequena, alvo de toque pequeno e textos encostados.
+# Falha se achar qualquer coisa. Roda também com o texto do sistema a 130%.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Servidor de desenvolvimento
+        run: |
+          npx vite --port 5173 --strictPort > vite.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:5173 > /dev/null && break; sleep 1; done
+      - name: Auditoria (texto normal)
+        run: node tools/verify/audit.mjs http://localhost:5173 tools/verify/out/normal
+      - name: Auditoria (texto a 130%)
+        if: always()
+        run: node tools/verify/audit.mjs http://localhost:5173 tools/verify/out/texto130 1.3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auditoria-de-layout
+          path: |
+            tools/verify/out
+            vite.log
+          retention-days: 14

@@ -120,15 +120,24 @@ const HEX_BUDGET = 400;
 
 function lintStyles(): LintIssue[] {
   const issues: LintIssue[] = [];
-  const file = "src/styles.css";
-  const css = fs.readFileSync(file, "utf8");
-  css.split(/\r?\n/).forEach((line, i) => {
-    if (line.includes("lint-ok")) return;
-    const m = line.match(/font(?:-size)?:\s*(?:\d{3}\s+)?(\d+(?:\.\d+)?)px/);
-    if (m && Number(m[1]) < MIN_FREE_FONT_PX) {
-      issues.push({ file, line: i + 1, rule: "style/type-scale", message: `${m[1]}px fora da escala: use var(--fs-1) … var(--fs-6).` });
-    }
-  });
+  // Os estilos ficam divididos por área em src/styles/ (a ordem está em index.css).
+  const dir = "src/styles";
+  const sheets = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".css"))
+    .sort()
+    .map((f) => ({ file: `${dir}/${f}`, css: fs.readFileSync(path.join(dir, f), "utf8") }));
+  for (const { file, css } of sheets) {
+    css.split(/\r?\n/).forEach((line, i) => {
+      if (line.includes("lint-ok")) return;
+      const m = line.match(/font(?:-size)?:\s*(?:\d{3}\s+)?(\d+(?:\.\d+)?)px/);
+      if (m && Number(m[1]) < MIN_FREE_FONT_PX) {
+        issues.push({ file, line: i + 1, rule: "style/type-scale", message: `${m[1]}px fora da escala: use var(--fs-1) … var(--fs-6).` });
+      }
+    });
+  }
+  const file = `${dir}/index.css`;
+  const css = sheets.map((s) => s.css).join("\n");
   const outside = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/:root[^{,]*\{[^}]*\}/g, "");
   const hex = outside.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
   if (hex.length > HEX_BUDGET) {

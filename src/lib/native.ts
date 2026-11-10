@@ -131,15 +131,15 @@ export async function shareFileNative(name: string, data: Blob | string, title =
 const KEY_NAME = "anthropic-api-key";
 
 /** No Android a chave fica no armazenamento seguro (Keystore), fora do IndexedDB. */
-export async function readSecretKey(): Promise<string> {
+export async function readSecretKey(name = KEY_NAME): Promise<string> {
   const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
-  return (await SecureStorage.getItem(KEY_NAME)) ?? "";
+  return (await SecureStorage.getItem(name)) ?? "";
 }
 
-export async function writeSecretKey(value: string): Promise<void> {
+export async function writeSecretKey(value: string, name = KEY_NAME): Promise<void> {
   const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
-  if (value) await SecureStorage.setItem(KEY_NAME, value);
-  else await SecureStorage.removeItem(KEY_NAME);
+  if (value) await SecureStorage.setItem(name, value);
+  else await SecureStorage.removeItem(name);
 }
 
 // ---------- Botão voltar do Android ----------

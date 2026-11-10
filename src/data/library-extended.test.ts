@@ -27,7 +27,7 @@ describe("biblioteca ampliada", () => {
   });
 
   it("ombro vira deltoide pelo nome do exercício", () => {
-    const by = (name: string) => EXTENDED.find((e) => e.name === name)!;
+    const by = (name: string) => EXTENDED.find((e) => e.en === name)!;
     expect(by("Cable Rear Delt Fly").muscles).toEqual(["deltPosterior"]);
     expect(by("Seated Side Lateral Raise").muscles).toEqual(["deltLateral"]);
     expect(by("Bent Over Low-Pulley Side Lateral").muscles).toEqual(["deltPosterior"]);

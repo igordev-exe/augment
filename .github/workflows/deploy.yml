@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
@@ -30,6 +30,8 @@ jobs:
         env:
           # Repositório "usuario.github.io" fica na raiz; os demais em /<nome-do-repo>/.
           VITE_BASE: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+          # Endereço do servidor online (Settings → Secrets and variables → Actions → Variables). Vazio = app só offline.
+          VITE_API_URL: ${{ vars.AUGMENT_API_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

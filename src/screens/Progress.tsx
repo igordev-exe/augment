@@ -14,6 +14,7 @@ import { FatigueMap } from "../components/FatigueMap";
 import { VolumeSlots } from "../components/VolumeSlots";
 import { PhotoCompare } from "../components/PhotoCompare";
 import { RecordList } from "../components/RecordList";
+import { CommunityModule } from "../components/CommunityCard";
 import { exById, programDays, shortName } from "../data/program";
 import type { Unit } from "../data/types";
 import { computeAchievements } from "../lib/achievements";
@@ -556,6 +557,8 @@ export function Progress() {
             <RecordList items={recent} linkToExercise />
           )}
         </SysModule>
+
+        <CommunityModule />
 
         <SysModule
           id="cargas"

@@ -1,0 +1,235 @@
+/* Conta online, amigos, comparação e moderação. */
+
+/* ---------- Online: conta, amigos e comparação ---------- */
+.toggle-chip.wide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 14px;
+  text-align: left;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-family: var(--body);
+  font-size: var(--fs-3);
+}
+.toggle-chip.wide::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--field-border);
+}
+.toggle-chip.wide[aria-pressed="true"]::before {
+  border-color: currentColor;
+  background: linear-gradient(currentColor, currentColor) center / 8px 8px no-repeat;
+}
+.warn-text {
+  margin: 0;
+  color: var(--warn);
+}
+.strong-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--cyan);
+  background: var(--cyan-soft);
+  color: var(--ink);
+}
+.recovery-code {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--cyan);
+  background: var(--bg);
+  color: var(--cyan);
+  font-size: var(--fs-5);
+  letter-spacing: 0.08em;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.sync-led {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+.sync-led.off {
+  background: var(--warn);
+  box-shadow: 0 0 8px var(--warn);
+}
+.cloud-list,
+.friend-list,
+.feed-list,
+.rank-list,
+.prose-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.prose-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding-left: 18px;
+  list-style: disc;
+}
+.cloud-item,
+.friend-row,
+.feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-2);
+}
+.cloud-item:first-child,
+.friend-row:first-child,
+.feed-item:first-child {
+  border-top: 0;
+}
+.friend-row .actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.friend-name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+/* Nome nunca corta: quebra linha e, se faltar espaço, os botões descem para a linha de baixo. */
+.friend-name {
+  flex: 1 1 120px;
+}
+.friend-name strong,
+.friend-name span {
+  overflow-wrap: anywhere;
+}
+.friend-row {
+  flex-wrap: wrap;
+}
+.friend-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+.feed-item {
+  align-items: flex-start;
+}
+.feed-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+}
+.feed-pr {
+  color: var(--amber);
+}
+.suggest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pct-hero {
+  display: grid;
+  gap: 4px;
+}
+.pct-hero .pct-num {
+  color: var(--cyan);
+  font-family: var(--tech);
+  font-size: var(--fs-6);
+  line-height: 1;
+}
+.pct-bar {
+  position: relative;
+  height: 8px;
+  background: var(--track-empty);
+}
+.pct-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+.rank-list {
+  display: grid;
+  gap: 6px;
+  counter-reset: rank;
+}
+.rank-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  counter-increment: rank;
+}
+.rank-row::before {
+  content: counter(rank);
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+.rank-row.me {
+  outline: 1px solid var(--cyan);
+}
+.rank-row .who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rank-row .mono {
+  text-align: right;
+}
+.cmp-table td.win {
+  color: var(--cyan);
+}
+.pct-chip {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  white-space: nowrap;
+}
+
+/* ---------- Online: moderação e comparação por faixa ---------- */
+.mod summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-3);
+  font-size: var(--fs-3);
+  cursor: pointer;
+}
+.fair-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fair-list li {
+  overflow-wrap: anywhere;
+}
+.fair-list .label {
+  display: block;
+  margin-bottom: 2px;
+}

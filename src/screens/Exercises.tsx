@@ -55,7 +55,7 @@ export function Exercises() {
   const [q, setQ] = useState("");
   const [group, setGroup] = useState<Group>("todos");
   const [equip, setEquip] = useState<Equip>("todos");
-  /** Curada (34, em português, com execução e evidência) ou completa (com a ampliada, em inglês). */
+  /** Curada (34, em português, com execução e evidência) ou completa (com a ampliada: nome em português, passo a passo em inglês). */
   const [full, setFull] = useState(false);
   const query = norm(q.trim());
 
@@ -88,7 +88,8 @@ export function Exercises() {
     if (!inGroup(group, muscles)) return false;
     if (equip !== "todos" && equipGroup !== equip) return false;
     const label = muscles.map((m) => MUSCLE_LABEL[m]).join(" ");
-    if (query && !norm(`${name} ${label} ${l?.primary ?? ""} ${l?.secondary ?? ""}`).includes(query)) return false;
+    if (query && !norm(`${name} ${EXT_BY_ID[lib]?.en ?? ""} ${label} ${l?.primary ?? ""} ${l?.secondary ?? ""}`).includes(query))
+      return false;
     return true;
   });
 
@@ -119,8 +120,8 @@ export function Exercises() {
         </div>
         {full && (
           <p className="tiny faint" style={{ margin: 0 }}>
-            A completa inclui ~{Math.round(EXTENDED.length / 10) * 10} exercícios do free-exercise-db, com nome e passo a passo em inglês.
-            As fotos baixam na primeira vez.
+            A completa inclui ~{Math.round(EXTENDED.length / 10) * 10} exercícios do free-exercise-db, com o passo a passo em inglês. A
+            busca aceita o nome em português ou em inglês. As fotos baixam na primeira vez.
           </p>
         )}
         <div className="ws-brackets" role="group" aria-label="Filtrar por músculo">

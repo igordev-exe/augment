@@ -3,3 +3,7 @@ node_modules
 package-lock.json
 public
 android
+graphify-out
+ios
+server/.wrangler/
+tools/verify/out

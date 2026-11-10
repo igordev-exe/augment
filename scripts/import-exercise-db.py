@@ -3,7 +3,8 @@
 Uso:  python -I scripts/import-exercise-db.py caminho/para/exercises.json
 
 Gera dois arquivos em src/data/:
-  - library-extended.json      índice compacto (carrega com o app): id, nome, tipo, equipamento, nível, músculos
+  - library-extended.json      índice compacto (carrega com o app): id, nome em português (`name`), nome original em
+                               inglês (`en`), tipo, equipamento, nível, músculos
   - library-instructions.json  passo a passo em inglês (carrega só ao abrir um exercício)
 
 Regras:
@@ -11,7 +12,8 @@ Regras:
   - músculos do banco viram os 14 do app; quem só treina pescoço, lombar ou adutor fica de fora;
   - ombro vira deltoide anterior, lateral ou posterior pelo nome do exercício;
   - sinergistas (0,5 série) só em compostos, a partir dos músculos secundários;
-  - exercícios que já existem na biblioteca curada (src/data/exercise-images.json) não entram de novo.
+  - exercícios que já existem na biblioteca curada (src/data/exercise-images.json) não entram de novo;
+  - o nome em português vem de scripts/exercise-names-pt.json (id original -> nome). Sem tradução, fica o inglês.
 """
 
 import json
@@ -78,6 +80,7 @@ def map_muscle(m: str, name: str):
 def main(path: str) -> None:
     data = json.load(open(path, encoding="utf-8"))
     curated = set(json.load(open(os.path.join(DATA, "exercise-images.json"), encoding="utf-8")).values())
+    pt = json.load(open(os.path.join(ROOT, "scripts", "exercise-names-pt.json"), encoding="utf-8"))
     index = []
     instructions = {}
     for x in data:
@@ -104,7 +107,8 @@ def main(path: str) -> None:
             {
                 "id": "db-" + x["id"],
                 "src": x["id"],
-                "name": str(x["name"])[:80],
+                "name": str(pt.get(x["id"]) or x["name"])[:80],
+                "en": str(x["name"])[:80],
                 "compound": compound,
                 "equip": EQUIP.get(x.get("equipment"), "outro"),
                 "level": x.get("level") or "intermediate",
@@ -116,7 +120,7 @@ def main(path: str) -> None:
         steps = [str(s)[:600] for s in x.get("instructions", []) if isinstance(s, str) and s.strip()]
         if steps:
             instructions["db-" + x["id"]] = steps
-    index.sort(key=lambda e: e["name"].lower())
+    index.sort(key=lambda e: e["en"].lower())
     with open(os.path.join(DATA, "library-extended.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(DATA, "library-instructions.json"), "w", encoding="utf-8", newline="\n") as f:

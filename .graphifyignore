@@ -1,0 +1,17 @@
+# graphify: o que não entra no grafo do código (ruído ou gerado).
+android/
+dist/
+dev-dist/
+public/
+coach/
+docs/brand/
+src/data/library-extended.json
+src/data/library-instructions.json
+src/data/exercise-images.json
+Sci-fi UI Kit*/
+*.png
+*.webp
+*.jpg
+ios/
+server/data/
+tools/verify/out/

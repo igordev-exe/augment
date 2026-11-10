@@ -250,4 +250,8 @@ export interface Settings {
   reentryDismissed?: string;
   /** Segunda-feira em que o cartão do relatório da semana passada foi fechado. */
   reportSeen?: string;
+  /** Já passou (ou pulou) o assistente de primeiro uso. */
+  onboarded?: boolean;
+  /** Incluir as fotos do corpo no backup da nuvem. Padrão: não (as fotos ficam só no aparelho). */
+  cloudPhotos?: boolean;
 }

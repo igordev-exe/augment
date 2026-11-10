@@ -7,6 +7,8 @@ const base = process.env.VITE_BASE ?? "/";
 
 export default defineConfig({
   base,
+  // Versão do app (package.json): vai junto no registro de erros.
+  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? "dev") },
   plugins: [
     react(),
     VitePWA({
