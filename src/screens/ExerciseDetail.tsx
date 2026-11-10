@@ -7,7 +7,7 @@ import { LineChart } from "../components/LineChart";
 import { LIB_BY_ID } from "../data/library";
 import { EXT_BY_ID, useLibraryEntry } from "../data/library-extended";
 import { dayOfExercise, usesOfLibrary } from "../data/program";
-import type { LibraryEntry, ProgramDay, ProgramExercise, Session, Unit } from "../data/types";
+import type { LibraryEntry, ProgramDay, Session, Unit } from "../data/types";
 import { shortDate } from "../lib/dates";
 import { saveProgram } from "../lib/db";
 import { useProgram, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
@@ -258,16 +258,40 @@ export function ExerciseDetail() {
         ) : null}
       </section>
 
-      {sessions && uses.map((ex) => <ExerciseProgress key={ex.id} ex={ex} sessions={sessions} showDay={uses.length > 1} />)}
+      {sessions &&
+        (uses.length === 0 ? (
+          <ExerciseProgress exId={lib.id} libId={lib.id} sessions={sessions} />
+        ) : uses.length === 1 ||
+          !sessions.some(
+            (s) => s.status === "done" && s.exercises.some((e) => uses.some((u) => u.id === e.exId) && workSets(e).length > 0),
+          ) ? (
+          <ExerciseProgress exId={uses[0].id} libId={uses[0].lib} sessions={sessions} />
+        ) : (
+          uses.map((ex) => <ExerciseProgress key={ex.id} exId={ex.id} libId={ex.lib} sessions={sessions} showDay ownOnly />)
+        ))}
 
       <CommunityCard libId={libId} />
     </div>
   );
 }
 
-function ExerciseProgress({ ex, sessions, showDay }: { ex: ProgramExercise; sessions: Session[]; showDay: boolean }) {
-  const hist = historyOf(sessions, ex.id);
-  const title = showDay ? `Progresso no ${dayName(dayOfExercise(ex.id)!.id)}` : "Progresso";
+function ExerciseProgress({
+  exId,
+  libId,
+  sessions,
+  showDay = false,
+  ownOnly = false,
+}: {
+  exId: string;
+  libId: string;
+  sessions: Session[];
+  showDay?: boolean;
+  ownOnly?: boolean;
+}) {
+  const rawHist = historyOf(sessions, exId, undefined, libId);
+  const hist = ownOnly ? rawHist.filter((h) => h.entry.exId === exId) : rawHist;
+  const day = dayOfExercise(exId);
+  const title = showDay && day ? `Progresso no ${dayName(day.id)}` : "Progresso";
 
   if (!hist.length) {
     return (

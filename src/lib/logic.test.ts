@@ -384,14 +384,16 @@ describe("recordes, alternativas e conquistas", () => {
     expect(map.get("c")).toEqual([]);
   });
 
-  it("computa módulos de conquista determinísticos", () => {
-    const mods = computeAchievements([a, b, cAlt], DEFAULT_SETTINGS, [
+  it("computa módulos de conquista determinísticos e ignora semana 0 (programa fixo) em MOD-05", () => {
+    const fixedS: Session = { ...a, id: "fx", week: 0 };
+    const mods = computeAchievements([a, b, cAlt, fixedS], DEFAULT_SETTINGS, [
       { id: "1", date: "2026-09-24", weightKg: 80 },
       { id: "2", date: "2026-10-01", weightKg: 80.5 },
       { id: "3", date: "2026-10-08", weightKg: 81 },
     ]);
     expect(mods.find((m) => m.id === "first-protocol")?.unlocked).toBe(true);
     expect(mods.find((m) => m.id === "body-tracker")?.unlocked).toBe(true);
+    expect(mods.find((m) => m.id === "meso-cycle")?.progress).toBe("1 sem / 6 sem");
   });
 });
 

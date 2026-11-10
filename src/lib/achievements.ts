@@ -30,7 +30,7 @@ export function computeAchievements(sessions: Session[], settings: Settings, bod
     cardioMinutes += s.cardio?.minutes ?? 0;
     const wk = mondayOf(s.date);
     byWeek.set(wk, (byWeek.get(wk) ?? 0) + 1);
-    weeksSeen.add(s.week);
+    if (s.week >= 1 && s.week <= 7) weeksSeen.add(s.week);
     for (const e of s.exercises) {
       for (const set of e.sets) {
         if (set.done && set.kind !== "warmup" && set.rir != null) rirSets += 1;

@@ -102,6 +102,18 @@ function triggerDownload(dataUrl: string, fileName: string) {
   if (file) setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+function getGymRatsHref(): string {
+  if (typeof navigator === "undefined") return "https://www.gymrats.app/";
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) {
+    return "intent://open#Intent;scheme=gymrats;package=com.gymrats.app;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gymrats.app;end";
+  }
+  if (/iPad|iPhone|iPod/i.test(ua)) {
+    return "https://apps.apple.com/app/gymrats-workout-challenge/id1476007693";
+  }
+  return "https://www.gymrats.app/";
+}
+
 export function ShareWorkoutCard({
   session,
   prs,
@@ -410,6 +422,25 @@ export function ShareWorkoutCard({
     }
   }
 
+  async function copySummary() {
+    try {
+      await navigator.clipboard.writeText(textSummary);
+      toast("Resumo copiado para a área de transferência.", "ok");
+    } catch {
+      toast("Não foi possível copiar o texto.", "warn");
+    }
+  }
+
+  function onGymRatsClick() {
+    if (dataUrl && !isNative) {
+      triggerDownload(dataUrl, fileName);
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(textSummary).catch(() => {});
+    }
+    toast("Foto salva e resumo copiado! No GymRats, toque em + para postar.", "ok");
+  }
+
   return (
     <div data-augmented-ui="tl-clip br-clip border" className="card stack" style={{ gap: 12 }}>
       <div className="spread">
@@ -462,12 +493,28 @@ export function ShareWorkoutCard({
         />
       )}
 
+      <a
+        href={getGymRatsHref()}
+        onClick={onGymRatsClick}
+        data-augmented-ui="tl-clip br-clip border"
+        className="btn btn-primary"
+        style={{ width: "100%" }}
+      >
+        Check-in no GymRats
+      </a>
+      <p className="tiny faint" style={{ margin: 0 }}>
+        Salva a foto (.jpg), copia o resumo das séries e abre o app do GymRats para você criar o check-in no botão <b>+</b>.
+      </p>
+
       <div className="row-wrap">
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary grow" onClick={downloadImage}>
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={downloadImage}>
           Salvar foto (.jpg)
         </button>
         <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={shareImage}>
-          <Icon name="share" size={18} /> Compartilhar
+          <Icon name="share" size={18} /> Outros apps
+        </button>
+        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={copySummary}>
+          Copiar texto
         </button>
       </div>
     </div>

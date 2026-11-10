@@ -148,11 +148,11 @@ export function Exercises() {
 
       <div className="ws-grid">
         {shown.slice(0, full ? 120 : undefined).map(({ lib, exs, name, muscles, inProgram, equipGroup, equipLabel }) => {
-          // Histórico do exercício mais recente entre os dias em que ele aparece.
+          // Histórico do exercício mais recente entre os dias em que ele aparece (ou pela biblioteca se fora do programa).
           const hist =
-            exs
-              .map((e) => historyOf(done, e.id))
-              .sort((a, b) => (b[b.length - 1]?.session.date ?? "").localeCompare(a[a.length - 1]?.session.date ?? ""))[0] ?? [];
+            (exs.length ? exs.map((e) => historyOf(done, e.id)) : [historyOf(done, lib, undefined, lib)]).sort((a, b) =>
+              (b[b.length - 1]?.session.date ?? "").localeCompare(a[a.length - 1]?.session.date ?? ""),
+            )[0] ?? [];
           const last = hist[hist.length - 1];
           const best = hist.length ? Math.max(...hist.map((h) => bestE1rm(h.entry))) : 0;
           const lastLoad = last

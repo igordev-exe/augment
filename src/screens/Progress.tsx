@@ -54,7 +54,10 @@ export function Progress() {
     [sessions, settings, bodyLog],
   );
   const week = weekFor(settings.mesoStart, today);
-  const muscles = useMemo(() => muscleStatus(sessions ?? [], week, today), [sessions, week, today]);
+  const muscles = useMemo(
+    () => muscleStatus(sessions ?? [], week, today, Date.now(), settings.setAdjust),
+    [sessions, week, today, settings.setAdjust],
+  );
   const grid = useMemo(
     () => activityGrid(sessions ?? [], today, settings.trainingDays.length),
     [sessions, today, settings.trainingDays.length],

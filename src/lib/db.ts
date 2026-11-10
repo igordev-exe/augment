@@ -471,6 +471,7 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
         increments: { ...incoming.increments, ...cur.increments },
         machineWeights: { ...incoming.machineWeights, ...cur.machineWeights },
         swaps: { ...incoming.swaps, ...cur.swaps },
+        setAdjust: { ...incoming.setAdjust, ...cur.setAdjust },
         videos: { ...incoming.videos, ...cur.videos },
         exerciseNotes: { ...incoming.exerciseNotes, ...cur.exerciseNotes },
         bodyGoal: cur.bodyGoal ?? incoming.bodyGoal,

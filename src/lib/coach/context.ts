@@ -467,6 +467,9 @@ export function parseProposal(input: Record<string, unknown>): Proposal {
     return { tipo: "ajustar_series", exercicio: ex.id, valor, motivo };
   }
   if (input.tipo === "recomecar_mesociclo" || input.tipo === "repetir_semana" || input.tipo === "antecipar_deload") {
+    if (isFixedProgram()) {
+      throw new ToolInputError("O programa atual usa periodização fixa (sem mesociclo ou deload).");
+    }
     return { tipo: input.tipo, motivo };
   }
   throw new ToolInputError(

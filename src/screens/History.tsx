@@ -87,14 +87,14 @@ export function History() {
           ))}
           {weeks.map((row) => {
             const wk = weekFor(settings.mesoStart, row[0]);
-            const beforeStart = row[6] < settings.mesoStart;
+            const beforeStart = wk !== 0 && row[6] < settings.mesoStart;
             return [
               <span
                 key={row[0] + "w"}
                 className={`wk${wk === 7 && !beforeStart ? " deload" : ""}`}
-                title={beforeStart ? "Antes do mesociclo" : wk === 7 ? "Deload" : `Semana ${wk}`}
+                title={beforeStart ? "Antes do mesociclo" : wk === 7 ? "Deload" : wk === 0 ? "Programa fixo" : `Semana ${wk}`}
               >
-                {beforeStart ? "·" : wk === 7 ? "D" : wk}
+                {beforeStart ? "·" : wk === 7 ? "D" : wk === 0 ? "FX" : wk}
               </span>,
               ...row.map((d) => {
                 const daySessions = done.filter((s) => s.date === d);
@@ -112,7 +112,7 @@ export function History() {
                     {!daySessions.length && planned && <span className="code planned">{dayCode(planned.dayId)}</span>}
                   </>
                 );
-                return daySessions.length === 1 ? (
+                return daySessions.length >= 1 ? (
                   <Link key={d} to={`/treino/${daySessions[0].id}`} data-augmented-ui="tl-clip border" className={cls}>
                     {inner}
                   </Link>

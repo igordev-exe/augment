@@ -95,13 +95,15 @@
   text-decoration: none;
   text-align: center;
   white-space: normal;
+  overflow-wrap: anywhere;
   max-width: 100%;
 }
 .btn svg {
   flex-shrink: 0;
 }
 .btn.grow {
-  min-width: fit-content;
+  flex: 1 1 140px;
+  min-width: 0;
 }
 .btn:disabled {
   opacity: 0.45;

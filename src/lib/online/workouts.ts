@@ -45,6 +45,16 @@ export async function syncWorkouts(): Promise<WorkoutSyncResult> {
   const state = await loadState();
   const result: WorkoutSyncResult = { pulled: 0, pushed: 0, removed: 0 };
 
+  const initialDone = (await db.sessions.toArray()).filter((s) => s.status === "done");
+  const initialIds = new Set(initialDone.map((s) => s.id));
+  const initialKnown = Object.keys(state.hashes);
+  const initialMissing = initialKnown.filter((id) => !initialIds.has(id));
+  if (initialMissing.length > 3 && initialMissing.length > initialKnown.length * 0.3) {
+    // Sumiço em massa: o aparelho foi limpo ou restaurado. A nuvem não é apagada; junta tudo de novo já nesta rodada.
+    state.hashes = {};
+    state.since = 0;
+  }
+
   // 1. Desce o que mudou nos outros aparelhos.
   for (let guard = 0; guard < 200; guard++) {
     const page = await api<WorkoutPull>("GET", `/workouts?since=${state.since}`);
@@ -88,13 +98,7 @@ export async function syncWorkouts(): Promise<WorkoutSyncResult> {
   const known = Object.keys(state.hashes);
   const missing = known.filter((id) => !ids.has(id));
   const changes: WorkoutChange[] = [];
-  if (missing.length > 3 && missing.length > known.length * 0.3) {
-    // Sumiço em massa: o aparelho foi limpo ou restaurado. A nuvem não é apagada; junta tudo de novo.
-    state.hashes = {};
-    state.since = 0;
-  } else {
-    for (const id of missing) changes.push({ id, hash: "", data: "", deleted: true });
-  }
+  for (const id of missing) changes.push({ id, hash: "", data: "", deleted: true });
   const fresh = new Map<string, string>();
   for (const s of done) {
     const h = hashOf(s);

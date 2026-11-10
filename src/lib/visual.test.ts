@@ -91,10 +91,11 @@ describe("mapa muscular", () => {
         ]),
       ],
     };
-    const st = muscleStatus([pushA], 3, "2026-11-03", Date.parse("2026-11-03T18:00:00"));
+    const st = muscleStatus([pushA], 3, "2026-11-03", Date.parse("2026-11-03T18:00:00"), { "push-a.supino-maq": 1 });
     expect(fatigueLevel(fatiguePct(st.deltAnterior))).toBe("critico");
     expect(fatigueLevel(fatiguePct(st.deltLateral))).toBe("critico");
     expect(fatigueLevel(fatiguePct(st.triceps))).toBe("critico");
+    expect(st.peito.target).toBe(14);
   });
 });
 

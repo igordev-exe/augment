@@ -32,7 +32,7 @@ import {
 } from "../lib/progression";
 import { intensifierPlan, liveNudges, NUDGE_TONE, type Nudge } from "../lib/engine";
 import { finishLogLines } from "../lib/hud";
-import { buildSession, effectiveEndAt, newSet, sessionStats, snapOf } from "../lib/sessions";
+import { buildSession, effectiveEndAt, newSet, sessionStats, snapOf, unitFor } from "../lib/sessions";
 import { useTimer } from "../lib/timer";
 import { AddExercise } from "./ProgramEditor";
 
@@ -115,12 +115,18 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   async function addExtra(make: (taken: Set<string>, dayId: string) => ProgramExercise) {
     const taken = new Set(session.exercises.map((e) => e.exId));
     const ex = make(taken, session.dayId);
-    const sets = Array.from({ length: Math.max(1, setsFor(ex, week)) }, () => newSet("work", null));
+    const hist = historyOf(before, ex.id, undefined, ex.lib);
+    const last = hist[hist.length - 1]?.entry;
+    const unit = unitFor(ex.id, settings, last);
+    const planned = Math.max(1, setsFor(ex, week, settings.setAdjust?.[ex.id]));
+    const step = increaseStep(ex, unit, settings.increments[ex.id]);
+    const s = suggestNext(ex, hist, planned, week, step, settings.machineWeights?.[ex.id]);
+    const sets = Array.from({ length: planned }, (_, k) => newSet("work", k > 0 && s.volumeWeight != null ? s.volumeWeight : s.weight));
     let index = -1;
     await db.transaction("rw", db.sessions, async () => {
       const cur = await db.sessions.get(session.id);
       if (!cur) return;
-      cur.exercises.push({ exId: ex.id, snap: snapOf(ex), unit: "kg", sets, extra: true });
+      cur.exercises.push({ exId: ex.id, snap: snapOf(ex), unit, sets, extra: true });
       index = cur.exercises.length - 1;
       await db.sessions.put(cur);
     });
@@ -157,7 +163,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       entry,
       week,
       lowDay,
-      history: historyOf(before, ex.id, entry.alt),
+      history: historyOf(before, ex.id, entry.alt, ex.lib),
       plannedSets: setsFor(ex, week, settings.setAdjust?.[ex.id]),
       step: increaseStep(ex, entry.unit, settings.increments[ex.id]),
       availableWeights: settings.machineWeights?.[ex.id],
@@ -241,7 +247,7 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       const nextLoad = nextSet?.weight ?? set.weight;
       const nextWhat = nextLoad != null ? ` · ${formatWeight(nextLoad)} ${next.unit}` : "";
       const nextEx = session.exercises.find((e, i) => i > index && e.sets.some((s) => s.kind !== "warmup" && !s.done));
-      const nextExDef = nextEx && exById(nextEx.exId);
+      const nextExDef = nextEx && exOf(nextEx);
       timer.start(
         rest,
         remaining

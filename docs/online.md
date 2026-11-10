@@ -185,7 +185,8 @@ grátis. Os limites eram estes em 2025; confira em cloudflare.com/plans:
    ```bash
    npx wrangler d1 migrations apply augment --remote
    ```
-5. Publique:
+5. Publique (ainda dentro de `server`; na raiz do projeto o wrangler não acha a configuração e tenta publicar o app
+   Vite, o que dá erro de versão do Vite):
    ```bash
    npx wrangler deploy
    ```

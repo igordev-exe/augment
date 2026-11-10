@@ -1,4 +1,5 @@
-import { MUSCLE_ORDER, programDays, exOf } from "../data/program";
+import { MUSCLE_ORDER, programDays, exOf, synergistsOf } from "../data/program";
+import { SCIENCE } from "../data/science";
 import type { BodyEntry, BodyGoal, MuscleId, Session } from "../data/types";
 import { addDays, daysBetween, mondayOf } from "./dates";
 import { e1rm, historyOf, toKg, workSets } from "./progression";
@@ -36,24 +37,16 @@ export function recoveryHours(sets: number): number {
 export const LATE_DAYS = 5;
 export const UNTRAINED_DAYS = 8;
 
-/** Sinergistas de exercícios compostos: contam 0,5 série por série de trabalho na estimativa de fadiga/recuperação. */
-const SECONDARY_MUSCLES: Partial<Record<string, MuscleId[]>> = {
-  "supino-inclinado-halteres": ["deltAnterior", "triceps"],
-  "supino-reto-maquina": ["deltAnterior", "triceps"],
-  "supino-inclinado-smith": ["deltAnterior", "triceps"],
-  "desenvolvimento-maquina": ["deltLateral", "triceps"],
-  "desenvolvimento-halteres": ["deltLateral", "triceps"],
-  "puxada-aberta": ["biceps", "deltPosterior"],
-  "puxada-unilateral": ["biceps", "deltPosterior"],
-  "remada-apoio-peito": ["deltPosterior", "trapezio", "biceps"],
-  "remada-baixa-neutra": ["deltPosterior", "trapezio", "biceps"],
-  "terra-romeno": ["gluteo"],
-};
-
-export function muscleStatus(sessions: Session[], week: number, today: string, now = Date.now()): Record<MuscleId, MuscleStatus> {
+export function muscleStatus(
+  sessions: Session[],
+  week: number,
+  today: string,
+  now = Date.now(),
+  setAdjust?: Record<string, number>,
+): Record<MuscleId, MuscleStatus> {
   const done = sessions.filter((s) => s.status === "done" && s.date <= today);
   const vol = weeklyVolume(done, today);
-  const plan = plannedVolume(week);
+  const plan = plannedVolume(week, false, setAdjust);
   const last = new Map<MuscleId, { date: string; at: number; sets: number }>();
   for (const s of done) {
     const at = s.finishedAt ?? Date.parse(`${s.date}T12:00:00`);
@@ -64,8 +57,8 @@ export function muscleStatus(sessions: Session[], week: number, today: string, n
       const n = workSets(e).length;
       if (!n) continue;
       for (const m of ex.muscles) perMuscle.set(m, (perMuscle.get(m) ?? 0) + n);
-      for (const m of SECONDARY_MUSCLES[ex.lib] ?? []) {
-        if (!ex.muscles.includes(m)) perMuscle.set(m, (perMuscle.get(m) ?? 0) + n * 0.5);
+      for (const m of synergistsOf(ex)) {
+        if (!ex.muscles.includes(m)) perMuscle.set(m, (perMuscle.get(m) ?? 0) + n * SCIENCE.indirectSetWeight);
       }
     }
     for (const [m, rawSets] of perMuscle) {

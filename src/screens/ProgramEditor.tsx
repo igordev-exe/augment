@@ -554,8 +554,8 @@ export function ProgramEditor() {
 
   // Rascunho começa no que está salvo; daí em diante a tela é a fonte (o banco recebe depois de 300 ms).
   useEffect(() => {
-    if (stored && !draft) setDraft(stored);
-  }, [stored, draft]);
+    if (stored && (!draft || draft.id !== id)) setDraft(stored);
+  }, [stored, draft, id]);
   useEffect(
     () => () => {
       window.clearTimeout(timer.current);

@@ -1,4 +1,4 @@
-import { exById } from "../data/program";
+import { exById, exOf } from "../data/program";
 import type { ProgramExercise, Session, SessionExercise, SetEntry, Unit } from "../data/types";
 import { bySessionAsc } from "./dates";
 import { rirRange } from "./mesocycle";
@@ -505,7 +505,8 @@ function evaluateSessionPRs(session: Session, tracker: Map<string, RunningExerci
   for (const entry of session.exercises) {
     const sets = workSets(entry);
     if (!sets.length) continue;
-    const key = `${entry.exId}::${entry.alt || ""}`;
+    const canonicalId = exOf(entry)?.lib ?? entry.exId;
+    const key = `${canonicalId}::${entry.alt || ""}`;
     let state = tracker.get(key);
     if (!state) {
       state = { sessions: 0, maxKg: 0, maxE1rm: 0, repsByWeight: new Map() };

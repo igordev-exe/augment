@@ -4,7 +4,7 @@ import { SCIENCE } from "../data/science";
 import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
-import { bestE1rm, e1rm, formatWeight, historyOf, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
+import { bestE1rm, e1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
 import { restsBefore, volumeAdvice, type VolumeAdvice } from "./engine";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
@@ -147,11 +147,18 @@ export function weeklyReport(
 
   // Estagnação: três sessões seguidas (fora do deload) sem 1RM estimado novo
   const stalls: Stall[] = [];
-  const trained = new Set(sessions.flatMap((s) => s.exercises.filter((e) => workSets(e).length).map((e) => e.exId)));
-  for (const exId of trained) {
+  const trained = new Map<string, { exId: string; alt?: string; lib?: string }>();
+  for (const s of sessions) {
+    for (const e of s.exercises) {
+      if (workSets(e).length) trained.set(e.exId, { exId: e.exId, alt: e.alt, lib: exOf(e)?.lib });
+    }
+  }
+  for (const { exId, alt, lib } of trained.values()) {
     const h = historyOf(
       upToEnd.filter((s) => s.week !== 7),
       exId,
+      alt,
+      lib,
     ).slice(-3);
     if (h.length < 3) continue;
     const [a, b, c] = h.map((x) => bestE1rm(x.entry));
@@ -194,8 +201,8 @@ export function weeklyReport(
   for (const [exId, rs] of restById) {
     if (rs.length < 2) continue;
     const median = [...rs].sort((a, b) => a - b)[Math.floor(rs.length / 2)];
-    const ex = exById(exId);
-    if (median < ex.rest[0] * 0.6) shortRest.push(`${shortName(ex)} (~${median} s, ficha ${ex.restLabel})`);
+    const ex = exById(exId) ?? sessions.flatMap((s) => s.exercises).find((e) => e.exId === exId)?.snap;
+    if (ex && median < ex.rest[0] * 0.6) shortRest.push(`${shortName(ex)} (~${median} s, ficha ${ex.restLabel})`);
   }
   if (shortRest.length) {
     signals.push(`Descanso curto em ${list(shortRest)}: com menos descanso as séries seguintes rendem menos reps.`);
@@ -213,11 +220,12 @@ export function weeklyReport(
 
   const recent = done.filter((s) => s.date >= addDays(weekStart, -14) && s.date < weekEnd);
   const joints: JointIssue[] = [];
-  for (const exId of trained) {
+  for (const { exId, lib } of trained.values()) {
     const hurtThisWeek = sessions.some((s) => s.exercises.some((e) => e.exId === exId && e.feedback?.joint === "incomodou"));
     if (!hurtThisWeek) continue;
     const times = recent.filter((s) => s.exercises.some((e) => e.exId === exId && e.feedback?.joint === "incomodou")).length;
-    joints.push({ exId, times, alternatives: LIB_BY_ID[exById(exId)?.lib]?.alternatives ?? [] });
+    const libId = lib ?? exById(exId)?.lib;
+    joints.push({ exId, times, alternatives: (libId ? LIB_BY_ID[libId]?.alternatives : undefined) ?? [] });
   }
 
   // Cardio e passos na semana (F10)
@@ -404,8 +412,11 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
     const lWork = workSets(last.entry, false);
     if (!fWork.length || !lWork.length) continue;
 
-    const firstLoad = mainLoad(fWork) ?? fWork[0].weight!;
-    const firstReps = Math.max(...fWork.filter((s) => s.weight === firstLoad).map((s) => s.reps!));
+    const unit = last.entry.unit;
+    const conv = (w: number, u: Unit) => (u === unit ? w : Number((unit === "kg" ? toKg(w, u) : w / LB_TO_KG).toFixed(2)));
+    const firstRawLoad = mainLoad(fWork) ?? fWork[0].weight!;
+    const firstLoad = conv(firstRawLoad, first.entry.unit);
+    const firstReps = Math.max(...fWork.filter((s) => s.weight === firstRawLoad).map((s) => s.reps!));
     const firstE1rm = Math.max(...fWork.map((s) => e1rm(toKg(s.weight!, first.entry.unit), s.reps!)));
 
     const lastLoad = mainLoad(lWork) ?? lWork[0].weight!;

@@ -8,7 +8,7 @@ import { useOnline } from "../lib/online/sync";
 import { LIB_BY_ID } from "../data/library";
 import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
-import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup } from "../lib/db";
+import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup, loadActiveProgram } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { isNative, requestNotifyPermission } from "../lib/native";
 import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
@@ -147,19 +147,28 @@ export function SettingsScreen() {
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <h2 className="h-sec">Mesociclo</h2>
-        <p className="small muted">
-          Toque na semana em que você está. O app recalcula o início e ajusta séries, selos e intensificadores. Início atual:{" "}
-          {shortDate(settings.mesoStart)}.
-        </p>
-        <WeekStrip week={week} onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })} />
-        <button
-          type="button"
-          data-augmented-ui="tl-clip br-clip border"
-          className="btn btn-sm"
-          onClick={() => update({ mesoStart: mondayOf(today) })}
-        >
-          Começar novo mesociclo nesta semana
-        </button>
+        {week === 0 ? (
+          <p className="small muted">
+            O programa em uso (<strong>{program.name}</strong>) usa periodização fixa: mesmas séries e esforço toda semana, sem semana de
+            deload. Você pode mudar para 6 + 1 no <Link to={`/programas/${program.id}`}>montador do programa</Link>.
+          </p>
+        ) : (
+          <>
+            <p className="small muted">
+              Toque na semana em que você está. O app recalcula o início e ajusta séries, selos e intensificadores. Início atual:{" "}
+              {shortDate(settings.mesoStart)}.
+            </p>
+            <WeekStrip week={week} onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })} />
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="btn btn-sm"
+              onClick={() => update({ mesoStart: mondayOf(today) })}
+            >
+              Começar novo mesociclo nesta semana
+            </button>
+          </>
+        )}
       </section>
 
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
@@ -466,6 +475,7 @@ export function SettingsScreen() {
                 await db.sessions.clear();
                 await db.kv.put({ key: "settings", value: DEFAULT_SETTINGS });
                 await db.kv.delete("body-log");
+                await loadActiveProgram();
                 setWipe(false);
                 toast("Dados apagados.", "danger");
               }}
