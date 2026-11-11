@@ -220,6 +220,17 @@ export function toolPlan(data: CoachData) {
       multiplicadores_recuperacao: learnedRecoveryMultipliers(op),
       razao_descanso_real: op.behavior.restConfidence >= 0.5 ? op.behavior.restRatio : undefined,
       dia_semana_vulneravel: op.behavior.vulnerableWeekday,
+      peso_corporal:
+        op.body.kgPerWeek != null
+          ? { kg_por_semana: op.body.kgPerWeek, caindo_rapido: op.body.rapidLoss, subindo_rapido: op.body.rapidGain }
+          : undefined,
+      mesociclos_anteriores: (data.memory?.mesoHistory ?? []).slice(-4).map((m) => ({
+        inicio: m.start,
+        fim: m.end,
+        treinos: `${m.sessionsDone}/${m.sessionsPlanned}`,
+        recordes: m.prsCount,
+        series_por_semana: m.avgWeeklySets,
+      })),
     },
     agenda_7_dias: plan.map((p) => ({ data: p.date, dia_semana: weekdayName(p.date), treino: dayById(p.dayId).name })),
     proximo_treino: nextDay

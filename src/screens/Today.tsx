@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrandMark, Wordmark } from "../components/Brand";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
@@ -9,12 +9,12 @@ import { OnlineStrip, useOnlineStatus } from "../components/OnlineStrip";
 import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
-import { db, exportBackup } from "../lib/db";
+import { db, ensureMesoHistory, exportBackup } from "../lib/db";
 import { operatorBrief } from "../lib/core/operator";
 import { planDay } from "../lib/core/planner";
 import { bootBeam } from "../lib/fx";
 import { shareOrDownload } from "../lib/files";
-import { useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useBodyLog, useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { fatigueAlert } from "../lib/engine";
 import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import { weeklyReport } from "../lib/report";
@@ -41,7 +41,12 @@ export function Today() {
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const status = useOnlineStatus();
-  const operator = useOperatorState(sessions, undefined, settings, today);
+  const bodyLog = useBodyLog();
+  const operator = useOperatorState(sessions, bodyLog, settings, today);
+  // Mesociclo que terminou vira um resumo na memória do operador (uma vez por abertura).
+  useEffect(() => {
+    void ensureMesoHistory(today).catch(() => {});
+  }, [today]);
 
   if (!sessions) return null;
 
@@ -58,7 +63,9 @@ export function Today() {
   const doneToday = doneAll.filter((s) => s.date === today);
   const lastDone = [...doneAll].sort(bySessionDesc)[0];
   const adaptation = planDay(dayId, week, settings, sessions, operator);
+  // O núcleo só fala no banner quando tem algo que pede atenção; no resto do tempo, fica o lema.
   const coreBrief = operator ? operatorBrief(operator) : null;
+  const coreLine = coreBrief && !coreBrief.silent ? coreBrief : null;
 
   async function start(from?: Session) {
     bootBeam();
@@ -411,7 +418,7 @@ export function Today() {
         </p>
         <p className="small muted">
           {settings.operator ? `Operador: ${settings.operator}. ` : ""}
-          {coreBrief ? `${coreBrief.headline} — ${coreBrief.detail}` : "Seu corpo é o hardware. Cada série registrada é uma atualização."}
+          {coreLine ? `${coreLine.headline}. ${coreLine.detail}` : "Seu corpo é o hardware. Cada série registrada é uma atualização."}
         </p>
       </div>
 

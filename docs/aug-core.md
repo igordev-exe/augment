@@ -57,8 +57,9 @@ O planejador recebe `(dayId, week, settings, sessions, operator, memory, today)`
    - **Cenário 1 — Tempo curto (`"time-cap"`, ex.: 40 min)**: mantém todos os compostos na íntegra; ativa pareamento agonista-antagonista quando possível e corta `1` série dos isolados do fim da sessão até a duração estimada caber no limite.
    - **Cenário 2 — Equipamento restrito (`"equipment"`, ex.: só halteres/peso corporal)**: para cada exercício cujo equipamento não está disponível, seleciona automaticamente a alternativa compatível de `LIB_BY_ID[ex.lib]?.alternatives` como troca efêmera da sessão (`alt`), preservando os músculos-alvo.
    - **Cenário 3 — Dor ou sensibilidade articular alta (`"pain"` ou `jointRisk >= 0.5`)**: sugere na hora a alternativa biomecânica mais amigável da biblioteca e reduz a parada de falha (`F`) para falha técnica (`T`) no grupo afetado.
-   - **Cenário 4 — Semana de prova / estresse alto (`"schedule"` com `reduceVolume`) ou fadiga aguda**: corta `1` série de cada exercício (piso de `2` séries nos compostos, `1` nos isolados), mantendo a carga na barra para preservar estímulo neural (dose mínima efetiva — Pelland 2026).
+   - **Cenário 4 — Semana de prova / estresse alto (`"schedule"` com `reduceVolume`) ou fadiga aguda**: corta `1` série de cada exercício (piso de `2` séries nos compostos, `1` nos isolados), mantendo a carga na barra: menos séries com a mesma carga seguram o ganho por algumas semanas (princípio da dose mínima, nível de evidência "consenso" no Guia; a referência exata ainda precisa entrar em `science.ts` antes de virar texto no app).
    - **Cenário 5 — Padrão de falta em dia da semana (`weekdayMissRate >= 0.65`)**: avisa no plano semanal qual dia de `trainingDays` costuma falhar e sugere redistribuir na agenda.
+   - **Cenário 6 — Peso corporal caindo rápido (`body.rapidLoss`, ≥ 0,7 kg/semana por 2+ semanas)**: não muda a carga; acrescenta o fator `corpo` na explicação dos compostos ("se a primeira série vier difícil, fique no peso atual") e um aviso no Hoje.
 
 ### O que o Planejador NUNCA faz
 
@@ -73,10 +74,10 @@ O planejador recebe `(dayId, week, settings, sessions, operator, memory, today)`
 
 ### Momentos de Presença
 
-1. **Ao abrir o app (`Hoje`)**: resumo de 1 linha do estado do gêmeo e, se houver restrição ativa (ex.: tempo curto, equipamento, calibração na Semana 1), mostra o aviso conciso do núcleo.
-2. **Durante o treino (`SessionHud` / cartão do exercício)**:
-   - Explicação instantânea da carga (_"Por que essa carga?"_) a partir do `DecisionTrace`.
-   - Telemetria passiva de descanso e RIR sem popups bloqueantes.
+1. **Ao abrir o app (`Hoje`)**: a linha do banner só muda quando há algo que pede atenção (`OperatorBrief.silent === false`): restrição ativa, calibração, articulação incomodando, descanso curto, dia que costuma falhar, peso caindo rápido. Com tudo normal, fica o lema de sempre.
+2. **Durante o treino (cartão do exercício)**:
+   - Os motivos da carga (`DecisionTrace.factors`, lista `.why-load`) ficam dentro da dobra "Por que essa carga · histórico" que o cartão do plano já tinha; os que vêm do histórico da pessoa ficam marcados em âmbar. Nada aparece inline além da sugestão de sempre.
+   - Sem previsão de repetições na tela: `predictFirstSetReps()` fica só para testes e para o treinador.
 3. **Relatório (`Relatório` → aba `Motor`)**: diagnóstico do gêmeo digital (curva de recuperação aprendida, responsividade por movimento, aderência e ritmo de descanso).
 
 ### Orçamento de Atenção (Anti-Spam)
@@ -86,8 +87,9 @@ O planejador recebe `(dayId, week, settings, sessions, operator, memory, today)`
 
 ### Tom de Voz
 
-- Curto, técnico, em português claro, sem adjetivos vazios (_"Mandou muito bem!"_ é proibido).
-- Sempre cita o dado concreto da pessoa: _"Tríceps testa: 2 queixas no cotovelo em 3 treinos. Alternativa sugerida hoje: tríceps na corda."_
+- Curto, direto, em português de todo dia, sem adjetivos vazios (_"Mandou muito bem!"_ é proibido).
+- Sempre cita o dado concreto da pessoa: _"Tríceps testa incomodou 2 vezes em 3 treinos. Hoje vale trocar pelo tríceps na corda."_
+- **Nada de jargão interno na tela**: "gêmeo digital", "calibração", "telemetria", "biomecânica", "curva" e "multiplicador" são nomes de código. Para a pessoa é "o app está te conhecendo", "seu ritmo", "incomodou", "descanso". O código do módulo (`AUG.CORE // …`) pode seguir o estilo HUD.
 
 ---
 
@@ -104,7 +106,7 @@ Antes de chamar qualquer modelo de linguagem na nuvem, o texto da pessoa passa p
 | `faltei_treino`         | _"faltei ontem"_, _"perdi 2 treinos essa semana"_                            | Consulta `planAhead()` e `reentryFor()` para mostrar exatamente como a sequência segue sem pular dia (ou se vale repetir a semana).                                                                              |
 | `travou_exercicio`      | _"travei no desenvolvimento"_, _"supino estagnou"_                           | Consulta `OperatorState.exercises[libId]` e o histórico das últimas 3 sessões; explica se a causa é descanso curto (`restRatio`), salto grande de pino/halter ou estagnação real (−10% ou rotação de acessório). |
 
-Se a mensagem não bater em nenhuma intenção determinística (ou se a pessoa pedir uma análise aberta), ela segue normalmente para o treinador com o resumo do `OperatorState` injetado no contexto.
+Se a mensagem não bater em nenhuma intenção determinística (ou se a pessoa pedir uma análise aberta), ela segue normalmente para o treinador com o resumo do `OperatorState` injetado no contexto. Negar dor ("sem dor", "não doeu") nunca vira queixa. Quando o núcleo responde na hora e a pessoa tem chave, aparece "Perguntar ao treinador mesmo assim".
 
 ---
 
@@ -120,9 +122,18 @@ Se a mensagem não bater em nenhuma intenção determinística (ou se a pessoa p
 - [`src/screens/Today.tsx`](file:///c:/Users/igora/augment/src/screens/Today.tsx): exibe a linha de telemetria do núcleo (`operatorBrief`) e respeita adaptações ativas quando houver restrição declarada.
 - [`src/lib/coach/context.ts`](file:///c:/Users/igora/augment/src/lib/coach/context.ts): expõe o resumo do `OperatorState` em `toolPlan()` para que o treinador conheça a curva aprendida da pessoa.
 
+### Memória entre mesociclos e peso corporal
+
+- `closeFinishedMesos(memory, sessions, settings, today)` (puro) resume um ciclo quando as 7 semanas passam ou quando `mesoStart` muda (`lastMesoStart` na memória). `ensureMesoHistory()` em `db.ts` grava; o Hoje chama ao abrir. O resumo (`MesoSummary`) vai para o contexto do treinador (`mesociclos_anteriores`).
+- `OperatorState.body` vem de `weightTrend()` (`visual.ts`): `kgPerWeek`, `rapidLoss`, `rapidGain`. Só com 14+ dias de registro.
+
+### Garantias testadas (`guarantees.test.ts`)
+
+Com 3 operadores simulados × 7 conjuntos de restrição × todos os dias × 4 semanas: nunca aumenta séries, respeita o piso (2 compostos / 1 isolados), nunca manda à falha com dor, nunca muda o programa em memória, restrição expirada não vale, e o núcleo fica em silêncio quando está tudo normal.
+
 ### Etapas de Entrega
 
-1. **Etapa 1 (hoje)**: `docs/aug-core.md` + `src/lib/core/operator.ts` (`OperatorMemory`, `operatorState()`, `effectiveRecoveryHours()`, `operatorBrief()`) + persistência em `db.ts` + suíte `src/lib/core/operator.test.ts` com 3 operadores fictícios + ligação em `Onboarding`, `Today`, `Report`/`diagnostics` e `visual.ts`.
-2. **Etapa 2 (hoje)**: `src/lib/core/planner.ts` (`explainLoad()` com `DecisionTrace` + `planDay()` com `SessionAdaptation`) + `src/lib/core/planner.test.ts` + `src/lib/core/intents.ts` (`matchIntent()`, `handleIntent()`) + `src/lib/core/intents.test.ts`.
-3. **Etapa 3 (próxima)**: chips de intenção rápida e resposta instantânea na tela `Coach.tsx` + botão de 1 toque _"Por que essa carga?"_ na `SessionScreen.tsx`.
+1. **Etapa 1 (feita)**: `docs/aug-core.md` + `src/lib/core/operator.ts` (`OperatorMemory`, `operatorState()`, `effectiveRecoveryHours()`, `operatorBrief()`) + persistência em `db.ts` + suíte `src/lib/core/operator.test.ts` com 3 operadores fictícios + ligação em `Onboarding`, `Today`, `Report`/`diagnostics` e `visual.ts`.
+2. **Etapa 2 (feita)**: `src/lib/core/planner.ts` (`explainLoad()` com `DecisionTrace` + `planDay()` com `SessionAdaptation`) + `src/lib/core/planner.test.ts` + `src/lib/core/intents.ts` (`matchIntent()`, `handleIntent()`) + `src/lib/core/intents.test.ts`.
+3. **Etapa 3 (parcial)**: "Por que essa carga?" já está no cartão do exercício. Faltam os chips de intenção rápida no `Coach.tsx` e a camada de linguagem no servidor (Workers AI no plano grátis), conforme `docs/online.md`.
 4. **Etapa 4 (experimental)**: sensores opcionais (cadência por acelerômetro, passos nativos) e retrospectiva multi-mesociclo.

@@ -109,6 +109,8 @@ export function Coach() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingIntent, setPendingIntent] = useState<IntentProposal | null>(null);
+  /** Última pergunta respondida pelo núcleo na hora: a pessoa pode mandar para o treinador mesmo assim. */
+  const [answeredLocally, setAnsweredLocally] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const autoSent = useRef(false);
@@ -151,16 +153,20 @@ export function Coach() {
     saveCoachChat(next);
   }
 
-  async function send(text: string) {
+  async function send(text: string, skipLocal = false) {
     const t = text.trim();
     if (!t || busy) return;
     setError(null);
     setDraft("");
+    setAnsweredLocally(null);
     if (params.get("q") || params.get("auto")) setParams({}, { replace: true });
     const notes = chat.notes?.length ? `\n[${chat.notes.join(" ")}]` : "";
-    const localIntent = handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
+    const localIntent = skipLocal
+      ? { matched: false as const, reply: "" }
+      : handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
     if (localIntent.matched) {
       setPendingIntent(localIntent.proposal ?? null);
+      if (config?.apiKey) setAnsweredLocally(t);
       const nextChat: CoachChat = {
         ...chat,
         notes: [],
@@ -358,6 +364,11 @@ export function Coach() {
           <div className="thinking small scan-beam">
             <span className="status-dot ok" /> {tool ? `${TOOL_LABEL[tool] ?? tool}…` : "Pensando…"}
           </div>
+        )}
+        {answeredLocally && !pendingIntent && (
+          <button type="button" className="ob-link" onClick={() => void send(answeredLocally, true)}>
+            Perguntar ao treinador mesmo assim
+          </button>
         )}
         {pendingIntent && (
           <div data-augmented-ui="tl-clip br-clip border" className="card stack proposal" style={{ gap: 8 }}>

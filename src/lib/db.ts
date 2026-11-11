@@ -2,7 +2,7 @@ import Dexie, { type Table } from "dexie";
 import { rememberPrograms, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
-import { mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
+import { closeFinishedMesos, mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
 import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
 
@@ -401,6 +401,15 @@ export async function upsertConstraint(c: Constraint): Promise<OperatorMemory> {
     await db.kv.put({ key: "operator-memory", value: next });
     return next;
   });
+}
+
+/** Ao abrir o app: resume na memória os mesociclos que terminaram (7 semanas passaram, ou a pessoa reiniciou o ciclo). */
+export async function ensureMesoHistory(today: string): Promise<OperatorMemory | null> {
+  const [memory, settings, sessions] = await Promise.all([loadOperatorMemory(), loadSettings(), db.sessions.toArray()]);
+  const next = closeFinishedMesos(memory, sessions.filter(isSession), settings, today);
+  if (!next) return null;
+  await db.kv.put({ key: "operator-memory", value: sanitizeOperatorMemory(next) });
+  return next;
 }
 
 export async function removeConstraint(id: string): Promise<OperatorMemory> {

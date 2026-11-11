@@ -106,9 +106,12 @@ export function matchIntent(rawText: string): IntentMatch | null {
 
   // 1. Dor articular / incômodo vem primeiro: segurança ganha de qualquer outra intenção na mesma frase.
   // "dor no ombro", "cotovelo incomodando", "joelho doendo", "estou com dor"
+  // "sem dor", "nenhuma dor", "não doeu": é o contrário de queixa.
+  const painDenied = hasAny(t, ["sem dor", "sem dores", "nenhuma dor", "nao doeu", "nao doi", "nao incomodou", "sem incomodo", "zero dor"]);
   if (
-    /(?:^|[^a-z])dor(?:es)?(?:$|[^a-z])/.test(t) ||
-    hasAny(t, ["doendo", "doi", "doeu", "incomodando", "incomodou", "incomodo", "machuquei", "lesionei"])
+    !painDenied &&
+    (/(?:^|[^a-z])dor(?:es)?(?:$|[^a-z])/.test(t) ||
+      hasAny(t, ["doendo", "doi", "doeu", "incomodando", "incomodou", "incomodo", "machuquei", "lesionei"]))
   ) {
     const muscle = detectMuscle(t);
     const exerciseQuery = detectExerciseQuery(t);
@@ -337,20 +340,20 @@ export function handleIntent(
   const reasons: string[] = [];
   if (op.behavior.restConfidence >= 0.5 && op.behavior.restRatio < 0.65 && ex.rest[0] >= 90) {
     reasons.push(
-      `- **Descanso curto detectado:** você tem descansado ~${Math.round(op.behavior.restRatio * 100)}% do que a ficha pede (${ex.restLabel}). Descansar o tempo cheio costuma destravar 1–2 reps na hora.`,
+      `- **Descanso curto:** você tem descansado cerca de ${Math.round(op.behavior.restRatio * 100)}% do que a ficha pede (${ex.restLabel}). Descansar o tempo cheio costuma render 1 ou 2 repetições a mais na hora.`,
     );
   }
   if (twin && twin.jointComplaints > 0) {
     reasons.push(
-      `- **Sensibilidade articular (${twin.jointComplaints}×):** o desconforto limita a produção de força.${alts[0] ? ` Troque por **${alts[0]}** no ciclo.` : ""}`,
+      `- **Incomodou ${twin.jointComplaints} vezes:** com desconforto, o corpo segura a força.${alts[0] ? ` Vale trocar por **${alts[0]}** neste ciclo.` : ""}`,
     );
   }
   reasons.push(
-    `- **Regra de destrave do motor:** após 3 sessões sem subir o 1RM estimado, o AUGMENT reduz ~10% da carga para você reconstruir a margem de repetições, ou você pode girar para **${alts[0] ?? "uma variante equivalente"}** no fim do deload.`,
+    `- **O que o app faz:** depois de 3 treinos sem a força subir, ele baixa a carga uns 10% para você voltar a ganhar repetições. Outra saída é trocar por **${alts[0] ?? "um exercício parecido"}** no fim da semana de descanso.`,
   );
   return {
     matched: true,
     intent,
-    reply: [`**Diagnóstico de estagnação — ${shortName(ex)}:**`, ...reasons].join("\n"),
+    reply: [`**${shortName(ex)} travou. O que pode estar pesando:**`, ...reasons].join("\n"),
   };
 }

@@ -19,7 +19,7 @@ import {
 } from "../lib/progression";
 import { newSet } from "../lib/sessions";
 import { liveNudges } from "../lib/engine";
-import { predictFirstSetReps, type OperatorState } from "../lib/core/operator";
+import type { OperatorState } from "../lib/core/operator";
 import { explainLoad } from "../lib/core/planner";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
@@ -85,7 +85,10 @@ export function ExerciseBlock({
   const last = recentHistory[recentHistory.length - 1];
   const trace = explainLoad(ex, recentHistory, planned, week, step, availableWeights, operator);
   const sug = trace.suggestion;
-  const twinFactors = trace.factors.filter((f) => f.tag === "articular" || f.tag === "descanso" || f.tag === "fadiga-muscular");
+  // Fatores que vêm do que o app aprendeu sobre a pessoa (não da regra de progressão): contam como aviso.
+  const twinFactors = trace.factors.filter(
+    (f) => f.tag === "articular" || f.tag === "descanso" || f.tag === "fadiga-muscular" || f.tag === "corpo",
+  );
   const stop = stopFor(ex.stop, week);
   const showInt = !!ex.intensifier && intensifierToday && WEEK_RULES[week].intensifiers > 0;
   const nudges = active
@@ -124,7 +127,6 @@ export function ExerciseBlock({
     !entry.alt && !!lib?.equipment && /barra/i.test(lib.equipment) && !/barra w|barra fixa|polia|guiada/i.test(lib.equipment);
   const refLoad = sug.weight ?? mainLoad(entry.sets);
   const plateBreakdown = isOlympicBarbell ? platesForBarbell(refLoad, entry.unit) : null;
-  const pred1 = refLoad != null && refLoad > 0 ? predictFirstSetReps(ex, refLoad, recentHistory, operator) : null;
 
   // F7: Mini-histórico das últimas 5 sessões
   const miniPoints = recentHistory.slice(-5).map((h) => {
@@ -410,16 +412,15 @@ export function ExerciseBlock({
               alerts={sug.notes.length + twinFactors.length + (lowDay ? 1 : 0)}
             >
               <span className="small muted">{sug.detail}</span>
-              {pred1 != null && (
-                <span className="tiny" style={{ color: "var(--cyan)" }}>
-                  Previsão do gêmeo na 1ª série ({formatWeight(refLoad)} {entry.unit}): ~{pred1.predictedReps} reps
-                </span>
+              {trace.factors.length > 0 && (
+                <ul className="why-load small">
+                  {trace.factors.map((f) => (
+                    <li key={f.tag} className={twinFactors.includes(f) ? "twin" : ""}>
+                      <strong>{f.label}.</strong> {f.detail}
+                    </li>
+                  ))}
+                </ul>
               )}
-              {twinFactors.map((f) => (
-                <span key={f.tag} className="small sug-note">
-                  <strong>{f.label}:</strong> {f.detail}
-                </span>
-              ))}
               {plateBreakdown && (
                 <span className="tiny" style={{ color: "var(--cyan)" }}>
                   Montagem ({formatWeight(refLoad)} {entry.unit}): {plateBreakdown}

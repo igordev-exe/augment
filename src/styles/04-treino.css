@@ -430,6 +430,21 @@ button.set-kind:active {
   border-left: 2px solid var(--amber);
 }
 
+/* Motivos da carga, dentro da dobra "Por que essa carga · histórico" do cartão do plano. */
+.why-load {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding-left: 16px;
+}
+.why-load li.twin {
+  color: var(--ink);
+  list-style: none;
+  margin-left: -16px;
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+}
+
 .unit-toggle {
   display: inline-flex;
   border: 1px solid var(--line);

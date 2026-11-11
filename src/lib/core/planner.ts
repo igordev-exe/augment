@@ -1,6 +1,7 @@
 import { LIB_BY_ID } from "../../data/library";
 import { dayById, MUSCLE_LABEL, shortName } from "../../data/program";
 import type { MuscleId, ProgramExercise, Session, Settings, StopKind } from "../../data/types";
+import { shortDate } from "../dates";
 import { defaultRest, setsFor } from "../mesocycle";
 import { formatWeight, type historyOf, suggestNext, workSets, type Suggestion } from "../progression";
 import type { EquipmentKind, OperatorState } from "./operator";
@@ -11,7 +12,7 @@ export type HistoryItem = ReturnType<typeof historyOf>[number];
 // Gera adaptações efêmeras para a sessão de hoje (`SessionAdaptation`) sem jamais alterar o programa salvo (`ppl-v2`).
 
 export interface DecisionFactor {
-  tag: "historico" | "dupla-progressao" | "salto-grande" | "deload" | "fadiga-muscular" | "articular" | "descanso";
+  tag: "historico" | "dupla-progressao" | "salto-grande" | "deload" | "fadiga-muscular" | "articular" | "descanso" | "corpo";
   label: string;
   detail: string;
 }
@@ -113,7 +114,7 @@ export function explainLoad(
     const setsText = lastWork.map((s) => `${formatWeight(s.weight)}×${s.reps}`).join(", ");
     factors.push({
       tag: "historico",
-      label: `Último treino (${lastItem.session.date})`,
+      label: `Último treino (${shortDate(lastItem.session.date)})`,
       detail: `Séries feitas: ${setsText} ${unit}.`,
     });
   } else {
@@ -159,18 +160,18 @@ export function explainLoad(
     recommendedAlt = alts[0];
     factors.push({
       tag: "articular",
-      label: `Sensibilidade articular detectada (${exTwin.jointComplaints}×)`,
+      label: `Incomodou ${exTwin.jointComplaints} vezes nos últimos treinos`,
       detail: recommendedAlt
-        ? `Este movimento incomodou recentemente. Alternativa direta hoje: ${recommendedAlt}.`
-        : "Este movimento incomodou recentemente; controle a amplitude e pare 2 reps antes da falha.",
+        ? `Se incomodar de novo, troque hoje por ${recommendedAlt}.`
+        : "Se incomodar de novo, encurte o movimento e pare 2 repetições antes da falha.",
     });
   }
 
   if (operator && operator.behavior.restConfidence >= 0.5 && operator.behavior.restRatio < 0.65 && ex.rest[0] >= 90) {
     factors.push({
       tag: "descanso",
-      label: `Descanso real curto (~${Math.round(operator.behavior.restRatio * 100)}% da ficha)`,
-      detail: `Você tem descansado menos que os ${ex.restLabel} pedidos; descansar o tempo cheio destrava +1–2 reps sem baixar o peso.`,
+      label: "Você tem descansado pouco",
+      detail: `Seus intervalos ficam em ${Math.round(operator.behavior.restRatio * 100)}% dos ${ex.restLabel} da ficha. Descansar o tempo cheio costuma render 1 ou 2 repetições a mais.`,
     });
   }
 
@@ -180,8 +181,17 @@ export function explainLoad(
   if (slowMuscle && operator) {
     factors.push({
       tag: "fadiga-muscular",
-      label: `Curva de ${MUSCLE_LABEL[slowMuscle].toLowerCase()}`,
-      detail: `Seu gêmeo pede ~${Math.round((operator.muscles[slowMuscle].recoveryMultiplier - 1) * 100)}% mais horas de recuperação neste grupo; priorize técnica limpa.`,
+      label: `${MUSCLE_LABEL[slowMuscle]} demora mais para se recuperar`,
+      detail: `No seu histórico, ${MUSCLE_LABEL[slowMuscle].toLowerCase()} pede cerca de ${Math.round((operator.muscles[slowMuscle].recoveryMultiplier - 1) * 100)}% mais tempo que a média. Se a primeira série vier pesada, mantenha a carga em vez de subir.`,
+    });
+  }
+
+  if (operator?.body.rapidLoss && ex.compound && suggestion.kind === "up") {
+    factors.push({
+      tag: "corpo",
+      label: "Peso corporal caindo rápido",
+      detail:
+        "Com menos energia, a carga pode não subir como antes. Se a primeira série vier difícil, fique no peso atual: não é falta de progresso.",
     });
   }
 
@@ -288,7 +298,8 @@ export function planDay(
         adapt.adaptedAlt = alts[0];
       }
       if (ex.stop === "F") adapt.adaptedStop = "T";
-      if (painMatch.severity === "forte" && adapt.adaptedSets > 1) {
+      // Piso: 2 séries nos compostos, 1 nos isolados (mesmo com dor forte, o estímulo mínimo fica).
+      if (painMatch.severity === "forte" && adapt.adaptedSets > (ex.compound ? 2 : 1)) {
         adapt.adaptedSets -= 1;
         setsMap[ex.id] = adapt.adaptedSets;
       }

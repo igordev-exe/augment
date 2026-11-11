@@ -3,7 +3,8 @@ import { SCIENCE } from "../../data/science";
 import type { BodyEntry, MuscleId, ProgramExercise, Session, SessionExercise, Settings } from "../../data/types";
 import { addDays, bySessionAsc, fromISO, mondayOf } from "../dates";
 import { setsFor } from "../mesocycle";
-import { bestE1rm, increaseStep, mainLoad, predictReps, suggest, toKg, workSets } from "../progression";
+import { bestE1rm, increaseStep, mainLoad, predictReps, prsBySession, suggest, toKg, workSets } from "../progression";
+import { weightTrend } from "../visual";
 
 // AUG.CORE — Camada 2: Modelo do Operador ("Gêmeo Digital").
 // Separa o que é declarado/persistido (`OperatorMemory`) do que é derivado em O(N) (`OperatorState`).
@@ -65,6 +66,8 @@ export interface OperatorMemory {
   constraints: Constraint[];
   /** Resumo dos mesociclos anteriores já fechados. */
   mesoHistory: MesoSummary[];
+  /** Último `mesoStart` visto: quando muda, o ciclo anterior é fechado e resumido mesmo antes da 7ª semana. */
+  lastMesoStart?: string;
 }
 
 export const EMPTY_OPERATOR_MEMORY: OperatorMemory = {
@@ -128,13 +131,81 @@ export function sanitizeOperatorMemory(raw: unknown): OperatorMemory {
   const obj = raw as Partial<OperatorMemory>;
   const calibrationUntil =
     typeof obj.calibrationUntil === "string" && ISO_DATE_RE.test(obj.calibrationUntil) ? obj.calibrationUntil : undefined;
+  const lastMesoStart = typeof obj.lastMesoStart === "string" && ISO_DATE_RE.test(obj.lastMesoStart) ? obj.lastMesoStart : undefined;
   const constraints = Array.isArray(obj.constraints) ? obj.constraints.filter(isConstraint) : [];
   const mesoHistory = Array.isArray(obj.mesoHistory) ? obj.mesoHistory.filter(isMesoSummary) : [];
   return {
     version: 1,
     ...(calibrationUntil ? { calibrationUntil } : {}),
+    ...(lastMesoStart ? { lastMesoStart } : {}),
     constraints,
     mesoHistory,
+  };
+}
+
+/** Semanas do mesociclo em dias: 7 semanas (6 de carga + deload). */
+const MESO_DAYS = 49;
+
+/** Resumo de um mesociclo (ou do pedaço dele que foi treinado) entre `start` e `end`, inclusive. */
+export function mesoSummaryFor(sessions: Session[], start: string, end: string, trainingDays: number[]): MesoSummary | null {
+  const done = sessions.filter((s) => s.status === "done" && s.date >= start && s.date <= end).sort(bySessionAsc);
+  if (!done.length) return null;
+  const prs = prsBySession(sessions);
+  let prsCount = 0;
+  let totalSets = 0;
+  const setsByMuscle = new Map<MuscleId, number>();
+  for (const s of done) {
+    prsCount += prs.get(s.id)?.length ?? 0;
+    for (const entry of s.exercises) {
+      const ex = exOf(entry);
+      const n = workSets(entry, false).length;
+      totalSets += n;
+      for (const m of ex?.muscles ?? []) setsByMuscle.set(m, (setsByMuscle.get(m) ?? 0) + n);
+    }
+  }
+  const days = Math.max(1, Math.round((fromISO(end).getTime() - fromISO(start).getTime()) / 86_400_000) + 1);
+  const weeks = Math.max(1, days / 7);
+  const planned = Math.round(weeks * Math.max(1, trainingDays.length));
+  const bestMuscles = [...setsByMuscle.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([m]) => m);
+  return {
+    start,
+    end,
+    sessionsDone: done.length,
+    sessionsPlanned: planned,
+    prsCount,
+    avgWeeklySets: Math.round(totalSets / weeks),
+    bestMuscles,
+  };
+}
+
+/**
+ * Fecha mesociclos que terminaram: o ciclo atual passou das 7 semanas, ou `mesoStart` mudou (a pessoa reiniciou).
+ * Devolve a memória nova, ou `null` quando não há nada a fechar. Puro: quem chama decide gravar.
+ */
+export function closeFinishedMesos(memory: OperatorMemory, sessions: Session[], settings: Settings, today: string): OperatorMemory | null {
+  const known = new Set(memory.mesoHistory.map((m) => m.start));
+  const add: MesoSummary[] = [];
+  const prev = memory.lastMesoStart;
+  if (prev && prev !== settings.mesoStart && !known.has(prev)) {
+    // Reiniciou o ciclo: resume o anterior até o dia antes do novo começo (ou até o fim natural dele).
+    const naturalEnd = addDays(prev, MESO_DAYS - 1);
+    const end = settings.mesoStart > prev && settings.mesoStart <= naturalEnd ? addDays(settings.mesoStart, -1) : naturalEnd;
+    const s = mesoSummaryFor(sessions, prev, end, settings.trainingDays);
+    if (s) add.push(s);
+  }
+  const curEnd = addDays(settings.mesoStart, MESO_DAYS - 1);
+  if (today > curEnd && !known.has(settings.mesoStart)) {
+    const s = mesoSummaryFor(sessions, settings.mesoStart, curEnd, settings.trainingDays);
+    if (s) add.push(s);
+  }
+  if (!add.length && prev === settings.mesoStart) return null;
+  return {
+    ...memory,
+    lastMesoStart: settings.mesoStart,
+    mesoHistory: [...memory.mesoHistory, ...add].sort((a, b) => a.start.localeCompare(b.start)).slice(-24),
   };
 }
 
@@ -209,7 +280,17 @@ export interface BehaviorTwin {
   loadAcceptanceRate: number;
 }
 
+/** Peso corporal: só a tendência recente (kg por semana) e se ela está rápida demais para progredir carga com folga. */
+export interface BodyTwin {
+  kgPerWeek: number | null;
+  /** Perdendo 0,7 kg/semana ou mais por 2+ semanas: menos energia para subir carga nos compostos. */
+  rapidLoss: boolean;
+  /** Ganhando 0,7 kg/semana ou mais: provavelmente gordura, vale conferir a dieta. */
+  rapidGain: boolean;
+}
+
 export interface OperatorState {
+  body: BodyTwin;
   calibration: {
     stage: CalibrationStage;
     confidence: number;
@@ -291,11 +372,18 @@ function RestIntervalsOfEntry(entry: SessionExercise): number[] {
  */
 export function operatorState(
   sessions: Session[],
-  _bodyLog: BodyEntry[],
+  bodyLog: BodyEntry[],
   settings: Settings,
   memory: OperatorMemory = EMPTY_OPERATOR_MEMORY,
   today: string,
 ): OperatorState {
+  const trend = weightTrend(bodyLog.filter((e) => e.date <= today));
+  const trendOk = trend != null && trend.spanDays >= 14;
+  const body: BodyTwin = {
+    kgPerWeek: trendOk ? Math.round(trend.kgPerWeek * 100) / 100 : null,
+    rapidLoss: trendOk && trend.kgPerWeek <= -0.7,
+    rapidGain: trendOk && trend.kgPerWeek >= 0.7,
+  };
   const done = sessions.filter((s) => s.status === "done" && s.date <= today).sort(bySessionAsc);
   const sessionsDone = done.length;
   const stage: CalibrationStage = sessionsDone < 4 ? "calibrando" : sessionsDone < 12 ? "aprendendo" : "calibrado";
@@ -654,6 +742,7 @@ export function operatorState(
       loadAcceptanceRate,
     },
     activeConstraints: activeConstraints(memory, today),
+    body,
   };
 }
 
@@ -816,6 +905,8 @@ export interface OperatorBrief {
   headline: string;
   detail: string;
   tone: "info" | "good" | "warn";
+  /** `true` = nada pede atenção hoje. A tela Hoje fica em silêncio; o Relatório ainda mostra. */
+  silent: boolean;
 }
 
 const WEEKDAY_LABELS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
@@ -830,34 +921,38 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
     if (c.kind === "time-cap") {
       return {
         code: "AUG.CORE // MODO RÁPIDO",
-        headline: `Treino adaptado para ${c.minutes} min`,
-        detail: "Compostos mantidos na íntegra; séries finais de isolados enxugadas para caber no relógio.",
+        headline: `Treino de hoje cabe em ${c.minutes} min`,
+        detail: "Os exercícios principais ficam inteiros; saem séries do fim do treino.",
         tone: "info",
+        silent: false,
       };
     }
     if (c.kind === "equipment") {
       return {
         code: "AUG.CORE // EQUIPAMENTO",
-        headline: `Filtro ativo: ${c.allowed.join(", ")}`,
-        detail: "Exercícios sem aparelho compatível usam a alternativa equivalente da biblioteca hoje.",
+        headline: `Treinando só com ${c.allowed.join(", ").replace(/-/g, " ")}`,
+        detail: "O que precisa de outro aparelho foi trocado por uma versão parecida, só por estes dias.",
         tone: "info",
+        silent: false,
       };
     }
     if (c.kind === "pain") {
       const target = c.muscle ? MUSCLE_LABEL[c.muscle] : (c.libId ?? "articulação");
       return {
         code: "AUG.CORE // PROTEÇÃO ARTICULAR",
-        headline: `Protegendo ${target.toLowerCase()} (${c.severity})`,
-        detail: "Priorizando alternativas estáveis e parando antes da falha no grupo afetado.",
+        headline: `Cuidando de ${target.toLowerCase()}`,
+        detail: "Nos exercícios dessa região, o app troca por uma versão mais confortável e para antes da falha.",
         tone: "warn",
+        silent: false,
       };
     }
     if (c.kind === "schedule") {
       return {
         code: "AUG.CORE // ROTINA",
         headline: c.note,
-        detail: "Volume ajustado para manter os ganhos com menor desgaste sistêmico nesta semana.",
+        detail: "Semana mais leve: menos séries, mesma carga. Dá para manter o que você ganhou sem se desgastar.",
         tone: "info",
+        silent: false,
       };
     }
   }
@@ -868,10 +963,11 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
       code: "AUG.CORE // CALIBRAÇÃO",
       headline:
         state.calibration.sessionsDone === 0
-          ? "Semana 1 de calibração do gêmeo"
-          : `Calibrando perfil (${state.calibration.sessionsDone}/4 treinos)`,
-      detail: `Mais ${rem} ${rem === 1 ? "treino concluído" : "treinos concluídos"} para o núcleo destravar sua curva individual de recuperação e resposta.`,
+          ? "O app ainda está te conhecendo"
+          : `Te conhecendo (${state.calibration.sessionsDone} de 4 treinos)`,
+      detail: `Faltam ${rem} ${rem === 1 ? "treino" : "treinos"} para o app ajustar as sugestões ao seu ritmo de recuperação.`,
       tone: "info",
+      silent: false,
     };
   }
 
@@ -880,19 +976,21 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
     .sort((a, b) => b.jointRisk - a.jointRisk)[0];
   if (highRiskEx) {
     return {
-      code: "AUG.CORE // BIOMECÂNICA",
-      headline: `${highRiskEx.name}: sensibilidade articular (${highRiskEx.jointComplaints}×)`,
-      detail: "O gêmeo detectou desconforto recorrente neste movimento. Prefira a variante alternativa da biblioteca.",
+      code: "AUG.CORE // ARTICULAÇÃO",
+      headline: `${highRiskEx.name} incomodou ${highRiskEx.jointComplaints} vezes`,
+      detail: "Vale trocar por uma versão parecida por um tempo. O app sugere a troca na hora do treino.",
       tone: "warn",
+      silent: false,
     };
   }
 
   if (state.behavior.restConfidence >= 0.5 && state.behavior.restRatio < 0.65) {
     return {
-      code: "AUG.CORE // TELEMETRIA",
-      headline: `Descanso real em ${Math.round(state.behavior.restRatio * 100)}% da ficha`,
-      detail: "Cortar o intervalo entre séries derruba as repetições das séries seguintes. Respeite o relógio nos compostos.",
+      code: "AUG.CORE // DESCANSO",
+      headline: "Você descansa menos do que a ficha pede",
+      detail: `Seu intervalo fica em ${Math.round(state.behavior.restRatio * 100)}% do combinado. Descansar o tempo cheio rende mais repetições nas séries seguintes.`,
       tone: "warn",
+      silent: false,
     };
   }
 
@@ -901,9 +999,10 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
     const pct = Math.round(state.behavior.weekdayMissRate[state.behavior.vulnerableWeekday] * 100);
     return {
       code: "AUG.CORE // AGENDA",
-      headline: `Faltas frequentes na ${wdName} (${pct}%)`,
-      detail: `Se a ${wdName} é corrida, considere mover esse dia em Ajustes para manter a sequência sem atrasos.`,
+      headline: `A ${wdName} costuma falhar (${pct}% das vezes)`,
+      detail: `Se esse dia é corrido, mude o dia de treino em Ajustes. A sequência continua de onde parou.`,
       tone: "info",
+      silent: false,
     };
   }
 
@@ -914,15 +1013,28 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
     (m) => MUSCLE_LABEL[m],
   );
 
+  if (state.body.rapidLoss) {
+    return {
+      code: "AUG.CORE // PESO",
+      headline: "Peso caindo rápido",
+      detail: `Cerca de ${Math.abs(state.body.kgPerWeek ?? 0)
+        .toFixed(1)
+        .replace(".", ",")} kg por semana. Com menos energia, é normal a carga não subir: segure o que tem e cuide da comida.`,
+      tone: "warn",
+      silent: false,
+    };
+  }
+
   if (fastMuscles.length || slowMuscles.length) {
     const parts: string[] = [];
-    if (fastMuscles.length) parts.push(`recuperação rápida em ${fastMuscles.slice(0, 2).join(", ").toLowerCase()}`);
-    if (slowMuscles.length) parts.push(`janela maior em ${slowMuscles.slice(0, 2).join(", ").toLowerCase()}`);
+    if (fastMuscles.length) parts.push(`${fastMuscles.slice(0, 2).join(" e ").toLowerCase()} se recupera mais rápido que a média`);
+    if (slowMuscles.length) parts.push(`${slowMuscles.slice(0, 2).join(" e ").toLowerCase()} precisa de mais descanso`);
     return {
-      code: "AUG.CORE // GÊMEO CALIBRADO",
-      headline: `Perfil individual ativo (${Math.round(state.calibration.confidence * 100)}% confiança)`,
-      detail: `Curva aprendida: ${parts.join(" · ")}. O mapa muscular já usa suas horas reais.`,
+      code: "AUG.CORE // SEU RITMO",
+      headline: "O app já conhece seu ritmo",
+      detail: `${parts.join("; ")}. O mapa de fadiga usa esses tempos.`,
       tone: "good",
+      silent: true,
     };
   }
 
@@ -931,17 +1043,19 @@ export function operatorBrief(state: OperatorState): OperatorBrief {
     .sort((a, b) => b.e1rmSlopePct - a.e1rmSlopePct)[0];
   if (topEx) {
     return {
-      code: "AUG.CORE // GÊMEO ATIVO",
-      headline: `Boa resposta em ${topEx.name}`,
-      detail: `1RM estimado subindo ~${(topEx.e1rmSlopePct * 100).toFixed(1).replace(".", ",")}% por sessão neste exercício.`,
+      code: "AUG.CORE // SEU RITMO",
+      headline: `${topEx.name} está rendendo bem`,
+      detail: `Sua força nele sobe cerca de ${(topEx.e1rmSlopePct * 100).toFixed(1).replace(".", ",")}% por treino.`,
       tone: "good",
+      silent: true,
     };
   }
 
   return {
-    code: "AUG.CORE // GÊMEO ATIVO",
-    headline: `Modelo calibrado (${state.calibration.sessionsDone} treinos lidos)`,
-    detail: "Recuperação e progressão dentro da faixa esperada pela ficha.",
+    code: "AUG.CORE // SEU RITMO",
+    headline: `Tudo dentro do esperado (${state.calibration.sessionsDone} treinos lidos)`,
+    detail: "Recuperação e progressão dentro do que a ficha prevê.",
     tone: "good",
+    silent: true,
   };
 }

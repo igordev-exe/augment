@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (191 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (210 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -223,14 +223,14 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 **`db.ts`**: Dexie `"augment"`.
 
-| Parte         | Conteúdo                                                                                                                                                                |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tabelas       | `sessions` (`id, date, dayId, status`); `kv` (`key`: `settings`, `body-log`, `coach-config`, `coach-chat`, `online`, `online-workouts`, `error-log`); `programs` (`id`) |
-| Migrações     | v2 cria `programs` com o PPL e faz backfill dos snaps; v3 faz backfill dos retratos de dia                                                                              |
-| Configurações | `DEFAULT_SETTINGS` (operator `""`; `mesoStart` = segunda da semana atual); `sanitizeSettings`, `loadSettings`, `saveSettings`                                           |
-| Programas     | `loadActiveProgram`, `saveProgram`, `activateProgram`, `deleteProgram`, `backfillSnapshots`                                                                             |
-| Corpo         | `loadBodyLog`, `saveBodyLog`, `upsertBodyEntry`, `deleteBodyEntry`                                                                                                      |
-| Backup        | `exportBackup`, `isBackup`, `importBackup(b, "merge" \| "replace")`; `uid()`                                                                                            |
+| Parte         | Conteúdo                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tabelas       | `sessions` (`id, date, dayId, status`); `kv` (`key`: `settings`, `body-log`, `coach-config`, `coach-chat`, `online`, `online-workouts`, `error-log`, `operator-memory`); `programs` (`id`) |
+| Migrações     | v2 cria `programs` com o PPL e faz backfill dos snaps; v3 faz backfill dos retratos de dia                                                                                                 |
+| Configurações | `DEFAULT_SETTINGS` (operator `""`; `mesoStart` = segunda da semana atual); `sanitizeSettings`, `loadSettings`, `saveSettings`                                                              |
+| Programas     | `loadActiveProgram`, `saveProgram`, `activateProgram`, `deleteProgram`, `backfillSnapshots`                                                                                                |
+| Corpo         | `loadBodyLog`, `saveBodyLog`, `upsertBodyEntry`, `deleteBodyEntry`                                                                                                                         |
+| Backup        | `exportBackup`, `isBackup`, `importBackup(b, "merge" \| "replace")`; `uid()`                                                                                                               |
 
 > Há um ciclo de import entre `db.ts` e `restore.ts`.
 
@@ -320,6 +320,32 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 - `files.ts`: `download`, `shareOrDownload`, `resizeImageFile`.
 - `dates.ts`: datas locais `AAAA-MM-DD`; `todayISO`, `addDays`, `daysBetween`, `mondayOf`, formatadores,
   `bySessionAsc`/`bySessionDesc`.
+
+**AUG.CORE (`lib/core/`)**: o "cérebro" determinístico. Puro, offline, sem importar telas. Design em `docs/aug-core.md`.
+
+- `operator.ts`:
+  - memória declarada `OperatorMemory` (kv `operator-memory`, entra no backup): restrições com validade (`time-cap`,
+    `equipment`, `pain`, `schedule`), `mesoHistory`, `lastMesoStart`, `calibrationUntil`; `sanitizeOperatorMemory`,
+    `mergeOperatorMemory`, `activeConstraints`;
+  - estado derivado `operatorState(sessions, bodyLog, settings, memory, today)`: por músculo (`recoveryMultiplier`,
+    `volumeTolerance`), por exercício (`responsiveness`, `jointRisk`), comportamento (`restRatio`, `weekdayMissRate`,
+    `preferredHour`, `loadAcceptanceRate`), `body` (tendência de peso) e `calibration`; cada um com `confidence`;
+  - `operatorBrief(state)` → `{ headline, detail, tone, silent }`. **`silent: true` = o Hoje não mostra nada**;
+  - `closeFinishedMesos` / `mesoSummaryFor`, `simulateOperator` (operadores fictícios para testes),
+    `effectiveRecoveryHours`, `learnedRecoveryMultipliers` (vai para `muscleStatus` em `visual.ts`).
+- `planner.ts`: `explainLoad()` embrulha `suggestNext()` e devolve o `DecisionTrace` ("Por que essa carga?");
+  `planDay()` devolve uma `SessionAdaptation` efêmera (séries, `alt`, `stop`) que `buildSession` aplica no retrato
+  da sessão. **Nunca altera `db.programs`.** Pisos: 2 séries em composto, 1 em isolado.
+- `intents.ts`: `matchIntent` (6 intenções, por palavra) e `handleIntent` (resposta na hora, offline; mudanças viram
+  `IntentProposal` que só grava com confirmação). Negar dor não é queixa.
+- Hooks: `useOperatorMemory`, `useOperatorState` (`hooks.tsx`); `db.ts`: `loadOperatorMemory`, `saveOperatorMemory`,
+  `upsertConstraint`, `removeConstraint`, `ensureMesoHistory`.
+- Telas: Hoje (linha do banner só quando `!silent`, `planDay` na duração e no `buildSession`), ExerciseBlock
+  (lista `.why-load` dentro da dobra do PlanCard), Coach (intenção antes do modelo + "Perguntar ao treinador mesmo assim"), Relatório
+  e treinador (`gemeo_digital` no contexto).
+- **Texto para a pessoa sem jargão**: nada de "gêmeo", "calibração", "telemetria", "curva" na tela.
+- Testes: `operator.test.ts`, `planner.test.ts`, `intents.test.ts` e `guarantees.test.ts` (o que o planejador nunca
+  faz, sob muitas combinações).
 
 **Treinador (`lib/coach/`)**:
 
@@ -445,6 +471,7 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
   `android-assets.py`, `ios-assets.py`, `make-icons.py`.
 - `tools/verify/`: auditoria de layout e fluxos no navegador (seção 9).
 - `docs/`:
+  - `aug-core.md`: design do cérebro determinístico (modelo do operador, planejador, presença, intenções);
   - `roadmap-apk.md`: 6 fases; até a fase 4, concluídas;
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.

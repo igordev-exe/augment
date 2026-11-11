@@ -74,7 +74,7 @@ describe("AUG.CORE — Intenções Guiadas do Chat (intents.ts)", () => {
     });
     expect(stall.matched).toBe(true);
     expect(stall.intent?.kind).toBe("travou_exercicio");
-    expect(stall.reply).toContain("Diagnóstico de estagnação");
+    expect(stall.reply).toContain("travou. O que pode estar pesando");
 
     const sessions: Session[] = [
       {

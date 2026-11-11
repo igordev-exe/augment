@@ -7,7 +7,7 @@ compatibility_date = "2026-11-01"
 binding = "DB"
 database_name = "augment"
 # Troque pelo id que o `npx wrangler d1 create augment` mostrar.
-database_id = "COLOQUE-AQUI-O-ID-DO-D1"
+database_id = "30a49a34-6ab0-40d8-be4c-87e56b94ef88"
 migrations_dir = "migrations"
 
 [vars]
