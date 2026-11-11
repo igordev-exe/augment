@@ -1,0 +1,353 @@
+/* Atmosfera e micro-interações: horizonte em grade, cartões que "ligam", LEDs dos módulos, carga nos botões. */
+
+/*
+  Direção: o app não é uma tela, é um sistema vivo que a pessoa veste. A hierarquia continua vindo da luminância
+  (o neon é contido: linhas finas, brilhos curtos), e todo movimento é curto (≤ 300 ms) ou lento e periférico
+  (o horizonte). Modo academia (fx-gym) e "reduzir movimento" desligam tudo que é só decoração.
+*/
+
+/* ---------- Horizonte: grade em perspectiva no rodapé, atrás de todo o conteúdo ---------- */
+body {
+  position: relative;
+  isolation: isolate;
+}
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  left: -20%;
+  right: -20%;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) - 8px);
+  height: 34vh;
+  pointer-events: none;
+  background-image: linear-gradient(rgb(63 216 224 / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(63 216 224 / 0.16) 1px, transparent 1px);
+  background-size: 56px 56px;
+  transform: perspective(420px) rotateX(64deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
+  mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
+  animation: horizon-drift 7s linear infinite;
+}
+@keyframes horizon-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 56px;
+  }
+}
+/* Luz fria no alto e cantos mais escuros: o brilho parece vir do próprio sistema, não da tela. */
+body {
+  background-image: radial-gradient(120% 60% at 50% -10%, rgb(63 216 224 / 0.07), transparent 60%),
+    radial-gradient(90% 70% at 50% 110%, rgb(239 48 44 / 0.06), transparent 60%), linear-gradient(rgb(67 72 81 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(67 72 81 / 0.09) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    64px 64px,
+    64px 64px;
+  background-attachment: fixed, fixed, scroll, scroll;
+}
+
+/* ---------- Entrada de tela: cada bloco "liga" (varredura da esquerda + flash curto), ainda em ≤ 300 ms ---------- */
+.app > .stack-lg > * {
+  animation: route-power 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+/* Só opacidade e deslocamento (baratos e seguros): nada de máscara, clip-path (os cartões já usam, pelo
+   augmented-ui) nem filter em blocos grandes, que deixavam a tela sem pintar até o próximo repaint.
+   O "ligar" é o pisco duplo de um painel acendendo. */
+@keyframes route-power {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  30% {
+    opacity: 0.8;
+  }
+  42% {
+    opacity: 0.3;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ---------- Cartão quente (missão em andamento, avisos): cantoneiras HUD ---------- */
+.card.hot {
+  position: relative;
+}
+.card.hot::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--red), var(--red)) 0 100% / 18px 1px no-repeat,
+    linear-gradient(var(--red), var(--red)) 0 100% / 1px 18px no-repeat,
+    linear-gradient(var(--red), var(--red)) 100% 0 / 18px 1px no-repeat,
+    linear-gradient(var(--red), var(--red)) 100% 0 / 1px 18px no-repeat;
+  opacity: 0.8;
+}
+
+/* ---------- Módulos do protocolo (lista do Hoje): LED de estado na borda esquerda ---------- */
+.list-item {
+  position: relative;
+}
+.list > li > .list-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  background: var(--track-empty);
+  box-shadow: none;
+}
+.list > li:first-child > .list-item::before {
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgb(63 216 224 / 0.8);
+  animation: led-breathe 2.2s ease-in-out infinite;
+}
+@keyframes led-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- Botões: ao tocar (classe zap, lib/fx.ts), uma luz varre o botão de ação ---------- */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+.btn.zap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  animation: btn-charge 0.45s ease-out forwards;
+}
+@keyframes btn-charge {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---------- Cabeçalhos de seção: o ponto do "eyebrow" respira devagar ---------- */
+.eyebrow::before {
+  animation: led-breathe 3.2s ease-in-out infinite;
+}
+
+/* ---------- Barra de abas: a aba ativa tem um leve pulso de luz ao trocar ---------- */
+.nav a.active::before {
+  animation: nav-light 0.6s ease-out;
+}
+@keyframes nav-light {
+  0% {
+    left: 45%;
+    right: 45%;
+    box-shadow: 0 0 18px var(--red);
+  }
+  100% {
+    left: 22%;
+    right: 22%;
+  }
+}
+
+/* ---------- Modo academia e mínimo: nada de decoração contínua ---------- */
+:root:is(.fx-gym, .fx-min) body::after {
+  display: none;
+}
+:root:is(.fx-gym, .fx-min) :is(.list > li:first-child > .list-item::before, .eyebrow::before) {
+  animation: none !important;
+}
+/* Telas largas (tablet): o horizonte fica mais baixo para não competir com o conteúdo. */
+@media (min-width: 768px) {
+  body::after {
+    height: 26vh;
+  }
+}
+
+/* ---------- Varredura biométrica: uma linha ciano passa devagar pelo operador (banner do Hoje, primeiro uso) ---------- */
+.scan-line {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(63 216 224 / 0.9) 35%,
+    rgb(255 255 255 / 0.95) 50%,
+    rgb(63 216 224 / 0.9) 65%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgb(63 216 224 / 0.6);
+  opacity: 0;
+  animation: scan-pass 7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 1.2s;
+}
+@keyframes scan-pass {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.85;
+  }
+  38% {
+    opacity: 0.85;
+  }
+  42% {
+    transform: translateY(var(--scan-h, 300px));
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(var(--scan-h, 300px));
+    opacity: 0;
+  }
+}
+.mission {
+  --scan-h: 100%;
+}
+.mission .scan-line {
+  top: 0;
+  height: 100%;
+  background: none;
+  box-shadow: none;
+}
+/* Dentro do banner a linha é um pseudo-elemento, para o translateY ser em % da altura do card. */
+.mission .scan-line::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(63 216 224 / 0.9) 35%,
+    rgb(255 255 255 / 0.95) 50%,
+    rgb(63 216 224 / 0.9) 65%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgb(63 216 224 / 0.6);
+}
+.mission .scan-line {
+  animation-name: scan-pass-card;
+}
+@keyframes scan-pass-card {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.8;
+  }
+  38% {
+    opacity: 0.8;
+  }
+  42% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* ---------- Primeiro uso: o operador aparece na tela de boas-vindas, com a varredura ---------- */
+.ob-hero {
+  position: relative;
+  height: 150px;
+  margin: -6px 0 2px;
+  overflow: hidden;
+  --scan-h: 150px;
+}
+.ob-hero img {
+  position: absolute;
+  right: -8%;
+  top: -4px;
+  width: 210px;
+  height: auto;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, black 0%, black 60%, transparent 100%), linear-gradient(90deg, transparent 0%, black 25%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, black 0%, black 60%, transparent 100%), linear-gradient(90deg, transparent 0%, black 25%);
+  mask-composite: intersect;
+}
+.ob-hero-tag {
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  padding: 4px 8px;
+  background: rgb(12 14 17 / 0.85);
+  border-left: 2px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.12em;
+}
+:root:is(.fx-gym, .fx-min) .scan-line {
+  display: none;
+}
+
+/* ---------- Ajustes: escolha da aparência do operador (herói + avatar) ---------- */
+.persona-pick {
+  display: grid;
+  gap: 10px;
+}
+.persona-opt {
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 8px 12px;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+}
+.persona-opt img {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-3);
+}
+.persona-opt strong {
+  font-family: var(--tech);
+  font-size: var(--fs-3);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.persona-opt[aria-pressed="true"] {
+  --aug-border-bg: var(--cyan);
+  background: var(--sel-soft);
+  box-shadow: 0 0 14px rgb(63 216 224 / 0.25);
+}
+.persona-opt[aria-pressed="true"] img {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}

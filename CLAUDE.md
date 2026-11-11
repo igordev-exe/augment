@@ -512,20 +512,34 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
 
-| Arquivo                      | O que guarda                                                                 |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `01-base`                    | tokens do `:root`, reset, layout, tipografia, topo e cabeçalho de página     |
-| `02-componentes`             | cartões, botões, chips, barra de abas, timer                                 |
-| `03-hoje`                    | banner de missão, faixa de semanas, faixa de dias                            |
-| `04-treino`                  | cartão do exercício e linhas de série                                        |
-| `05-comuns`                  | toast, calendário, tabelas, gráfico, formulários, Guia, rodapé, Treinador    |
-| `06-fadiga`                  | resumo visual do Progresso, mapa de fadiga, anatomia                         |
-| `07-treino-hud`              | fotos de execução, HUD do treino, próxima série, segurar, menu circular, log |
-| `08-progresso`               | séries da semana, roda de atributos, módulos, gráficos, mapa do ano, laudo   |
-| `09-oficina-relatorio`       | Exercícios, modo terminal, deload, relatório, zona de perigo                 |
-| `10-montador-acessibilidade` | montador, alvos de toque, telas estreitas, letra grande do sistema           |
-| `11-online`                  | conta, amigos, comparação, moderação                                         |
-| `12-primeiro-uso-erro`       | assistente de primeiro uso e tela de erro                                    |
+| Arquivo                      | O que guarda                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `01-base`                    | tokens do `:root`, reset, layout, tipografia, topo e cabeçalho de página                    |
+| `02-componentes`             | cartões, botões, chips, barra de abas, timer                                                |
+| `03-hoje`                    | banner de missão, faixa de semanas, faixa de dias                                           |
+| `04-treino`                  | cartão do exercício e linhas de série                                                       |
+| `05-comuns`                  | toast, calendário, tabelas, gráfico, formulários, Guia, rodapé, Treinador                   |
+| `06-fadiga`                  | resumo visual do Progresso, mapa de fadiga, anatomia                                        |
+| `07-treino-hud`              | fotos de execução, HUD do treino, próxima série, segurar, menu circular, log                |
+| `08-progresso`               | séries da semana, roda de atributos, módulos, gráficos, mapa do ano, laudo                  |
+| `09-oficina-relatorio`       | Exercícios, modo terminal, deload, relatório, zona de perigo                                |
+| `10-montador-acessibilidade` | montador, alvos de toque, telas estreitas, letra grande do sistema                          |
+| `11-online`                  | conta, amigos, comparação, moderação                                                        |
+| `12-primeiro-uso-erro`       | assistente de primeiro uso e tela de erro                                                   |
+| `13-atmosfera`               | horizonte em perspectiva, cartões que "ligam", LEDs, carga nos botões, varredura biométrica |
+
+**Atmosfera e movimento** (`13-atmosfera.css`): o app é um sistema vivo que a pessoa veste. Horizonte em grade no
+rodapé (`body::after`, atrás de tudo), luz fria no alto, blocos que "ligam" ao entrar (só opacidade e deslocamento:
+nada de máscara, clip-path ou filter em bloco grande, que deixavam a tela sem pintar), LED no módulo seguinte, luz
+que varre o botão tocado (`.btn.zap`), cantoneiras no `.card.hot` e a linha de varredura `.scan-line` (banner do
+Hoje e boas-vindas). Tudo desliga em `fx-gym`/`fx-min` e com "reduzir movimento".
+
+**Personas** (`src/data/personas.ts`, `settings.persona`): a aparência do operador é um par herói + avatar em
+`public/` (`hero-<id>.webp` 720×720 transparente, `avatar-<id>.png` com recorte circular). Hoje: `humano`
+(padrão: implante neural, lente vermelha, circuitos ciano) e `robo` (capacete integral, o desenho original). Escolha
+em Ajustes → Operador → Aparência (`.persona-pick`). `heroSrc()`/`avatarSrc()` resolvem o arquivo; a tela de
+boas-vindas usa a padrão. Persona nova: gere os dois arquivos no mesmo enquadramento e rode
+`TAG_PERSONA=<id> node tools/verify/tagcheck.mjs …` (seção 9).
 
 **Tokens no `:root`**:
 
@@ -601,8 +615,10 @@ Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/style
    - Telas logadas: `npm run server`, `node tools/verify/seed-server.mjs` e a auditoria com
      `AUDIT_API=http://localhost:8787`.
    - `audit.mjs`: texto cortado, sobreposição entre irmãos flex/grid na mesma linha, alvos < 44 px.
-   - `tagcheck.mjs` + `tagmeasure.py`: distância em pixels entre a etiqueta do banner e o capacete, em fundo vermelho
-     e azul.
+   - `tagcheck.mjs` + `tagmeasure.py`: distância em pixels entre a etiqueta do banner e o herói, em fundo vermelho
+     e azul (o script carrega os dados de demonstração e esconde a `.scan-line` antes de medir).
+   - `shots.mjs`: foto de cada tela em 390 px para revisão de design (`SHOTS_RAW=1` não força o fim das animações;
+     no Git Bash, passe as rotas com `MSYS_NO_PATHCONV=1`).
    - `e2e.mjs`: fluxos dos testes com usuários.
    - `seed.js`: dados de demonstração.
 3. **Lógica**: escreva ou ajuste o teste vitest ao lado (`*.test.ts` em `src/lib`, `src/data`, `src/lib/coach`).

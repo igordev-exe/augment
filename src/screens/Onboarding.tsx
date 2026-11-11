@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BrandMark, Wordmark } from "../components/Brand";
 import { apiUrl } from "../lib/online/client";
 import { applyOnboarding, recommendTemplate, skipOnboarding, type Focus, type Level } from "../lib/onboarding";
+import { heroSrc } from "../data/personas";
 import { TEMPLATES } from "../data/templates";
 
 // Assistente de primeiro uso: uma pergunta por tela, respostas de um toque, e no fim o programa sugerido.
@@ -68,6 +69,11 @@ export function Onboarding({ inApp = false }: { inApp?: boolean }) {
 
       {step === 0 && (
         <section className="stack ob-step">
+          <div className="ob-hero" aria-hidden="true">
+            <img src={heroSrc(undefined)} alt="" width={720} height={720} decoding="async" />
+            <span className="scan-line" />
+            <span className="ob-hero-tag">BIO-LINK // OPERADOR</span>
+          </div>
           <div className="eyebrow">Iniciando sistema</div>
           <h1 className="h-page">Bem-vindo ao Augment</h1>
           <p className="muted">Três perguntas rápidas e o app monta o seu programa de treino. Dá para mudar tudo depois.</p>

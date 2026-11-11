@@ -6,6 +6,7 @@ import { SysModule } from "../components/SysModule";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { OnlineStrip, useOnlineStatus } from "../components/OnlineStrip";
+import { avatarSrc, heroSrc } from "../data/personas";
 import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
@@ -133,7 +134,7 @@ export function Today() {
             <span className={`status-dot ${status.tone}`} /> {status.text}
           </span>
           <Link to="/ajustes" className="avatar" aria-label="Ajustes e perfil">
-            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={48} height={48} />
+            <img src={avatarSrc(settings.persona)} alt="" width={48} height={48} />
           </Link>
         </div>
       </header>
@@ -297,9 +298,10 @@ export function Today() {
       {!active && (
         <section className="stack">
           <div data-augmented-ui="tl-clip br-clip border" className="mission">
-            <img className="figure" src={`${import.meta.env.BASE_URL}hero.webp`} alt="" width={720} height={720} decoding="async" />
+            <img className="figure" src={heroSrc(settings.persona)} alt="" width={720} height={720} decoding="async" />
             <span className="shade" aria-hidden="true" />
             <span className="hatch" aria-hidden="true" />
+            <span className="scan-line" aria-hidden="true" />
             <div className="mission-top">
               <span className="mission-tag">{missionLabel}</span>
               <span className="mission-code">EXO.PROTOCOL / {day.code}</span>

@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import { rememberPrograms, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
+import { PERSONAS } from "../data/personas";
 import { closeFinishedMesos, mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
 import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
@@ -189,6 +190,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     reportSeen: typeof s.reportSeen === "string" && ISO_DATE_RE.test(s.reportSeen) ? s.reportSeen : undefined,
     onboarded: s.onboarded === true ? true : undefined,
     cloudPhotos: s.cloudPhotos === true ? true : undefined,
+    persona: PERSONAS.some((p) => p.id === s.persona) ? (s.persona as string) : undefined,
   };
 }
 

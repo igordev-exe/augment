@@ -6,6 +6,7 @@ import { RestorePoints } from "../components/RestorePoints";
 import { apiUrl } from "../lib/online/client";
 import { useOnline } from "../lib/online/sync";
 import { LIB_BY_ID } from "../data/library";
+import { avatarSrc, PERSONAS, personaOf } from "../data/personas";
 import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup, loadActiveProgram } from "../lib/db";
@@ -127,9 +128,33 @@ export function SettingsScreen() {
       <section data-augmented-ui="tl-clip br-clip border" className="card stack">
         <div className="row" style={{ gap: 12 }}>
           <span className="avatar" aria-hidden="true">
-            <img src={`${import.meta.env.BASE_URL}avatar.png`} alt="" width={48} height={48} />
+            <img src={avatarSrc(settings.persona)} alt="" width={48} height={48} />
           </span>
           <h2 className="h-sec">Operador</h2>
+        </div>
+        <span className="label" id="persona-label">
+          Aparência
+        </span>
+        <div className="persona-pick" role="group" aria-labelledby="persona-label">
+          {PERSONAS.map((p) => {
+            const on = personaOf(settings.persona).id === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="persona-opt"
+                aria-pressed={on}
+                onClick={() => update({ persona: p.id })}
+              >
+                <img src={avatarSrc(p.id)} alt="" width={56} height={56} />
+                <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+                  <strong>{p.name}</strong>
+                  <span className="tiny faint">{p.hint}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
         <label className="label" htmlFor="operator">
           Como o app te chama

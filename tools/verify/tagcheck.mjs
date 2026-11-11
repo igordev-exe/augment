@@ -2,9 +2,10 @@
 // Para cada largura e cada texto possível da etiqueta: grava a captura e a caixa da etiqueta (px de tela).
 import { browserArgs, browserPath } from "./browser.mjs";
 import { spawn } from "node:child_process";
-import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
 const [URL, OUT] = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
@@ -47,14 +48,34 @@ const send = (method, params = {}) =>
 const js = async (expr) =>
   (await send("Runtime.evaluate", { expression: `(async()=>{${expr}})()`, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
+// Dados de demonstração: sem treinos o app abre no assistente de primeiro uso e não há banner para medir.
+const SEED = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "seed.js"), "utf8")
+  .replace("settings: { ...settings,", "settings: { ...settings, mesoStart: '2026-09-21',")
+  .replace(/\nsessions\.length;\s*$/, "\nreturn sessions.length;");
+await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 740, deviceScaleFactor: 2, mobile: true });
+await send("Page.navigate", { url: URL });
+await sleep(3500);
+console.log("seed", await js(SEED));
+if (process.env.TAG_PERSONA) {
+  // Mede o herói de outra persona (data/personas.ts): TAG_PERSONA=robo node tools/verify/tagcheck.mjs …
+  await js(`const D = await import('/src/lib/db.ts'); await D.saveSettings({ persona: ${JSON.stringify(process.env.TAG_PERSONA)} });`);
+  console.log("persona", process.env.TAG_PERSONA);
+}
+
 const rows = [];
 for (const [w, h, dpr] of WIDTHS) {
   await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: dpr, mobile: w < 700 });
   await send("Page.navigate", { url: URL });
-  await sleep(3000);
+  await sleep(1500);
+  // A tela de boot cobre o app por até ~4 s: espera ela sair antes de medir.
+  for (let i = 0; i < 40 && (await js(`return !document.querySelector('.mission') || !!document.querySelector('.boot')`)); i++)
+    await sleep(300);
+  await sleep(600);
   for (const tag of TAGS) {
     const box = await js(`
       document.getAnimations().forEach(a=>{try{a.finish()}catch{}});
+      // A varredura biométrica (linha ciano que passa pelo banner) não é o herói: fica fora da medida.
+      document.querySelectorAll('.scan-line').forEach(e=>e.style.display='none');
       const card=document.querySelector('.mission'); card.scrollIntoView({block:'start'}); scrollTo(0, scrollY-8);
       const t=card.querySelector('.mission-tag'); t.innerHTML=${JSON.stringify(tag.replace("ANTIGA: ", ""))};
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));

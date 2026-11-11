@@ -254,4 +254,6 @@ export interface Settings {
   onboarded?: boolean;
   /** Incluir as fotos do corpo no backup da nuvem. Padrão: não (as fotos ficam só no aparelho). */
   cloudPhotos?: boolean;
+  /** Aparência do operador (herói do banner e avatar): id em `data/personas.ts`. */
+  persona?: string;
 }

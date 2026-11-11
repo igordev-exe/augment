@@ -9,7 +9,7 @@ import type { FxLevel } from "../data/types";
 
 const INTERACTIVE = 'button, a[href], [role="button"], [role="tab"], summary, select, input[type="checkbox"], input[type="radio"]';
 /** Painéis com animação contínua: pausam fora da tela. */
-const PAUSABLE = ".fm, .aw, .chart.holo, .hm-holo, .sysmod, .term, .bm-sweep, .scan-beam";
+const PAUSABLE = ".fm, .aw, .chart.holo, .hm-holo, .sysmod, .term, .bm-sweep, .scan-beam, .scan-line, .ob-hero";
 
 const root = () => document.documentElement;
 const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
