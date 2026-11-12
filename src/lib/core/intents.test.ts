@@ -21,7 +21,7 @@ describe("AUG.CORE — Intenções Guiadas do Chat (intents.ts)", () => {
       today: "2026-09-14",
     });
     expect(res.matched).toBe(true);
-    expect(res.proposal?.constraint.kind).toBe("time-cap");
+    expect(res.proposal?.constraint?.kind).toBe("time-cap");
     expect(res.reply).toContain("Proposta: modo 40 min");
   });
 
@@ -33,7 +33,7 @@ describe("AUG.CORE — Intenções Guiadas do Chat (intents.ts)", () => {
     });
     expect(res.matched).toBe(true);
     expect(res.intent?.kind).toBe("equipamento_restrito");
-    expect(res.proposal?.constraint.kind).toBe("equipment");
+    expect(res.proposal?.constraint?.kind).toBe("equipment");
     expect(res.reply).toContain("Proposta: treinar só com");
   });
 
@@ -53,7 +53,7 @@ describe("AUG.CORE — Intenções Guiadas do Chat (intents.ts)", () => {
     expect(res.matched).toBe(true);
     expect(res.intent?.kind).toBe("dor_articular");
     expect(res.intent?.severity).toBe("forte");
-    expect(res.proposal?.constraint.kind).toBe("pain");
+    expect(res.proposal?.constraint?.kind).toBe("pain");
     expect(res.reply).toContain("Proposta: proteger");
   });
 

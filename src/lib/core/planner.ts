@@ -423,3 +423,29 @@ export function findExerciseInDay(dayId: string, query?: string): ProgramExercis
     }) ?? day.exercises[0]
   );
 }
+
+/** Piso de séries de trabalho que o planejador garante: 2 em composto, 1 em isolado. */
+export const setFloor = (ex: Pick<ProgramExercise, "compound">) => (ex.compound ? 2 : 1);
+
+/**
+ * Check-in de baixa ou dor no meio do treino: tira 1 série pendente de cada isolado que ainda está acima do piso.
+ * Só mexe na sessão aberta (o programa não muda), nunca tira série já feita e nunca deixa abaixo do piso.
+ * Devolve a sessão nova e quantas séries saíram.
+ */
+export function trimIsolatesForLowDay(
+  session: Session,
+  defOf: (e: Session["exercises"][number]) => Pick<ProgramExercise, "compound"> | undefined,
+): { session: Session; removed: number } {
+  let removed = 0;
+  const exercises = session.exercises.map((e) => {
+    const def = defOf(e);
+    if (!def || def.compound) return e;
+    const work = e.sets.filter((s) => s.kind === "work");
+    const pending = work.filter((s) => !s.done);
+    if (!pending.length || work.length - 1 < setFloor(def)) return e;
+    const drop = pending[pending.length - 1];
+    removed += 1;
+    return { ...e, sets: e.sets.filter((s) => s.id !== drop.id) };
+  });
+  return { session: { ...session, exercises, lowDayTrim: removed > 0 ? true : session.lowDayTrim }, removed };
+}

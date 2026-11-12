@@ -32,6 +32,7 @@ export function PlanCard({
   basis,
   overload = [],
   onOverload,
+  onNudge,
   rir,
   reason,
   alerts,
@@ -46,6 +47,8 @@ export function PlanCard({
   /** Formas de superar a última vez (+1 rep, +carga). Tocar aplica na próxima série. */
   overload?: OverloadOption[];
   onOverload?: (weight: number, reps: number) => void;
+  /** − e + da próxima série, sem abrir teclado. */
+  onNudge?: (field: "weight" | "reps", dir: 1 | -1) => void;
   rir: string;
   reason: string;
   /** Observações dentro da gaveta (aparecem no selo). */
@@ -76,6 +79,28 @@ export function PlanCard({
             <span className="next-rir">sobra {rir}</span>
           </div>
           {basis && <span className="next-basis">{basis}</span>}
+          {onNudge && (
+            <div className="next-nudge">
+              <span className="next-nudge-group" role="group" aria-label="Ajustar o peso da próxima série">
+                <button type="button" aria-label="Menos peso" onClick={() => onNudge("weight", -1)}>
+                  −
+                </button>
+                <small>{unit}</small>
+                <button type="button" aria-label="Mais peso" onClick={() => onNudge("weight", 1)}>
+                  +
+                </button>
+              </span>
+              <span className="next-nudge-group" role="group" aria-label="Ajustar as reps da próxima série">
+                <button type="button" aria-label="Menos uma rep" onClick={() => onNudge("reps", -1)}>
+                  −
+                </button>
+                <small>reps</small>
+                <button type="button" aria-label="Mais uma rep" onClick={() => onNudge("reps", 1)}>
+                  +
+                </button>
+              </span>
+            </div>
+          )}
           {overload.length > 0 && (
             <div className="overload" role="group" aria-label="Superar a última vez">
               <span className="overload-label">Superar a última vez</span>

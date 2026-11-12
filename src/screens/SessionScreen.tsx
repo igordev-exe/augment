@@ -11,6 +11,8 @@ import { Choice } from "../components/SetRow";
 import { ShareWorkoutCard } from "../components/ShareWorkoutCard";
 import { SysModule } from "../components/SysModule";
 import { exById, shortName, exOf, dayOf } from "../data/program";
+import { afterSet } from "../lib/superset";
+import { trimIsolatesForLowDay } from "../lib/core/planner";
 import type { CardioEntry, Checkin, ProgramExercise, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
@@ -21,6 +23,7 @@ import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } fr
 import {
   backoffWeight,
   formatWeight,
+  altFirstTimeNote,
   historyOf,
   increaseStep,
   mainLoad,
@@ -174,6 +177,22 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     return n ?? null;
   }
 
+  // Check-in que age (M6): com dia de baixa ou dor, oferece tirar 1 série dos isolados, uma vez por treino.
+  const lowOrPain = lowDay || (!!checkin && !checkin.skipped && (checkin.pain === "leve" || checkin.pain === "forte"));
+  const trimOffer = lowOrPain && !session.lowDayTrim ? trimIsolatesForLowDay(session, exOf).removed : 0;
+  async function trimLowDay() {
+    const cur = await db.sessions.get(session.id);
+    if (!cur) return;
+    const before = clone(cur);
+    const { session: next, removed } = trimIsolatesForLowDay(cur, exOf);
+    if (!removed) return;
+    await save(next);
+    toast(`${removed} ${removed === 1 ? "série a menos" : "séries a menos"} hoje nos isolados.`, "ok", undefined, {
+      label: "Desfazer",
+      run: () => void save(before),
+    });
+  }
+
   async function setCheckin(patch: Checkin) {
     await db.transaction("rw", db.sessions, async () => {
       const cur = await db.sessions.get(session.id);
@@ -234,15 +253,28 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps", "descanso-curto", "intensificador", "meta-batida"]);
     if (live) toast(live.text, NUDGE_TONE[live.tone], live.id === "recorde-reps" || live.id === "meta-batida" ? "glitch" : undefined);
 
-    // Timer de descanso.
+    // Timer de descanso e foco (superset alterna A1 → A2; o que sobra de um lado segue como exercício normal).
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
-    if (set.kind === "warmup") {
-      timer.start(60, `Aquecimento\n${shortName(ex)}`);
-    } else if (ex.superset?.order === 1) {
-      const partner = exById(ex.superset.with);
-      if (!live && !warned) toast(`Superset: vá direto para A2${partner ? `, ${shortName(partner).toLowerCase()}` : ""}.`);
+    const order = ex.superset?.order;
+    const partnerIdx = order === 1 ? index + 1 : order === 2 ? index - 1 : -1;
+    const partner = partnerIdx >= 0 ? session.exercises[partnerIdx] : undefined;
+    const flow = afterSet({
+      warmup: set.kind === "warmup",
+      order,
+      partnerPending: !!partner?.sets.some((s) => s.kind !== "warmup" && !s.done),
+      remaining,
+    });
+    if (flow.rest === "warmup") {
+      timer.start(
+        60,
+        `Aquecimento
+${shortName(ex)}`,
+      );
+    } else if (flow.rest === "none") {
+      const partnerDef = partner && exOf(partner);
+      if (!live && !warned) toast(`Superset: vá direto para A2${partnerDef ? `, ${shortName(partnerDef).toLowerCase()}` : ""}.`);
     } else {
-      const rest = ex.superset?.order === 2 ? 60 : defaultRest(ex.rest);
+      const rest = flow.rest === "superset" ? 60 : defaultRest(ex.rest);
       const workAll = next.sets.filter((s) => s.kind !== "warmup");
       const nextSet = workAll.find((s) => !s.done);
       const nextN = nextSet ? workAll.indexOf(nextSet) + 1 : 0;
@@ -253,23 +285,18 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
       timer.start(
         rest,
         remaining
-          ? `Série ${nextN}/${workAll.length}${nextWhat}\n${shortName(ex)}`
-          : `Próximo exercício${nextExDef ? `\n${shortName(nextExDef)}` : ""}`,
+          ? `Série ${nextN}/${workAll.length}${nextWhat}
+${shortName(ex)}`
+          : `Próximo exercício${
+              nextExDef
+                ? `
+${shortName(nextExDef)}`
+                : ""
+            }`,
       );
     }
-    if (ex.superset?.order === 1) {
-      // Superset: alterna A1 → A2 a cada série.
-      setOpen(index + 1);
-      return;
-    }
-    if (ex.superset?.order === 2) {
-      const partner = session.exercises[index - 1];
-      if (partner?.sets.some((s) => s.kind !== "warmup" && !s.done)) {
-        setOpen(index - 1);
-        return;
-      }
-    }
-    if (remaining === 0) {
+    if (flow.focus === "partner") setOpen(partnerIdx);
+    else if (flow.focus === "next") {
       const nextIdx = session.exercises.findIndex((e, i) => i > index && e.sets.some((s) => s.kind !== "warmup" && !s.done));
       setOpen(nextIdx);
     }
@@ -540,6 +567,18 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
           </div>
         ))}
 
+      {isActive && trimOffer > 0 && (
+        <div data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
+          <span className="small">
+            Dia pesado para o corpo: dá para tirar 1 série de {trimOffer === 1 ? "1 isolado" : `${trimOffer} isolados`} só hoje. Os
+            compostos ficam como estão e o programa não muda.
+          </span>
+          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm" onClick={trimLowDay}>
+            Tirar 1 série dos isolados hoje
+          </button>
+        </div>
+      )}
+
       {isActive && (
         <div data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 6 }}>
           <div className="small">
@@ -582,8 +621,10 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
               reminder={settings.exerciseNotes?.[ex.id]}
               open={open === i}
               recentHistory={hist}
+              altNote={altFirstTimeNote(entry.alt, hist, entry.alt ? historyOf(before, ex.id, undefined, ex.lib) : [])}
               step={step}
               availableWeights={available}
+              barKg={settings.barWeightKg}
               intensifierToday={intensifiers.has(ex.id)}
               setAdjust={settings.setAdjust?.[ex.id] ?? 0}
               operator={operator}

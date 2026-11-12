@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
+import { ImportCsv } from "../components/ImportCsv";
 import { RestorePoints } from "../components/RestorePoints";
 import { apiUrl } from "../lib/online/client";
 import { useOnline } from "../lib/online/sync";
@@ -372,7 +373,30 @@ export function SettingsScreen() {
       </SetGroup>
 
       {/* F5: Incremento e pesos específicos do aparelho por exercício */}
-      <SetGroup key={`inc-${loaded}`} code="08" title="Incrementos e pesos" value="Salto de carga e placas de cada aparelho">
+      <SetGroup
+        key={`inc-${loaded}`}
+        code="08"
+        title="Incrementos e pesos"
+        value={`Barra de ${formatWeight(settings.barWeightKg ?? 20)} kg · salto de carga e placas`}
+      >
+        <span className="label" id="bar-label">
+          Peso da barra (conta das anilhas)
+        </span>
+        <div className="row-wrap" role="group" aria-labelledby="bar-label">
+          {[20, 15, 10, 7].map((kg) => (
+            <button
+              key={kg}
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="toggle-chip"
+              aria-pressed={(settings.barWeightKg ?? 20) === kg}
+              onClick={() => update({ barWeightKg: kg === 20 ? undefined : kg })}
+            >
+              {kg} kg
+            </button>
+          ))}
+        </div>
+        <p className="tiny faint">Olímpica 20 kg, feminina 15 kg, barras menores 10 ou 7 kg. Em libras, 20 kg vira 45 lb.</p>
         <p className="small muted" style={{ marginTop: 8 }}>
           Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
           vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
@@ -489,6 +513,8 @@ export function SettingsScreen() {
             e.target.value = "";
           }}
         />
+        <div className="divider" />
+        <ImportCsv />
       </SetGroup>
 
       <RestorePoints />

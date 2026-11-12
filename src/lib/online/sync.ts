@@ -10,7 +10,7 @@ import { LIMITS } from "../../../server/src/protocol";
 import { dayOf, exOf } from "../../data/program";
 import type { Session } from "../../data/types";
 import { db, exportBackup, isBackup, importBackup, loadBodyLog, loadSettings, saveBodyLog } from "../db";
-import { e1rm, prsBySession, toKg, workSets } from "../progression";
+import { E1RM_MAX_REPS, e1rm, prsBySession, toKg, workSets } from "../progression";
 import { addDays, todayISO } from "../dates";
 import { api, ApiError, apiUrl, isOnlineNow, loadToken, saveToken } from "./client";
 import { quickHash } from "./hash";
@@ -53,9 +53,6 @@ export function useOnline(): OnlineState | undefined {
 }
 
 // ---------- o que sobe ----------
-
-/** Reps acima disso estimam mal o 1RM: a série conta para "carga máxima", não para o 1RM. */
-const E1RM_MAX_REPS = 15;
 
 /**
  * Melhor marca por exercício da biblioteca, em kg. Só o exercício titular (sem alternativa) e só exercícios da
@@ -266,13 +263,18 @@ export async function listCloudBackups(): Promise<BackupMeta[]> {
 }
 
 /** Troca os dados do aparelho pelo backup da nuvem (o estado atual vira um ponto de restauração antes). */
-export async function restoreCloudBackup(id: string): Promise<number> {
+/**
+ * Traz um backup da nuvem para o aparelho. "replace" troca tudo pelo backup; "merge" junta (treinos, peso, programas e
+ * memória dos dois lados), para quem usa dois aparelhos. Os dois criam antes um ponto de restauração. Quem toca é a
+ * pessoa: o servidor nunca sobrescreve nada sozinho.
+ */
+export async function restoreCloudBackup(id: string, mode: "replace" | "merge" = "replace"): Promise<number> {
   const { data } = await api<{ data: string }>("GET", `/backups/${encodeURIComponent(id)}`, undefined, 120_000);
   const parsed: unknown = JSON.parse(data);
   if (!isBackup(parsed)) throw new ApiError("O backup da nuvem está danificado.", 422);
   // As fotos do corpo normalmente não vão para a nuvem: as que estão neste aparelho voltam para os mesmos registros.
   const photos = new Map((await loadBodyLog()).filter((e) => e.photoDataUrl).map((e) => [e.id, e.photoDataUrl]));
-  const n = await importBackup(parsed, "replace");
+  const n = await importBackup(parsed, mode);
   if (photos.size) {
     const log = await loadBodyLog();
     if (log.some((e) => !e.photoDataUrl && photos.has(e.id)))

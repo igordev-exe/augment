@@ -114,6 +114,11 @@ describe("sincronização com o servidor", () => {
     const [b] = await listCloudBackups();
     expect(await restoreCloudBackup(b.id)).toBe(1);
     expect((await db.sessions.toArray()).map((s) => s.id)).toEqual(["a"]);
+
+    // Segundo aparelho com um treino que a nuvem não tem: "Juntar" soma em vez de trocar.
+    await db.sessions.put(session("z", "2026-11-02", [entry(80, [8])]));
+    await restoreCloudBackup(b.id, "merge");
+    expect((await db.sessions.toArray()).map((s) => s.id).sort()).toEqual(["a", "z"]);
   });
 
   it("amigos veem o treino e o ranking do exercício", async () => {

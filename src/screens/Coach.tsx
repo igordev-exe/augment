@@ -20,7 +20,7 @@ import {
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
 import { handleIntent, type IntentProposal } from "../lib/core/intents";
-import { upsertConstraint } from "../lib/db";
+import { addAbsence, upsertConstraint } from "../lib/db";
 import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
 import { shareOrDownload } from "../lib/files";
@@ -382,7 +382,8 @@ export function Coach() {
                 onClick={async () => {
                   const p = pendingIntent;
                   setPendingIntent(null);
-                  await upsertConstraint(p.constraint);
+                  if (p.constraint) await upsertConstraint(p.constraint);
+                  if (p.absence) await addAbsence(p.absence);
                   updateChat({
                     ...chat,
                     notes: [...(chat.notes ?? []), `Aplicou proposta do núcleo: ${p.confirmLabel}.`],

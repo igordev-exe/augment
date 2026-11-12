@@ -7,6 +7,7 @@ import { operatorSerial, profileTelemetry, rankOf, sessionTopKg, tonnes } from "
 import { formatWeight, prsBySession } from "../lib/progression";
 import { sessionStats } from "../lib/sessions";
 import { weekStreaks } from "../lib/visual";
+import { useOperatorMemory } from "../lib/hooks";
 
 // Perfil do operador (design "Perfil e Amigos Cyberpunk"): capa com grade e varredura, avatar sobre a capa, etiquetas,
 // quatro números e duas abas: Atividade (os últimos treinos como transmissões) e Telemetria (volume de 8 semanas).
@@ -38,7 +39,8 @@ export function OperatorProfile({
   const done = useMemo(() => sessions.filter((s) => s.status === "done"), [sessions]);
   const prs = useMemo(() => prsBySession(done), [done]);
   const recordExercises = useMemo(() => new Set([...prs.values()].flat().map((p) => p.exId)).size, [prs]);
-  const streak = weekStreaks(done, today, weeklyTarget).streak;
+  const [memory] = useOperatorMemory();
+  const streak = weekStreaks(done, today, weeklyTarget, memory.absences).streak;
   const tele = useMemo(() => profileTelemetry(done, today), [done, today]);
   const recent = useMemo(() => [...done].sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0)).slice(0, 3), [done]);
   const maxWeek = Math.max(1, ...tele.weeks.map((w) => w.volumeKg));

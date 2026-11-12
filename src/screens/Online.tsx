@@ -427,6 +427,7 @@ function SignedIn({
   const [backups, setBackups] = useState<BackupMeta[] | null>(null);
   const [backupError, setBackupError] = useState("");
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [merging, setMerging] = useState<string | null>(null);
   const localDone = (sessions ?? []).filter((s) => s.status === "done").length;
   const program = useProgram();
   const today = useToday();
@@ -531,21 +532,44 @@ function SignedIn({
                     Segure
                   </HoldButton>
                 ) : (
-                  <button
-                    type="button"
-                    data-augmented-ui="tl-clip br-clip border"
-                    className={`btn btn-sm${i === 0 && localDone === 0 ? " btn-primary" : ""}`}
-                    onClick={() => setRestoring(b.id)}
-                  >
-                    Restaurar
-                  </button>
+                  <span className="actions">
+                    {localDone > 0 && (
+                      <button
+                        type="button"
+                        data-augmented-ui="tl-clip br-clip border"
+                        className="btn btn-sm"
+                        disabled={merging != null}
+                        onClick={async () => {
+                          setMerging(b.id);
+                          try {
+                            const n = await restoreCloudBackup(b.id, "merge");
+                            toast(`Juntado: ${n} treinos do backup somados aos deste aparelho.`, "ok");
+                          } catch (err) {
+                            toast(onlineErrorText(err), "warn");
+                          }
+                          setMerging(null);
+                        }}
+                      >
+                        {merging === b.id ? "Juntando…" : "Juntar"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      data-augmented-ui="tl-clip br-clip border"
+                      className={`btn btn-sm${i === 0 && localDone === 0 ? " btn-primary" : " btn-ghost"}`}
+                      onClick={() => setRestoring(b.id)}
+                    >
+                      Restaurar
+                    </button>
+                  </span>
                 )}
               </li>
             ))}
           </ul>
         )}
         <p className="tiny faint">
-          Restaurar troca os dados deste aparelho pelos do backup. Antes, o estado atual vira um ponto de restauração.
+          Juntar soma o backup ao que já está aqui (para quem usa dois aparelhos): treinos, peso, programas e memória dos dois lados ficam.
+          Restaurar troca os dados deste aparelho pelos do backup. Nos dois casos, antes, o estado atual vira um ponto de restauração.
         </p>
         <div className="divider" />
         <button

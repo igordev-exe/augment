@@ -204,6 +204,8 @@ export interface Session {
   checkin?: Checkin;
   cardio?: CardioEntry;
   exercises: SessionExercise[];
+  /** O check-in de baixa já tirou 1 série dos isolados nesta sessão (o botão não aparece de novo). */
+  lowDayTrim?: boolean;
   /** Sessão criada a partir de "repetir treino". */
   repeatedFrom?: string;
 }
@@ -232,6 +234,8 @@ export interface Settings {
   increments: Record<string, number>;
   /** Pesos específicos disponíveis na polia/máquina por exercício (id do programa → lista em kg/lb). */
   machineWeights: Record<string, number[]>;
+  /** Peso da barra (kg) para a conta de anilhas por lado. Padrão 20 kg (45 lb). */
+  barWeightKg?: number;
   /** Rotação de acessórios ativa no mesociclo (id do programa → nome da alternativa). */
   swaps: Record<string, string>;
   /** Vídeo de referência escolhido (id da biblioteca → URL). */

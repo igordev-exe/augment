@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (219 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (272 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -241,7 +241,8 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
   `deleteRestorePoint`.
 
 **`hooks.tsx`**: `useSessions`, `usePrograms`, `useProgram`, `useSession(id)`, `useSettings()` → `[s, save, loaded]`,
-`useBodyLog`, `useToday`, `ToastProvider`/`useToast` e `useWakeLock`. Os dados vêm de `liveQuery` do Dexie.
+`useBodyLog`, `useToday`, `ToastProvider`/`useToast` e `useWakeLock`. Os dados vêm de `liveQuery` do Dexie. Aviso com efeito `glitch` (recorde, meta
+batida) vibra `RECORD_BUZZ` (curto-curto-longo), diferente do fim do descanso.
 
 **`sessions.ts`**:
 
@@ -253,15 +254,16 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 **`progression.ts`**: o coração das cargas.
 
-| Grupo                     | Funções                                                                                                                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Unidades e arredondamento | `toKg`, `e1rm`, `roundTo`, `formatWeight`, `snapWeight`, `nextAvailableWeight`                                                                                           |
-| Barra e aquecimento       | `platesForBarbell`, `warmupSpec`, `workSets`, `mainLoad`                                                                                                                 |
-| Sugestão                  | `suggest()`: `SuggestionKind` first/up/same/down/deload; `predictReps`, `increaseStep`, `loadRef`                                                                        |
-| Recuo                     | `backoffWeight`, `revertBackoff` (limpa o `suggested`)                                                                                                                   |
-| Histórico e recordes      | `historyOf(sessions, exId, alt?, libId?)` (cai para o histórico do mesmo `libId`), `recordsOf`, `prsBySession`, `prsInSession`, `summarizeSets`                          |
-| Estagnação e regressão    | `stallOf` (`STALL_SESSIONS = 3`), `regressionOf`, `bestE1rm`, `suggestNext`                                                                                              |
-| Sobrecarga e leitura      | `overloadOptions` (+1 rep na mesma carga ou próxima carga com reps previstas; botões no PlanCard), `loadBasis` ("cada halter", "total, com a barra", "na pilha do cabo") |
+| Grupo                     | Funções                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Régua do 1RM              | `E1RM_MAX_REPS = 15`, `setE1rm`/`entryE1rm(entry, mode)`: **"recorde"** (sem drop, sem sobra, até 15 reps: recordes, PRs, gráfico, amigos, força relativa) e **"comparacao"** (sem drop, soma a sobra, sem teto: `bestE1rm`, estagnação, `mesoReport`). Sem série válida → `null`. Não calcule 1RM com `e1rm` direto numa tela                                                                                                                         |
+| Unidades e arredondamento | `toKg`, `e1rm`, `roundTo`, `formatWeight`, `snapWeight`, `nextAvailableWeight`                                                                                                                                                                                                                                                                                                                                                                         |
+| Barra e aquecimento       | `platesForBarbell`, `warmupSpec`, `workSets`, `mainLoad`                                                                                                                                                                                                                                                                                                                                                                                               |
+| Sugestão                  | `suggest()`: `SuggestionKind` first/up/same/down/deload; `predictReps`, `increaseStep`, `loadRef`                                                                                                                                                                                                                                                                                                                                                      |
+| Recuo                     | `backoffWeight`, `revertBackoff` (limpa o `suggested`)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Histórico e recordes      | `historyOf(sessions, exId, alt?, libId?)` (cai para o histórico do mesmo `libId`), `recordsOf`, `prsBySession`, `prsInSession`, `summarizeSets`                                                                                                                                                                                                                                                                                                        |
+| Estagnação e regressão    | `stallOf` (`STALL_SESSIONS = 3`), `regressionOf`, `bestE1rm`, `suggestNext`                                                                                                                                                                                                                                                                                                                                                                            |
+| Sobrecarga e leitura      | `stepWeight` (− e + da próxima série no PlanCard, respeita placas da máquina), `barWeightIn` + `settings.barWeightKg` (barra de 20/15/10/7 kg na conta de anilhas), `altFirstTimeNote` (1ª vez numa alternativa: a carga do titular como referência, sem fator de conversão), `overloadOptions` (+1 rep na mesma carga ou próxima carga com reps previstas; botões no PlanCard), `loadBasis` ("cada halter", "total, com a barra", "na pilha do cabo") |
 
 **`mesocycle.ts`**:
 
@@ -281,7 +283,17 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 **`diagnostics.ts`**: `engineDiagnostics`.
 
 **`report.ts`**: `weeklyReport` → `WeekReport` (shortfalls, RIR fora, estagnações, articulação), `focusOf` e
-`mesoReport` (inclui candidatos a troca de acessório).
+`mesoReport` (inclui candidatos a troca de acessório; compara a mesma variante: a titular com 2+ sessões no ciclo, senão a mais usada).
+
+**`sanity.ts`**: `suspiciousSet` (trava contra erro de digitação: carga > 1,5× o máximo do exercício, com histórico ≥ 20 kg, ou reps > 50). O ExerciseBlock marca a série e avisa com "Corrigir".
+
+**`superset.ts`**: `afterSet` decide descanso e foco depois de cada série (A1 → A2 sem descanso, A2 → A1 com 60 s; o lado que sobrar segue como exercício normal). Usado em `SessionScreen.onSetDone`.
+
+**`importcsv.ts`**: importa o histórico do **Hevy** e do **Strong** (CSV; formato detectado pelo cabeçalho; o Strong pede a
+unidade). Cada treino vira sessão concluída com retrato próprio (`dayId: "importado"`, semana 0) e id fixo
+(`imp-<origem>-<hash>`: reimportar não duplica); cada exercício leva `snap` da biblioteca (`matchLibrary`, conservador:
+movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`). Tela: Ajustes → Backup → `ImportCsv`
+(prévia, depois grava com ponto de restauração antes).
 
 **`schedule.ts`**: `dayOrder`, `nextIndex`, `planAhead` (rotação dos dias pelo calendário de `trainingDays`).
 
@@ -290,8 +302,10 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 - `visual.ts`:
   - fadiga e recuperação: `muscleStatus`, `recoveryHours`, `fatiguePct`, `fatigueLevel`, `hoursToReady`,
     `readiness`;
-  - atividade: `dailySets`, `activityGrid`, `weekStreaks`;
-  - corpo: `weightTrend`, `goalStatus`, `GOAL_RANGES`, `bodyweightAt`, `relativeStrength`;
+  - atividade: `dailySets`, `activityGrid`, `weekStreaks` (recebe as ausências declaradas: semana coberta fica
+    congelada, não zera nem soma);
+  - corpo: `weightLine` (linha do gráfico: média dos últimos 7 dias pelo tempo, não pelas 7 últimas pesagens),
+    `weightTrend` (medido: um pico de 2 kg saindo da janela move < 0,15 kg/semana, então a conta ficou), `goalStatus`, `GOAL_RANGES`, `bodyweightAt`, `relativeStrength`;
   - **fadiga pela intensidade real**: `MuscleStatus.intensity` (0,6–1,3) vem de `setEffort` (RIR/falha),
     `feedbackFactor` (pump, volume) e `noteFactor` (nota do treino ou do exercício: "ruim", "leve" × "pesado",
     "intenso"). Escala o pico (`fatiguePct`) e as horas (`neededHours`, ±25%). `fatigueColor(pct)` dá o tom contínuo
@@ -333,15 +347,19 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 - `operator.ts`:
   - memória declarada `OperatorMemory` (kv `operator-memory`, entra no backup): restrições com validade (`time-cap`,
-    `equipment`, `pain`, `schedule`), `mesoHistory`, `lastMesoStart`, `calibrationUntil`; `sanitizeOperatorMemory`,
+    `equipment`, `pain`, `schedule`), `mesoHistory`, `lastMesoStart`, `calibrationUntil`, `absences` (doença, viagem; `addAbsence` em `db.ts`, proposta pela
+    intenção "faltei"/"fiquei doente"/"viajei" no Coach); `sanitizeOperatorMemory`,
     `mergeOperatorMemory`, `activeConstraints`;
   - estado derivado `operatorState(sessions, bodyLog, settings, memory, today)`: por músculo (`recoveryMultiplier`,
     `volumeTolerance`), por exercício (`responsiveness`, `jointRisk`), comportamento (`restRatio`, `weekdayMissRate`,
-    `preferredHour`, `loadAcceptanceRate`), `body` (tendência de peso) e `calibration`; cada um com `confidence`;
+    `preferredHour`, `loadAcceptanceRate`), `body` (tendência de peso) e `calibration`; cada um com `confidence`. Treino
+    só com trabalho indireto relevante (≥ `INDIRECT_STRESS_SETS`) reinicia o relógio da recuperação sem gerar sinal;
   - `operatorBrief(state)` → `{ headline, detail, tone, silent }`. **`silent: true` = o Hoje não mostra nada**;
   - `closeFinishedMesos` / `mesoSummaryFor`, `simulateOperator` (operadores fictícios para testes),
     `effectiveRecoveryHours`, `learnedRecoveryMultipliers` (vai para `muscleStatus` em `visual.ts`).
 - `planner.ts`: `explainLoad()` embrulha `suggestNext()` e devolve o `DecisionTrace` ("Por que essa carga?");
+  `trimIsolatesForLowDay()` (check-in de baixa ou dor: −1 série pendente de cada isolado acima do piso, só na sessão
+  aberta, com "Desfazer"; `Session.lowDayTrim` evita oferecer de novo) e `setFloor`.
   `planDay()` devolve uma `SessionAdaptation` efêmera (séries, `alt`, `stop`) que `buildSession` aplica no retrato
   da sessão. **Nunca altera `db.programs`.** Pisos: 2 séries em composto, 1 em isolado.
 - `intents.ts`: `matchIntent` (6 intenções, por palavra) e `handleIntent` (resposta na hora, offline; mudanças viram
@@ -450,7 +468,8 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
     `activityOf(sessions)` (60 dias), `backupPayload()` (hash ignora `exportedAt`; **sem as fotos do corpo**, a não
     ser com `settings.cloudPhotos`);
   - quando: `syncNow(reason)` (um por vez; pedido no meio entra na fila), `syncIdle()`, `startAutoSync()`;
-  - backups: `listCloudBackups`, `restoreCloudBackup` (substitui os dados, cria antes um ponto de restauração e
+  - backups: `listCloudBackups`, `restoreCloudBackup(id, "replace" | "merge")` ("Restaurar" substitui os dados; "Juntar"
+    soma ao aparelho, para quem usa dois; cria antes um ponto de restauração e
     devolve aos registros as fotos que estavam no aparelho);
   - erro 401: sai da conta sem apagar dados locais.
 - `account.ts`: `register`, `login`, `recover`, `logout`, `updateProfile`, `newRecoveryCode`, `changePassword`,
@@ -481,8 +500,8 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 - `docs/`:
   - `aug-core.md`: design do cérebro determinístico (modelo do operador, planejador, presença, intenções);
   - `roadmap-apk.md`: 6 fases; até a fase 4, concluídas;
-  - `melhorias-fable-argon.md`: auditoria externa conferida no código + plano de 15 mudanças em 4 ondas (nada
-    implementado ainda);
+  - `melhorias-fable-argon.md`: auditoria externa conferida no código + plano de 15 mudanças em 4 ondas (M1–M14
+    feitos; M15, voz, adiado até confirmar um plugin nativo);
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.
 - `.claude/skills/treinador`: skill de debrief a partir de um backup.

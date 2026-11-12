@@ -3,7 +3,7 @@ import type { BodyEntry, BodyGoal, Session } from "../data/types";
 import { addDays, daysBetween, shortDate } from "../lib/dates";
 import { bodyAdvice } from "../lib/engine";
 import { formatWeight } from "../lib/progression";
-import { GOAL_LABEL, goalStatus, weightTrend, type GoalPace } from "../lib/visual";
+import { GOAL_LABEL, goalStatus, weightLine, weightTrend, type GoalPace } from "../lib/visual";
 import { NudgeList } from "./NudgeList";
 
 // Aba "Corpo" do laudo, no visual dos painéis holográficos do Mapa de Fadiga: monitor do peso com meta, três
@@ -29,10 +29,8 @@ function Monitor({ points, target }: { points: { date: string; kg: number }[]; t
   const span = Math.max(1, daysBetween(t0, points[points.length - 1].date));
   const x = (d: string) => P.l + (daysBetween(t0, d) / span) * (W - P.l - P.r);
   const y = (kg: number) => P.t + (1 - (Math.max(minY, Math.min(hi, kg)) - minY) / Math.max(0.1, hi - minY)) * (H - P.t - P.b);
-  const avg = points.map((p, i) => {
-    const w = points.slice(Math.max(0, i - 6), i + 1);
-    return { date: p.date, kg: w.reduce((a, q) => a + q.kg, 0) / w.length };
-  });
+  // Média dos últimos 7 dias (pelo tempo, não pela contagem de pesagens); os pontos crus ficam apagados por baixo.
+  const avg = weightLine(points);
   const path = (ps: { date: string; kg: number }[]) =>
     ps.map((p, i) => `${i ? "L" : "M"}${x(p.date).toFixed(1)} ${y(p.kg).toFixed(1)}`).join("");
   const line = path(avg);

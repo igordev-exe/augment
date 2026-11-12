@@ -18,6 +18,38 @@ export function e1rm(weight: number, reps: number): number {
   return weight * (1 + reps / 30);
 }
 
+// ---------- Régua única do 1RM estimado ----------
+
+/** Reps acima disso estimam mal o 1RM: a série conta para "carga máxima" e "recorde de reps", não para o 1RM. */
+export const E1RM_MAX_REPS = 15;
+
+/**
+ * Como medir o 1RM estimado de uma série. Todas as telas usam uma destas duas regras (antes eram quatro):
+ * - "recorde": o número que aparece como recorde (página do exercício, PRs, amigos, força relativa). Sem drop-set,
+ *   sem somar as reps que sobraram, e série acima de {@link E1RM_MAX_REPS} reps não gera 1RM.
+ * - "comparacao": só para comparar o mesmo exercício ao longo do tempo (estagnação, queda, relatório do mesociclo).
+ *   Sem drop-set, soma as reps que sobraram e não tem teto: o exagero do Epley em reps altas é crescente, então a
+ *   ordem continua certa (16 reps vale mais que 15) e nada "trava" ao passar de 15.
+ */
+export type E1rmMode = "recorde" | "comparacao";
+
+/** 1RM estimado (kg) de uma série pela régua `mode`, ou null se a série não conta. */
+export function setE1rm(set: SetEntry, unit: Unit, mode: E1rmMode): number | null {
+  if (!set.done || set.kind !== "work" || set.weight == null || set.reps == null || set.reps <= 0 || set.weight <= 0) return null;
+  if (mode === "recorde") return set.reps > E1RM_MAX_REPS ? null : e1rm(toKg(set.weight, unit), set.reps);
+  return e1rm(toKg(set.weight, unit), set.reps + (set.rir ?? 0));
+}
+
+/** Melhor 1RM estimado (kg) de uma entrada e a série que o deu, pela régua `mode`. null sem série válida (nunca 0). */
+export function entryE1rm(entry: SessionExercise | undefined, mode: E1rmMode): { value: number; set: SetEntry } | null {
+  let best: { value: number; set: SetEntry } | null = null;
+  for (const s of entry?.sets ?? []) {
+    const v = setE1rm(s, entry!.unit, mode);
+    if (v != null && (!best || v > best.value)) best = { value: v, set: s };
+  }
+  return best;
+}
+
 export function roundTo(x: number, step: number): number {
   if (step <= 0) return x;
   const r = Math.round(x / step) * step;
@@ -54,6 +86,44 @@ export function nextAvailableWeight(load: number, step: number, available?: numb
     if (higher != null) return higher;
   }
   return roundTo(load + step, step >= 1 ? 0.5 : 0.25);
+}
+
+/**
+ * Um passo de carga para cima ou para baixo (botões − e + da próxima série): respeita os pesos da máquina quando
+ * existem, senão anda pelo incremento do exercício. Nunca abaixo de 0.
+ */
+export function stepWeight(load: number, dir: 1 | -1, step: number, available?: number[]): number {
+  if (dir > 0) return nextAvailableWeight(load, step, available);
+  if (available && available.length > 0) {
+    const lower = [...available].sort((a, b) => b - a).find((w) => w < load - 1e-6);
+    if (lower != null) return lower;
+  }
+  return Math.max(0, roundTo(load - step, step >= 1 ? 0.5 : 0.25));
+}
+
+/**
+ * Primeira vez numa alternativa: a carga que a pessoa usou no titular, como referência em texto (sem fator de
+ * conversão inventado: máquinas e pegadas diferentes pesam diferente). null se ela já tem histórico na alternativa
+ * ou nunca fez o titular.
+ */
+export function altFirstTimeNote(
+  alt: string | undefined,
+  altHistory: ExerciseHistoryItem[],
+  mainHistory: ExerciseHistoryItem[],
+): string | null {
+  if (!alt || altHistory.length) return null;
+  const last = mainHistory[mainHistory.length - 1];
+  const ws = workSets(last?.entry, false);
+  if (!last || !ws.length) return null;
+  const { load } = loadRef(ws);
+  return `No titular você usou ${formatWeight(load)} ${last.entry.unit}. Comece mais leve e ajuste: daqui em diante o app lembra.`;
+}
+
+/** Peso da barra na unidade do exercício: 20 kg vira 45 lb (o padrão americano), os outros convertem. */
+export function barWeightIn(unit: Unit, kg: number | undefined): number {
+  const k = kg ?? 20;
+  if (unit === "kg") return k;
+  return k === 20 ? 45 : Math.round(k / LB_TO_KG);
 }
 
 /** Calculadora de anilhas por lado para exercícios com barra olímpica (20 kg ou 45 lb). */
@@ -462,7 +532,7 @@ export function recordsOf(history: ExerciseHistoryItem[]): Records {
       const w = s.weight!;
       const r = s.reps!;
       const kg = toKg(w, entry.unit);
-      const est = e1rm(kg, r);
+      const est = setE1rm(s, entry.unit, "recorde");
       if (
         !rec.heaviest ||
         kg > toKg(rec.heaviest.weight, rec.heaviest.unit) ||
@@ -470,7 +540,7 @@ export function recordsOf(history: ExerciseHistoryItem[]): Records {
       ) {
         rec.heaviest = { weight: w, reps: r, date: session.date, unit: entry.unit };
       }
-      if (!rec.bestE1rm || est > rec.bestE1rm.value) {
+      if (est != null && (!rec.bestE1rm || est > rec.bestE1rm.value)) {
         rec.bestE1rm = { value: est, weight: w, reps: r, date: session.date, unit: entry.unit };
       }
       if (!rec.mostReps || r > rec.mostReps.reps) {
@@ -526,9 +596,10 @@ function evaluateSessionPRs(session: Session, tracker: Map<string, RunningExerci
         });
       }
 
-      const best = sets.reduce((a, b) => (e1rm(toKg(b.weight!, entry.unit), b.reps!) > e1rm(toKg(a.weight!, entry.unit), a.reps!) ? b : a));
-      const bestVal = e1rm(toKg(best.weight!, entry.unit), best.reps!);
-      if (bestVal > state.maxE1rm + 1e-9) {
+      const top = entryE1rm(entry, "recorde");
+      if (top && top.value > state.maxE1rm + 1e-9) {
+        const best = top.set;
+        const bestVal = top.value;
         out.push({
           exId: entry.exId,
           kind: "1rm",
@@ -553,7 +624,7 @@ function evaluateSessionPRs(session: Session, tracker: Map<string, RunningExerci
       state.sessions += 1;
       for (const s of sets) {
         const kg = toKg(s.weight!, entry.unit);
-        const est = e1rm(kg, s.reps!);
+        const est = setE1rm(s, entry.unit, "recorde") ?? 0;
         if (kg > state.maxKg) state.maxKg = kg;
         if (est > state.maxE1rm) state.maxE1rm = est;
         const wKey = `${s.weight}${entry.unit}`;
@@ -618,7 +689,7 @@ export interface ExerciseStall {
 
 /** 1RM estimado do treino, contando as reps que sobraram quando foram marcadas. */
 export function bestE1rm(entry: SessionExercise): number {
-  return Math.max(0, ...workSets(entry, false).map((s) => e1rm(toKg(s.weight!, entry.unit), s.reps! + (s.rir ?? 0))));
+  return entryE1rm(entry, "comparacao")?.value ?? 0;
 }
 
 export function stallOf(hist: ExerciseHistoryItem[]): ExerciseStall | null {

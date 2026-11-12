@@ -4,7 +4,7 @@ import type { BodyEntry, MuscleId, ProgramExercise, Session, SessionExercise, Se
 import { addDays, bySessionAsc, fromISO, mondayOf } from "../dates";
 import { setsFor } from "../mesocycle";
 import { bestE1rm, increaseStep, mainLoad, predictReps, prsBySession, suggest, toKg, workSets } from "../progression";
-import { weightTrend } from "../visual";
+import { weightTrend, type Absence } from "../visual";
 
 // AUG.CORE — Camada 2: Modelo do Operador ("Gêmeo Digital").
 // Separa o que é declarado/persistido (`OperatorMemory`) do que é derivado em O(N) (`OperatorState`).
@@ -68,6 +68,8 @@ export interface OperatorMemory {
   mesoHistory: MesoSummary[];
   /** Último `mesoStart` visto: quando muda, o ciclo anterior é fechado e resumido mesmo antes da 7ª semana. */
   lastMesoStart?: string;
+  /** Ausências declaradas (doença, viagem): a semana coberta não quebra a sequência. Ficam guardadas depois de passar. */
+  absences?: Absence[];
 }
 
 export const EMPTY_OPERATOR_MEMORY: OperatorMemory = {
@@ -134,12 +136,27 @@ export function sanitizeOperatorMemory(raw: unknown): OperatorMemory {
   const lastMesoStart = typeof obj.lastMesoStart === "string" && ISO_DATE_RE.test(obj.lastMesoStart) ? obj.lastMesoStart : undefined;
   const constraints = Array.isArray(obj.constraints) ? obj.constraints.filter(isConstraint) : [];
   const mesoHistory = Array.isArray(obj.mesoHistory) ? obj.mesoHistory.filter(isMesoSummary) : [];
+  const absences = Array.isArray(obj.absences)
+    ? obj.absences
+        .filter(
+          (a): a is Absence =>
+            !!a &&
+            typeof a.from === "string" &&
+            typeof a.until === "string" &&
+            ISO_DATE_RE.test(a.from) &&
+            ISO_DATE_RE.test(a.until) &&
+            a.from <= a.until,
+        )
+        .map((a) => ({ from: a.from, until: a.until }))
+        .slice(-50)
+    : [];
   return {
     version: 1,
     ...(calibrationUntil ? { calibrationUntil } : {}),
     ...(lastMesoStart ? { lastMesoStart } : {}),
     constraints,
     mesoHistory,
+    ...(absences.length ? { absences } : {}),
   };
 }
 
@@ -222,6 +239,13 @@ export function mergeOperatorMemory(current: OperatorMemory, incoming: OperatorM
     calibrationUntil: current.calibrationUntil ?? incoming.calibrationUntil,
     constraints: [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     mesoHistory: [...byStart.values()].sort((a, b) => a.start.localeCompare(b.start)),
+    ...(current.absences?.length || incoming.absences?.length
+      ? {
+          absences: [
+            ...new Map([...(incoming.absences ?? []), ...(current.absences ?? [])].map((a) => [`${a.from}|${a.until}`, a])).values(),
+          ].sort((a, b) => a.from.localeCompare(b.from)),
+        }
+      : {}),
   };
 }
 
@@ -354,7 +378,12 @@ interface MuscleSessionPoint {
   beatTop: boolean;
   tooMuchVolume: boolean;
   easyOrGoodVolume: boolean;
+  /** Só trabalho indireto relevante (ex.: supino pesado para o tríceps): reinicia o relógio, não gera sinal. */
+  indirectOnly?: boolean;
 }
+
+/** Séries indiretas (já com o peso de sinergista) a partir das quais um treino conta como estresse para o músculo. */
+export const INDIRECT_STRESS_SETS = 2;
 
 function RestIntervalsOfEntry(entry: SessionExercise): number[] {
   const work = entry.sets.filter((s) => s.done && (s.kind === "work" || s.kind === "drop") && s.doneAt != null);
@@ -484,7 +513,26 @@ export function operatorState(
     }
 
     for (const [m, rec] of perMuscle) {
-      if (rec.directSets <= 0) continue;
+      if (rec.directSets <= 0) {
+        // Treino sem série direta, mas com trabalho indireto relevante: vira um ponto de estresse. O intervalo seguinte
+        // passa a contar dele (senão o app via "recupera devagar" quando, no meio, houve um supino pesado).
+        if (rec.sets >= INDIRECT_STRESS_SETS) {
+          musclePoints.get(m)!.push({
+            date: s.date,
+            week: s.week,
+            at,
+            sets: Math.ceil(rec.sets),
+            directSets: 0,
+            sleepBad,
+            underFirstSetAtSameOrLowerLoad: false,
+            beatTop: false,
+            tooMuchVolume: false,
+            easyOrGoodVolume: false,
+            indirectOnly: true,
+          });
+        }
+        continue;
+      }
       musclePoints.get(m)!.push({
         date: s.date,
         week: s.week,
@@ -513,6 +561,10 @@ export function operatorState(
     for (let i = 1; i < pts.length; i++) {
       const prev = pts[i - 1];
       const curr = pts[i];
+      // Ponto de estresse indireto: só reinicia o relógio (o próximo par mede a partir dele), sem sinal.
+      if (curr.indirectOnly) continue;
+      // Intervalo medido de um estresse indireto: a fadiga pode ser do supino, não do tríceps. Sem sinal.
+      if (prev.indirectOnly) continue;
       const hours = (curr.at - prev.at) / 3600_000;
       if (hours < 16 || hours > 168) continue;
       const expected = baseRecoveryHours(prev.sets);

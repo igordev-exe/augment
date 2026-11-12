@@ -2,7 +2,7 @@ import { MUSCLE_ORDER, programDays, exOf, synergistsOf } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { BodyEntry, BodyGoal, ExerciseFeedback, MuscleId, Session, SetEntry } from "../data/types";
 import { addDays, daysBetween, mondayOf } from "./dates";
-import { e1rm, historyOf, toKg, workSets } from "./progression";
+import { entryE1rm, historyOf, workSets } from "./progression";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
 // Telemetria visual da tela Progresso: mapa muscular, mapa de atividade do ano, ritmo do peso e força relativa.
@@ -218,7 +218,13 @@ export interface ActivityGrid {
   longestStreak: number;
 }
 
-export function activityGrid(sessions: Session[], today: string, perWeekTarget: number, numWeeks = 53): ActivityGrid {
+export function activityGrid(
+  sessions: Session[],
+  today: string,
+  perWeekTarget: number,
+  numWeeks = 53,
+  absences: Absence[] = [],
+): ActivityGrid {
   const end = mondayOf(today);
   const weeks = Array.from({ length: numWeeks }, (_, i) => addDays(end, -7 * (numWeeks - 1 - i)));
   const from = weeks[0];
@@ -244,7 +250,7 @@ export function activityGrid(sessions: Session[], today: string, perWeekTarget: 
     d.level = d.sets === 0 ? 1 : r < 0.35 ? 1 : r < 0.65 ? 2 : r < 0.9 ? 3 : 4;
   }
 
-  const { streak, longest } = weekStreaks(done, today, perWeekTarget);
+  const { streak, longest } = weekStreaks(done, today, perWeekTarget, absences);
   return {
     weeks,
     days,
@@ -255,8 +261,22 @@ export function activityGrid(sessions: Session[], today: string, perWeekTarget: 
   };
 }
 
-/** Sequência de semanas com a meta cumprida. A semana atual só conta se já bateu a meta (não quebra a sequência). */
-export function weekStreaks(sessions: Session[], today: string, target: number): { streak: number; longest: number } {
+/** Período de ausência declarada (doença, viagem): datas locais, inclusivas. */
+export interface Absence {
+  from: string;
+  until: string;
+}
+
+/**
+ * Sequência de semanas com a meta cumprida. A semana atual só conta se já bateu a meta (não quebra a sequência).
+ * Semana que não bateu a meta, mas tem uma ausência declarada, fica congelada: não zera nem soma.
+ */
+export function weekStreaks(
+  sessions: Session[],
+  today: string,
+  target: number,
+  absences: Absence[] = [],
+): { streak: number; longest: number } {
   const goal = Math.max(1, target);
   const perWeek = new Map<string, number>();
   for (const s of sessions) {
@@ -265,25 +285,27 @@ export function weekStreaks(sessions: Session[], today: string, target: number):
     perWeek.set(w, (perWeek.get(w) ?? 0) + 1);
   }
   if (!perWeek.size) return { streak: 0, longest: 0 };
+  const hit = (w: string) => (perWeek.get(w) ?? 0) >= goal;
+  const excused = (w: string) => absences.some((a) => a.from <= addDays(w, 6) && a.until >= w);
 
   const current = mondayOf(today);
   let streak = 0;
   let w = current;
-  if ((perWeek.get(w) ?? 0) >= goal) streak = 1;
+  if (hit(w)) streak = 1;
   w = addDays(w, -7);
-  while ((perWeek.get(w) ?? 0) >= goal) {
-    streak += 1;
+  const first = [...perWeek.keys()].sort()[0];
+  while (w >= first && (hit(w) || excused(w))) {
+    if (hit(w)) streak += 1;
     w = addDays(w, -7);
   }
 
-  const first = [...perWeek.keys()].sort()[0];
   let longest = 0;
   let run = 0;
   for (let x = first; x <= current; x = addDays(x, 7)) {
-    if ((perWeek.get(x) ?? 0) >= goal) {
+    if (hit(x)) {
       run += 1;
       longest = Math.max(longest, run);
-    } else if (x !== current) run = 0;
+    } else if (x !== current && !excused(x)) run = 0;
   }
   return { streak, longest: Math.max(longest, streak) };
 }
@@ -319,6 +341,35 @@ function weightPoints(entries: BodyEntry[]): { date: string; kg: number }[] {
     .filter((e) => e.weightKg != null && e.weightKg > 0)
     .map((e) => ({ date: e.date, kg: e.weightKg! }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Linha do gráfico de peso: para cada pesagem, a média dos últimos `days` dias (não das últimas N pesagens), com
+ * cada pesagem valendo pelos dias que ela "cobre" até a seguinte (no máximo `days`). Pesagens espaçadas não misturam
+ * semanas diferentes, e três pesagens num dia não pesam mais que uma semana inteira de uma só.
+ */
+export function weightLine(points: { date: string; kg: number }[], days = 7): { date: string; kg: number }[] {
+  // Várias pesagens no mesmo dia viram uma (a média do dia).
+  const byDay = new Map<string, number[]>();
+  for (const p of points) byDay.set(p.date, [...(byDay.get(p.date) ?? []), p.kg]);
+  const daily = [...byDay.entries()]
+    .map(([date, kgs]) => ({ date, kg: kgs.reduce((a, b) => a + b, 0) / kgs.length }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const at = new Map<string, number>();
+  daily.forEach((d, i) => {
+    let sum = 0;
+    let wsum = 0;
+    for (let j = i; j >= 0; j--) {
+      const age = daysBetween(daily[j].date, d.date);
+      if (age >= days) break;
+      // Dias que esta pesagem cobre dentro da janela: até a próxima (a mais recente vale 1 dia).
+      const w = j === i ? 1 : Math.min(days - age, daysBetween(daily[j].date, daily[j + 1].date));
+      sum += daily[j].kg * w;
+      wsum += w;
+    }
+    at.set(d.date, sum / wsum);
+  });
+  return points.map((p) => ({ date: p.date, kg: at.get(p.date)! }));
 }
 
 export function weightTrend(entries: BodyEntry[]): WeightTrend | null {
@@ -420,7 +471,7 @@ export function relativeStrength(sessions: Session[], entries: BodyEntry[]): Rel
       const hist = historyOf(done, ex.id);
       const ratios = hist
         .map(({ session, entry }) => {
-          const best = Math.max(0, ...workSets(entry, false).map((s) => e1rm(toKg(s.weight!, entry.unit), s.reps!)));
+          const best = entryE1rm(entry, "recorde")?.value ?? 0;
           const bw = bodyweightAt(entries, session.date);
           return best > 0 && bw ? { best, bw, ratio: best / bw } : null;
         })

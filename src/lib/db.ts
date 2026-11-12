@@ -4,6 +4,7 @@ import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
 import { PERSONAS } from "../data/personas";
 import { closeFinishedMesos, mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
+import type { Absence } from "./visual";
 import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
 
@@ -179,6 +180,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     units: sanitizeUnits(s.units),
     increments: sanitizeIncrements(s.increments),
     machineWeights: sanitizeMachineWeights(s.machineWeights),
+    barWeightKg: typeof s.barWeightKg === "number" && s.barWeightKg > 0 && s.barWeightKg <= 50 ? s.barWeightKg : undefined,
     swaps: sanitizeRecordString(s.swaps),
     videos: sanitizeRecordString(s.videos),
     exerciseNotes: sanitizeRecordString(s.exerciseNotes),
@@ -400,6 +402,16 @@ export async function upsertConstraint(c: Constraint): Promise<OperatorMemory> {
     const cur = await loadOperatorMemory();
     const rest = cur.constraints.filter((x) => x.id !== c.id && x.kind !== c.kind);
     const next = sanitizeOperatorMemory({ ...cur, constraints: [...rest, c] });
+    await db.kv.put({ key: "operator-memory", value: next });
+    return next;
+  });
+}
+
+/** Guarda uma ausência declarada (doença, viagem) na memória do operador: a semana não quebra a sequência. */
+export async function addAbsence(a: Absence): Promise<OperatorMemory> {
+  return db.transaction("rw", db.kv, async () => {
+    const cur = await loadOperatorMemory();
+    const next = sanitizeOperatorMemory({ ...cur, absences: [...(cur.absences ?? []), a] });
     await db.kv.put({ key: "operator-memory", value: next });
     return next;
   });

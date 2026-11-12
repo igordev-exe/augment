@@ -105,6 +105,8 @@ const ToastCtx = createContext<ToastFn>(() => {});
 
 /** Vibrar nos avisos de atenção/perigo (o Shell liga conforme Ajustes → vibrar). */
 let vibrateOnWarn = true;
+/** Vibração do recorde: dois toques curtos e um longo (o fim do descanso é longo-longo-longo). */
+export const RECORD_BUZZ = [30, 50, 30, 50, 160];
 export function setToastVibrate(on: boolean) {
   vibrateOnWarn = on;
 }
@@ -145,6 +147,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToast({ msg, tone, fx, action, at: Date.now() });
       arm(toastDuration(msg, !!action));
       if (vibrateOnWarn && (tone === "warn" || tone === "danger")) vibrate([40, 60, 40]);
+      // Recorde e meta batida (efeito glitch): pulso próprio, curto-curto-longo, diferente do fim do descanso.
+      else if (vibrateOnWarn && fx === "glitch") vibrate(RECORD_BUZZ);
     },
     [arm],
   );

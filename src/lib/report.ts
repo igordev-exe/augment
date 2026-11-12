@@ -4,7 +4,7 @@ import { SCIENCE } from "../data/science";
 import type { MuscleId, Session, Unit } from "../data/types";
 import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates";
 import { rirRange, setsFor, weekFor } from "./mesocycle";
-import { bestE1rm, e1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
+import { bestE1rm, entryE1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
 import { restsBefore, volumeAdvice, type VolumeAdvice } from "./engine";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
@@ -399,10 +399,20 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
 
   for (const ex of allProgramEx) {
     // Considera sessões do ciclo; para comparar o pico, prefere última sessão fora do deload quando disponível.
-    const hits = inCycle
+    const allHits = inCycle
       .map((s) => ({ session: s, entry: s.exercises.find((e) => e.exId === ex.id) }))
       .filter((x): x is { session: Session; entry: Session["exercises"][number] } => !!x.entry && workSets(x.entry).length > 0);
-    if (!hits.length) continue;
+    if (!allHits.length) continue;
+
+    // Compara a mesma variante: a titular se tiver 2+ sessões no ciclo, senão a mais usada. Misturar a titular com
+    // uma alternativa mais leve fazia o relatório ver "queda" e sugerir tirar série.
+    const byAlt = new Map<string, typeof allHits>();
+    for (const h of allHits) {
+      const k = h.entry.alt || "";
+      byAlt.set(k, [...(byAlt.get(k) ?? []), h]);
+    }
+    const own = byAlt.get("") ?? [];
+    const hits = own.length >= 2 ? own : [...byAlt.values()].sort((a, b) => b.length - a.length)[0];
 
     const first = hits[0];
     const nonDeloadHits = hits.filter((h) => h.session.week !== 7);
@@ -417,11 +427,13 @@ export function mesoReport(all: Session[], mesoStart: string, trainingDays: numb
     const firstRawLoad = mainLoad(fWork) ?? fWork[0].weight!;
     const firstLoad = conv(firstRawLoad, first.entry.unit);
     const firstReps = Math.max(...fWork.filter((s) => s.weight === firstRawLoad).map((s) => s.reps!));
-    const firstE1rm = Math.max(...fWork.map((s) => e1rm(toKg(s.weight!, first.entry.unit), s.reps!)));
+    // Régua de comparação (soma o que sobrou, sem teto de reps): a semana 1 para com 2–3 sobrando, a 6 vai à falha.
+    const firstE1rm = entryE1rm(first.entry, "comparacao")?.value;
 
     const lastLoad = mainLoad(lWork) ?? lWork[0].weight!;
     const lastReps = Math.max(...lWork.filter((s) => s.weight === lastLoad).map((s) => s.reps!));
-    const lastE1rm = Math.max(...lWork.map((s) => e1rm(toKg(s.weight!, last.entry.unit), s.reps!)));
+    const lastE1rm = entryE1rm(last.entry, "comparacao")?.value;
+    if (firstE1rm == null || lastE1rm == null) continue;
 
     const deltaLoad = Number((lastLoad - firstLoad).toFixed(2));
     const deltaE1rmPct = firstE1rm > 0 ? Math.round(((lastE1rm - firstE1rm) / firstE1rm) * 100) : 0;

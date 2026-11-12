@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { programDays } from "../../data/program";
-import type { BodyEntry, Settings } from "../../data/types";
+import type { BodyEntry, Session, Settings } from "../../data/types";
 import { DEFAULT_SETTINGS } from "../db";
 import { addDays } from "../dates";
 import { setsFor } from "../mesocycle";
@@ -16,7 +16,7 @@ import {
   type Constraint,
   type OperatorMemory,
 } from "./operator";
-import { explainLoad, planDay } from "./planner";
+import { explainLoad, planDay, setFloor, trimIsolatesForLowDay } from "./planner";
 
 // Garantias do AUG.CORE: o que o planejador NUNCA faz, sob muitas combinações de restrição e operador.
 // Operadores vêm do simulador (sementes fixas), então o teste é determinístico.
@@ -205,5 +205,57 @@ describe("AUG.CORE: intenções não disparam por engano", () => {
     expect(matchIntent("descansei 90 min entre o almoço e o treino")).toBeNull();
     expect(matchIntent("por que treinar 5 dias?")).toBeNull();
     expect(matchIntent("qual a melhor hora para treinar?")).toBeNull();
+  });
+});
+
+describe("check-in de baixa: tirar 1 série dos isolados (M6)", () => {
+  const defs = new Map(programDays().flatMap((d) => d.exercises.map((e) => [e.id, e] as const)));
+  const defOf = (e: { exId: string }) => defs.get(e.exId);
+
+  it("nunca fica abaixo do piso e nunca tira série já feita, com qualquer número de séries e de séries feitas", () => {
+    for (const day of programDays()) {
+      for (let total = 1; total <= 5; total++) {
+        for (let doneCount = 0; doneCount <= total; doneCount++) {
+          const session: Session = {
+            id: "s",
+            dayId: day.id,
+            date: TODAY,
+            week: 3,
+            startedAt: 0,
+            status: "active",
+            exercises: day.exercises.map((ex) => ({
+              exId: ex.id,
+              unit: "kg",
+              sets: Array.from({ length: total }, (_, i) => ({
+                id: `${ex.id}-${i}`,
+                kind: "work" as const,
+                weight: 50,
+                reps: 10,
+                done: i < doneCount,
+              })),
+            })),
+          };
+          const { session: out, removed } = trimIsolatesForLowDay(session, defOf);
+          let expected = 0;
+          for (const [i, e] of out.exercises.entries()) {
+            const def = defOf(e)!;
+            const before = session.exercises[i];
+            const work = e.sets.filter((s) => s.kind === "work");
+            // Feitas continuam todas.
+            expect(work.filter((s) => s.done).length).toBe(before.sets.filter((s) => s.done).length);
+            // Composto não muda; isolado nunca abaixo de 1.
+            if (def.compound) expect(work.length).toBe(before.sets.length);
+            else {
+              expect(work.length).toBeGreaterThanOrEqual(Math.min(setFloor(def), before.sets.length));
+              expect(before.sets.length - work.length).toBeLessThanOrEqual(1);
+              expected += before.sets.length - work.length;
+            }
+          }
+          expect(removed).toBe(expected);
+          // O programa não muda: só a sessão aberta.
+          expect(defs.get(day.exercises[0].id)).toBe(day.exercises[0]);
+        }
+      }
+    }
   });
 });

@@ -14,7 +14,7 @@ import { useProgram, useSessions, useSettings, useToast, useToday } from "../lib
 import { addExercise, exerciseFromLibrary } from "../lib/program-edit";
 import { setsFor, weekFor } from "../lib/mesocycle";
 import { CommunityCard } from "../components/CommunityCard";
-import { e1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, recordsOf, toKg, workSets } from "../lib/progression";
+import { entryE1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, recordsOf, toKg, workSets } from "../lib/progression";
 
 function youtubeId(url: string): string | null {
   try {
@@ -312,9 +312,10 @@ function ExerciseProgress({
     const l = mainLoad(workSets(h.entry, false));
     return l == null ? null : conv(l, h.entry.unit);
   });
+  // Régua de recorde (mesma da lista de recordes e dos amigos), convertida para a unidade do gráfico.
   const best = hist.map((h) => {
-    const vals = workSets(h.entry).map((s) => e1rm(conv(s.weight!, h.entry.unit), s.reps!));
-    return vals.length ? Math.max(...vals) : null;
+    const kg = entryE1rm(h.entry, "recorde")?.value;
+    return kg == null ? null : conv(kg, "kg");
   });
   const u = ` ${unit}`;
 

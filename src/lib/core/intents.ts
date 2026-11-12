@@ -1,7 +1,8 @@
 import { LIB_BY_ID } from "../../data/library";
 import { dayById, MUSCLE_LABEL, programDays, shortName } from "../../data/program";
 import type { MuscleId, ProgramExercise, Session, Settings } from "../../data/types";
-import { addDays, weekdayName } from "../dates";
+import { addDays, shortDate, weekdayName } from "../dates";
+import type { Absence } from "../visual";
 import { reentryFor, setsFor, weekFor } from "../mesocycle";
 import { historyOf, increaseStep } from "../progression";
 import { planAhead } from "../schedule";
@@ -31,7 +32,9 @@ export interface IntentMatch {
 
 export interface IntentProposal {
   /** Restrição temporária que só vai para o `OperatorMemory` se a pessoa confirmar no cartão. */
-  constraint: Constraint;
+  constraint?: Constraint;
+  /** Ausência declarada (doença, viagem) para guardar na memória: a semana não quebra a sequência. */
+  absence?: Absence;
   /** Texto do botão de confirmar. */
   confirmLabel: string;
 }
@@ -143,7 +146,24 @@ export function matchIntent(rawText: string): IntentMatch | null {
   }
 
   // 4. Faltei / perdi treino
-  if (hasAny(t, ["faltei", "perdi o treino", "perdi treino", "perdi dois treinos", "nao consegui treinar", "nao treinei"])) {
+  if (
+    hasAny(t, [
+      "faltei",
+      "perdi o treino",
+      "perdi treino",
+      "perdi dois treinos",
+      "nao consegui treinar",
+      "nao treinei",
+      "fiquei doente",
+      "estou doente",
+      "estava doente",
+      "gripado",
+      "gripada",
+      "viajei",
+      "estive viajando",
+      "estava viajando",
+    ])
+  ) {
     return { kind: "faltei_treino" };
   }
 
@@ -330,6 +350,22 @@ export function handleIntent(
         : "Siga a fila normalmente nos seus próximos dias planejados:",
       nextThree,
     ];
+    // Propõe guardar a ausência (do dia seguinte ao último treino até hoje): a semana não quebra a sequência.
+    const lastDone = done
+      .map((s) => s.date)
+      .sort()
+      .pop();
+    const from = lastDone ? addDays(lastDone, 1) : undefined;
+    // Só com 2+ dias sem treino (treinou ontem: não há o que justificar).
+    if (from && from <= addDays(today, -1)) {
+      lines.push("Se foi doença ou viagem, dá para registrar a ausência: essas semanas não quebram a sua sequência.");
+      return {
+        matched: true,
+        intent,
+        reply: lines.join("\n\n"),
+        proposal: { absence: { from, until: today }, confirmLabel: `Registrar ausência de ${shortDate(from)} a ${shortDate(today)}` },
+      };
+    }
     return { matched: true, intent, reply: lines.join("\n\n") };
   }
 

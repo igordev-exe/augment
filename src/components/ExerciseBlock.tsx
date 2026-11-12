@@ -6,12 +6,14 @@ import type { ExerciseFeedback, ProgramExercise, SessionExercise, SetEntry, Unit
 import { shortDate } from "../lib/dates";
 import { rirRange, setsFor, stopFor, WEEK_RULES } from "../lib/mesocycle";
 import {
-  e1rm,
+  entryE1rm,
   formatWeight,
   mainLoad,
   loadBasis,
   overloadOptions,
+  barWeightIn,
   platesForBarbell,
+  stepWeight,
   revertBackoff,
   summarizeSets,
   toKg,
@@ -20,6 +22,8 @@ import {
   type ExerciseHistoryItem,
 } from "../lib/progression";
 import { newSet } from "../lib/sessions";
+import { suspiciousSet } from "../lib/sanity";
+import { useToast } from "../lib/hooks";
 import { liveNudges } from "../lib/engine";
 import type { OperatorState } from "../lib/core/operator";
 import { explainLoad } from "../lib/core/planner";
@@ -42,6 +46,8 @@ export function ExerciseBlock({
   recentHistory,
   step,
   availableWeights,
+  barKg,
+  altNote,
   intensifierToday,
   setAdjust = 0,
   operator,
@@ -64,6 +70,10 @@ export function ExerciseBlock({
   recentHistory: ExerciseHistoryItem[];
   step: number;
   availableWeights?: number[];
+  /** Peso da barra (kg) dos Ajustes, para a conta de anilhas. */
+  barKg?: number;
+  /** Primeira vez numa alternativa: a carga do titular como referência. */
+  altNote?: string | null;
   /** Intensificador liberado hoje para este exercício (cota da semana, motor de decisões). */
   intensifierToday: boolean;
   /** Séries a mais/menos do ajuste de fim de mesociclo. */
@@ -79,6 +89,7 @@ export function ExerciseBlock({
   onUnit: (u: Unit) => void;
 }) {
   const lib = useLibraryEntry(ex.lib);
+  const toast = useToast();
   const alts = lib?.alternatives ?? [];
   const planned = setsFor(ex, week, setAdjust);
   const workAll = entry.sets.filter((s) => s.kind !== "warmup");
@@ -130,6 +141,10 @@ export function ExerciseBlock({
   const askRirId = active
     ? entry.sets.filter((s) => s.done && s.kind !== "warmup" && s.rir == null).sort((a, b) => (b.doneAt ?? 0) - (a.doneAt ?? 0))[0]?.id
     : undefined;
+  // Maior carga de trabalho já registrada neste exercício (antes de hoje), para a trava contra erro de digitação.
+  const historyMaxKg = recentHistory.length
+    ? Math.max(0, ...recentHistory.flatMap((h) => workSets(h.entry, false).map((x) => toKg(x.weight!, h.entry.unit))))
+    : undefined;
   const fb = entry.feedback;
   const askFeedback = active && complete && !fb?.skipped && !(fb?.pump && fb?.volume && fb?.joint);
   // Com o exercício fechado (fecha sozinho na última série), o RIR que falta vai para o cartão de baixo.
@@ -140,7 +155,7 @@ export function ExerciseBlock({
   const isOlympicBarbell =
     !entry.alt && !!lib?.equipment && /barra/i.test(lib.equipment) && !/barra w|barra fixa|polia|guiada/i.test(lib.equipment);
   const refLoad = sug.weight ?? mainLoad(entry.sets);
-  const plateBreakdown = isOlympicBarbell ? platesForBarbell(refLoad, entry.unit) : null;
+  const plateBreakdown = isOlympicBarbell ? platesForBarbell(refLoad, entry.unit, barWeightIn(entry.unit, barKg)) : null;
   const basis = loadBasis(ex.name, lib?.equipment, ex.perSide);
 
   // F7: Mini-histórico das últimas 5 sessões
@@ -148,7 +163,7 @@ export function ExerciseBlock({
     const ws = workSets(h.entry, false);
     const load = mainLoad(ws) ?? ws[0]?.weight ?? 0;
     const topReps = Math.max(0, ...ws.filter((s) => s.weight === load).map((s) => s.reps ?? 0));
-    const est = Math.max(0, ...ws.map((s) => e1rm(toKg(s.weight!, h.entry.unit), s.reps!)));
+    const est = entryE1rm(h.entry, "recorde")?.value ?? 0;
     return {
       date: shortDate(h.session.date),
       summary: `${formatWeight(load)}×${topReps}`,
@@ -187,12 +202,29 @@ export function ExerciseBlock({
     };
   });
   const nextPlan = plans.find((p) => !p.done);
+  /** Botões − e + da próxima série (no PlanCard): peso pelo passo do exercício, reps de 1 em 1. */
+  function nudgeNext(field: "weight" | "reps", dir: 1 | -1) {
+    if (!nextPlan) return;
+    void mutate((e) => {
+      const s = e.sets.find((x) => x.id === nextPlan.id);
+      if (!s || s.done) return;
+      if (field === "weight") {
+        s.weight = stepWeight(s.weight ?? nextPlan.weight ?? 0, dir, step, availableWeights);
+        s.suggested = false;
+      } else {
+        s.reps = Math.max(1, (s.reps ?? nextPlan.reps ?? ex.reps[0]) + dir);
+      }
+    });
+  }
   const rirLabel = rirTarget[0] === rirTarget[1] ? `${rirTarget[0]}` : `${rirTarget[0]}–${rirTarget[1]}`;
-  const nextReason = nextPlan?.drop
-    ? "Uma série caiu abaixo do piso: esta vai com −15% para fechar dentro da faixa."
-    : lowDay
-      ? "Dia de baixa no check-in: pare com +1 rep de sobra."
-      : `Até ${stop.label.toLowerCase()}.`;
+  const nextReason =
+    altNote && sug.kind === "first"
+      ? altNote
+      : nextPlan?.drop
+        ? "Uma série caiu abaixo do piso: esta vai com −15% para fechar dentro da faixa."
+        : lowDay
+          ? "Dia de baixa no check-in: pare com +1 rep de sobra."
+          : `Até ${stop.label.toLowerCase()}.`;
 
   let workCounter = 0;
   let warmupCounter = 0;
@@ -230,7 +262,14 @@ export function ExerciseBlock({
         revertBackoff(e, ex.reps[0], step, availableWeights);
       }
     });
-    if (fresh && becameDone) onSetDone(fresh, setId);
+    if (fresh && becameDone) {
+      onSetDone(fresh, setId);
+      // Trava contra erro de digitação (800 no lugar de 80): marca, mas avisa com "Corrigir" (desmarca para editar).
+      const s = fresh.sets.find((x) => x.id === setId);
+      const why = s && s.kind !== "warmup" ? suspiciousSet(s, fresh.unit, historyMaxKg) : null;
+      if (why)
+        toast(`Confira: ${why}`, "warn", undefined, { label: "Corrigir", run: () => void toggleDone(setId, null, null, null, null) });
+    }
   }
 
   function addSet(kind: SetEntry["kind"]) {
@@ -425,6 +464,7 @@ export function ExerciseBlock({
               basis={basis}
               overload={overload}
               onOverload={applyOverload}
+              onNudge={nudgeNext}
               rir={rirLabel}
               reason={nextReason}
               alerts={sug.notes.length + twinFactors.length + (lowDay ? 1 : 0)}
