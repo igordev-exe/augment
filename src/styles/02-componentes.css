@@ -95,7 +95,8 @@
   text-decoration: none;
   text-align: center;
   white-space: normal;
-  overflow-wrap: anywhere;
+  /* break-word (não anywhere): uma palavra nunca se parte em "CONTINUA / R"; só quebra entre palavras. */
+  overflow-wrap: break-word;
   max-width: 100%;
 }
 .btn svg {

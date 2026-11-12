@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (210 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (219 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -253,14 +253,15 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 **`progression.ts`**: o coração das cargas.
 
-| Grupo                     | Funções                                                                                                                                         |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unidades e arredondamento | `toKg`, `e1rm`, `roundTo`, `formatWeight`, `snapWeight`, `nextAvailableWeight`                                                                  |
-| Barra e aquecimento       | `platesForBarbell`, `warmupSpec`, `workSets`, `mainLoad`                                                                                        |
-| Sugestão                  | `suggest()`: `SuggestionKind` first/up/same/down/deload; `predictReps`, `increaseStep`, `loadRef`                                               |
-| Recuo                     | `backoffWeight`, `revertBackoff` (limpa o `suggested`)                                                                                          |
-| Histórico e recordes      | `historyOf(sessions, exId, alt?, libId?)` (cai para o histórico do mesmo `libId`), `recordsOf`, `prsBySession`, `prsInSession`, `summarizeSets` |
-| Estagnação e regressão    | `stallOf` (`STALL_SESSIONS = 3`), `regressionOf`, `bestE1rm`, `suggestNext`                                                                     |
+| Grupo                     | Funções                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unidades e arredondamento | `toKg`, `e1rm`, `roundTo`, `formatWeight`, `snapWeight`, `nextAvailableWeight`                                                                                           |
+| Barra e aquecimento       | `platesForBarbell`, `warmupSpec`, `workSets`, `mainLoad`                                                                                                                 |
+| Sugestão                  | `suggest()`: `SuggestionKind` first/up/same/down/deload; `predictReps`, `increaseStep`, `loadRef`                                                                        |
+| Recuo                     | `backoffWeight`, `revertBackoff` (limpa o `suggested`)                                                                                                                   |
+| Histórico e recordes      | `historyOf(sessions, exId, alt?, libId?)` (cai para o histórico do mesmo `libId`), `recordsOf`, `prsBySession`, `prsInSession`, `summarizeSets`                          |
+| Estagnação e regressão    | `stallOf` (`STALL_SESSIONS = 3`), `regressionOf`, `bestE1rm`, `suggestNext`                                                                                              |
+| Sobrecarga e leitura      | `overloadOptions` (+1 rep na mesma carga ou próxima carga com reps previstas; botões no PlanCard), `loadBasis` ("cada halter", "total, com a barra", "na pilha do cabo") |
 
 **`mesocycle.ts`**:
 
@@ -290,11 +291,18 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
   - fadiga e recuperação: `muscleStatus`, `recoveryHours`, `fatiguePct`, `fatigueLevel`, `hoursToReady`,
     `readiness`;
   - atividade: `dailySets`, `activityGrid`, `weekStreaks`;
-  - corpo: `weightTrend`, `goalStatus`, `GOAL_RANGES`, `bodyweightAt`, `relativeStrength`.
+  - corpo: `weightTrend`, `goalStatus`, `GOAL_RANGES`, `bodyweightAt`, `relativeStrength`;
+  - **fadiga pela intensidade real**: `MuscleStatus.intensity` (0,6–1,3) vem de `setEffort` (RIR/falha),
+    `feedbackFactor` (pump, volume) e `noteFactor` (nota do treino ou do exercício: "ruim", "leve" × "pesado",
+    "intenso"). Escala o pico (`fatiguePct`) e as horas (`neededHours`, ±25%). `fatigueColor(pct)` dá o tom contínuo
+    ciano → âmbar → vermelho (lista, medidor e corpo).
 - `slots.ts`: `volumeSlots`, `slotCells` e `SLOT_COLUMNS` (o antebraço fica em "Tronco").
 - `attributes.ts`: `attributes()`, com seis atributos: forca, volume, consistencia, recuperacao, intensidade e
   composicao.
 - `achievements.ts`: `computeAchievements`.
+- `profile.ts`: `profileTelemetry` (volume de 8 semanas, consistência, recordes no ciclo), `sessionTopKg`,
+  `operatorSerial`, `tonnes`, `rankOf`. Usado por `components/OperatorProfile` (perfil na conta online) e pelo ranking
+  semanal dos Amigos. Só números reais: nada de seguidores ou curtidas.
 - `hud.ts`: `hudSegments` e `finishLogLines`.
 
 **`program-edit.ts`**: funções puras do montador. Todas recebem um `Program` e devolvem um `Program` novo.
@@ -473,6 +481,8 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 - `docs/`:
   - `aug-core.md`: design do cérebro determinístico (modelo do operador, planejador, presença, intenções);
   - `roadmap-apk.md`: 6 fases; até a fase 4, concluídas;
+  - `melhorias-fable-argon.md`: auditoria externa conferida no código + plano de 15 mudanças em 4 ondas (nada
+    implementado ainda);
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.
 - `.claude/skills/treinador`: skill de debrief a partir de um backup.
@@ -507,26 +517,27 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 - **Datas** são strings locais `AAAA-MM-DD` (`dates.ts`). Nada de `Date` em UTC para dia. `trainingDays` vai de 0 =
   domingo a 6 = sábado; `ProgramDay.weekday` usa 1 = segunda.
 
-## 7. Sistema visual (`src/styles/`, 12 arquivos)
+## 7. Sistema visual (`src/styles/`, 14 arquivos)
 
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
 
-| Arquivo                      | O que guarda                                                                                |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `01-base`                    | tokens do `:root`, reset, layout, tipografia, topo e cabeçalho de página                    |
-| `02-componentes`             | cartões, botões, chips, barra de abas, timer                                                |
-| `03-hoje`                    | banner de missão, faixa de semanas, faixa de dias                                           |
-| `04-treino`                  | cartão do exercício e linhas de série                                                       |
-| `05-comuns`                  | toast, calendário, tabelas, gráfico, formulários, Guia, rodapé, Treinador                   |
-| `06-fadiga`                  | resumo visual do Progresso, mapa de fadiga, anatomia                                        |
-| `07-treino-hud`              | fotos de execução, HUD do treino, próxima série, segurar, menu circular, log                |
-| `08-progresso`               | séries da semana, roda de atributos, módulos, gráficos, mapa do ano, laudo                  |
-| `09-oficina-relatorio`       | Exercícios, modo terminal, deload, relatório, zona de perigo                                |
-| `10-montador-acessibilidade` | montador, alvos de toque, telas estreitas, letra grande do sistema                          |
-| `11-online`                  | conta, amigos, comparação, moderação                                                        |
-| `12-primeiro-uso-erro`       | assistente de primeiro uso e tela de erro                                                   |
-| `13-atmosfera`               | horizonte em perspectiva, cartões que "ligam", LEDs, carga nos botões, varredura biométrica |
+| Arquivo                      | O que guarda                                                                                                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01-base`                    | tokens do `:root`, reset, layout, tipografia, topo e cabeçalho de página                                                                                             |
+| `02-componentes`             | cartões, botões, chips, barra de abas, timer                                                                                                                         |
+| `03-hoje`                    | banner de missão, faixa de semanas, faixa de dias                                                                                                                    |
+| `04-treino`                  | cartão do exercício e linhas de série                                                                                                                                |
+| `05-comuns`                  | toast, calendário, tabelas, gráfico, formulários, Guia, rodapé, Treinador                                                                                            |
+| `06-fadiga`                  | resumo visual do Progresso, mapa de fadiga, anatomia                                                                                                                 |
+| `07-treino-hud`              | fotos de execução, HUD do treino, próxima série, segurar, menu circular, log                                                                                         |
+| `08-progresso`               | séries da semana, roda de atributos, módulos, gráficos, mapa do ano, laudo                                                                                           |
+| `09-oficina-relatorio`       | Exercícios, modo terminal, deload, relatório, zona de perigo                                                                                                         |
+| `10-montador-acessibilidade` | montador, alvos de toque, telas estreitas, letra grande do sistema                                                                                                   |
+| `11-online`                  | conta, amigos, comparação, moderação                                                                                                                                 |
+| `12-primeiro-uso-erro`       | assistente de primeiro uso e tela de erro                                                                                                                            |
+| `13-atmosfera`               | horizonte em perspectiva, cartões que "ligam", LEDs, carga nos botões, varredura biométrica, filtros que quebram linha, blocos recolhidos dos Ajustes (`.set-group`) |
+| `14-rede`                    | portão de identidade (login), perfil do operador (capa, abas Atividade/Telemetria), esquadrão (feed, ranking semanal, sigla)                                         |
 
 **Atmosfera e movimento** (`13-atmosfera.css`): o app é um sistema vivo que a pessoa veste. Horizonte em grade no
 rodapé (`body::after`, atrás de tudo), luz fria no alto, blocos que "ligam" ao entrar (só opacidade e deslocamento:

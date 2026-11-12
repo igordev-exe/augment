@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
@@ -16,6 +16,35 @@ import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
+
+/** Bloco de ajuste recolhido: uma linha com o valor atual; abre para mexer. Menos coisa empilhada na tela. */
+function SetGroup({
+  code,
+  title,
+  value,
+  icon,
+  children,
+}: {
+  code: string;
+  title: string;
+  value: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <details data-augmented-ui="tl-clip br-clip border" className="card set-group">
+      <summary>
+        {icon ? <span className="set-icon avatar">{icon}</span> : <span className="set-code">{code}</span>}
+        <span className="set-title">
+          <strong>{title}</strong>
+          <small>{value}</small>
+        </span>
+        <span className="set-chev" aria-hidden="true" />
+      </summary>
+      <div className="stack set-body">{children}</div>
+    </details>
+  );
+}
 
 export function SettingsScreen() {
   const [settings, update, loaded] = useSettings();
@@ -125,13 +154,12 @@ export function SettingsScreen() {
         </Link>
       )}
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <div className="row" style={{ gap: 12 }}>
-          <span className="avatar" aria-hidden="true">
-            <img src={avatarSrc(settings.persona)} alt="" width={48} height={48} />
-          </span>
-          <h2 className="h-sec">Operador</h2>
-        </div>
+      <SetGroup
+        code="01"
+        title="Operador"
+        value={`${settings.operator || "Sem nome"} · ${personaOf(settings.persona).name}`}
+        icon={<img src={avatarSrc(settings.persona)} alt="" width={40} height={40} />}
+      >
         <span className="label" id="persona-label">
           Aparência
         </span>
@@ -168,10 +196,9 @@ export function SettingsScreen() {
           maxLength={24}
           onBlur={(e) => update({ operator: e.target.value.trim() })}
         />
-      </section>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Mesociclo</h2>
+      <SetGroup code="02" title="Mesociclo" value={week === 0 ? "Periodização fixa" : `Semana ${week} de 7`}>
         {week === 0 ? (
           <p className="small muted">
             O programa em uso (<strong>{program.name}</strong>) usa periodização fixa: mesmas séries e esforço toda semana, sem semana de
@@ -194,18 +221,23 @@ export function SettingsScreen() {
             </button>
           </>
         )}
-      </section>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Treinador (IA)</h2>
+      <SetGroup code="03" title="Treinador (IA)" value="Chave, modelo e profundidade">
         <p className="small muted">Chave da API da Anthropic, modelo e profundidade. A chave fica só neste aparelho e não vai no backup.</p>
         <Link to="/treinador?config=1" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm">
           Configurar treinador
         </Link>
-      </section>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Dias de treino</h2>
+      <SetGroup
+        code="04"
+        title="Dias de treino"
+        value={[1, 2, 3, 4, 5, 6, 0]
+          .filter((d) => settings.trainingDays.includes(d))
+          .map(weekdayShort)
+          .join(" · ")}
+      >
         <p className="small muted">A agenda distribui a sequência só nesses dias.</p>
         <div className="row-wrap">
           {[1, 2, 3, 4, 5, 6, 0].map((d) => (
@@ -225,10 +257,15 @@ export function SettingsScreen() {
             </button>
           ))}
         </div>
-      </section>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Timer de descanso</h2>
+      <SetGroup
+        code="05"
+        title="Timer de descanso"
+        value={
+          [settings.sound && "Som", settings.vibrate && "Vibração", settings.notify && "Aviso"].filter(Boolean).join(" · ") || "Silencioso"
+        }
+      >
         <div className="row-wrap">
           <button
             type="button"
@@ -262,10 +299,9 @@ export function SettingsScreen() {
           O alarme toca com o app aberto. O aviso em outra aba dispara quando o navegador permite em segundo plano (com a tela bloqueada, o
           sistema do celular pode congelar ou silenciar timers web). Mantenha a tela acesa durante o treino.
         </p>
-      </section>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Efeitos visuais</h2>
+      <SetGroup code="06" title="Efeitos visuais" value={{ max: "Máximo", auto: "Automático", min: "Mínimo" }[settings.fx ?? "auto"]}>
         <div className="row-wrap" role="group" aria-label="Nível dos efeitos visuais">
           {(
             [
@@ -290,132 +326,121 @@ export function SettingsScreen() {
           Automático: tudo ligado fora do treino e modo academia durante o protocolo (sem animações em loop, mais bateria). Mínimo: só o
           essencial, sem retícula de toque nem transições. O sistema em &quot;reduzir movimento&quot; sempre vence.
         </p>
-      </section>
+      </SetGroup>
 
       {/* F1: Rotação de acessórios do mesociclo */}
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <details key={`swaps-${loaded}`}>
-          <summary className="h-sec" style={{ cursor: "pointer" }}>
-            Rotação de acessórios no mesociclo
-          </summary>
-          <p className="small muted" style={{ marginTop: 8 }}>
-            Ao fim do deload, troque 2–3 acessórios por alternativas da biblioteca. Os treinos novos já abrem com a variação escolhida,
-            mantendo o histórico separado.
-          </p>
-          <div className="stack" style={{ marginTop: 10, gap: 10 }}>
-            {programDays().flatMap((d) =>
-              d.exercises
-                .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
-                .map((ex) => {
-                  const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
-                  const cur = settings.swaps?.[ex.id] ?? "";
-                  return (
-                    <label key={ex.id} className="stack" style={{ gap: 4 }}>
-                      <span className="small">
-                        <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
-                      </span>
-                      <select
-                        className="input"
-                        value={cur}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          const next = { ...settings.swaps };
-                          if (!v) delete next[ex.id];
-                          else next[ex.id] = v;
-                          update({ swaps: next });
-                        }}
-                      >
-                        <option value="">Titular: {shortName(ex)}</option>
-                        {alts.map((a) => (
-                          <option key={a} value={a}>
-                            Alternativa: {a}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  );
-                }),
-            )}
-          </div>
-        </details>
-      </section>
-
-      {/* F5: Incremento e pesos específicos do aparelho por exercício */}
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <details key={`inc-${loaded}`}>
-          <summary className="h-sec" style={{ cursor: "pointer" }}>
-            Incrementos e pesos do aparelho por exercício
-          </summary>
-          <p className="small muted" style={{ marginTop: 8 }}>
-            Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
-            vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
-          </p>
-          <div className="stack" style={{ marginTop: 10, gap: 12 }}>
-            {programDays().flatMap((d) =>
-              d.exercises.map((ex) => (
-                <div key={ex.id} className="stack" style={{ gap: 4 }}>
-                  <div className="spread small">
-                    <span className="grow">
+      <SetGroup key={`swaps-${loaded}`} code="07" title="Rotação de acessórios" value="Trocar acessórios no fim do deload">
+        <p className="small muted" style={{ marginTop: 8 }}>
+          Ao fim do deload, troque 2–3 acessórios por alternativas da biblioteca. Os treinos novos já abrem com a variação escolhida,
+          mantendo o histórico separado.
+        </p>
+        <div className="stack" style={{ marginTop: 10, gap: 10 }}>
+          {programDays().flatMap((d) =>
+            d.exercises
+              .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
+              .map((ex) => {
+                const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
+                const cur = settings.swaps?.[ex.id] ?? "";
+                return (
+                  <label key={ex.id} className="stack" style={{ gap: 4 }}>
+                    <span className="small">
                       <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
                     </span>
-                    <input
+                    <select
                       className="input"
-                      style={{ width: 84, minHeight: 36, textAlign: "center" }}
-                      inputMode="decimal"
-                      aria-label={`Incremento de ${shortName(ex)}`}
-                      defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
-                      placeholder={formatWeight(ex.increment)}
-                      onBlur={(e) => {
-                        const v = Number(e.target.value.replace(",", "."));
-                        const next = { ...settings.increments };
-                        if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
+                      value={cur}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const next = { ...settings.swaps };
+                        if (!v) delete next[ex.id];
                         else next[ex.id] = v;
-                        update({ increments: next });
+                        update({ swaps: next });
                       }}
-                    />
-                  </div>
+                    >
+                      <option value="">Titular: {shortName(ex)}</option>
+                      {alts.map((a) => (
+                        <option key={a} value={a}>
+                          Alternativa: {a}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              }),
+          )}
+        </div>
+      </SetGroup>
+
+      {/* F5: Incremento e pesos específicos do aparelho por exercício */}
+      <SetGroup key={`inc-${loaded}`} code="08" title="Incrementos e pesos" value="Salto de carga e placas de cada aparelho">
+        <p className="small muted" style={{ marginTop: 8 }}>
+          Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
+          vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
+        </p>
+        <div className="stack" style={{ marginTop: 10, gap: 12 }}>
+          {programDays().flatMap((d) =>
+            d.exercises.map((ex) => (
+              <div key={ex.id} className="stack" style={{ gap: 4 }}>
+                <div className="spread small">
+                  <span className="grow">
+                    <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
+                  </span>
                   <input
                     className="input"
-                    style={{ minHeight: 34, fontSize: "var(--fs-2)" }}
-                    aria-label={`Pesos disponíveis para ${shortName(ex)}`}
-                    placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
-                    defaultValue={
-                      settings.machineWeights?.[ex.id]?.length ? settings.machineWeights[ex.id].map((w) => formatWeight(w)).join(", ") : ""
-                    }
+                    style={{ width: 84, minHeight: 36, textAlign: "center" }}
+                    inputMode="decimal"
+                    aria-label={`Incremento de ${shortName(ex)}`}
+                    defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
+                    placeholder={formatWeight(ex.increment)}
                     onBlur={(e) => {
-                      const raw = e.target.value.trim();
-                      const next = { ...settings.machineWeights };
-                      if (!raw) {
-                        delete next[ex.id];
-                      } else {
-                        const nums = Array.from(
-                          new Set(
-                            raw
-                              .split(/[;\s]+|,\s+(?=\d)/)
-                              .flatMap((tok) =>
-                                tok.includes(",") && tok.split(",").every((p) => Number.isInteger(Number(p))) && tok.split(",").length > 2
-                                  ? tok.split(",")
-                                  : [tok],
-                              )
-                              .map((s) => Number(s.replace(",", ".").trim()))
-                              .filter((n) => Number.isFinite(n) && n > 0 && n <= 1000),
-                          ),
-                        ).sort((a, b) => a - b);
-                        if (nums.length > 0) next[ex.id] = nums;
-                        else delete next[ex.id];
-                      }
-                      update({ machineWeights: next });
+                      const v = Number(e.target.value.replace(",", "."));
+                      const next = { ...settings.increments };
+                      if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
+                      else next[ex.id] = v;
+                      update({ increments: next });
                     }}
                   />
                 </div>
-              )),
-            )}
-          </div>
-        </details>
-      </section>
+                <input
+                  className="input"
+                  style={{ minHeight: 34, fontSize: "var(--fs-2)" }}
+                  aria-label={`Pesos disponíveis para ${shortName(ex)}`}
+                  placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
+                  defaultValue={
+                    settings.machineWeights?.[ex.id]?.length ? settings.machineWeights[ex.id].map((w) => formatWeight(w)).join(", ") : ""
+                  }
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    const next = { ...settings.machineWeights };
+                    if (!raw) {
+                      delete next[ex.id];
+                    } else {
+                      const nums = Array.from(
+                        new Set(
+                          raw
+                            .split(/[;\s]+|,\s+(?=\d)/)
+                            .flatMap((tok) =>
+                              tok.includes(",") && tok.split(",").every((p) => Number.isInteger(Number(p))) && tok.split(",").length > 2
+                                ? tok.split(",")
+                                : [tok],
+                            )
+                            .map((s) => Number(s.replace(",", ".").trim()))
+                            .filter((n) => Number.isFinite(n) && n > 0 && n <= 1000),
+                        ),
+                      ).sort((a, b) => a - b);
+                      if (nums.length > 0) next[ex.id] = nums;
+                      else delete next[ex.id];
+                    }
+                    update({ machineWeights: next });
+                  }}
+                />
+              </div>
+            )),
+          )}
+        </div>
+      </SetGroup>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Backup</h2>
+      <SetGroup code="09" title="Backup" value={settings.lastBackupAt ? `Último: ${shortDate(settings.lastBackupAt)}` : "Nunca exportado"}>
         <p className="small muted">
           Seus treinos ficam só neste aparelho. Exporte um backup de vez em quando e antes de trocar de celular ou limpar o navegador.
           {settings.lastBackupAt ? ` Último backup: ${shortDate(settings.lastBackupAt)}.` : ""}
@@ -464,7 +489,7 @@ export function SettingsScreen() {
             e.target.value = "";
           }}
         />
-      </section>
+      </SetGroup>
 
       <RestorePoints />
 

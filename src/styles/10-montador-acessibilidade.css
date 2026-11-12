@@ -355,7 +355,7 @@ button.chip {
 a.chip {
   max-width: 100%;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .unit-toggle button {
   min-height: 40px;

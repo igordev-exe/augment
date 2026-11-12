@@ -9,6 +9,8 @@ import {
   e1rm,
   formatWeight,
   mainLoad,
+  loadBasis,
+  overloadOptions,
   platesForBarbell,
   revertBackoff,
   summarizeSets,
@@ -85,6 +87,18 @@ export function ExerciseBlock({
   const last = recentHistory[recentHistory.length - 1];
   const trace = explainLoad(ex, recentHistory, planned, week, step, availableWeights, operator);
   const sug = trace.suggestion;
+  // Sobrecarga progressiva sugerida: superar a última vez por +1 rep ou pela próxima carga (só quando o motor manda
+  // manter ou subir; baixar e deload não são dia de bater marca).
+  const overload = sug.kind === "same" || sug.kind === "up" ? overloadOptions(ex, last?.entry, week, step, availableWeights) : [];
+  const applyOverload = (w: number, r: number) =>
+    void mutate((e) => {
+      const pending = e.sets.filter((s) => s.kind === "work" && !s.done);
+      pending.forEach((s, i) => {
+        s.weight = w;
+        s.suggested = false;
+        if (i === 0) s.reps = r;
+      });
+    });
   // Fatores que vêm do que o app aprendeu sobre a pessoa (não da regra de progressão): contam como aviso.
   const twinFactors = trace.factors.filter(
     (f) => f.tag === "articular" || f.tag === "descanso" || f.tag === "fadiga-muscular" || f.tag === "corpo",
@@ -127,6 +141,7 @@ export function ExerciseBlock({
     !entry.alt && !!lib?.equipment && /barra/i.test(lib.equipment) && !/barra w|barra fixa|polia|guiada/i.test(lib.equipment);
   const refLoad = sug.weight ?? mainLoad(entry.sets);
   const plateBreakdown = isOlympicBarbell ? platesForBarbell(refLoad, entry.unit) : null;
+  const basis = loadBasis(ex.name, lib?.equipment, ex.perSide);
 
   // F7: Mini-histórico das últimas 5 sessões
   const miniPoints = recentHistory.slice(-5).map((h) => {
@@ -407,6 +422,9 @@ export function ExerciseBlock({
               title={sug.title}
               plans={plans}
               unit={entry.unit}
+              basis={basis}
+              overload={overload}
+              onOverload={applyOverload}
               rir={rirLabel}
               reason={nextReason}
               alerts={sug.notes.length + twinFactors.length + (lowDay ? 1 : 0)}
@@ -548,7 +566,10 @@ export function ExerciseBlock({
             {active && <span className="tiny faint">Toque no número da série para mais ações.</span>}
             <div className="sets-head">
               <span>Série</span>
-              <span className="center">Peso · {entry.unit}</span>
+              <span className="center">
+                Peso · {entry.unit}
+                <small className="sets-basis">{basis}</small>
+              </span>
               <span className="center">Reps</span>
               <span className="center">Feita</span>
             </div>

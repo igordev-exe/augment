@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SuggestionKind } from "../lib/progression";
-import { formatWeight } from "../lib/progression";
+import { formatWeight, type OverloadOption } from "../lib/progression";
 
 // Cartão único do exercício no treino: a decisão do motor (ex.: "MANTER 85 KG"), a próxima série em destaque
 // (peso × reps × sobra) e a fila de séries. O resto (meta, observações, última vez, histórico) fica numa gaveta
@@ -29,6 +29,9 @@ export function PlanCard({
   title,
   plans,
   unit,
+  basis,
+  overload = [],
+  onOverload,
   rir,
   reason,
   alerts,
@@ -38,6 +41,11 @@ export function PlanCard({
   title: string;
   plans: SetPlan[];
   unit: string;
+  /** O que o peso significa: "cada halter", "total, com a barra"… */
+  basis?: string;
+  /** Formas de superar a última vez (+1 rep, +carga). Tocar aplica na próxima série. */
+  overload?: OverloadOption[];
+  onOverload?: (weight: number, reps: number) => void;
   rir: string;
   reason: string;
   /** Observações dentro da gaveta (aparecem no selo). */
@@ -67,6 +75,20 @@ export function PlanCard({
             <small>reps</small>
             <span className="next-rir">sobra {rir}</span>
           </div>
+          {basis && <span className="next-basis">{basis}</span>}
+          {overload.length > 0 && (
+            <div className="overload" role="group" aria-label="Superar a última vez">
+              <span className="overload-label">Superar a última vez</span>
+              {overload.map((o) => (
+                <button key={o.via} type="button" className="overload-opt" onClick={() => onOverload?.(o.weight, o.reps)}>
+                  <b>
+                    {formatWeight(o.weight)} × {o.reps}
+                  </b>
+                  <small>{o.via === "reps" ? "+1 rep, mesma carga" : "+carga"}</small>
+                </button>
+              ))}
+            </div>
+          )}
           <span className="small muted">{reason}</span>
         </div>
       ) : (
@@ -76,7 +98,8 @@ export function PlanCard({
       <div className="buffer" aria-label="Séries do exercício">
         {plans.map((p) => (
           <span key={p.id} className={`cell${p.done ? " done" : next && p.id === next.id ? " next" : ""}${p.drop ? " drop" : ""}`}>
-            {p.done ? `${formatWeight(p.weight)}×${p.reps}` : next && p.id === next.id ? "▸" : ""}
+            <i>S{p.n}</i>
+            {p.done ? `${formatWeight(p.weight)}×${p.reps}` : next && p.id === next.id ? "AGORA" : "·"}
           </span>
         ))}
       </div>

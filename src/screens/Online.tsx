@@ -1,9 +1,12 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { USERNAME_RE, type BackupMeta, type Sex } from "../../server/src/protocol";
+import { BrandMark } from "../components/Brand";
+import { OperatorProfile } from "../components/OperatorProfile";
+import { weekFor } from "../lib/mesocycle";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
-import { useBodyLog, useSessions, useSettings, useToast } from "../lib/hooks";
+import { useBodyLog, useProgram, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { changePassword, deleteAccount, login, logout, newRecoveryCode, recover, register, updateProfile } from "../lib/online/account";
 import { apiUrl, hasCustomApiUrl, onlineErrorText, setApiUrl } from "../lib/online/client";
 import { listCloudBackups, restoreCloudBackup, saveOnline, syncNow, useOnline, type OnlineState } from "../lib/online/sync";
@@ -72,7 +75,10 @@ export function Online() {
       <Link to="/privacidade" className="tap small">
         Política de privacidade: o que vai para o servidor &gt;
       </Link>
-      <ServerCard onChange={() => setServerTick((n) => n + 1)} />
+      {/* Só aparece para quem hospeda o próprio servidor (app sem servidor embutido, endereço trocado ou #/online?servidor). */}
+      {(!import.meta.env.VITE_API_URL || hasCustomApiUrl() || location.hash.includes("servidor")) && (
+        <ServerCard onChange={() => setServerTick((n) => n + 1)} />
+      )}
     </div>
   );
 }
@@ -93,6 +99,7 @@ function SignedOut({ onRecoveryCode, lastError }: { onRecoveryCode: (code: strin
   const [shareActivity, setShareActivity] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   // Os ajustes carregam depois do primeiro desenho: preenche o nome com o "como o app te chama".
   useEffect(() => {
@@ -128,148 +135,227 @@ function SignedOut({ onRecoveryCode, lastError }: { onRecoveryCode: (code: strin
     }
   }
 
+  const MODE_HEAD: Record<Mode, { n: string; tag: string; title: string }> = {
+    entrar: { n: "01", tag: "IDENTITY_GATE", title: "Autenticação" },
+    criar: { n: "02", tag: "NEW_IDENTITY", title: "Nova identidade" },
+    recuperar: { n: "03", tag: "KEY_RECOVERY", title: "Recuperar chave" },
+  };
+  const head = MODE_HEAD[mode];
+
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <div className="row-wrap" role="group" aria-label="O que você quer fazer">
-        {(
-          [
-            ["entrar", "Entrar"],
-            ["criar", "Criar conta"],
-            ["recuperar", "Esqueci a senha"],
-          ] as const
-        ).map(([m, label]) => (
-          <button
-            key={m}
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={mode === m}
-            onClick={() => {
-              setMode(m);
-              setError("");
-            }}
-          >
-            {label}
-          </button>
-        ))}
+    <section className="id-gate" aria-label="Entrar na rede AUGMENT">
+      <div className="id-intro">
+        <div className="id-glyph" aria-hidden="true">
+          <BrandMark />
+          <i className="id-glyph-scan" />
+        </div>
+        <div>
+          <p className="id-micro">PROTOCOLO DE ACESSO // REDE</p>
+          <h2 className="id-title">
+            Conecte-se
+            <span>à rede AUGMENT</span>
+          </h2>
+        </div>
       </div>
+      <ul className="id-perks" aria-label="O que a conta libera">
+        <li>
+          <b>BACKUP</b>
+          <small>automático</small>
+        </li>
+        <li>
+          <b>AMIGOS</b>
+          <small>feed e treinos</small>
+        </li>
+        <li>
+          <b>RANKING</b>
+          <small>você × todos</small>
+        </li>
+      </ul>
 
-      {lastError && mode === "entrar" && <p className="small warn-text">{lastError}</p>}
+      <div data-augmented-ui="tl-clip br-clip border" className="id-module">
+        <div className="id-module-title">
+          <span className="id-module-n">{head.n}</span>
+          <div>
+            <p>{head.tag}</p>
+            <h3>{head.title}</h3>
+          </div>
+          <span className="id-module-dot" aria-hidden="true" />
+        </div>
 
-      <form className="stack" onSubmit={submit} noValidate>
-        <label className="label" htmlFor="on-user">
-          Usuário
-        </label>
-        <input
-          id="on-user"
-          className="input"
-          autoComplete="username"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          maxLength={20}
-          value={username}
-          onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
-          placeholder="ex.: ana.silva"
-        />
-        {mode !== "entrar" && username && !userOk && (
-          <span className="tiny faint">3 a 20 caracteres: letras minúsculas, números, ponto ou _.</span>
-        )}
+        <div className="id-tabs" role="group" aria-label="O que você quer fazer">
+          {(
+            [
+              ["entrar", "Entrar"],
+              ["criar", "Criar conta"],
+              ["recuperar", "Esqueci"],
+            ] as const
+          ).map(([m, label]) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => {
+                setMode(m);
+                setError("");
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {mode === "criar" && (
-          <>
-            <label className="label" htmlFor="on-name">
-              Nome que os amigos veem
-            </label>
+        {lastError && mode === "entrar" && <p className="small warn-text">{lastError}</p>}
+
+        <form className="stack" onSubmit={submit} noValidate>
+          <label className="id-label" htmlFor="on-user">
+            Usuário <i>UID</i>
+          </label>
+          <span className="id-frame">
+            <span className="id-icon" aria-hidden="true">
+              @
+            </span>
             <input
-              id="on-name"
+              id="on-user"
               className="input"
-              maxLength={24}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Seu nome"
-            />
-          </>
-        )}
-
-        {mode === "recuperar" && (
-          <>
-            <label className="label" htmlFor="on-code">
-              Código de recuperação
-            </label>
-            <input
-              id="on-code"
-              className="input mono"
-              autoCapitalize="characters"
+              autoComplete="username"
+              autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="XXXX-XXXX-XXXX-XXXX"
+              maxLength={20}
+              value={username}
+              onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
+              placeholder="ex.: ana.silva"
             />
-            <span className="tiny faint">É o código que o app mostrou quando você criou a conta.</span>
-          </>
-        )}
+          </span>
+          {mode !== "entrar" && username && !userOk && (
+            <span className="tiny faint">3 a 20 caracteres: letras minúsculas, números, ponto ou _.</span>
+          )}
 
-        <label className="label" htmlFor="on-pass">
-          {mode === "recuperar" ? "Senha nova" : "Senha"}
-        </label>
-        <input
-          id="on-pass"
-          className="input"
-          type="password"
-          autoComplete={mode === "entrar" ? "current-password" : "new-password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={mode === "entrar" ? "" : "Pelo menos 8 caracteres"}
-        />
+          {mode === "criar" && (
+            <>
+              <label className="id-label" htmlFor="on-name">
+                Nome que os amigos veem <i>TAG</i>
+              </label>
+              <span className="id-frame">
+                <span className="id-icon" aria-hidden="true">
+                  ◆
+                </span>
+                <input
+                  id="on-name"
+                  className="input"
+                  maxLength={24}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Seu nome"
+                />
+              </span>
+            </>
+          )}
 
-        {mode === "criar" && (
-          <div className="stack" style={{ gap: 8 }}>
-            <span className="label">Privacidade (dá para mudar depois)</span>
+          {mode === "recuperar" && (
+            <>
+              <label className="id-label" htmlFor="on-code">
+                Código de recuperação <i>RCV</i>
+              </label>
+              <span className="id-frame">
+                <span className="id-icon" aria-hidden="true">
+                  #
+                </span>
+                <input
+                  id="on-code"
+                  className="input mono"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="XXXX-XXXX-XXXX-XXXX"
+                />
+              </span>
+              <span className="tiny faint">É o código que o app mostrou quando você criou a conta.</span>
+            </>
+          )}
+
+          <label className="id-label" htmlFor="on-pass">
+            {mode === "recuperar" ? "Senha nova" : "Senha"} <i>KEY</i>
+          </label>
+          <span className="id-frame">
+            <span className="id-icon" aria-hidden="true">
+              ⌁
+            </span>
+            <input
+              id="on-pass"
+              className="input"
+              type={showPass ? "text" : "password"}
+              autoComplete={mode === "entrar" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === "entrar" ? "••••••••" : "Pelo menos 8 caracteres"}
+            />
             <button
               type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="toggle-chip wide"
-              aria-pressed={sharePercentiles}
-              onClick={() => setSharePercentiles(!sharePercentiles)}
+              className="id-eye"
+              aria-label={showPass ? "Esconder a senha" : "Mostrar a senha"}
+              aria-pressed={showPass}
+              onClick={() => setShowPass((v) => !v)}
             >
-              Entrar na comparação com todos (anônimo)
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path d="M2.7 12s3.3-5 9.3-5 9.3 5 9.3 5-3.3 5-9.3 5-9.3-5-9.3-5Z" />
+                <circle cx="12" cy="12" r="2.4" />
+                {showPass && <path d="m4 4 16 16" />}
+              </svg>
             </button>
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="toggle-chip wide"
-              aria-pressed={shareActivity}
-              onClick={() => setShareActivity(!shareActivity)}
-            >
-              Amigos veem meus treinos e recordes
-            </button>
-            <p className="tiny faint">
-              Na comparação ninguém vê seu nome: só entra a sua melhor marca em cada exercício. Seus treinos completos ficam no celular e no
-              seu backup, que só você acessa. As fotos do corpo não vão para o servidor.{" "}
-              <Link to="/privacidade" className="tap">
-                Ler a política de privacidade
-              </Link>
+          </span>
+          {mode === "criar" && (
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="label">Privacidade (dá para mudar depois)</span>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="toggle-chip wide"
+                aria-pressed={sharePercentiles}
+                onClick={() => setSharePercentiles(!sharePercentiles)}
+              >
+                Entrar na comparação com todos (anônimo)
+              </button>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="toggle-chip wide"
+                aria-pressed={shareActivity}
+                onClick={() => setShareActivity(!shareActivity)}
+              >
+                Amigos veem meus treinos e recordes
+              </button>
+              <p className="tiny faint">
+                Na comparação ninguém vê seu nome: só entra a sua melhor marca em cada exercício. Seus treinos completos ficam no celular e
+                no seu backup, que só você acessa. As fotos do corpo não vão para o servidor.{" "}
+                <Link to="/privacidade" className="tap">
+                  Ler a política de privacidade
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <p className="small warn-text" role="alert">
+              {error}
             </p>
-          </div>
-        )}
+          )}
 
-        {error && (
-          <p className="small warn-text" role="alert">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          data-augmented-ui="tl-clip br-clip border"
-          className="btn btn-primary"
-          disabled={busy || !username || !password}
-        >
-          {busy ? "Aguarde…" : mode === "entrar" ? "Entrar" : mode === "criar" ? "Criar conta" : "Trocar a senha"}
-        </button>
-      </form>
+          <button type="submit" className="id-submit" disabled={busy || !username || !password}>
+            <span>
+              {busy ? "Verificando…" : mode === "entrar" ? "Acessar sistema" : mode === "criar" ? "Criar identidade" : "Trocar a senha"}
+            </span>
+            <b aria-hidden="true">↗</b>
+            {busy && <i className="id-submit-scan" />}
+          </button>
+        </form>
+      </div>
+      <p className="id-foot" aria-hidden="true">
+        <span>CANAL CIFRADO</span>
+        <span>SEU CELULAR É A FONTE DA VERDADE</span>
+      </p>
     </section>
   );
 }
@@ -307,6 +393,23 @@ function RecoveryCodeCard({ code, onDone }: { code: string; onDone: () => void }
 
 // ---------- com conta ----------
 
+/** Bloco recolhido do online: uma linha com o resumo; abre para mexer. */
+function Fold({ code, title, value, children }: { code: string; title: string; value: string; children: ReactNode }) {
+  return (
+    <details data-augmented-ui="tl-clip br-clip border" className="card set-group">
+      <summary>
+        <span className="set-code">{code}</span>
+        <span className="set-title">
+          <strong>{title}</strong>
+          <small>{value}</small>
+        </span>
+        <span className="set-chev" aria-hidden="true" />
+      </summary>
+      <div className="stack set-body">{children}</div>
+    </details>
+  );
+}
+
 function SignedIn({
   online,
   showingCode,
@@ -325,6 +428,9 @@ function SignedIn({
   const [backupError, setBackupError] = useState("");
   const [restoring, setRestoring] = useState<string | null>(null);
   const localDone = (sessions ?? []).filter((s) => s.status === "done").length;
+  const program = useProgram();
+  const today = useToday();
+  const week = weekFor(settings.mesoStart, today);
   const incoming = online.social?.friends.incoming.length ?? 0;
 
   async function refreshBackups() {
@@ -351,16 +457,18 @@ function SignedIn({
   return (
     <>
       {!showingCode && <RecoveryCard remind={!online.recoveryAck} onCode={onRecoveryCode} />}
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <div className="spread">
-          <div className="stack" style={{ gap: 2, minWidth: 0 }}>
-            <strong className="h-card">{user.displayName}</strong>
-            <span className="small faint mono">@{user.username}</span>
-          </div>
+      <OperatorProfile
+        user={user}
+        persona={settings.persona}
+        sessions={sessions ?? []}
+        friends={online.social?.friends.friends.length ?? 0}
+        today={today}
+        weeklyTarget={settings.trainingDays.length}
+        tags={[program.name, week ? `Semana ${week}/7` : "Periodização fixa", `${settings.trainingDays.length}× por semana`]}
+      >
+        <p className="id-sync small" role="status">
           <span className={`sync-led${online.lastError ? " off" : ""}`} aria-hidden="true" />
-        </div>
-        <p className="small" role="status">
-          {online.lastError ? online.lastError : `Sincronizado ${agoText(online.lastSyncAt)}.`}
+          {online.lastError ? online.lastError : `Nuvem sincronizada ${agoText(online.lastSyncAt)}`}
         </p>
         <div className="row-wrap">
           <button
@@ -376,10 +484,9 @@ function SignedIn({
             Amigos{incoming ? ` (${incoming} pedido${incoming > 1 ? "s" : ""})` : ""}
           </Link>
         </div>
-      </section>
+      </OperatorProfile>
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <h2 className="h-sec">Backup automático</h2>
+      <Fold code="B1" title="Backup automático" value={online.backupAt ? `Último: ${agoText(online.backupAt)}` : "Ainda nenhum"}>
         <p className="small muted">
           Ao terminar um treino, ao sair do app e a cada 15 minutos (se algo mudou), uma cópia de tudo vai para a nuvem. Ficam as 5 mais
           recentes. Último envio: {online.backupAt ? `${dateTime(online.backupAt)} (${agoText(online.backupAt)})` : "ainda nenhum"}.
@@ -458,7 +565,7 @@ function SignedIn({
             ? "As fotos do corpo sobem junto com o backup. Desligue para o próximo backup ir sem elas."
             : "Desligado: as fotos do corpo ficam só neste aparelho e nunca vão para o servidor. Para guardar as fotos, use Ajustes > Exportar backup."}
         </p>
-      </section>
+      </Fold>
 
       <Privacy online={online} />
       <FairCompare online={online} />
@@ -481,8 +588,7 @@ function Privacy({ online }: { online: OnlineState }) {
   }
 
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <h2 className="h-sec">Perfil e privacidade</h2>
+    <Fold code="P1" title="Perfil e privacidade" value="Nome, comparação e o que os amigos veem">
       <label className="label" htmlFor="on-display">
         Nome que os amigos veem
       </label>
@@ -513,7 +619,7 @@ function Privacy({ online }: { online: OnlineState }) {
         Amigos veem meus treinos e recordes
       </button>
       <p className="tiny faint">Fora da comparação, você continua vendo a sua posição, mas ninguém conta a sua marca.</p>
-    </section>
+    </Fold>
   );
 }
 
@@ -539,8 +645,7 @@ function FairCompare({ online }: { online: OnlineState }) {
   const changed = kg.trim() === "" ? user.bodyweightKg != null : typed !== user.bodyweightKg;
 
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <h2 className="h-sec">Comparação mais justa (opcional)</h2>
+    <Fold code="P2" title="Comparação justa" value="Sexo e peso, para comparar com quem é parecido">
       <p className="small muted">
         Informe sexo e peso para o app te comparar também com pessoas parecidas com você e pela força relativa (quanto você levanta por
         quilo de peso corporal). Ninguém vê esses dados: eles só entram na conta da porcentagem.
@@ -611,7 +716,7 @@ function FairCompare({ online }: { online: OnlineState }) {
         Faixa de peso: pessoas com até 10% a mais ou a menos que você. Atualize quando o seu peso mudar; deixe em branco e salve para
         remover.
       </p>
-    </section>
+    </Fold>
   );
 }
 

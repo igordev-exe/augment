@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MUSCLE_LABEL, MUSCLE_ORDER } from "../data/program";
 import type { MuscleId } from "../data/types";
 import { weekdayName, weekdayShort, fromISO } from "../lib/dates";
-import { fatigueLevel, fatiguePct, hoursToReady, type FatigueLevel, type MuscleStatus } from "../lib/visual";
+import { fatigueColor, fatigueLevel, fatiguePct, hoursToReady, type FatigueLevel, type MuscleStatus } from "../lib/visual";
 import { Anatomy, type AnatomyZone, type View } from "./Anatomy";
 import { Icon } from "./Icon";
 
@@ -32,6 +32,11 @@ function subline(s: MuscleStatus): string {
   return s.daysSince == null ? "Nunca treinado" : `${s.daysSince} d sem treino`;
 }
 
+/** Como o último treino bateu, pelo que a pessoa marcou (RIR, falha, pump, volume, notas). */
+function intensityTag(i: number): string {
+  return i >= 1.08 ? "DURO" : i <= 0.9 ? "LEVE" : "NORMAL";
+}
+
 function advice(s: MuscleStatus, pct: number): { title: string; text: string } {
   const h = hoursToReady(s);
   if (s.state === "sem-treino" && s.daysSince == null)
@@ -45,7 +50,7 @@ function advice(s: MuscleStatus, pct: number): { title: string; text: string } {
   if (pct >= 75)
     return {
       title: "RECÉM-TREINADO",
-      text: `${s.lastSets} séries ${ago(s)}. Dê ~${h} h antes de treinar pesado de novo.`,
+      text: `${s.lastSets} séries ${ago(s)}${s.intensity >= 1.08 ? ", num treino duro" : ""}. Dê ~${h} h antes de treinar pesado de novo.`,
     };
   if (pct >= 50)
     return {
@@ -186,14 +191,14 @@ export function FatigueMap({
         </div>
       </div>
 
-      <div className="fm-panel fm-zones">
-        <div className="fm-heading">
+      <details className="fm-panel fm-zones">
+        <summary className="fm-heading">
           <div>
             <span>GRUPOS MUSCULARES</span>
-            <small>SELECIONE PARA ANALISAR</small>
+            <small>TOQUE PARA ABRIR A LISTA</small>
           </div>
           <b>{String(ids.length).padStart(2, "0")}</b>
-        </div>
+        </summary>
         <div className="fm-zone-list">
           {zones.map((z, i) => (
             <button key={z.id} type="button" aria-pressed={selected === z.id} onClick={() => setPicked(z.id)}>
@@ -204,7 +209,7 @@ export function FatigueMap({
                   {subline(status[z.id])}
                 </small>
               </span>
-              <span className={`fm-zone-value ${z.level}`}>
+              <span className={`fm-zone-value ${z.level}`} style={{ "--lv": fatigueColor(z.fatigue) } as CSSProperties}>
                 <strong>{z.fatigue}%</strong>
                 <i>
                   <u style={{ width: `${z.fatigue}%` }} />
@@ -230,7 +235,7 @@ export function FatigueMap({
             </span>
           </div>
         </div>
-      </div>
+      </details>
 
       <div className="fm-panel fm-diag">
         <div className="fm-heading">
@@ -247,7 +252,7 @@ export function FatigueMap({
           </div>
           <span className={stale(s) ? "atencao" : sLevel}>{stale(s) ? "PARADO" : LEVEL_TAG[sLevel]}</span>
         </div>
-        <div className={`fm-gauge ${sLevel}`} style={{ "--value": `${sPct * 3.6}deg` } as CSSProperties}>
+        <div className={`fm-gauge ${sLevel}`} style={{ "--value": `${sPct * 3.6}deg`, "--lv": fatigueColor(sPct) } as CSSProperties}>
           <div>
             <strong>{sPct}</strong>
             <span>%</span>
@@ -266,7 +271,7 @@ export function FatigueMap({
           <div>
             <small>ÚLTIMO TREINO</small>
             <strong>{s.daysSince == null ? "—" : s.daysSince === 0 ? "Hoje" : `${s.daysSince} d`}</strong>
-            <span>{s.lastSets ? `${s.lastSets} SÉRIES` : "SEM REGISTRO"}</span>
+            <span>{s.lastSets ? `${s.lastSets} SÉRIES · ${intensityTag(s.intensity)}` : "SEM REGISTRO"}</span>
           </div>
           <div>
             <small>SEMANA</small>

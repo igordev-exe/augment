@@ -731,3 +731,70 @@ export function suggestNext(
     notes: s.notes,
   };
 }
+
+/**
+ * O que o número do peso significa, para não haver dúvida entre "cada halter" e "a soma". A convenção do app é
+ * anotar o que está escrito no equipamento: o peso de UM halter, o total da barra (com a barra), a placa da máquina.
+ */
+export function loadBasis(name: string, equipment: string | undefined, perSide?: boolean): string {
+  // O nome manda; do equipamento vale só a 1ª opção ("Barra ou halteres" → barra).
+  const kind = basisKind(name) ?? basisKind((equipment ?? "").split(/\s+ou\s+/i)[0]);
+  if (kind === "halter") return perSide ? "um halter, por lado" : "cada halter";
+  if (perSide) return "por lado";
+  if (kind === "cabo") return "na pilha do cabo";
+  if (kind === "maquina") return "total da máquina";
+  if (kind === "barra") return "total, com a barra";
+  if (kind === "corpo") return "carga extra";
+  return "total";
+}
+
+function basisKind(txt: string): "halter" | "cabo" | "maquina" | "barra" | "corpo" | undefined {
+  if (/halter|kettle/i.test(txt)) return "halter";
+  if (/polia|pulley|cabo|crossover|puxada|remada baixa|tr[ií]ceps corda|face pull/i.test(txt)) return "cabo";
+  if (/m[aá]quina|leg press|hack|cadeira|mesa flexora|peck|voador|smith|hammer/i.test(txt)) return "maquina";
+  if (/barra fixa|paralela|peso do corpo|corporal|flex[aã]o/i.test(txt)) return "corpo";
+  if (/barra/i.test(txt)) return "barra";
+  return undefined;
+}
+
+export interface OverloadOption {
+  weight: number;
+  reps: number;
+  /** "reps" = mesma carga, +1 rep; "carga" = próxima carga disponível, reps previstas pelo 1RM estimado. */
+  via: "reps" | "carga";
+}
+
+/**
+ * Sobrecarga progressiva sugerida, não só acompanhada: a partir da melhor série da última vez na carga de referência,
+ * as duas formas de superar o que já foi feito. Subir reps e subir carga dão hipertrofia parecida (Plotkin et al.,
+ * PeerJ 2022); o app mostra as duas e a pessoa escolhe no dia.
+ * Ex.: última vez 10 kg × 10 → "10 × 11" ou "12,5 × 8" (previsão de Epley a partir do 1RM estimado, com o RIR).
+ * Vazio na 1ª vez, no deload ou quando a última série ficou abaixo da faixa (aí o certo é baixar, não superar).
+ */
+export function overloadOptions(
+  ex: ProgramExercise,
+  last: SessionExercise | undefined,
+  week: number,
+  step: number,
+  availableWeights?: number[],
+): OverloadOption[] {
+  const work = workSets(last, false);
+  if (!last || !work.length || week === 7) return [];
+  const [lo, hi] = ex.reps;
+  const { load, atLoad } = loadRef(work);
+  if (!(load > 0)) return [];
+  const bestReps = Math.max(...atLoad.map((s) => s.reps ?? 0));
+  if (bestReps < lo) return [];
+  const out: OverloadOption[] = [];
+  // +1 rep na mesma carga, até 3 acima do topo da faixa (passou disso, a carga é que tem que subir).
+  if (bestReps + 1 <= hi + 3) out.push({ weight: load, reps: bestReps + 1, via: "reps" });
+  const next = nextAvailableWeight(load, step, availableWeights);
+  if (next > load) {
+    const oneRm = Math.max(...atLoad.map((s) => e1rm(load, (s.reps ?? 0) + (s.rir ?? 0))));
+    // Reps previstas com a carga nova, menos o que sobrou da última vez (a meta é o mesmo esforço).
+    const rir = Math.min(...atLoad.map((s) => s.rir ?? 0));
+    const reps = Math.min(hi, predictReps(oneRm, next) - rir);
+    if (reps >= Math.max(1, lo - 2)) out.push({ weight: next, reps, via: "carga" });
+  }
+  return out;
+}

@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { FeedItem, FriendsResponse, PublicUser, RecordIn } from "../../server/src/protocol";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
 import { UserModeration } from "../components/UserModeration";
 import { libraryName } from "../data/library-extended";
-import { shortDate } from "../lib/dates";
-import { useSessions, useToast } from "../lib/hooks";
+import { avatarSrc } from "../data/personas";
+import { addDays, shortDate } from "../lib/dates";
+import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { tonnes } from "../lib/profile";
+import { sessionStats } from "../lib/sessions";
+import { PostLabel } from "../components/OperatorProfile";
 import {
   acceptFriend,
   getBlocked,
@@ -28,6 +32,9 @@ const EMPTY: FriendsResponse = { friends: [], incoming: [], outgoing: [] };
 export function Friends() {
   const online = useOnline();
   const toast = useToast();
+  const [settings] = useSettings();
+  const sessions = useSessions();
+  const today = useToday();
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [offline, setOffline] = useState("");
@@ -82,6 +89,30 @@ export function Friends() {
 
   const fr = friends ?? online.social?.friends ?? EMPTY;
   const items = feed ?? online.social?.feed ?? [];
+  // Ranking da semana: volume dos últimos 7 dias (o seu, do aparelho; o dos amigos, do feed).
+  const since = addDays(today, -6);
+  const byUser = new Map<string, { id: string; name: string; kg: number; me?: boolean }>();
+  for (const f of fr.friends) byUser.set(f.id, { id: f.id, name: f.displayName, kg: 0 });
+  for (const it of items) {
+    if (it.date < since) continue;
+    const cur = byUser.get(it.user.id) ?? { id: it.user.id, name: it.user.displayName, kg: 0 };
+    cur.kg += it.volumeKg;
+    byUser.set(it.user.id, cur);
+  }
+  const myKg = (sessions ?? [])
+    .filter((s) => s.status === "done" && s.date >= since && s.date <= today)
+    .reduce((a, s) => a + sessionStats(s).volumeKg, 0);
+  byUser.set(user.id, { id: user.id, name: user.displayName, kg: myKg, me: true });
+  const ranking = [...byUser.values()].sort((a, b) => b.kg - a.kg || (a.me ? -1 : b.me ? 1 : 0)).slice(0, 5);
+
+  async function copyHandle() {
+    try {
+      await navigator.clipboard.writeText(`@${user!.username}`);
+      toast("Seu @ foi copiado.", "ok");
+    } catch {
+      toast(`Seu @ é ${user!.username}`, "info");
+    }
+  }
 
   async function act(fn: () => Promise<unknown>, ok: string) {
     try {
@@ -95,12 +126,37 @@ export function Friends() {
 
   return (
     <div className="stack-lg">
-      <PageHead
-        back="/"
-        code="AUG.NET // AMIGOS"
-        title="Amigos"
-        sub={`Você é @${user.username}. Passe esse nome para quem quiser te adicionar.`}
-      />
+      <PageHead back="/" code="AUG.NET // ESQUADRÃO" title="Amigos" />
+
+      <section data-augmented-ui="tl-clip br-clip border" className="card squad-head">
+        <div className="squad-me">
+          <span className="id-avatar sm" aria-hidden="true">
+            <img src={avatarSrc(settings.persona)} alt="" width={56} height={56} />
+          </span>
+          <div className="squad-me-name">
+            <span className="id-micro">SEU ID NA REDE</span>
+            <strong>{user.displayName}</strong>
+            <button type="button" className="squad-handle" onClick={copyHandle} aria-label={`Copiar @${user.username}`}>
+              @{user.username} <span aria-hidden="true">⧉</span>
+            </button>
+          </div>
+        </div>
+        <dl className="id-stats">
+          <div>
+            <dt>Amigos</dt>
+            <dd>{fr.friends.length}</dd>
+          </div>
+          <div>
+            <dt>Pedidos</dt>
+            <dd className={fr.incoming.length ? "hot" : undefined}>{fr.incoming.length}</dd>
+          </div>
+          <div>
+            <dt>Treinos 30d</dt>
+            <dd>{items.length}</dd>
+          </div>
+        </dl>
+        <p className="tiny faint">Passe o seu @ para quem quiser te adicionar.</p>
+      </section>
 
       {offline && (
         <p className="small warn-text" role="status">
@@ -146,46 +202,92 @@ export function Friends() {
       )}
 
       <section className="stack">
-        <h2 className="h-sec">Treinos dos amigos</h2>
+        <h2 className="h-sec">Transmissões do esquadrão</h2>
         {items.length === 0 ? (
-          <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">
-            {fr.friends.length
-              ? "Nenhum treino dos seus amigos nos últimos 30 dias."
-              : "Quando você tiver amigos, os treinos deles aparecem aqui."}
+          <div data-augmented-ui="tl-clip br-clip border" className="card flat no-signal">
+            <span className="radar" aria-hidden="true" />
+            <strong>SEM SINAL</strong>
+            <span className="small muted">
+              {fr.friends.length
+                ? "Nenhum treino dos seus amigos nos últimos 30 dias."
+                : "Quando você tiver amigos, os treinos deles aparecem aqui."}
+            </span>
           </div>
         ) : (
-          <div data-augmented-ui="tl-clip br-clip border" className="card">
-            <ul className="feed-list">
-              {items.map((it) => (
-                <li key={`${it.user.id}-${it.id}`} className="feed-item">
-                  <div className="stack" style={{ gap: 4, minWidth: 0 }}>
-                    <span className="small">
-                      <strong>{it.user.displayName}</strong> <span className="faint">· {shortDate(it.date)}</span>
+          <ul className="feed-posts">
+            {items.map((it) => (
+              <li
+                key={`${it.user.id}-${it.id}`}
+                data-augmented-ui="tl-clip br-clip border"
+                className={`card feed-post${it.prs ? " pr" : ""}`}
+              >
+                <div className="feed-post-head">
+                  <Sigil name={it.user.displayName} />
+                  <span className="friend-name">
+                    <strong>{it.user.displayName}</strong>
+                    <span className="tiny faint mono">
+                      @{it.user.username} · {shortDate(it.date)}
                     </span>
-                    <span>{it.title}</span>
-                    <span className="feed-stats">
-                      <span>{it.sets} séries</span>
-                      <span>{formatWeight(Math.round(it.volumeKg / 100) / 10)} t</span>
-                      {it.minutes > 0 && <span>{it.minutes} min</span>}
-                      {it.prs > 0 && (
-                        <span className="feed-pr">
-                          {it.prs} recorde{it.prs > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </span>
+                  </span>
+                </div>
+                <PostLabel pr={it.prs} />
+                <p className="feed-post-title">{it.title}</p>
+                <dl className="feed-post-stats">
+                  <div>
+                    <dt>Séries</dt>
+                    <dd>{it.sets}</dd>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <div>
+                    <dt>Volume</dt>
+                    <dd>{formatWeight(Math.round(it.volumeKg / 100) / 10)} t</dd>
+                  </div>
+                  {it.minutes > 0 && (
+                    <div>
+                      <dt>Tempo</dt>
+                      <dd>{it.minutes} min</dd>
+                    </div>
+                  )}
+                </dl>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
+
+      {ranking.length > 1 && (
+        <section data-augmented-ui="tl-clip br-clip border" className="card sq-rank" aria-label="Ranking da semana">
+          <div className="sq-rank-head">
+            <span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <path d="M12 22c4.4 0 7-3 7-7.2 0-3.3-2-6.4-5.8-9.7.2 3-1.4 4.7-2.4 5.4.1-3.8-2-6-2-6C6.2 7.6 5 10.7 5 14.3 5 18.6 7.7 22 12 22Z" />
+              </svg>
+              Ranking semanal
+            </span>
+            <small>VOLUME · 7 DIAS</small>
+          </div>
+          <ol>
+            {ranking.map((r, i) => (
+              <li key={r.id} className={r.me ? "you" : undefined}>
+                <b>{String(i + 1).padStart(2, "0")}</b>
+                <Sigil name={r.name} />
+                <span>
+                  {r.name}
+                  {r.me && <em>Você</em>}
+                </span>
+                <strong>{tonnes(r.kg)}</strong>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <section className="stack">
         <h2 className="h-sec">Seus amigos ({fr.friends.length})</h2>
         {fr.friends.length === 0 ? (
-          <div data-augmented-ui="tl-clip br-clip border" className="card flat empty small">
-            Ninguém ainda. Adicione pelo nome de usuário logo acima.
+          <div data-augmented-ui="tl-clip br-clip border" className="card flat no-signal">
+            <span className="radar" aria-hidden="true" />
+            <strong>ESQUADRÃO VAZIO</strong>
+            <span className="small muted">Adicione pelo nome de usuário logo acima.</span>
           </div>
         ) : (
           <div data-augmented-ui="tl-clip br-clip border" className="card">
@@ -251,11 +353,32 @@ export function Friends() {
   );
 }
 
+/** Sigla do operador (iniciais) num hexágono, com a cor tirada do nome: cada amigo tem a sua. */
+function Sigil({ name }: { name: string }) {
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join("") || "?";
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return (
+    <span className="sigil" style={{ "--sig": `hsl(${h} 80% 60%)` } as CSSProperties} aria-hidden="true">
+      {initials}
+    </span>
+  );
+}
+
 function Name({ u }: { u: PublicUser }) {
   return (
-    <span className="friend-name">
-      <strong>{u.displayName}</strong>
-      <span className="tiny faint mono">@{u.username}</span>
+    <span className="friend-who">
+      <Sigil name={u.displayName} />
+      <span className="friend-name">
+        <strong>{u.displayName}</strong>
+        <span className="tiny faint mono">@{u.username}</span>
+      </span>
     </span>
   );
 }
@@ -301,7 +424,7 @@ function AddFriend({ onDone }: { onDone: () => void }) {
 
   return (
     <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <h2 className="h-sec">Adicionar amigo</h2>
+      <h2 className="h-sec">Recrutar para o esquadrão</h2>
       <form
         className="stack"
         onSubmit={(e: FormEvent) => {
@@ -309,38 +432,39 @@ function AddFriend({ onDone }: { onDone: () => void }) {
           if (q.trim()) void send(q.trim().toLowerCase().replace(/^@/, ""));
         }}
       >
-        <label className="label" htmlFor="fr-q">
-          Nome de usuário
+        <label className="id-label" htmlFor="fr-q">
+          Nome de usuário <i>UID</i>
         </label>
-        <input
-          id="fr-q"
-          className="input"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          value={q}
-          onChange={(e) => setQ(e.target.value.replace(/\s/g, ""))}
-          placeholder="@usuario"
-        />
+        <span className="id-frame">
+          <span className="id-icon" aria-hidden="true">
+            @
+          </span>
+          <input
+            id="fr-q"
+            className="input"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={q}
+            onChange={(e) => setQ(e.target.value.replace(/\s/g, "").replace(/^@/, ""))}
+            placeholder="usuario"
+          />
+        </span>
         {found.length > 0 && (
           <ul className="suggest-list" aria-label="Usuários encontrados">
             {found.map((u) => (
-              <li key={u.id}>
-                <button
-                  type="button"
-                  data-augmented-ui="tl-clip br-clip border"
-                  className="btn btn-sm"
-                  disabled={busy}
-                  onClick={() => send(u.username)}
-                >
-                  + {u.displayName} <span className="faint">@{u.username}</span>
+              <li key={u.id} className="sq-user">
+                <Name u={u} />
+                <button type="button" className="sq-follow" disabled={busy} onClick={() => send(u.username)}>
+                  Adicionar
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <button type="submit" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary" disabled={busy || q.trim().length < 3}>
-          Enviar pedido
+        <button type="submit" className="id-submit" disabled={busy || q.trim().length < 3}>
+          <span>Enviar pedido</span>
+          <b aria-hidden="true">↗</b>
         </button>
       </form>
     </section>

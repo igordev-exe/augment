@@ -351,3 +351,135 @@ body {
   outline: 2px solid var(--cyan);
   outline-offset: 1px;
 }
+
+/* Botão ao lado de texto (ex.: "Continuar" na missão em andamento): nunca encolhe abaixo da própria palavra. */
+.spread > .btn {
+  flex-shrink: 0;
+}
+
+/* ---------- Filtros que não "comem" pela borda: quebram em linhas, nada fica cortado ---------- */
+/* Exercícios: músculos como etiquetas de módulo (grade de 3), a ativa acesa em ciano. */
+.ws-brackets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+  overflow: visible;
+  padding: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.ws-bracket {
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom: 2px solid var(--track-empty);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.ws-bracket small {
+  font-family: var(--tech);
+  opacity: 0.55;
+}
+.ws-bracket[aria-pressed="true"] {
+  color: var(--ink);
+  background: linear-gradient(0deg, rgb(63 216 224 / 0.16), rgb(63 216 224 / 0.04));
+  border-color: rgb(63 216 224 / 0.45);
+  border-bottom-color: var(--cyan);
+  box-shadow: 0 8px 14px -12px var(--cyan);
+}
+.ws-bracket[aria-pressed="true"] small {
+  color: var(--cyan);
+  opacity: 1;
+}
+/* Guia: atalhos das seções em linhas, sem rolagem lateral escondida. */
+.toc {
+  flex-wrap: wrap;
+  overflow: visible;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.toc a {
+  flex-shrink: 1;
+}
+
+/* ---------- Ajustes: blocos recolhidos (uma linha com o valor atual) ---------- */
+.set-group {
+  padding: 0;
+}
+.set-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.set-group > summary::-webkit-details-marker {
+  display: none;
+}
+.set-code {
+  flex-shrink: 0;
+  width: 34px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-top: 1px solid var(--cyan);
+  border-bottom: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  transform: skew(-12deg);
+}
+.set-icon {
+  flex-shrink: 0;
+}
+.set-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.set-title strong {
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.set-title small {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  color: var(--ink-3);
+  overflow-wrap: break-word;
+}
+.set-chev {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 0.2s;
+}
+.set-group[open] > summary .set-chev {
+  transform: rotate(-135deg);
+  border-color: var(--cyan);
+}
+.set-group[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.set-body {
+  padding: 14px 16px 16px;
+}
+
+/* Fila com botões: em tela estreita o botão desce de linha em vez de cortar a palavra (botão nunca parte palavra). */
+:is(.row, .spread, .cloud-item, .friend-row, .actions):has(> .btn) {
+  flex-wrap: wrap;
+}

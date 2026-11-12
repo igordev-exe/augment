@@ -1,6 +1,6 @@
-import { useId, type ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import type { MuscleId } from "../data/types";
-import type { FatigueLevel } from "../lib/visual";
+import { fatigueColor, type FatigueLevel } from "../lib/visual";
 
 // Corpo anatômico do mapa de fadiga (design do Figma "Visualizador de Fadiga Cyberpunk").
 // Cada forma é da metade esquerda e é espelhada. As formas ficam agrupadas por região anatômica
@@ -632,6 +632,12 @@ export function Anatomy({
           <g
             key={id}
             className={`anatomy-muscle ${zone.level}${selected ? " is-selected" : ""}`}
+            // Tom contínuo pela % (ciano → âmbar → vermelho), não só três faixas.
+            style={
+              zone.fatigue > 0
+                ? ({ "--tissue-edge": fatigueColor(zone.fatigue), "--tissue-glow": fatigueColor(zone.fatigue) } as CSSProperties)
+                : undefined
+            }
             tabIndex={0}
             role="button"
             aria-label={`${zone.name}, fadiga ${zone.fatigue}%`}

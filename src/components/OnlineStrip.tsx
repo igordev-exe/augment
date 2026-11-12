@@ -3,12 +3,14 @@ import { apiUrl } from "../lib/online/client";
 import { useOnline } from "../lib/online/sync";
 import { shortDate } from "../lib/dates";
 
-/** Texto do status no topo da tela inicial: local, nuvem em dia ou nuvem pendente. */
+/**
+ * Texto do status no topo da tela inicial. O celular é a fonte da verdade, então o padrão é sempre "Local / ativo"
+ * (com ou sem conta). Só muda quando a cópia na nuvem ficou para trás, para a pessoa saber.
+ */
 export function useOnlineStatus(): { text: string; tone: "ok" | "warn" } {
   const online = useOnline();
-  if (!online?.user || !apiUrl()) return { text: "Local / ativo", tone: "ok" };
-  if (online.lastError) return { text: "Nuvem / pendente", tone: "warn" };
-  return { text: "Nuvem / em dia", tone: "ok" };
+  if (online?.user && apiUrl() && online.lastError) return { text: "Local / nuvem pendente", tone: "warn" };
+  return { text: "Local / ativo", tone: "ok" };
 }
 
 /** Na tela inicial: atalho para os amigos (com pedidos e o último treino deles) ou convite discreto para a conta. */

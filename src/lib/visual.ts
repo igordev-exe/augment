@@ -1,6 +1,6 @@
 import { MUSCLE_ORDER, programDays, exOf, synergistsOf } from "../data/program";
 import { SCIENCE } from "../data/science";
-import type { BodyEntry, BodyGoal, MuscleId, Session } from "../data/types";
+import type { BodyEntry, BodyGoal, ExerciseFeedback, MuscleId, Session, SetEntry } from "../data/types";
 import { addDays, daysBetween, mondayOf } from "./dates";
 import { e1rm, historyOf, toKg, workSets } from "./progression";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
@@ -26,6 +26,40 @@ export interface MuscleStatus {
   /** 0–1: quanto já recuperou desde o último treino. */
   recovery: number;
   state: MuscleState;
+  /**
+   * Intensidade do último treino do músculo (1 = normal, sem dados). Sobe com falha/poucas reps sobrando, pump forte,
+   * "pesado" e nota de treino duro; desce com RIR alto, pump fraco, "leve" e nota de treino ruim. Escala o pico de
+   * fadiga e o tempo de recuperação.
+   */
+  intensity: number;
+  /** Horas para recuperar desde o último treino (volume × intensidade × ritmo aprendido). */
+  neededHours: number;
+}
+
+/** Peso de esforço de uma série: falha e 0–1 reps sobrando cansam mais; 3+ sobrando cansa menos. Sem RIR = 1. */
+export function setEffort(set: SetEntry): number {
+  if (set.failure) return 1.15;
+  if (set.rir == null) return 1;
+  return [1.12, 1.05, 1, 0.88, 0.75][Math.min(4, Math.max(0, set.rir))];
+}
+
+/** Como o exercício bateu ("pump", "volume") muda o peso das séries dele. */
+export function feedbackFactor(f: ExerciseFeedback | undefined): number {
+  if (!f || f.skipped) return 1;
+  const pump = f.pump === "fraco" ? 0.88 : f.pump === "forte" ? 1.08 : 1;
+  const vol = f.volume === "leve" ? 0.85 : f.volume === "pesado" ? 1.12 : 1;
+  return pump * vol;
+}
+
+const EASY_NOTE = /(?<!\p{L})(ruim|fraco|fraca|leve|f[aá]cil|cansad[oa]|sem energia|mal dormido|travado|p[eé]ssimo)(?!\p{L})/iu;
+const HARD_NOTE = /(?<!\p{L})(pesad[oa]|intens[oa]|destru[ií]d[oa]|brutal|muito forte|insano|no limite)(?!\p{L})/iu;
+
+/** A nota do treino (texto livre) indica treino fraco (0,85) ou duro (1,1). Sem nota ou neutra = 1. */
+export function noteFactor(notes: string | undefined): number {
+  if (!notes) return 1;
+  if (HARD_NOTE.test(notes)) return 1.1;
+  if (EASY_NOTE.test(notes)) return 0.85;
+  return 1;
 }
 
 /** Janela de recuperação pelo volume da última sessão do músculo: pouco volume recupera mais rápido. */
@@ -49,24 +83,34 @@ export function muscleStatus(
   const done = sessions.filter((s) => s.status === "done" && s.date <= today);
   const vol = weeklyVolume(done, today);
   const plan = plannedVolume(week, false, setAdjust);
-  const last = new Map<MuscleId, { date: string; at: number; sets: number }>();
+  const last = new Map<MuscleId, { date: string; at: number; sets: number; intensity: number }>();
   for (const s of done) {
     const at = s.finishedAt ?? Date.parse(`${s.date}T12:00:00`);
-    const perMuscle = new Map<MuscleId, number>();
+    const note = noteFactor(s.notes);
+    // [séries, séries ponderadas pelo esforço] por músculo
+    const perMuscle = new Map<MuscleId, [number, number]>();
+    const add = (m: MuscleId, n: number, eff: number) => {
+      const cur = perMuscle.get(m) ?? [0, 0];
+      perMuscle.set(m, [cur[0] + n, cur[1] + eff]);
+    };
     for (const e of s.exercises) {
       const ex = exOf(e);
       if (!ex) continue;
-      const n = workSets(e).length;
+      const ws = workSets(e);
+      const n = ws.length;
       if (!n) continue;
-      for (const m of ex.muscles) perMuscle.set(m, (perMuscle.get(m) ?? 0) + n);
+      const fb = feedbackFactor(e.feedback) * noteFactor(e.notes);
+      const eff = ws.reduce((a, set) => a + setEffort(set), 0) * fb;
+      for (const m of ex.muscles) add(m, n, eff);
       for (const m of synergistsOf(ex)) {
-        if (!ex.muscles.includes(m)) perMuscle.set(m, (perMuscle.get(m) ?? 0) + n * SCIENCE.indirectSetWeight);
+        if (!ex.muscles.includes(m)) add(m, n * SCIENCE.indirectSetWeight, eff * SCIENCE.indirectSetWeight);
       }
     }
-    for (const [m, rawSets] of perMuscle) {
+    for (const [m, [rawSets, effSets]] of perMuscle) {
       const n = Math.ceil(rawSets);
+      const intensity = Math.min(1.3, Math.max(0.6, rawSets ? (effSets / rawSets) * note : 1));
       const cur = last.get(m);
-      if (!cur || at > cur.at) last.set(m, { date: s.date, at, sets: n });
+      if (!cur || at > cur.at) last.set(m, { date: s.date, at, sets: n, intensity });
     }
   }
 
@@ -74,17 +118,29 @@ export function muscleStatus(
   for (const m of MUSCLE_ORDER) {
     const l = last.get(m);
     if (!l) {
-      out[m] = { muscle: m, sets: vol[m], target: plan[m], lastSets: 0, recovery: 1, state: "sem-treino" };
+      out[m] = { muscle: m, sets: vol[m], target: plan[m], lastSets: 0, recovery: 1, state: "sem-treino", intensity: 1, neededHours: 0 };
       continue;
     }
     const daysSince = daysBetween(l.date, today);
     const hours = Math.max(0, (now - l.at) / 3600_000);
     const mult = recoveryMultipliers?.[m] ?? 1;
-    const neededHours = Math.max(18, recoveryHours(l.sets) * mult);
+    // Treino leve recupera mais rápido e treino duro mais devagar (±25% no máximo).
+    const neededHours = Math.max(18, recoveryHours(l.sets) * mult * Math.min(1.25, Math.max(0.75, l.intensity)));
     const recovery = Math.min(1, hours / neededHours);
     const state: MuscleState =
       daysSince >= UNTRAINED_DAYS ? "sem-treino" : daysSince >= LATE_DAYS ? "atrasado" : recovery < 1 ? "recuperando" : "pronto";
-    out[m] = { muscle: m, sets: vol[m], target: plan[m], lastDate: l.date, daysSince, lastSets: l.sets, recovery, state };
+    out[m] = {
+      muscle: m,
+      sets: vol[m],
+      target: plan[m],
+      lastDate: l.date,
+      daysSince,
+      lastSets: l.sets,
+      recovery,
+      state,
+      intensity: l.intensity,
+      neededHours,
+    };
   }
   return out;
 }
@@ -94,9 +150,22 @@ export function muscleStatus(
 /** Faixas do mapa de fadiga: 0–49 estável, 50–74 atenção, 75+ crítico. */
 export type FatigueLevel = "estavel" | "atencao" | "critico";
 
-/** 0–100: quanto ainda falta recuperar desde o último treino. Pronto, atrasado ou sem treino = 0. */
+/**
+ * 0–100: quanto ainda falta recuperar desde o último treino × o pico daquele treino. O pico é a intensidade
+ * (limitada a 1): um treino leve (pump fraco, sobrando reps, "treino ruim") começa abaixo de 100%.
+ * Pronto, atrasado ou sem treino = 0.
+ */
 export function fatiguePct(s: MuscleStatus): number {
-  return s.state === "recuperando" ? Math.round((1 - s.recovery) * 100) : 0;
+  if (s.state !== "recuperando") return 0;
+  const peak = Math.min(1, s.intensity ?? 1);
+  return Math.round((1 - s.recovery) * peak * 100);
+}
+
+/** Cor contínua da fadiga: ciano (0) → âmbar (50) → vermelho (100), em tons dos tokens do app. */
+export function fatigueColor(pct: number): string {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p <= 50) return `color-mix(in srgb, var(--amber) ${Math.round(p * 2)}%, var(--cyan))`;
+  return `color-mix(in srgb, var(--red) ${Math.round((p - 50) * 2)}%, var(--amber))`;
 }
 
 export function fatigueLevel(pct: number): FatigueLevel {
@@ -105,7 +174,7 @@ export function fatigueLevel(pct: number): FatigueLevel {
 
 /** Horas até 100% recuperado (0 se já está). */
 export function hoursToReady(s: MuscleStatus): number {
-  return s.state === "recuperando" ? Math.ceil((1 - s.recovery) * recoveryHours(s.lastSets)) : 0;
+  return s.state === "recuperando" ? Math.ceil((1 - s.recovery) * (s.neededHours || recoveryHours(s.lastSets))) : 0;
 }
 
 /** Prontidão (0–100) de um conjunto de músculos: média do quanto cada um já recuperou. */
