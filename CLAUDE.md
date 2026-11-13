@@ -583,6 +583,12 @@ boas-vindas usa a padrão. Persona nova: gere os dois arquivos no mesmo enquadra
   | -------- | -------- | -------- | -------- | -------- | -------- |
   | 11 px    | 12 px    | 13,5 px  | 15,5 px  | 20 px    | 30 px    |
 
+- Espaço (vão, padding, margem novos; nada de 10, 14, 18, 22):
+
+  | `--sp-1` | `--sp-2` | `--sp-3` | `--sp-4` | `--sp-5` | `--sp-6` |
+  | -------- | -------- | -------- | -------- | -------- | -------- |
+  | 4 px     | 8 px     | 12 px    | 16 px    | 24 px    | 32 px    |
+
 - `--nav-h: 66px`; `--text-zoom` (fonte do sistema).
 
 **Modos**:
@@ -605,6 +611,26 @@ boas-vindas usa a padrão. Persona nova: gere os dois arquivos no mesmo enquadra
 - Nenhum texto cortado em 320 px nem com fonte do sistema a 130%.
 - Contraste conforme a WCAG.
 - Respeite `prefers-reduced-motion`.
+
+**Regras de design** (R1–R11; origem, detalhe e módulos em `docs/plano-refino-visual.md`, seções 3 e 3A). Na dúvida
+entre duas soluções, vence a que obedece mais regras:
+
+- **R1 Proximidade**: vão dentro de um grupo ≤ metade do vão entre grupos; itens do mesmo tipo moram num painel só.
+- **R2 Menos bordas**: linha de lista não é cartão; um contêiner com chanfro e filetes `--line-2` entre as linhas.
+- **R3 Luz, não tamanho**: `--ink` no dado, `--ink-2` no apoio, `--ink-3` no rótulo; para destacar, apague o vizinho.
+- **R4 Vermelho é sinal**: no máximo 1 botão vermelho cheio por tela visível; âmbar = recorde (só etiqueta), ciano =
+  informação e seleção, verde = ok; perigo usa as listras da zona de perigo.
+- **R5 Orbitron é tempero**: só em título de página, nome curto de cartão (≤ 3 palavras) e número de destaque; linha,
+  pessoa e treino em lista vão em Exo 2 600, caixa normal; rótulo em Share Tech Mono.
+- **R6 Uma aparência por função**: um só recolhível (seta à direita que gira), um só "selecionado" por tipo (modo =
+  cheio claro, filtro = ciano), um só liga/desliga (interruptor).
+- **R7 Grade sem órfão**: nenhuma fileira termina com um item sozinho; chips cabem numa grade exata ou rolam numa linha.
+- **R8 Denso, com escala**: só os passos `--sp-1..6`.
+- **R9 Enfeite sugere função**: código, colchete, LED e varredura só onde dizem algo verdadeiro.
+- **R10 Recolher com honestidade**: o resumo mostra o valor atual; nunca recolhível dentro de recolhível; o que se usa
+  toda vez não fica escondido.
+- **R11 Limites que não mudam**: alvo ≥ 44 px, fonte mínima `--fs-1`, contraste AA, 320 px até tablet, texto a 130%,
+  `prefers-reduced-motion`, orçamento de 400 hex.
 
 ## 8. Armadilhas conhecidas (já custaram tempo)
 

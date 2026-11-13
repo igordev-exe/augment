@@ -75,6 +75,16 @@
   --fs-4: 15.5px; /* corpo */
   --fs-5: 20px; /* subtítulo */
   --fs-6: 30px; /* número de destaque */
+  /*
+    Escala de espaço (6 passos). Vão, padding e margem novos usam só estes; nada de 10, 14, 18, 22.
+    Vão dentro de um grupo ≤ metade do vão entre grupos (docs/plano-refino-visual.md, R1 e R8).
+  */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
   --sel: var(--cyan);
   --sel-soft: var(--cyan-soft);
   /*
