@@ -47,7 +47,7 @@ export interface IntentResult {
   proposal?: IntentProposal;
 }
 
-function norm(s: string): string {
+export function norm(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
@@ -75,12 +75,12 @@ const MUSCLE_KEYWORDS_BY_LENGTH = MUSCLE_KEYWORDS.flatMap(({ muscle, words }) =>
 );
 
 /** Palavra ou expressão inteira no texto já normalizado (sem pegar "casa" dentro de "casaco"). */
-function hasWord(t: string, phrase: string): boolean {
+export function hasWord(t: string, phrase: string): boolean {
   const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
   return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`).test(t);
 }
 
-function hasAny(t: string, phrases: string[]): boolean {
+export function hasAny(t: string, phrases: string[]): boolean {
   return phrases.some((p) => hasWord(t, p));
 }
 

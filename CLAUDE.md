@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (275 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (289 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -367,11 +367,30 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   `planDay()` devolve uma `SessionAdaptation` efêmera (séries, `alt`, `stop`) que `buildSession` aplica no retrato
   da sessão. **Nunca altera `db.programs`.** Pisos: 2 séries em composto, 1 em isolado.
 - `intents.ts`: `matchIntent` (6 intenções, por palavra) e `handleIntent` (resposta na hora, offline; mudanças viram
-  `IntentProposal` que só grava com confirmação). Negar dor não é queixa.
+  `IntentProposal` que só grava com confirmação). Negar dor não é queixa. Exporta `norm`, `hasWord`, `hasAny`.
+- **Chat sem chave** (fase 1 de `docs/prompt-chat-local.md`; sem modelo de linguagem, sem rede). Ordem na tela:
+  intenções → `localReply` (trava → dados → busca). Com chave, só as respostas certeiras ficam locais.
+  - `data/answers.ts`: `ANSWERS` (136 respostas prontas: treino, alimentação, recuperação, app, iniciante; 4+ `asks`,
+    `level` ou `principle` obrigatório fora do app), `GUARD_REPLY`. Revisão do dono: `docs/respostas-para-revisar.md`.
+  - `answers.ts`: buscador próprio (radical leve `stem`, `SYNONYMS` com abreviações de celular, BM25 por campo
+    `BM25`, 1 erro de digitação), `guardTopic` (dor no peito, lesão, remédio, hormônio, transtorno alimentar,
+    gravidez, doença, dieta < 1.200 kcal, menor de idade), `rank`, `findAnswer` → answer/maybe/none/guard com
+    `THRESHOLDS` calibrados. Nome de exercício ou músculo que nenhuma resposta cita sai da conta.
+  - `data-answers.ts`: `detectExercise` (programa → 34 curados → 569 estendidos, pt e en), `matchData` e
+    `dataAnswer` (recorde, última vez, trocar, como faz, o que trabalha, próximo treino, semana do ciclo, músculo
+    pronto, séries da semana, peso, minha semana, sequência). Continuação curta ("e no hack?") herda o tipo.
+  - `localchat.ts`: `localReply` → `{ text, meta: LocalMeta, ctx }`; `personalize` põe o peso da pessoa em proteína e
+    ritmo de ganho/perda; `STARTERS`. `CoachChat.local[índice]` guarda o `LocalMeta` (nível, "Ler mais" no Guia
+    `#/guia?p=<id>`, atalho, perguntas tocáveis, "Levar a pergunta para outro chat"). `isUrgent`: na tela, a urgência
+    (dor no peito, falta de ar, desmaio) roda ANTES das intenções, senão "dor no peito" vira proposta de proteger o
+    peitoral.
+  - Medição: `answers.golden.ts` (172 dentro, 40 fora; nenhuma cópia de `asks`) e `answers.test.ts` exige top-1 ≥ 85%,
+    top-3 ≥ 95%, fora respondido ≤ 5%, trava 100%. Ao mexer em sinônimo ou limiar, rode e olhe a lista de erros.
 - Hooks: `useOperatorMemory`, `useOperatorState` (`hooks.tsx`); `db.ts`: `loadOperatorMemory`, `saveOperatorMemory`,
   `upsertConstraint`, `removeConstraint`, `ensureMesoHistory`.
 - Telas: Hoje (linha do banner só quando `!silent`, `planDay` na duração e no `buildSession`), ExerciseBlock
-  (lista `.why-load` dentro da dobra do PlanCard), Coach (intenção antes do modelo + "Perguntar ao treinador mesmo assim"), Relatório
+  (lista `.why-load` dentro da dobra do PlanCard), Coach (intenção e respostas prontas antes do modelo + "Perguntar ao treinador mesmo assim"; sem chave, o chat
+  local é a tela principal e a chave vira o convite "Ligar o treinador completo"), Relatório
   e treinador (`gemeo_digital` no contexto).
 - **Texto para a pessoa sem jargão**: nada de "gêmeo", "calibração", "telemetria", "curva" na tela.
 - Testes: `operator.test.ts`, `planner.test.ts`, `intents.test.ts` e `guarantees.test.ts` (o que o planejador nunca

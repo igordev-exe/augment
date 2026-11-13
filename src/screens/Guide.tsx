@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { MUSCLE_LABEL, MUSCLE_ORDER, shortName } from "../data/program";
 import { whyLabel } from "../components/NudgeList";
@@ -168,6 +168,14 @@ export function Guide() {
   const vol = plannedVolume(3);
   const frac = plannedVolume(3, true);
   const temas = [...new Set(PRINCIPLES.map((p) => p.tema))];
+  // "Ler mais" do treinador abre direto no princípio (#/guia?p=<id>).
+  const [params] = useSearchParams();
+  const target = params.get("p");
+  useEffect(() => {
+    if (!target) return;
+    const t = window.setTimeout(() => goTo(`p-${target}`), 80);
+    return () => window.clearTimeout(t);
+  }, [target]);
   return (
     <div className="stack-lg">
       <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="Protocolos de execução, progressão de carga e referências." />
@@ -583,7 +591,7 @@ export function Guide() {
               {t}
             </h3>
             {PRINCIPLES.filter((p) => p.tema === t).map((p) => (
-              <div key={p.id} className="stack" style={{ gap: 4 }}>
+              <div key={p.id} id={`p-${p.id}`} className={`stack${target === p.id ? " is-target" : ""}`} style={{ gap: 4 }}>
                 <span>
                   <span data-augmented-ui="br-clip border" className={`chip ${LEVEL_TONE[p.nivel]}`}>
                     {LEVEL_LABEL[p.nivel]}

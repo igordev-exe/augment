@@ -598,3 +598,62 @@ table.t a {
 .composer {
   gap: 8px;
 }
+/* Respostas prontas (treinador sem chave): nível, atalhos e perguntas tocáveis logo abaixo da resposta. */
+.local-extras {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: calc(var(--sp-1) * -1);
+  padding-left: var(--sp-3);
+}
+.local-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+}
+.local-links .link-btn,
+.local-extras > .link-btn,
+.coach-upgrade {
+  min-height: 44px;
+}
+.coach-upgrade {
+  align-self: flex-start;
+}
+.local-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  width: 100%;
+}
+.ask-chip {
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--sector-line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--fs-3);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.ask-chip:active {
+  background: var(--sector-soft);
+}
+.ask-chip:disabled {
+  opacity: 0.5;
+}
+.bubble.coach-msg.local-guard {
+  border-left-color: var(--amber);
+}
+.bubble.coach-msg.local-none {
+  border-left-color: var(--ink-3);
+}
+/* Princípio aberto pelo "Ler mais" do treinador. */
+.guide-sec .is-target {
+  outline: 1px solid var(--sector-line);
+  outline-offset: var(--sp-2);
+}

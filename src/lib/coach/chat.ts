@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { LocalMeta } from "../core/localchat";
 import { db } from "../db";
 import { isNative, readSecretKey, writeSecretKey } from "../native";
 import { coachSystem, runCoachTool, ToolInputError, type CoachData } from "./context";
@@ -38,6 +39,8 @@ export interface CoachChat {
   notes?: string[];
   /** Timestamp do último turno (para podar tool_results antigos após o cache de 5 min expirar). */
   lastTurnAt?: number;
+  /** Respostas prontas (sem chave), pelo índice da mensagem: nível de evidência, atalhos e perguntas tocáveis. */
+  local?: Record<number, LocalMeta>;
 }
 
 export const EMPTY_CHAT: CoachChat = { messages: [], usage: { input: 0, cacheRead: 0, output: 0 }, proposals: {} };

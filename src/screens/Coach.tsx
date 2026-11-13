@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import {
   coachTurn,
@@ -20,6 +20,9 @@ import {
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
 import { handleIntent, type IntentProposal } from "../lib/core/intents";
+import type { DataContext } from "../lib/core/data-answers";
+import { isUrgent, localReply, STARTERS, type LocalMeta } from "../lib/core/localchat";
+import { LEVEL_LABEL, type EvidenceLevel } from "../data/science";
 import { addAbsence, upsertConstraint } from "../lib/db";
 import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
@@ -85,6 +88,65 @@ function Md({ text }: { text: string }) {
   return <div className="prose md">{blocks}</div>;
 }
 
+const LEVEL_TONE: Record<EvidenceLevel, string> = { evidencia: "go", consenso: "int", campo: "warn", hipotese: "changed" };
+
+/**
+ * O que vem junto de uma resposta pronta: nível de evidência, "Ler mais" no Guia, atalho para a tela e perguntas
+ * tocáveis (relacionadas, "você quis dizer" ou sugestões do "não sei").
+ */
+function LocalExtras({
+  meta,
+  onAsk,
+  onHandoff,
+  disabled,
+}: {
+  meta: LocalMeta;
+  onAsk?: (q: string) => void;
+  onHandoff?: () => void;
+  disabled?: boolean;
+}) {
+  const links = meta.level || meta.principle || meta.route;
+  const chips = onAsk ? (meta.chips ?? []) : [];
+  if (!links && !chips.length && !onHandoff) return null;
+  return (
+    <div className="local-extras">
+      {links && (
+        <div className="local-links">
+          {meta.level && (
+            <span data-augmented-ui="br-clip border" className={`chip ${LEVEL_TONE[meta.level]}`}>
+              {LEVEL_LABEL[meta.level]}
+            </span>
+          )}
+          {meta.principle && (
+            <Link className="link-btn" to={`/guia?p=${meta.principle}`}>
+              Ler mais no Guia
+            </Link>
+          )}
+          {meta.route && (
+            <Link className="link-btn" to={meta.route}>
+              Abrir no app
+            </Link>
+          )}
+        </div>
+      )}
+      {chips.length > 0 && (
+        <div className="local-chips" role="group" aria-label={meta.kind === "maybe" ? "Você quis dizer" : "Perguntas relacionadas"}>
+          {chips.map((q) => (
+            <button key={q} type="button" className="ask-chip" disabled={disabled} onClick={() => onAsk!(q)}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+      {onHandoff && (
+        <button type="button" className="link-btn" onClick={onHandoff}>
+          Levar a pergunta para outro chat
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Texto que ele digitou, sem a linha de contexto que o app põe na frente. */
 function userText(m: Anthropic.Beta.BetaMessageParam): string | null {
   const blocks = typeof m.content === "string" ? [{ type: "text", text: m.content }] : (m.content ?? []);
@@ -111,6 +173,9 @@ export function Coach() {
   const [pendingIntent, setPendingIntent] = useState<IntentProposal | null>(null);
   /** Última pergunta respondida pelo núcleo na hora: a pessoa pode mandar para o treinador mesmo assim. */
   const [answeredLocally, setAnsweredLocally] = useState<string | null>(null);
+  /** Última entidade das respostas prontas, para continuações ("e no agachamento?"). */
+  const [localCtx, setLocalCtx] = useState<DataContext>({});
+  const toast = useToast();
   const abort = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const autoSent = useRef(false);
@@ -118,7 +183,8 @@ export function Coach() {
   useEffect(() => {
     loadCoachConfig().then((c) => {
       setConfig(c);
-      if (!c.apiKey || params.get("config")) setEditing(true);
+      // Sem chave, o chat de respostas prontas é a tela principal; a configuração só abre quando pedida.
+      if (params.get("config")) setEditing(true);
     });
     loadCoachChat().then((ch) => {
       setChat(ch);
@@ -134,7 +200,7 @@ export function Coach() {
 
   // Disparo automático quando vem de "Debrief do treinador" (?auto=1&q=...)
   useEffect(() => {
-    if (autoSent.current || !chatLoaded || !sessions || !config?.apiKey || editing || busy) return;
+    if (autoSent.current || !chatLoaded || !sessions || !config || editing || busy) return;
     const q = params.get("q");
     const auto = params.get("auto");
     if (q && auto === "1") {
@@ -161,9 +227,12 @@ export function Coach() {
     setAnsweredLocally(null);
     if (params.get("q") || params.get("auto")) setParams({}, { replace: true });
     const notes = chat.notes?.length ? `\n[${chat.notes.join(" ")}]` : "";
-    const localIntent = skipLocal
-      ? { matched: false as const, reply: "" }
-      : handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
+    // Urgência (dor no peito, falta de ar, desmaio) vem antes das intenções: "dor no peito" não pode virar
+    // proposta de proteger o peitoral. Cai na trava do `localReply` logo abaixo.
+    const localIntent =
+      skipLocal || isUrgent(t)
+        ? { matched: false as const, reply: "" }
+        : handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
     if (localIntent.matched) {
       setPendingIntent(localIntent.proposal ?? null);
       if (config?.apiKey) setAnsweredLocally(t);
@@ -179,7 +248,26 @@ export function Coach() {
       updateChat(nextChat);
       return;
     }
-    if (!config?.apiKey) return;
+    // Respostas prontas: sem chave, sempre; com chave, só as certeiras (o resto vai para o treinador completo).
+    const hasKey = !!config?.apiKey;
+    const local = skipLocal ? null : localReply(t, { ...data, bodyLog: bodyLog ?? [] }, localCtx);
+    if (local && (!hasKey || local.meta.kind === "answer" || local.meta.kind === "data" || local.meta.kind === "guard")) {
+      setLocalCtx(local.ctx);
+      setPendingIntent(null);
+      if (hasKey && local.meta.kind !== "guard") setAnsweredLocally(t);
+      updateChat({
+        ...chat,
+        notes: [],
+        messages: [
+          ...chat.messages,
+          { role: "user", content: [{ type: "text", text: `${turnContext(data)}${notes}\n\n${t}` }] },
+          { role: "assistant", content: [{ type: "text", text: local.text }] },
+        ],
+        local: { ...chat.local, [chat.messages.length + 1]: local.meta },
+      });
+      return;
+    }
+    if (!hasKey) return;
     let cur: CoachChat = {
       ...chat,
       notes: [],
@@ -219,6 +307,25 @@ export function Coach() {
     }
   }
 
+  /** "Não sei": leva o documento do treinador, com a pergunta no fim, para outro chat. */
+  async function handoff(question: string) {
+    const text = `${coachHandoffText({ ...data, bodyLog: bodyLog ?? [] })}\n\n## Minha pergunta\n\n${question}\n`;
+    try {
+      const how = await shareOrDownload(`augment-pergunta-${today}.md`, text, "Pergunta ao treinador", "text/markdown");
+      toast(
+        how === "shared" ? "Escolha o app de chat para continuar a conversa." : "Arquivo salvo: anexe numa conversa do seu chat.",
+        "ok",
+      );
+    } catch {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copiado. Cole numa conversa nova do seu chat.", "ok");
+      } catch {
+        toast("Não deu para compartilhar nem copiar.", "warn");
+      }
+    }
+  }
+
   async function answer(id: string, input: Record<string, unknown>, apply: boolean) {
     const p = parseProposal(input);
     const what = describeProposal(p, settings, today);
@@ -241,10 +348,13 @@ export function Coach() {
         onSave={async (c) => {
           await saveCoachConfig(c);
           setConfig(c);
-          setEditing(!c.apiKey);
+          setEditing(false);
           if (params.get("config")) setParams({}, { replace: true });
         }}
-        onCancel={config.apiKey ? () => setEditing(false) : undefined}
+        onCancel={() => {
+          setEditing(false);
+          if (params.get("config")) setParams({}, { replace: true });
+        }}
       />
     );
   }
@@ -255,21 +365,29 @@ export function Coach() {
         back="/"
         code="AUG.OS // TREINADOR"
         title="Treinador"
-        sub={`${MODELS.find((m) => m.id === config.model)?.label.split(" · ")[0] ?? config.model}. Lê seus treinos; as cargas continuam vindo do app.`}
+        sub={
+          config.apiKey
+            ? `${MODELS.find((m) => m.id === config.model)?.label.split(" · ")[0] ?? config.model}. Lê seus treinos; as cargas continuam vindo do app.`
+            : "Respostas prontas e conferidas, com os seus números. Funciona sem internet; quando não souber, eu digo."
+        }
         right={
-          <button type="button" className="link-btn" onClick={() => setEditing(true)}>
-            Configurar
-          </button>
+          config.apiKey ? (
+            <button type="button" className="link-btn" onClick={() => setEditing(true)}>
+              Configurar
+            </button>
+          ) : undefined
         }
       />
 
       {chat.messages.length === 0 && (
         <section className="stack">
           <p className="small muted" style={{ margin: 0 }}>
-            Pergunte qualquer coisa sobre seus treinos. O treinador consulta o histórico, os relatórios e a agenda antes de responder.
+            {config.apiKey
+              ? "Pergunte qualquer coisa sobre seus treinos. O treinador consulta o histórico, os relatórios e a agenda antes de responder."
+              : "Pergunte sobre treino, alimentação, recuperação, o app ou os seus números. Experimente:"}
           </p>
           <div className="stack" style={{ gap: 8 }}>
-            {QUICK.map((q) => (
+            {(config.apiKey ? QUICK : STARTERS).map((q) => (
               <button
                 key={q}
                 type="button"
@@ -299,10 +417,24 @@ export function Coach() {
             <Fragment key={i}>
               {blocks.map((b, j) => {
                 if (b.type === "text" && b.text.trim()) {
+                  const meta = chat.local?.[i];
+                  const last = i === chat.messages.length - 1;
+                  const asked = meta?.handoff && last ? userText(chat.messages[i - 1]) : null;
                   return (
-                    <div key={j} className="bubble coach-msg">
-                      <Md text={b.text} />
-                    </div>
+                    <Fragment key={j}>
+                      <div className={`bubble coach-msg${meta ? ` local-${meta.kind}` : ""}`}>
+                        <Md text={b.text} />
+                      </div>
+                      {meta && (
+                        // Perguntas tocáveis só na última resposta; nível e atalhos ficam em todas.
+                        <LocalExtras
+                          meta={meta}
+                          disabled={busy}
+                          onAsk={last ? (q) => void send(q) : undefined}
+                          onHandoff={asked ? () => void handoff(asked) : undefined}
+                        />
+                      )}
+                    </Fragment>
                   );
                 }
                 if (b.type === "tool_use" && b.name === "propor_ajuste") {
@@ -424,7 +556,7 @@ export function Coach() {
         <textarea
           className="note"
           rows={2}
-          placeholder="Pergunte ao treinador…"
+          placeholder={config.apiKey ? "Pergunte ao treinador…" : "Pergunte sobre treino, comida ou seus números…"}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -449,12 +581,20 @@ export function Coach() {
               type="button"
               data-augmented-ui="tl-clip br-clip border"
               className="btn btn-ghost"
-              onClick={() => updateChat(EMPTY_CHAT)}
+              onClick={() => {
+                setLocalCtx({});
+                updateChat(EMPTY_CHAT);
+              }}
             >
               Nova conversa
             </button>
           )}
         </div>
+        {!config.apiKey && (
+          <button type="button" className="link-btn coach-upgrade" onClick={() => setEditing(true)}>
+            Ligar o treinador completo
+          </button>
+        )}
         {tokens > 0 && (
           <span className="tiny faint">
             Nesta conversa: {Math.round(tokens / 1000)} mil tokens, ≈ US$ {cost.toFixed(cost < 0.1 ? 3 : 2).replace(".", ",")}.
