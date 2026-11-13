@@ -1,6 +1,7 @@
 // Fotografa cada tela do app (390 × 844, 2×, com dados de demonstração) para revisão de design.
 // Uso: node tools/verify/shots.mjs [url] [pasta] [rotas separadas por vírgula]
 import { browserArgs, browserPath } from "./browser.mjs";
+import { loginScript } from "./login.mjs";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -58,16 +59,24 @@ await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, devi
 await send("Page.navigate", { url: BASE + "/#/" });
 await sleep(3500);
 console.log("seed", await js(SEED));
+// Com AUDIT_API, entra na conta de teste para fotografar as telas logadas (conta e amigos).
+if (process.env.AUDIT_API) console.log("conta", await js(loginScript(process.env.AUDIT_API)));
 await send("Page.reload");
 await sleep(4500);
 await shot("boot", false);
 await sleep(1500);
-for (const r of ROUTES) {
+// Rota "/online@Conta": abre a rota e toca no botão (aba) com esse texto antes da foto.
+for (const entry of ROUTES) {
+  const [r, tap] = entry.split("@");
   await js(`location.hash=${JSON.stringify(r)}`);
+  if (tap) {
+    await sleep(1200);
+    await js(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(tap)})?.click()`);
+  }
   await sleep(1400);
   if (!process.env.SHOTS_RAW) await js(`document.getAnimations().forEach(a=>{try{a.finish()}catch{}})`);
   else await sleep(1200);
-  const name = r === "/" ? "hoje" : r.replace(/^\//, "").replace(/\//g, "-");
+  const name = (r === "/" ? "hoje" : r.replace(/^\//, "").replace(/[/?=&]/g, "-")) + (tap ? `-${tap.toLowerCase()}` : "");
   await shot(name, true);
 }
 // treino em andamento

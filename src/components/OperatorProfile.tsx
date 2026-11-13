@@ -1,4 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { RankRow } from "./RankRow";
+import { Ticker } from "./Ticker";
+import { Link } from "react-router-dom";
 import type { Session } from "../data/types";
 import { avatarSrc } from "../data/personas";
 import { dayOf } from "../data/program";
@@ -9,33 +12,51 @@ import { sessionStats } from "../lib/sessions";
 import { weekStreaks } from "../lib/visual";
 import { useOperatorMemory } from "../lib/hooks";
 
-// Perfil do operador (design "Perfil e Amigos Cyberpunk"): capa com grade e varredura, avatar sobre a capa, etiquetas,
-// quatro números e duas abas: Atividade (os últimos treinos como transmissões) e Telemetria (volume de 8 semanas).
-// Tudo vem do histórico do aparelho; o que o servidor não tem (seguidores, curtidas) não aparece.
+// Perfil do operador (design "Perfil e Amigos Cyberpunk"): capa com grade, avatar sobre a capa, nome com o posto ao
+// lado, etiquetas, quatro números e abas: Atividade (os últimos treinos), Telemetria (volume de 8 semanas) e, quando a
+// tela passa `account`, Conta (a administração da conta, fora da rolagem do perfil). Tudo vem do histórico do aparelho;
+// o que o servidor não tem (seguidores, curtidas) não aparece.
+
+export type ProfileTab = "atividade" | "telemetria" | "conta";
 
 export function OperatorProfile({
   user,
   persona,
   sessions,
   friends,
+  pendingFriends = 0,
   today,
   tags,
   weeklyTarget,
   children,
+  account,
+  notice,
+  tab: tabProp,
+  onTab,
 }: {
   user: { id: string; displayName: string; username: string };
   persona?: string;
   sessions: Session[];
   friends: number;
+  /** Pedidos de amizade esperando: aparecem na célula "Amigos", que leva a #/amigos. */
+  pendingFriends?: number;
   today: string;
   /** Etiquetas do operador (programa, semana do meso…). */
   tags: string[];
   /** Treinos por semana que contam para a sequência. */
   weeklyTarget: number;
-  /** Rodapé do cartão (sincronização, ações). */
+  /** Linha discreta embaixo do cartão (estado da nuvem). Sem botões grandes. */
   children?: ReactNode;
+  /** Conteúdo da aba Conta. Sem ele, só as duas abas do perfil. */
+  account?: ReactNode;
+  /** Aviso curto logo depois do cartão (ex.: guardar o código de recuperação). */
+  notice?: ReactNode;
+  tab?: ProfileTab;
+  onTab?: (t: ProfileTab) => void;
 }) {
-  const [tab, setTab] = useState<"atividade" | "telemetria">("atividade");
+  const [own, setOwn] = useState<ProfileTab>("atividade");
+  const tab = tabProp ?? own;
+  const setTab = onTab ?? setOwn;
   const done = useMemo(() => sessions.filter((s) => s.status === "done"), [sessions]);
   const prs = useMemo(() => prsBySession(done), [done]);
   const recordExercises = useMemo(() => new Set([...prs.values()].flat().map((p) => p.exId)).size, [prs]);
@@ -44,6 +65,11 @@ export function OperatorProfile({
   const tele = useMemo(() => profileTelemetry(done, today), [done, today]);
   const recent = useMemo(() => [...done].sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0)).slice(0, 3), [done]);
   const maxWeek = Math.max(1, ...tele.weeks.map((w) => w.volumeKg));
+  const tabs: [ProfileTab, string, string][] = [
+    ["atividade", "Atividade", "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"],
+    ["telemetria", "Telemetria", "M3 12h4l2.2-6 4.2 12 2.2-6H21"],
+  ];
+  if (account) tabs.push(["conta", "Conta", "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0"]);
 
   return (
     <>
@@ -55,37 +81,49 @@ export function OperatorProfile({
         </div>
         <div className="op-main">
           <span className="id-avatar op-avatar" aria-hidden="true">
-            <img src={avatarSrc(persona)} alt="" width={96} height={96} />
+            <img src={avatarSrc(persona)} alt="" width={86} height={86} />
           </span>
           <div className="op-identity">
-            <span className="op-rank">{rankOf(done.length)}</span>
-            <h2>{user.displayName}</h2>
+            <h2>
+              <span className="op-name">{user.displayName}</span>
+              <span className="op-rank">{rankOf(done.length)}</span>
+            </h2>
             <span className="op-handle">@{user.username}</span>
-            {tags.length > 0 && (
-              <ul className="op-tags">
-                {tags.map((t) => (
-                  <li key={t}>{t}</li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
+        <RankRow done={done.length} />
+        {tags.length > 0 && (
+          <ul className="op-tags">
+            {tags.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        )}
         <dl className="op-stats">
           <div>
-            <dd>{done.length}</dd>
+            <dd>
+              <Ticker value={done.length} />
+            </dd>
             <dt>Sessões</dt>
           </div>
           <div>
-            <dd>{recordExercises}</dd>
+            <dd>
+              <Ticker value={recordExercises} />
+            </dd>
             <dt>Recordes</dt>
           </div>
-          <div>
-            <dd>{friends}</dd>
-            <dt>Amigos</dt>
+          <div className="op-stat-link">
+            <Link to="/amigos" aria-label={`Amigos: ${friends}${pendingFriends ? `, ${pendingFriends} pedido(s) esperando` : ""}`}>
+              <dd>
+                {friends}
+                {pendingFriends > 0 && <small className="op-pending">+{pendingFriends}</small>}
+              </dd>
+              <dt>Amigos ›</dt>
+            </Link>
           </div>
           <div>
             <dd>
-              {streak}
+              <Ticker value={streak} />
               <small>sem</small>
             </dd>
             <dt>Sequência</dt>
@@ -93,23 +131,32 @@ export function OperatorProfile({
         </dl>
         {children && <div className="op-foot">{children}</div>}
       </section>
+      {notice}
 
-      <div className="op-tabs" role="tablist" aria-label="Perfil">
-        <button type="button" role="tab" aria-selected={tab === "atividade"} onClick={() => setTab("atividade")}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-            <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
-          </svg>
-          Atividade
-        </button>
-        <button type="button" role="tab" aria-selected={tab === "telemetria"} onClick={() => setTab("telemetria")}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-            <path d="M3 12h4l2.2-6 4.2 12 2.2-6H21" />
-          </svg>
-          Telemetria
-        </button>
+      <div className={`op-tabs${account ? " three" : ""}`} role="tablist" aria-label="Perfil">
+        {tabs.map(([id, label, d]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            className="aim"
+            id={`op-tab-${id}`}
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <path d={d} />
+            </svg>
+            {label}
+          </button>
+        ))}
       </div>
 
-      {tab === "atividade" ? (
+      {tab === "conta" && account ? (
+        <div role="tabpanel" aria-labelledby="op-tab-conta" className="stack-lg op-account">
+          {account}
+        </div>
+      ) : tab === "atividade" ? (
         recent.length === 0 ? (
           <div data-augmented-ui="tl-clip br-clip border" className="card flat no-signal">
             <span className="radar" aria-hidden="true" />
@@ -118,31 +165,9 @@ export function OperatorProfile({
           </div>
         ) : (
           <ul className="feed-posts">
-            {recent.map((s) => {
-              const st = sessionStats(s);
-              const n = prs.get(s.id)?.length ?? 0;
-              return (
-                <li key={s.id} data-augmented-ui="tl-clip br-clip border" className={`card feed-post${n ? " pr" : ""}`}>
-                  <PostLabel pr={n} />
-                  <p className="feed-post-title">{dayOf(s)?.name ?? s.day?.name ?? "Treino"}</p>
-                  <span className="tiny faint mono">{shortDate(s.date)}</span>
-                  <dl className="feed-post-stats">
-                    <div>
-                      <dt>Carga máx.</dt>
-                      <dd>{formatWeight(sessionTopKg(s))} kg</dd>
-                    </div>
-                    <div>
-                      <dt>Séries</dt>
-                      <dd>{st.sets}</dd>
-                    </div>
-                    <div>
-                      <dt>Volume</dt>
-                      <dd>{tonnes(st.volumeKg)}</dd>
-                    </div>
-                  </dl>
-                </li>
-              );
-            })}
+            {recent.map((s) => (
+              <WorkoutPost key={s.id} session={s} pr={prs.get(s.id)?.length ?? 0} />
+            ))}
           </ul>
         )
       ) : (
@@ -174,7 +199,9 @@ export function OperatorProfile({
             </div>
             <div>
               <dt>Consistência</dt>
-              <dd>{tele.consistencyPct}%</dd>
+              <dd>
+                <Ticker value={tele.consistencyPct} />%
+              </dd>
               <span>semanas com treino</span>
             </div>
             <div>
@@ -189,7 +216,40 @@ export function OperatorProfile({
   );
 }
 
-/** Faixa de cima de cada transmissão: "SESSÃO CONCLUÍDA" e, com recorde, quantos. */
+/** Cartão de um treino concluído: etiqueta, nome, data e os três números numa caixa única com filetes. */
+function WorkoutPost({ session: s, pr }: { session: Session; pr: number }) {
+  const st = sessionStats(s);
+  return (
+    <li data-augmented-ui="tl-clip br-clip border" className="card feed-post">
+      <PostLabel pr={pr} />
+      <p className="feed-post-title">{dayOf(s)?.name ?? s.day?.name ?? "Treino"}</p>
+      <span className="tiny faint mono">{shortDate(s.date)}</span>
+      <WorkoutData top={`${formatWeight(sessionTopKg(s))} kg`} sets={st.sets} volume={tonnes(st.volumeKg)} />
+    </li>
+  );
+}
+
+/** Os três números de um treino numa caixa só, separados por filete (no lugar de três caixas com barra). */
+export function WorkoutData({ top, sets, volume }: { top: ReactNode; sets: ReactNode; volume: ReactNode }) {
+  return (
+    <dl className="workout-data">
+      <div>
+        <dt>Carga máx.</dt>
+        <dd>{top}</dd>
+      </div>
+      <div>
+        <dt>Séries</dt>
+        <dd>{sets}</dd>
+      </div>
+      <div>
+        <dt>Volume</dt>
+        <dd>{volume}</dd>
+      </div>
+    </dl>
+  );
+}
+
+/** Faixa de cima de cada transmissão: "SESSÃO CONCLUÍDA" em ciano e, com recorde, quantos em âmbar (só a etiqueta). */
 export function PostLabel({ pr }: { pr: number }) {
   return (
     <div className="post-label">
@@ -199,12 +259,10 @@ export function PostLabel({ pr }: { pr: number }) {
         </svg>
         Sessão concluída
       </span>
-      {pr > 0 ? (
+      {pr > 0 && (
         <span className="post-pr">
           ★ {pr} recorde{pr > 1 ? "s" : ""}
         </span>
-      ) : (
-        <span>SYNC_OK</span>
       )}
     </div>
   );

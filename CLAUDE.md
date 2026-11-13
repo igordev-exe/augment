@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (272 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (275 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -109,6 +109,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 #/amigos                Friends          Adicionar amigo, pedidos, feed, comparação de recordes, bloquear e denunciar
 #/primeiro-uso          Onboarding       Assistente (dias, experiência, foco) que sugere um programa; `inApp`
 #/privacidade           PrivacyPolicy    Política de privacidade e regras de convivência
+#/kit                   Kit (lazy, dev)  Vitrine das peças de jogo; só com import.meta.env.DEV (?setor=tel&deload=1)
 *                       Today
 ```
 
@@ -297,6 +298,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 
 **`schedule.ts`**: `dayOrder`, `nextIndex`, `planAhead` (rotação dos dias pelo calendário de `trainingDays`).
 
+**`sector.ts`**: `Sector`, `SECTORS`, `SECTOR_LABEL`, `sectorFor(pathname)` e `applySector` (classe `sector-*` no
+`<html>`; ver "Peças de jogo" na seção 7).
+
 **Visual e métricas**:
 
 - `visual.ts`:
@@ -315,7 +319,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   composicao.
 - `achievements.ts`: `computeAchievements`.
 - `profile.ts`: `profileTelemetry` (volume de 8 semanas, consistência, recordes no ciclo), `sessionTopKg`,
-  `operatorSerial`, `tonnes`, `rankOf`. Usado por `components/OperatorProfile` (perfil na conta online) e pelo ranking
+  `operatorSerial`, `tonnes`, `rankOf`, `RANKS` e `rankProgress` (posto atual, próximo e quanto falta; `RankRow`). Usado por `components/OperatorProfile` (perfil na conta online) e pelo ranking
   semanal dos Amigos. Só números reais: nada de seguidores ou curtidas.
 - `hud.ts`: `hudSegments` e `finishLogLines`.
 
@@ -390,37 +394,42 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 
 ### `src/components/`
 
-| Componente                                                   | Papel                                                                                       |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `ExerciseBlock`                                              | cartão do exercício no treino: próxima série, fila, menu radial, aquecimento, RIR, feedback |
-| `SetRow`                                                     | linha de série (`parseNum`, prop `hint`, sugestão fantasma); `Choice`                       |
-| `PlanCard`                                                   | plano da série (decisão do motor)                                                           |
-| `TimerBar`                                                   | barra de descanso fixa                                                                      |
-| `SessionHud`                                                 | HUD fixo do treino                                                                          |
-| `HoldButton`                                                 | segurar para confirmar                                                                      |
-| `RadialMenu`                                                 | roda de ações; `useLongPress`                                                               |
-| `TerminalLog`                                                | log de fim de treino                                                                        |
-| `ShareWorkoutCard`                                           | imagem do treino em canvas para compartilhar                                                |
-| `FatigueMap` + `Anatomy`                                     | mapa de fadiga (SVG frente/costas; o antebraço é zona própria)                              |
-| `VolumeSlots`                                                | séries da semana por músculo                                                                |
-| `AttributeWheel`                                             | roda de atributos                                                                           |
-| `LineChart`, `ActivityHeatmap`, `RecordList`, `PhotoCompare` | gráficos e registros                                                                        |
-| `BodyLab`, `BodyGoalCard`                                    | biometria e meta                                                                            |
-| `EngineLab`, `NudgeList`                                     | explicação do motor e recados (`whyLabel`)                                                  |
-| `SysModule`/`SysModuleGroup`                                 | aviso no estilo módulo de sistema                                                           |
-| `PanelActions`                                               | ações de painel                                                                             |
-| `RestorePoints`                                              | pontos de restauração                                                                       |
-| `ExerciseDemo`                                               | fotos de execução                                                                           |
-| `Brand`                                                      | `BrandMark`, `Wordmark`, `BootScreen`                                                       |
-| `bits.tsx`                                                   | `StopBadge`, `PageHead`, `WeekStrip`, `dayName`, `dayCode`                                  |
-| `Icon`                                                       | ícones SVG por nome                                                                         |
+| Componente                                                   | Papel                                                                                                                                                                                                           |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ExerciseBlock`                                              | cartão do exercício no treino: próxima série, fila, menu radial, aquecimento, RIR, feedback                                                                                                                     |
+| `SetRow`                                                     | linha de série (`parseNum`, prop `hint`, sugestão fantasma); `Choice`                                                                                                                                           |
+| `PlanCard`                                                   | plano da série (decisão do motor)                                                                                                                                                                               |
+| `TimerBar`                                                   | barra de descanso fixa                                                                                                                                                                                          |
+| `SessionHud`                                                 | HUD fixo do treino                                                                                                                                                                                              |
+| `HoldButton`                                                 | segurar para confirmar                                                                                                                                                                                          |
+| `RadialMenu`                                                 | roda de ações; `useLongPress`                                                                                                                                                                                   |
+| `TerminalLog`                                                | log de fim de treino                                                                                                                                                                                            |
+| `ShareWorkoutCard`                                           | imagem do treino em canvas para compartilhar                                                                                                                                                                    |
+| `FatigueMap` + `Anatomy`                                     | mapa de fadiga (SVG frente/costas; o antebraço é zona própria)                                                                                                                                                  |
+| `VolumeSlots`                                                | séries da semana por músculo                                                                                                                                                                                    |
+| `AttributeWheel`                                             | roda de atributos                                                                                                                                                                                               |
+| `LineChart`, `ActivityHeatmap`, `RecordList`, `PhotoCompare` | gráficos e registros                                                                                                                                                                                            |
+| `BodyLab`, `BodyGoalCard`                                    | biometria e meta                                                                                                                                                                                                |
+| `EngineLab`, `NudgeList`                                     | explicação do motor e recados (`whyLabel`)                                                                                                                                                                      |
+| `SysModule`/`SysModuleGroup`                                 | aviso no estilo módulo de sistema                                                                                                                                                                               |
+| `PanelActions`                                               | ações de painel                                                                                                                                                                                                 |
+| `RestorePoints`                                              | pontos de restauração                                                                                                                                                                                           |
+| `ExerciseDemo`                                               | fotos de execução                                                                                                                                                                                               |
+| `Brand`                                                      | `BrandMark`, `Wordmark`, `BootScreen`                                                                                                                                                                           |
+| `bits.tsx`                                                   | `StopBadge`, `PageHead`, `WeekStrip`, `dayName`, `dayCode`                                                                                                                                                      |
+| `Icon`                                                       | ícones SVG por nome                                                                                                                                                                                             |
+| `Pieces`                                                     | peças de jogo: `BandPanel`, `ListPanel`/`ListRow`, `Slot`, `Hex`, `NumBlock`, `WarnPlate`, `SegBar`, `Gauge`; lista agrupada `GroupPanel` + `FoldRow`/`LinkRow`/`SwitchRow` (Ajustes, Conta, Amigos, Programas) |
+| `RankRow`, `AchievementGrid`                                 | posto com barra até o próximo (recompensa ao subir) e conquistas em hexágonos com painel de detalhe                                                                                                             |
+| `OperatorProfile`                                            | perfil da conta online: cartão limpo, abas Atividade/Telemetria/Conta, `WorkoutData` (3 números numa caixa)                                                                                                     |
+| `Ticker`                                                     | número que conta até o valor (família "leitura"; respeita reduzir movimento)                                                                                                                                    |
 
 ### `src/screens/`
 
 - `Today`, `SessionScreen`, `History`, `Progress`, `Report`, `Exercises` (`equipOf`), `ExerciseDetail`, `Guide`,
   `SettingsScreen`, `Programs` e `Coach`.
 - `ProgramEditor` também exporta `MusclePicker` e `AddExercise`; este é reaproveitado no treino.
-- `Online` (exporta `agoText`) e `Friends`: as duas telas do online.
+- `Online` (exporta `agoText`) e `Friends`: as duas telas do online. Na Conta, tudo que é administração fica na aba
+  Conta do perfil (lista agrupada + zona de perigo); em Amigos, ranking antes do feed e transmissões de 5 em 5.
 
 ### Online (`server/` e `src/lib/online/`)
 
@@ -536,7 +545,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - **Datas** são strings locais `AAAA-MM-DD` (`dates.ts`). Nada de `Date` em UTC para dia. `trainingDays` vai de 0 =
   domingo a 6 = sábado; `ProgramDay.weekday` usa 1 = segunda.
 
-## 7. Sistema visual (`src/styles/`, 14 arquivos)
+## 7. Sistema visual (`src/styles/`, 15 arquivos)
 
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
@@ -557,6 +566,42 @@ Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/style
 | `12-primeiro-uso-erro`       | assistente de primeiro uso e tela de erro                                                                                                                            |
 | `13-atmosfera`               | horizonte em perspectiva, cartões que "ligam", LEDs, carga nos botões, varredura biométrica, filtros que quebram linha, blocos recolhidos dos Ajustes (`.set-group`) |
 | `14-rede`                    | portão de identidade (login), perfil do operador (capa, abas Atividade/Telemetria), esquadrão (feed, ranking semanal, sigla)                                         |
+| `15-pecas`                   | peças de jogo (MC0): tokens de setor e de movimento, as seis peças, barra segmentada, mira, famílias de movimento, ruído                                             |
+
+**Peças de jogo** (`15-pecas.css` + `components/Pieces.tsx` + `components/Ticker.tsx`; vitrine em `#/kit`, só no
+dev, `screens/Kit.tsx`). Os módulos M1–M6 montam as telas com elas; cada peça tem um papel só:
+
+| Peça (componente)                     | Papel                                                                                                                                    |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `BandPanel` (`.band-panel`)           | bloco principal da tela (1 ou 2): faixa cheia na cor do setor + microtexto real                                                          |
+| `ListPanel`/`ListRow` (`.list-panel`) | listas: é o `.list` do Hoje com rótulo acima e linha título + valor                                                                      |
+| `Slot` (`.slot`)                      | coisa a preencher ou moldura de imagem; vazio = hachura e "+"                                                                            |
+| `Hex` (`.hex`)                        | o que se conquista ou evolui: `off` (travado, hachura), `on`, `sel` (mira)                                                               |
+| `NumBlock` (`.num-block`)             | contagem ou código curto; `line` é a versão de contorno                                                                                  |
+| `WarnPlate` (`.warn-plate`)           | perigo (sempre vermelho), alerta (âmbar), deload (`--steel`)                                                                             |
+| `SegBar` + `Gauge` (`.seg-bar`)       | progresso em segmentos com ponta clara, alturas `s`/`m`/`l`; `read` = leitura                                                            |
+| `.aim`                                | mira ciano no item selecionado (`aria-pressed`/`-selected`/`-current`, `.is-sel`); não usar em item com augmented-ui (ocupa o `::after`) |
+
+- **Setores** (`lib/sector.ts` → `sectorFor(pathname)`; o Shell põe `sector-op|tel|net|coach` no `<html>`): Operação
+  (Hoje, treino, Programas, Ajustes) = `--red`; Telemetria (Histórico, Progresso, Relatório, Exercícios, Guia) =
+  `--cyan`; Rede (Conta, Amigos, Privacidade) = `--violet`; Treinador = `--lime`. As peças usam `--sector`,
+  `--sector-soft`, `--sector-line`, `--sector-hi` e `--sector-ink` (texto sobre a cor cheia, ≥ 4,5:1 nos quatro e no
+  deload). A classe `sector-*` também vale num bloco qualquer. Cor de estado não muda com o setor.
+- **Famílias de movimento** (tokens `--t-toque` 90 ms, `--t-mira` 140, `--t-ligar` 220 + `--t-cascata` 40,
+  `--t-leitura` 500, `--t-recompensa` 400, curva `--ease-seco`): **ligar** = `.fx-ligar` no contêiner (a faixa desenha
+  e até 6 filhos entram em cascata); **toque** = cantoneiras fecham no `:active`; **mira** = `.aim`; **leitura** =
+  `<Ticker value>` e `SegBar read` (só na 1ª vez que aparece); **recompensa** = `playReward(el)` de `lib/fx.ts` (só
+  recorde, meta batida, posto novo, meso fechado; quem chama vibra `RECORD_BUZZ`); **ambiente** = `.fx-ambiente`
+  (laço lento que pausa fora da vista; no máximo 2 por tela). Só `transform`/`opacity`/cor nas `@keyframes`
+  (`npm run verify:keyframes`), sempre com o estado final igual ao estilo normal; tudo para em `fx-gym`/`fx-min` e
+  com "reduzir movimento" (`node tools/verify/motion.mjs`).
+- **Lista agrupada** (M1): `GroupPanel` (rótulo mono + um contêiner com um traço) com `FoldRow` (abre dentro do
+  painel, fundo `--surface-2` e filete ciano), `LinkRow` (seta para a direita) e `SwitchRow` (interruptor ciano,
+  `role="switch"`). Nada de `<details>` nativo nem recolhível dentro de recolhível. Dentro dela, opção de modo ligada é
+  cheia clara e escolha múltipla (`.toggle-chip.multi`) é ciano.
+- **Movimento**: inventário e famílias em `docs/movimento.md`. Toda troca de tela usa `pc-ligar` (cascata de 6).
+- **Ruído**: `<div className="pc-noise" aria-hidden />`, textura fixa a 3,5%, só no nível máximo de efeitos. Por
+  enquanto só a vitrine usa.
 
 **Atmosfera e movimento** (`13-atmosfera.css`): o app é um sistema vivo que a pessoa veste. Horizonte em grade no
 rodapé (`body::after`, atrás de tudo), luz fria no alto, blocos que "ligam" ao entrar (só opacidade e deslocamento:
@@ -676,6 +721,16 @@ entre duas soluções, vence a que obedece mais regras:
    - `shots.mjs`: foto de cada tela em 390 px para revisão de design (`SHOTS_RAW=1` não força o fim das animações;
      no Git Bash, passe as rotas com `MSYS_NO_PATHCONV=1`).
    - `e2e.mjs`: fluxos dos testes com usuários.
+   - `keyframes.mjs` (`npm run verify:keyframes [arquivo.css]`): acusa `@keyframes` que animam algo fora de
+     transform, opacity e cor.
+   - `motion.mjs`: na vitrine `#/kit`, confere que nada se move com reduzir movimento, `fx-min` e `fx-gym` (e que
+     anima sem eles) e mede o contraste da faixa cheia em cada setor.
+   - `AUDIT_ROUTES=/kit node tools/verify/audit.mjs …` mede só as rotas citadas. A auditoria também acusa mais de 1
+     botão vermelho cheio no mesmo quadro (`vermelho-demais`) e `<details>` fora do padrão.
+   - `frames.mjs`: custo das animações num quadro de troca de tela com CPU 4× (com animações − sem, mediana de 3).
+     Rode sozinho: outra ferramenta de navegador em paralelo distorce os números.
+   - `login.mjs`: a entrada na conta de teste (`AUDIT_API`), usada por `audit.mjs` e `shots.mjs`. O `shots.mjs` aceita
+     `"/online@Conta"` (abre a rota e toca no botão com esse texto antes da foto).
    - `seed.js`: dados de demonstração.
 3. **Lógica**: escreva ou ajuste o teste vitest ao lado (`*.test.ts` em `src/lib`, `src/data`, `src/lib/coach`).
 4. **APK**: `npm run build:android` e, no CI, o workflow `android.yml`.

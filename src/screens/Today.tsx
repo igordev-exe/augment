@@ -342,7 +342,7 @@ export function Today() {
           </div>
 
           {!picking ? (
-            <div className="row-wrap">
+            <div className="today-links">
               <button
                 type="button"
                 data-augmented-ui="tl-clip br-clip border"

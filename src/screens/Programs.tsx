@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
+import { GroupPanel } from "../components/Pieces";
 import { TEMPLATE_GROUPS, TEMPLATES, type TemplateGroup } from "../data/templates";
 import type { Program } from "../data/types";
 import { activateProgram, deleteProgram, saveProgram } from "../lib/db";
@@ -113,45 +114,59 @@ export function Programs() {
         <p className="small muted" style={{ margin: 0 }}>
           Um modelo vira uma cópia sua: dá para trocar exercícios, séries e dias depois.
         </p>
-        <Link to="/primeiro-uso" data-augmented-ui="tl-clip br-clip border" className="btn">
-          Não sei qual escolher: me ajude
-        </Link>
+        <div className="tpl-start">
+          <Link to="/primeiro-uso" data-augmented-ui="tl-clip br-clip border" className="btn">
+            Não sei qual escolher: me ajude
+          </Link>
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="btn btn-ghost-line"
+            onClick={() => create(blankProgram())}
+          >
+            Começar do zero
+          </button>
+        </div>
+        {/* Cada família é um painel com linhas (R2); a ação é um botão pequeno de contorno (técnica 7 do plano). */}
         {(Object.keys(TEMPLATE_GROUPS) as TemplateGroup[]).map((g) => (
-          <div key={g} className="stack" style={{ gap: 10 }}>
-            <h3 className="label">{TEMPLATE_GROUPS[g].title}</h3>
-            <p className="tiny faint" style={{ margin: 0 }}>
-              {TEMPLATE_GROUPS[g].note}
-            </p>
+          <GroupPanel
+            key={g}
+            className="tpl-panel"
+            label={
+              <>
+                {TEMPLATE_GROUPS[g].title}
+                <span className="tpl-note">{TEMPLATE_GROUPS[g].note}</span>
+              </>
+            }
+          >
             {TEMPLATES.filter((t) => t.group === g).map((t) => (
-              <article key={t.id} data-augmented-ui="tl-clip br-clip border" className="card flat stack" style={{ gap: 8 }}>
-                <div className="spread" style={{ alignItems: "baseline" }}>
-                  <strong>{t.name}</strong>
-                  <span className="tiny faint">
+              <article key={t.id} className="tpl-row">
+                <span className="tpl-top">
+                  <strong className="row-title">{t.name}</strong>
+                  <span className="tpl-days">
                     {t
                       .make(0)
                       .days.map((d) => d.code)
                       .join(" · ")}
                   </span>
-                </div>
-                <span className="tiny faint">{t.level}</span>
-                <p className="small muted" style={{ margin: 0 }}>
-                  {t.pitch}
-                </p>
+                </span>
+                <span className="tpl-meta">
+                  <span className="tpl-level">{t.level}</span>
+                </span>
                 <button
                   type="button"
                   data-augmented-ui="tl-clip br-clip border"
-                  className="btn btn-sm"
+                  className="btn btn-sm btn-ghost-line tpl-use"
+                  aria-label={`Usar o modelo ${t.name}`}
                   onClick={() => create(fromTemplate(t.make()))}
                 >
-                  Usar este modelo <span className="arrow">&gt;</span>
+                  Usar
                 </button>
+                <p className="tpl-pitch">{t.pitch}</p>
               </article>
             ))}
-          </div>
+          </GroupPanel>
         ))}
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-ghost" onClick={() => create(blankProgram())}>
-          Começar do zero
-        </button>
       </section>
     </div>
   );

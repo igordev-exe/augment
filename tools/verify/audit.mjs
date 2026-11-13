@@ -1,6 +1,7 @@
 // Varredura de layout: todas as telas × vários aparelhos. Procura vazamento horizontal, texto cortado, letra < 11 px
 // e alvo de toque pequeno. Edge headless por CDP, com dados de demonstração.
 import { browserArgs, browserPath } from "./browser.mjs";
+import { loginScript } from "./login.mjs";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,7 +44,7 @@ const SCAN = `
 const vw = innerWidth, out = [];
 const desc = (e) => (e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).slice(0,2).join('.') : '')).slice(0, 60);
 const txt = (e) => (e.innerText || e.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 50);
-const hiddenDeco = (e) => e.closest('[aria-hidden="true"]');
+const hiddenDeco = (e) => e.closest('[aria-hidden="true"], .sr-only'); // .sr-only: texto só para o leitor de tela
 const clippedBy = (e) => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) { const cs = getComputedStyle(p); if (/(hidden|auto|scroll|clip)/.test(cs.overflowX)) return p; } return null; };
 if (document.documentElement.scrollWidth > vw + 1) out.push({ k: 'pagina-larga', d: 'html', t: 'scrollWidth ' + document.documentElement.scrollWidth + ' > ' + vw });
 for (const e of document.querySelectorAll('#root *')) {
@@ -84,6 +85,15 @@ for (const c of document.querySelectorAll('#root *')) {
     if (hGap < 2) out.push({ k: 'encostado', d: desc(ka) + ' + ' + desc(kb), t: txt(ka).slice(0, 20) + ' | ' + txt(kb).slice(0, 20), x: 'folga ' + hGap.toFixed(1) });
   }
 }
+// R4 (plano de refino): no máximo 1 botão de AÇÃO vermelho cheio no mesmo quadro. Perigo (.btn-danger, de segurar) é
+// outro sinal e não conta; a barra de abas também não.
+const reds = [...document.querySelectorAll('.btn-primary')].filter((b) => !b.closest('.danger-zone, .nav, [aria-hidden="true"]')).map((b) => [b, b.getBoundingClientRect()]).filter(([b, r]) => r.width && getComputedStyle(b).visibility !== 'hidden');
+for (let y = 0; y < document.documentElement.scrollHeight; y += Math.round(innerHeight / 2)) {
+  const inView = reds.filter(([, r]) => r.top + scrollY < y + innerHeight && r.bottom + scrollY > y);
+  if (inView.length > 1) { out.push({ k: 'vermelho-demais', d: 'quadro em y=' + y, t: inView.map(([b]) => txt(b).slice(0, 18)).join(' | ') }); break; }
+}
+// R6: todo recolhível usa o padrão (linha da lista agrupada ou a seta única); o treino em andamento fica de fora.
+for (const d of document.querySelectorAll('details:not(.fold-row, .how, .plan-more, .eg-why, .mod, .ob-others, .fm-zones, .rec-row, .small, .tiny)')) out.push({ k: 'details-fora-do-padrao', d: desc(d), t: txt(d.querySelector('summary') || d).slice(0, 40) });
 return out;`;
 
 async function main() {
@@ -131,37 +141,7 @@ async function main() {
   console.log("seed", await js(SEED));
   // Com AUDIT_API (servidor local de teste, `npm run server`), entra numa conta para medir também as telas logadas.
   if (process.env.AUDIT_API) {
-    const user = process.env.AUDIT_USER ?? "auditoria";
-    const pass = process.env.AUDIT_PASS ?? "senha-teste-123";
-    console.log(
-      "conta",
-      await js(`
-        const C = await import("/src/lib/online/client.ts");
-        const A = await import("/src/lib/online/account.ts");
-        const S = await import("/src/lib/online/sync.ts");
-        C.setApiUrl(${JSON.stringify(process.env.AUDIT_API)});
-        try { await A.login(${JSON.stringify(user)}, ${JSON.stringify(pass)}); }
-        catch { await A.register({ username: ${JSON.stringify(user)}, password: ${JSON.stringify(pass)}, displayName: "Auditoria", sharePercentiles: true, shareActivity: true }); }
-        await S.syncIdle();
-        await A.updateProfile({ sex: "m", bodyweightKg: 80 });
-        await S.syncIdle();
-        // Usuários do seed-server: dois viram amigos (eles aceitam) e um deixa um pedido esperando.
-        const api = ${JSON.stringify(process.env.AUDIT_API)};
-        const me = (await S.loadOnline()).user;
-        const as = async (name, path, body) => {
-          const post = (p, b, token) => fetch(api + p, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) }, body: JSON.stringify(b) }).then((r) => r.json());
-          const { token } = await post("/auth/login", { username: name, password: "senha-teste-123" });
-          if (token) await post(path, body, token);
-        };
-        for (const name of ["lara1", "joana3"]) {
-          await A.requestFriend(name).catch(() => {});
-          await as(name, "/friends/accept", { userId: me.id }).catch(() => {});
-        }
-        await as("pedro2", "/friends/request", { username: me.username }).catch(() => {});
-        const st = await S.syncNow("manual");
-        return (st && st.user ? st.user.username : "falhou") + " " + (st && st.lastError ? st.lastError : "ok");
-      `),
-    );
+    console.log("conta", await js(loginScript(process.env.AUDIT_API)));
   }
   await send("Page.reload");
   await sleep(3000);
@@ -184,6 +164,8 @@ async function main() {
     "/amigos",
     "/privacidade",
   ].filter(Boolean);
+  // AUDIT_ROUTES=/kit,/guia mede só essas rotas (ex.: a vitrine #/kit, que só existe no dev).
+  if (process.env.AUDIT_ROUTES) routes.splice(0, routes.length, ...process.env.AUDIT_ROUTES.split(","));
 
   await js(FONT_SCALE);
   console.log("fonte do corpo depois da escala:", await js(`return getComputedStyle(document.body).fontSize`));

@@ -1,7 +1,8 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHead, WeekStrip } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
+import { FoldRow, GroupPanel, LinkRow, SwitchRow } from "../components/Pieces";
 import { ImportCsv } from "../components/ImportCsv";
 import { RestorePoints } from "../components/RestorePoints";
 import { apiUrl } from "../lib/online/client";
@@ -17,35 +18,6 @@ import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
-
-/** Bloco de ajuste recolhido: uma linha com o valor atual; abre para mexer. Menos coisa empilhada na tela. */
-function SetGroup({
-  code,
-  title,
-  value,
-  icon,
-  children,
-}: {
-  code: string;
-  title: string;
-  value: string;
-  icon?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <details data-augmented-ui="tl-clip br-clip border" className="card set-group">
-      <summary>
-        {icon ? <span className="set-icon avatar">{icon}</span> : <span className="set-code">{code}</span>}
-        <span className="set-title">
-          <strong>{title}</strong>
-          <small>{value}</small>
-        </span>
-        <span className="set-chev" aria-hidden="true" />
-      </summary>
-      <div className="stack set-body">{children}</div>
-    </details>
-  );
-}
 
 export function SettingsScreen() {
   const [settings, update, loaded] = useSettings();
@@ -128,394 +100,353 @@ export function SettingsScreen() {
   }
 
   return (
-    <div className="stack-lg">
+    <div className="stack-lg set-screen">
       <PageHead back="/" code="AUG.OS // CONFIGURAÇÃO" title="Ajustes" />
 
-      <Link to="/programas" data-augmented-ui="tl-clip br-clip border" className="card stack pg-entry">
-        <span className="label">Programa de treino</span>
-        <span className="spread">
-          <strong>{program.name}</strong>
-          <span className="arrow">&gt;</span>
-        </span>
-        <span className="tiny faint">{program.days.map((d) => d.code).join(" · ")} · montar, trocar ou criar outro</span>
-      </Link>
-
-      {apiUrl() && (
-        <Link to="/online" data-augmented-ui="tl-clip br-clip border" className="card stack pg-entry">
-          <span className="label">Conta online</span>
-          <span className="spread">
-            <strong>{online?.user ? `@${online.user.username}` : "Sem conta (opcional)"}</strong>
-            <span className="arrow">&gt;</span>
+      <GroupPanel label="Operador">
+        <FoldRow
+          title="Operador"
+          value={`${settings.operator || "Sem nome"} · ${personaOf(settings.persona).name}`}
+          icon={<img src={avatarSrc(settings.persona)} alt="" width={36} height={36} />}
+        >
+          <span className="label" id="persona-label">
+            Aparência
           </span>
-          <span className="tiny faint">
-            {online?.user
-              ? "Backup automático, amigos e comparação"
-              : "Backup automático na nuvem, amigos e comparação com outros usuários"}
-          </span>
-        </Link>
-      )}
+          <div className="persona-pick" role="group" aria-labelledby="persona-label">
+            {PERSONAS.map((p) => {
+              const on = personaOf(settings.persona).id === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  data-augmented-ui="tl-clip br-clip border"
+                  className="persona-opt"
+                  aria-pressed={on}
+                  onClick={() => update({ persona: p.id })}
+                >
+                  <img src={avatarSrc(p.id)} alt="" width={56} height={56} />
+                  <span className="stack" style={{ gap: 2, minWidth: 0 }}>
+                    <strong>{p.name}</strong>
+                    <span className="tiny faint">{p.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <label className="label" htmlFor="operator">
+            Como o app te chama
+          </label>
+          <input
+            key={String(loaded)}
+            id="operator"
+            className="input"
+            defaultValue={settings.operator}
+            placeholder="Seu nome"
+            maxLength={24}
+            onBlur={(e) => update({ operator: e.target.value.trim() })}
+          />
+        </FoldRow>
+        {apiUrl() && (
+          <LinkRow
+            to="/online"
+            title="Conta online"
+            value={
+              online?.user ? `@${online.user.username} · backup, amigos e comparação` : "Sem conta (opcional) · backup na nuvem e amigos"
+            }
+          />
+        )}
+        <LinkRow to="/programas" title="Programa de treino" value={`${program.name} · ${program.days.map((d) => d.code).join(" · ")}`} />
+      </GroupPanel>
 
-      <SetGroup
-        code="01"
-        title="Operador"
-        value={`${settings.operator || "Sem nome"} · ${personaOf(settings.persona).name}`}
-        icon={<img src={avatarSrc(settings.persona)} alt="" width={40} height={40} />}
-      >
-        <span className="label" id="persona-label">
-          Aparência
-        </span>
-        <div className="persona-pick" role="group" aria-labelledby="persona-label">
-          {PERSONAS.map((p) => {
-            const on = personaOf(settings.persona).id === p.id;
-            return (
+      <GroupPanel label="Treino">
+        <FoldRow title="Mesociclo" value={week === 0 ? "Periodização fixa" : `Semana ${week} de 7`}>
+          {week === 0 ? (
+            <p className="small muted">
+              O programa em uso (<strong>{program.name}</strong>) usa periodização fixa: mesmas séries e esforço toda semana, sem semana de
+              deload. Você pode mudar para 6 + 1 no <Link to={`/programas/${program.id}`}>montador do programa</Link>.
+            </p>
+          ) : (
+            <>
+              <p className="small muted">
+                Toque na semana em que você está. O app recalcula o início e ajusta séries, selos e intensificadores. Início atual:{" "}
+                {shortDate(settings.mesoStart)}.
+              </p>
+              <WeekStrip week={week} onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })} />
               <button
-                key={p.id}
                 type="button"
                 data-augmented-ui="tl-clip br-clip border"
-                className="persona-opt"
-                aria-pressed={on}
-                onClick={() => update({ persona: p.id })}
+                className="btn btn-sm"
+                onClick={() => update({ mesoStart: mondayOf(today) })}
               >
-                <img src={avatarSrc(p.id)} alt="" width={56} height={56} />
-                <span className="stack" style={{ gap: 2, minWidth: 0 }}>
-                  <strong>{p.name}</strong>
-                  <span className="tiny faint">{p.hint}</span>
-                </span>
+                Começar novo mesociclo nesta semana
               </button>
-            );
-          })}
-        </div>
-        <label className="label" htmlFor="operator">
-          Como o app te chama
-        </label>
-        <input
-          key={String(loaded)}
-          id="operator"
-          className="input"
-          defaultValue={settings.operator}
-          placeholder="Seu nome"
-          maxLength={24}
-          onBlur={(e) => update({ operator: e.target.value.trim() })}
-        />
-      </SetGroup>
-
-      <SetGroup code="02" title="Mesociclo" value={week === 0 ? "Periodização fixa" : `Semana ${week} de 7`}>
-        {week === 0 ? (
-          <p className="small muted">
-            O programa em uso (<strong>{program.name}</strong>) usa periodização fixa: mesmas séries e esforço toda semana, sem semana de
-            deload. Você pode mudar para 6 + 1 no <Link to={`/programas/${program.id}`}>montador do programa</Link>.
+            </>
+          )}
+        </FoldRow>
+        <FoldRow
+          title="Dias de treino"
+          value={[1, 2, 3, 4, 5, 6, 0]
+            .filter((d) => settings.trainingDays.includes(d))
+            .map(weekdayShort)
+            .join(" · ")}
+        >
+          <p className="small muted">A agenda distribui a sequência só nesses dias.</p>
+          <div className="row-wrap">
+            {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+              <button
+                key={d}
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="toggle-chip multi"
+                aria-pressed={settings.trainingDays.includes(d)}
+                onClick={() => {
+                  const on = settings.trainingDays.includes(d);
+                  const next = on ? settings.trainingDays.filter((x) => x !== d) : [...settings.trainingDays, d];
+                  if (next.length) update({ trainingDays: next });
+                }}
+              >
+                {weekdayShort(d)}
+              </button>
+            ))}
+          </div>
+        </FoldRow>
+        <FoldRow
+          title="Timer de descanso"
+          value={
+            [settings.sound && "Som", settings.vibrate && "Vibração", settings.notify && "Aviso"].filter(Boolean).join(" · ") ||
+            "Silencioso"
+          }
+        >
+          <div>
+            <SwitchRow label="Som ao terminar" checked={settings.sound} onChange={(v) => update({ sound: v })} />
+            <SwitchRow label="Vibrar ao terminar" checked={settings.vibrate} onChange={(v) => update({ vibrate: v })} />
+            <SwitchRow label="Aviso em outra aba" checked={!!settings.notify} onChange={() => toggleNotify()} />
+          </div>
+          <p className="tiny faint">
+            O alarme toca com o app aberto. O aviso em outra aba dispara quando o navegador permite em segundo plano (com a tela bloqueada,
+            o sistema do celular pode congelar ou silenciar timers web). Mantenha a tela acesa durante o treino.
           </p>
-        ) : (
-          <>
-            <p className="small muted">
-              Toque na semana em que você está. O app recalcula o início e ajusta séries, selos e intensificadores. Início atual:{" "}
-              {shortDate(settings.mesoStart)}.
-            </p>
-            <WeekStrip week={week} onPick={(w) => update({ mesoStart: addDays(mondayOf(today), -(w - 1) * 7) })} />
-            <button
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="btn btn-sm"
-              onClick={() => update({ mesoStart: mondayOf(today) })}
-            >
-              Começar novo mesociclo nesta semana
-            </button>
-          </>
-        )}
-      </SetGroup>
-
-      <SetGroup code="03" title="Treinador (IA)" value="Chave, modelo e profundidade">
-        <p className="small muted">Chave da API da Anthropic, modelo e profundidade. A chave fica só neste aparelho e não vai no backup.</p>
-        <Link to="/treinador?config=1" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm">
-          Configurar treinador
-        </Link>
-      </SetGroup>
-
-      <SetGroup
-        code="04"
-        title="Dias de treino"
-        value={[1, 2, 3, 4, 5, 6, 0]
-          .filter((d) => settings.trainingDays.includes(d))
-          .map(weekdayShort)
-          .join(" · ")}
-      >
-        <p className="small muted">A agenda distribui a sequência só nesses dias.</p>
-        <div className="row-wrap">
-          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-            <button
-              key={d}
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="toggle-chip"
-              aria-pressed={settings.trainingDays.includes(d)}
-              onClick={() => {
-                const on = settings.trainingDays.includes(d);
-                const next = on ? settings.trainingDays.filter((x) => x !== d) : [...settings.trainingDays, d];
-                if (next.length) update({ trainingDays: next });
-              }}
-            >
-              {weekdayShort(d)}
-            </button>
-          ))}
-        </div>
-      </SetGroup>
-
-      <SetGroup
-        code="05"
-        title="Timer de descanso"
-        value={
-          [settings.sound && "Som", settings.vibrate && "Vibração", settings.notify && "Aviso"].filter(Boolean).join(" · ") || "Silencioso"
-        }
-      >
-        <div className="row-wrap">
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={settings.sound}
-            onClick={() => update({ sound: !settings.sound })}
-          >
-            Som ao terminar
-          </button>
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={settings.vibrate}
-            onClick={() => update({ vibrate: !settings.vibrate })}
-          >
-            Vibrar ao terminar
-          </button>
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={!!settings.notify}
-            onClick={toggleNotify}
-          >
-            Aviso em outra aba
-          </button>
-        </div>
-        <p className="tiny faint">
-          O alarme toca com o app aberto. O aviso em outra aba dispara quando o navegador permite em segundo plano (com a tela bloqueada, o
-          sistema do celular pode congelar ou silenciar timers web). Mantenha a tela acesa durante o treino.
-        </p>
-      </SetGroup>
-
-      <SetGroup code="06" title="Efeitos visuais" value={{ max: "Máximo", auto: "Automático", min: "Mínimo" }[settings.fx ?? "auto"]}>
-        <div className="row-wrap" role="group" aria-label="Nível dos efeitos visuais">
-          {(
-            [
-              ["max", "Máximo"],
-              ["auto", "Automático"],
-              ["min", "Mínimo"],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="toggle-chip"
-              aria-pressed={(settings.fx ?? "auto") === v}
-              onClick={() => update({ fx: v })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="tiny faint">
-          Automático: tudo ligado fora do treino e modo academia durante o protocolo (sem animações em loop, mais bateria). Mínimo: só o
-          essencial, sem retícula de toque nem transições. O sistema em &quot;reduzir movimento&quot; sempre vence.
-        </p>
-      </SetGroup>
-
-      {/* F1: Rotação de acessórios do mesociclo */}
-      <SetGroup key={`swaps-${loaded}`} code="07" title="Rotação de acessórios" value="Trocar acessórios no fim do deload">
-        <p className="small muted" style={{ marginTop: 8 }}>
-          Ao fim do deload, troque 2–3 acessórios por alternativas da biblioteca. Os treinos novos já abrem com a variação escolhida,
-          mantendo o histórico separado.
-        </p>
-        <div className="stack" style={{ marginTop: 10, gap: 10 }}>
-          {programDays().flatMap((d) =>
-            d.exercises
-              .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
-              .map((ex) => {
-                const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
-                const cur = settings.swaps?.[ex.id] ?? "";
-                return (
-                  <label key={ex.id} className="stack" style={{ gap: 4 }}>
-                    <span className="small">
+        </FoldRow>
+        <FoldRow
+          key={`inc-${loaded}`}
+          title="Incrementos e pesos"
+          value={`Barra de ${formatWeight(settings.barWeightKg ?? 20)} kg · salto de carga e placas`}
+        >
+          <span className="label" id="bar-label">
+            Peso da barra (conta das anilhas)
+          </span>
+          <div className="row-wrap" role="group" aria-labelledby="bar-label">
+            {[20, 15, 10, 7].map((kg) => (
+              <button
+                key={kg}
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="toggle-chip"
+                aria-pressed={(settings.barWeightKg ?? 20) === kg}
+                onClick={() => update({ barWeightKg: kg === 20 ? undefined : kg })}
+              >
+                {kg} kg
+              </button>
+            ))}
+          </div>
+          <p className="tiny faint">Olímpica 20 kg, feminina 15 kg, barras menores 10 ou 7 kg. Em libras, 20 kg vira 45 lb.</p>
+          <p className="small muted" style={{ marginTop: 8 }}>
+            Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
+            vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
+          </p>
+          <div className="stack" style={{ marginTop: 10, gap: 12 }}>
+            {programDays().flatMap((d) =>
+              d.exercises.map((ex) => (
+                <div key={ex.id} className="stack" style={{ gap: 4 }}>
+                  <div className="spread small">
+                    <span className="grow">
                       <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
                     </span>
-                    <select
+                    <input
                       className="input"
-                      value={cur}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const next = { ...settings.swaps };
-                        if (!v) delete next[ex.id];
+                      style={{ width: 84, minHeight: 36, textAlign: "center" }}
+                      inputMode="decimal"
+                      aria-label={`Incremento de ${shortName(ex)}`}
+                      defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
+                      placeholder={formatWeight(ex.increment)}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value.replace(",", "."));
+                        const next = { ...settings.increments };
+                        if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
                         else next[ex.id] = v;
-                        update({ swaps: next });
+                        update({ increments: next });
                       }}
-                    >
-                      <option value="">Titular: {shortName(ex)}</option>
-                      {alts.map((a) => (
-                        <option key={a} value={a}>
-                          Alternativa: {a}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                );
-              }),
-          )}
-        </div>
-      </SetGroup>
-
-      {/* F5: Incremento e pesos específicos do aparelho por exercício */}
-      <SetGroup
-        key={`inc-${loaded}`}
-        code="08"
-        title="Incrementos e pesos"
-        value={`Barra de ${formatWeight(settings.barWeightKg ?? 20)} kg · salto de carga e placas`}
-      >
-        <span className="label" id="bar-label">
-          Peso da barra (conta das anilhas)
-        </span>
-        <div className="row-wrap" role="group" aria-labelledby="bar-label">
-          {[20, 15, 10, 7].map((kg) => (
-            <button
-              key={kg}
-              type="button"
-              data-augmented-ui="tl-clip br-clip border"
-              className="toggle-chip"
-              aria-pressed={(settings.barWeightKg ?? 20) === kg}
-              onClick={() => update({ barWeightKg: kg === 20 ? undefined : kg })}
-            >
-              {kg} kg
-            </button>
-          ))}
-        </div>
-        <p className="tiny faint">Olímpica 20 kg, feminina 15 kg, barras menores 10 ou 7 kg. Em libras, 20 kg vira 45 lb.</p>
-        <p className="small muted" style={{ marginTop: 8 }}>
-          Defina o salto de carga padrão ou, se a polia/máquina tiver placas fora do padrão, informe os pesos disponíveis separados por
-          vírgula ou espaço (ex.: <code>12,5 17,5 22,5 27,5</code>).
-        </p>
-        <div className="stack" style={{ marginTop: 10, gap: 12 }}>
-          {programDays().flatMap((d) =>
-            d.exercises.map((ex) => (
-              <div key={ex.id} className="stack" style={{ gap: 4 }}>
-                <div className="spread small">
-                  <span className="grow">
-                    <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
-                  </span>
+                    />
+                  </div>
                   <input
                     className="input"
-                    style={{ width: 84, minHeight: 36, textAlign: "center" }}
-                    inputMode="decimal"
-                    aria-label={`Incremento de ${shortName(ex)}`}
-                    defaultValue={settings.increments[ex.id] != null ? formatWeight(settings.increments[ex.id]) : ""}
-                    placeholder={formatWeight(ex.increment)}
+                    style={{ minHeight: 34, fontSize: "var(--fs-2)" }}
+                    aria-label={`Pesos disponíveis para ${shortName(ex)}`}
+                    placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
+                    defaultValue={
+                      settings.machineWeights?.[ex.id]?.length ? settings.machineWeights[ex.id].map((w) => formatWeight(w)).join(", ") : ""
+                    }
                     onBlur={(e) => {
-                      const v = Number(e.target.value.replace(",", "."));
-                      const next = { ...settings.increments };
-                      if (e.target.value.trim() === "" || !Number.isFinite(v) || v <= 0) delete next[ex.id];
-                      else next[ex.id] = v;
-                      update({ increments: next });
+                      const raw = e.target.value.trim();
+                      const next = { ...settings.machineWeights };
+                      if (!raw) {
+                        delete next[ex.id];
+                      } else {
+                        const nums = Array.from(
+                          new Set(
+                            raw
+                              .split(/[;\s]+|,\s+(?=\d)/)
+                              .flatMap((tok) =>
+                                tok.includes(",") && tok.split(",").every((p) => Number.isInteger(Number(p))) && tok.split(",").length > 2
+                                  ? tok.split(",")
+                                  : [tok],
+                              )
+                              .map((s) => Number(s.replace(",", ".").trim()))
+                              .filter((n) => Number.isFinite(n) && n > 0 && n <= 1000),
+                          ),
+                        ).sort((a, b) => a - b);
+                        if (nums.length > 0) next[ex.id] = nums;
+                        else delete next[ex.id];
+                      }
+                      update({ machineWeights: next });
                     }}
                   />
                 </div>
-                <input
-                  className="input"
-                  style={{ minHeight: 34, fontSize: "var(--fs-2)" }}
-                  aria-label={`Pesos disponíveis para ${shortName(ex)}`}
-                  placeholder="Pinos da máquina (opcional, ex.: 10, 15, 20, 25)"
-                  defaultValue={
-                    settings.machineWeights?.[ex.id]?.length ? settings.machineWeights[ex.id].map((w) => formatWeight(w)).join(", ") : ""
-                  }
-                  onBlur={(e) => {
-                    const raw = e.target.value.trim();
-                    const next = { ...settings.machineWeights };
-                    if (!raw) {
-                      delete next[ex.id];
-                    } else {
-                      const nums = Array.from(
-                        new Set(
-                          raw
-                            .split(/[;\s]+|,\s+(?=\d)/)
-                            .flatMap((tok) =>
-                              tok.includes(",") && tok.split(",").every((p) => Number.isInteger(Number(p))) && tok.split(",").length > 2
-                                ? tok.split(",")
-                                : [tok],
-                            )
-                            .map((s) => Number(s.replace(",", ".").trim()))
-                            .filter((n) => Number.isFinite(n) && n > 0 && n <= 1000),
-                        ),
-                      ).sort((a, b) => a - b);
-                      if (nums.length > 0) next[ex.id] = nums;
-                      else delete next[ex.id];
-                    }
-                    update({ machineWeights: next });
-                  }}
-                />
-              </div>
-            )),
-          )}
-        </div>
-      </SetGroup>
+              )),
+            )}
+          </div>
+        </FoldRow>
+        <FoldRow key={`swaps-${loaded}`} title="Rotação de acessórios" value="Trocar acessórios no fim do deload">
+          <p className="small muted" style={{ marginTop: 8 }}>
+            Ao fim do deload, troque 2–3 acessórios por alternativas da biblioteca. Os treinos novos já abrem com a variação escolhida,
+            mantendo o histórico separado.
+          </p>
+          <div className="stack" style={{ marginTop: 10, gap: 10 }}>
+            {programDays().flatMap((d) =>
+              d.exercises
+                .filter((ex) => (LIB_BY_ID[ex.lib]?.alternatives?.length ?? 0) > 0)
+                .map((ex) => {
+                  const alts = LIB_BY_ID[ex.lib]?.alternatives ?? [];
+                  const cur = settings.swaps?.[ex.id] ?? "";
+                  return (
+                    <label key={ex.id} className="stack" style={{ gap: 4 }}>
+                      <span className="small">
+                        <strong>{shortName(ex)}</strong> <span className="faint">({d.name})</span>
+                      </span>
+                      <select
+                        className="input"
+                        value={cur}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const next = { ...settings.swaps };
+                          if (!v) delete next[ex.id];
+                          else next[ex.id] = v;
+                          update({ swaps: next });
+                        }}
+                      >
+                        <option value="">Titular: {shortName(ex)}</option>
+                        {alts.map((a) => (
+                          <option key={a} value={a}>
+                            Alternativa: {a}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                }),
+            )}
+          </div>
+        </FoldRow>
+      </GroupPanel>
 
-      <SetGroup code="09" title="Backup" value={settings.lastBackupAt ? `Último: ${shortDate(settings.lastBackupAt)}` : "Nunca exportado"}>
-        <p className="small muted">
-          Seus treinos ficam só neste aparelho. Exporte um backup de vez em quando e antes de trocar de celular ou limpar o navegador.
-          {settings.lastBackupAt ? ` Último backup: ${shortDate(settings.lastBackupAt)}.` : ""}
-        </p>
-        <div className="row-wrap">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={doExport}>
-            Exportar backup (.json)
+      <GroupPanel label="Sistema">
+        <FoldRow title="Treinador (IA)" value="Chave, modelo e profundidade">
+          <p className="small muted">
+            Chave da API da Anthropic, modelo e profundidade. A chave fica só neste aparelho e não vai no backup.
+          </p>
+          <Link to="/treinador?config=1" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm">
+            Configurar treinador
+          </Link>
+        </FoldRow>
+        <FoldRow title="Efeitos visuais" value={{ max: "Máximo", auto: "Automático", min: "Mínimo" }[settings.fx ?? "auto"]}>
+          <div className="row-wrap" role="group" aria-label="Nível dos efeitos visuais">
+            {(
+              [
+                ["max", "Máximo"],
+                ["auto", "Automático"],
+                ["min", "Mínimo"],
+              ] as const
+            ).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="toggle-chip"
+                aria-pressed={(settings.fx ?? "auto") === v}
+                onClick={() => update({ fx: v })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="tiny faint">
+            Automático: tudo ligado fora do treino e modo academia durante o protocolo (sem animações em loop, mais bateria). Mínimo: só o
+            essencial, sem retícula de toque nem transições. O sistema em &quot;reduzir movimento&quot; sempre vence.
+          </p>
+        </FoldRow>
+        <FoldRow title="Backup" value={settings.lastBackupAt ? `Último: ${shortDate(settings.lastBackupAt)}` : "Nunca exportado"}>
+          <p className="small muted">
+            Seus treinos ficam só neste aparelho. Exporte um backup de vez em quando e antes de trocar de celular ou limpar o navegador.
+            {settings.lastBackupAt ? ` Último backup: ${shortDate(settings.lastBackupAt)}.` : ""}
+          </p>
+          <div className="row-wrap">
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={doExport}>
+              Exportar backup (.json)
+            </button>
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={doCsv}>
+              Exportar séries (.csv)
+            </button>
+          </div>
+          <p className="tiny faint">O CSV abre em qualquer planilha.</p>
+          <div className="divider" />
+          <div className="row-wrap">
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="toggle-chip"
+              aria-pressed={mode === "merge"}
+              onClick={() => setMode("merge")}
+            >
+              Juntar com o que existe
+            </button>
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="toggle-chip"
+              aria-pressed={mode === "replace"}
+              onClick={() => setMode("replace")}
+            >
+              Substituir tudo
+            </button>
+          </div>
+          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={() => fileRef.current?.click()}>
+            Importar backup
           </button>
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={doCsv}>
-            Exportar séries (.csv)
-          </button>
-        </div>
-        <p className="tiny faint">O CSV abre em qualquer planilha.</p>
-        <div className="divider" />
-        <div className="row-wrap">
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={mode === "merge"}
-            onClick={() => setMode("merge")}
-          >
-            Juntar com o que existe
-          </button>
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="toggle-chip"
-            aria-pressed={mode === "replace"}
-            onClick={() => setMode("replace")}
-          >
-            Substituir tudo
-          </button>
-        </div>
-        <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn" onClick={() => fileRef.current?.click()}>
-          Importar backup
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) doImport(f);
-            e.target.value = "";
-          }}
-        />
-        <div className="divider" />
-        <ImportCsv />
-      </SetGroup>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) doImport(f);
+              e.target.value = "";
+            }}
+          />
+          <div className="divider" />
+          <ImportCsv />
+        </FoldRow>
+      </GroupPanel>
 
       <RestorePoints />
 

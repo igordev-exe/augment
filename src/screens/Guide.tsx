@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { MUSCLE_LABEL, MUSCLE_ORDER, shortName } from "../data/program";
@@ -54,6 +54,110 @@ function Sec({ id, title, children }: { id: string; title: string; children: Rea
   );
 }
 
+const reducedMotion = () =>
+  !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("fx-min");
+
+function goTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+}
+
+/**
+ * Navegação do Guia: abas de texto numa linha (rolam para o lado, fixas no topo) e, sempre visível na ponta, o botão
+ * "Índice" com a lista completa das 15 seções. A rolagem lateral nunca é o único caminho.
+ */
+function GuideNav() {
+  const [active, setActive] = useState(SECTIONS[0].id);
+  const [open, setOpen] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  // A aba ativa acompanha a seção que está no alto da tela.
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const visible = new Map<string, boolean>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) visible.set(e.target.id, e.isIntersecting);
+        const first = SECTIONS.find((s) => visible.get(s.id));
+        if (first) setActive(first.id);
+      },
+      { rootMargin: "-64px 0px -55% 0px" },
+    );
+    for (const s of SECTIONS) {
+      const el = document.getElementById(s.id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+
+  // A aba ativa rola sozinha para ficar à vista (só a faixa, nunca a página).
+  useEffect(() => {
+    const box = tabsRef.current;
+    const tab = box?.querySelector<HTMLElement>(`[data-id="${active}"]`);
+    if (!box || !tab) return;
+    const left = tab.offsetLeft - box.offsetLeft;
+    if (left < box.scrollLeft || left + tab.offsetWidth > box.scrollLeft + box.clientWidth * 0.8)
+      box.scrollTo({ left: Math.max(0, left - 24), behavior: reducedMotion() ? "auto" : "smooth" });
+  }, [active]);
+
+  // Índice aberto: Esc ou toque fora fecham.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: PointerEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open]);
+
+  const pick = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    setActive(id);
+    goTo(id);
+  };
+
+  return (
+    <nav className="gnav" aria-label="Seções do guia" ref={navRef}>
+      <div className="gnav-tabs" ref={tabsRef}>
+        {SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            className="aim"
+            data-id={s.id}
+            href={`#${s.id}`}
+            aria-current={active === s.id ? "true" : undefined}
+            onClick={pick(s.id)}
+          >
+            {s.t}
+          </a>
+        ))}
+      </div>
+      <button type="button" className="gnav-index-btn" aria-expanded={open} aria-controls="gnav-index" onClick={() => setOpen((o) => !o)}>
+        Índice
+        <span className="fold-chev" aria-hidden="true" style={{ transform: open ? "rotate(-135deg)" : undefined }} />
+      </button>
+      {open && (
+        <ol className="gnav-index" id="gnav-index">
+          {SECTIONS.map((s, i) => (
+            <li key={s.id}>
+              <a href={`#${s.id}`} aria-current={active === s.id ? "true" : undefined} onClick={pick(s.id)}>
+                <span className="idx">{String(i + 1).padStart(2, "0")}</span>
+                {s.t}
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </nav>
+  );
+}
+
 export function Guide() {
   const program = useProgram();
   const [settings] = useSettings();
@@ -68,22 +172,7 @@ export function Guide() {
     <div className="stack-lg">
       <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="Protocolos de execução, progressão de carga e referências." />
 
-      <nav className="toc" aria-label="Seções do guia">
-        {SECTIONS.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            data-augmented-ui="br-clip border"
-            className="chip"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            {s.t}
-          </a>
-        ))}
-      </nav>
+      <GuideNav />
 
       <Sec id="semana" title="Como rodar a semana">
         <p>

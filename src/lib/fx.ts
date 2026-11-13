@@ -9,7 +9,7 @@ import type { FxLevel } from "../data/types";
 
 const INTERACTIVE = 'button, a[href], [role="button"], [role="tab"], summary, select, input[type="checkbox"], input[type="radio"]';
 /** Painéis com animação contínua: pausam fora da tela. */
-const PAUSABLE = ".fm, .aw, .chart.holo, .hm-holo, .sysmod, .term, .bm-sweep, .scan-beam, .scan-line, .ob-hero";
+const PAUSABLE = ".fm, .aw, .chart.holo, .hm-holo, .sysmod, .term, .bm-sweep, .scan-beam, .scan-line, .ob-hero, .fx-ambiente";
 
 const root = () => document.documentElement;
 const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -28,6 +28,32 @@ export function bootBeam() {
   void root().offsetWidth;
   root().classList.add("fx-boot");
   window.setTimeout(() => root().classList.remove("fx-boot"), 700);
+}
+
+/**
+ * Família "recompensa" (docs/plano-refino-visual.md, 3A): falha rápida no elemento + clarão por cima dele.
+ * Só para recorde, meta batida, posto novo e mesociclo fechado. Não vibra: quem chama decide (RECORD_BUZZ).
+ * Nada acontece com "reduzir movimento" ou com efeitos em academia/mínimo.
+ */
+export function playReward(el: HTMLElement | null) {
+  if (!el || reduced() || root().classList.contains("fx-min") || root().classList.contains("fx-gym")) return;
+  el.classList.remove("fx-recompensa");
+  void el.offsetWidth; // reinicia se disparar de novo logo em seguida
+  el.classList.add("fx-recompensa");
+  window.setTimeout(() => el.classList.remove("fx-recompensa"), 500);
+
+  const r = el.getBoundingClientRect();
+  const flash = document.createElement("i");
+  flash.className = "pc-flash";
+  flash.setAttribute("aria-hidden", "true");
+  // O clarão sai na cor do setor do próprio elemento (a vitrine mostra setores diferentes lado a lado).
+  const tone = getComputedStyle(el).getPropertyValue("--sector-hi").trim();
+  if (tone) flash.style.background = tone;
+  Object.assign(flash.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+  document.body.appendChild(flash);
+  const drop = () => flash.remove();
+  flash.addEventListener("animationend", drop, { once: true });
+  window.setTimeout(drop, 800);
 }
 
 export function installTapFx(): () => void {

@@ -1,0 +1,1636 @@
+/* Peças de jogo (MC0, docs/plano-refino-visual.md seção 3A): setores, as seis peças, barra segmentada, mira,
+   tokens e famílias de movimento. Componentes em components/Pieces.tsx e Ticker.tsx; vitrine em #/kit (só no dev).
+   Cada peça tem um papel só. Movimento só com transform e opacity; tudo para em fx-gym/fx-min e com
+   "reduzir movimento", e o estado final é o estilo normal do elemento (as animações só têm o quadro "from"). */
+
+/* ---------- Tokens: setor e movimento ---------- */
+:root {
+  --lime: #cfe800; /* setor Treinador (a mesma do .mode-terminal) */
+  --steel: #2b84a8; /* azul-aço do deload, para a placa de deload fora da semana 7 */
+  --sector: var(--red);
+  /* Famílias de movimento: toque responde na hora, mira salta, ligar desenha, leitura conta, recompensa falha. */
+  --t-toque: 90ms;
+  --t-mira: 140ms;
+  --t-ligar: 220ms;
+  --t-cascata: 40ms;
+  --t-leitura: 500ms;
+  --t-recompensa: 400ms;
+  --ease-seco: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Setor pela rota (lib/sector.ts põe a classe no <html>); a mesma classe vale num bloco qualquer (vitrine). */
+:root.sector-op,
+.sector-op {
+  --sector: var(--red);
+}
+:root.sector-tel,
+.sector-tel {
+  --sector: var(--cyan);
+}
+:root.sector-net,
+.sector-net {
+  --sector: var(--violet);
+}
+:root.sector-coach,
+.sector-coach {
+  --sector: var(--lime);
+}
+/* Variações derivadas do setor: recalculadas onde o setor muda, sem hex novo. */
+:root,
+.sector-op,
+.sector-tel,
+.sector-net,
+.sector-coach {
+  --sector-ink: var(--bg); /* texto sobre a cor cheia do setor (≥ 4,5:1 nos quatro setores e no deload) */
+  --sector-soft: color-mix(in srgb, var(--sector) 14%, var(--surface));
+  --sector-line: color-mix(in srgb, var(--sector) 45%, var(--line));
+  --sector-hi: color-mix(in srgb, var(--sector) 60%, white);
+}
+
+/* Só para leitor de tela. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Cantoneiras em L (moldura do painel, slot e mira) ---------- */
+.band-panel::before,
+.slot-face::before,
+.aim::after {
+  --cl: 10px;
+  --cw: 2px;
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--cc), var(--cc)) left top / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) left top / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) right top / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) right top / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) left bottom / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) left bottom / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) right bottom / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) right bottom / var(--cw) var(--cl);
+  background-repeat: no-repeat;
+}
+
+/* ---------- 1. Painel com faixa cheia (bloco principal da tela) ---------- */
+.band-panel {
+  position: relative;
+  padding: var(--sp-1);
+  margin-inline: calc(var(--sp-1) * -1); /* a caixa de dentro alinha com os vizinhos; as cantoneiras ficam por fora */
+}
+.band-panel::before {
+  --cc: var(--sector);
+  --cl: 12px;
+  inset: 0;
+}
+.band-box {
+  --aug-br: 14px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--sector-line);
+  position: relative;
+  background: var(--surface);
+}
+.band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  padding: var(--sp-1) var(--sp-3);
+  color: var(--sector-ink);
+}
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--sector);
+  transform-origin: left center;
+}
+.band > * {
+  position: relative;
+}
+.band-mark {
+  width: var(--sp-2);
+  height: var(--sp-2);
+  flex-shrink: 0;
+  background: var(--sector-ink);
+}
+.band-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--fs-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.band-micro {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.band-body {
+  padding: var(--sp-4);
+}
+
+/* ---------- 2. Painel simples com linhas (listas): é o .list do Hoje com rótulo e linha de duas alturas ---------- */
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.list-label {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.list-panel .list {
+  background:
+    linear-gradient(var(--sector), var(--sector)) 14px 0 / 34px 2px no-repeat,
+    var(--surface);
+}
+.list-panel .list-item {
+  min-height: 56px;
+  padding: var(--sp-3) var(--sp-4);
+  font: inherit;
+  color: inherit;
+}
+.list-panel button.list-item {
+  cursor: pointer;
+}
+.li-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
+}
+.li-title {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-4);
+  line-height: 1.25;
+  color: var(--ink);
+}
+.li-value {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ---------- 3. Slot com cantoneiras (coisa a preencher, moldura de imagem) ---------- */
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-1);
+  min-width: 56px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  text-align: center;
+}
+button.slot {
+  cursor: pointer;
+}
+.slot-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-height: 56px;
+  overflow: hidden;
+  background: var(--surface-2);
+  outline: 1px solid var(--line-2);
+  outline-offset: -4px;
+}
+.slot-face::before {
+  --cc: var(--sector);
+  inset: 0;
+  z-index: 1;
+  transition: transform var(--t-toque) var(--ease-seco);
+}
+.slot-face > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.slot.is-empty .slot-face {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--sector) 16%, transparent) 0 2px, transparent 2px 9px),
+    var(--surface);
+}
+.slot-plus {
+  width: 18px;
+  height: 18px;
+  background:
+    linear-gradient(var(--sector), var(--sector)) center / 100% 2px no-repeat,
+    linear-gradient(var(--sector), var(--sector)) center / 2px 100% no-repeat;
+}
+.slot-label {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+/* Toque: as cantoneiras fecham sobre o slot. */
+button.slot:active .slot-face::before {
+  transform: scale(0.9);
+}
+
+/* ---------- 4. Hexágono entalhado (posto, atributo, conquista, sigla) ---------- */
+.hex {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 64px;
+  padding: var(--sp-1);
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+}
+button.hex {
+  cursor: pointer;
+}
+.hex-face {
+  --hex: polygon(25% 0, 40% 0, 44% 9%, 56% 9%, 60% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  aspect-ratio: 64 / 56;
+  clip-path: var(--hex);
+  background: var(--line);
+  transition: transform var(--t-toque) var(--ease-seco);
+}
+.hex-face::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  clip-path: var(--hex);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink-3) 14%, transparent) 0 2px, transparent 2px 7px),
+    var(--surface);
+}
+.hex-in {
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--fs-4);
+  color: var(--ink-3);
+}
+.hex-label {
+  max-width: 88px;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.hex:is([data-state="on"], [data-state="sel"]) {
+  color: var(--ink);
+}
+.hex:is([data-state="on"], [data-state="sel"]) .hex-face {
+  background: var(--sector);
+}
+.hex:is([data-state="on"], [data-state="sel"]) .hex-face::before {
+  background: var(--sector-soft);
+}
+.hex:is([data-state="on"], [data-state="sel"]) .hex-in {
+  color: var(--sector-hi);
+}
+button.hex:active .hex-face {
+  transform: scale(0.95);
+}
+
+/* ---------- 5. Bloco de número cheio (contagem, código curto) ---------- */
+.num-block {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.num-block b {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--fs-5);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  background: var(--sector);
+  color: var(--sector-ink);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.num-block[data-variant="line"] b {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--sector);
+  clip-path: none;
+}
+.num-label {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---------- 6. Placa de aviso (perigo, deload, alerta) ---------- */
+.warn-plate {
+  --wp: var(--danger-line); /* perigo é sempre vermelho, até no deload */
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-5);
+  background: color-mix(in srgb, var(--wp) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wp) 55%, transparent);
+}
+.warn-plate[data-kind="alert"] {
+  --wp: var(--amber);
+}
+.warn-plate[data-kind="deload"] {
+  --wp: var(--steel);
+}
+.wp-stripes {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sp-3);
+  background: repeating-linear-gradient(135deg, var(--wp) 0 4px, transparent 4px 8px);
+}
+.wp-tri {
+  flex-shrink: 0;
+  display: grid;
+  place-items: end center;
+  width: 36px;
+  height: 32px;
+  background: var(--wp);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.wp-tri b {
+  padding-bottom: 3px;
+  font-family: var(--tech);
+  font-weight: 800;
+  font-size: var(--fs-4);
+  line-height: 1;
+  color: var(--bg);
+}
+.wp-text {
+  flex: 1;
+  min-width: 0;
+}
+.wp-title {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--fs-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.wp-body {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-3);
+  color: var(--ink-2);
+}
+
+/* ---------- Barra segmentada (trilho, enchimento, ponta clara) ---------- */
+.seg-bar {
+  --gap: 2px;
+  --seg: calc(100% / var(--segs));
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--track-empty) 60%, transparent) 0 calc(var(--seg) - var(--gap)),
+    transparent calc(var(--seg) - var(--gap)) var(--seg)
+  );
+}
+.seg-bar[data-size="s"] {
+  height: 4px;
+}
+.seg-bar[data-size="l"] {
+  height: 14px;
+}
+/* O enchimento desliza até o valor e o padrão desliza ao contrário: os segmentos ficam parados sobre o trilho. */
+.seg-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateX(calc((var(--on) / var(--segs) - 1) * 100%));
+}
+.seg-pat {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc((1 - var(--on) / var(--segs)) * 100%));
+  background: repeating-linear-gradient(
+    90deg,
+    var(--sector) 0 calc(var(--seg) - var(--gap)),
+    transparent calc(var(--seg) - var(--gap)) var(--seg)
+  );
+}
+.seg-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--gap);
+  width: calc(var(--seg) - var(--gap));
+  background: var(--sector-hi);
+}
+/* Moldura assimétrica para a barra grande (HUD Pack): rótulo e valor embaixo. */
+.gauge {
+  --aug-bl: 12px;
+  --aug-tr: 6px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--sector-line);
+  padding: var(--sp-2) var(--sp-3);
+  background: color-mix(in srgb, var(--sector) 6%, var(--surface));
+}
+.gauge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.gauge-label {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.gauge-value {
+  font-family: var(--tech);
+  font-weight: 700;
+  font-size: var(--fs-4);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ---------- Mira: cantoneiras ciano no item selecionado (filtro, aba, dia, semana) ---------- */
+/* Use em item sem augmented-ui (ele ocupa o ::after). */
+.aim {
+  position: relative;
+}
+.aim::after {
+  --cc: var(--sel);
+  --cl: 8px;
+  inset: -3px;
+  opacity: 0;
+  transform: scale(1.12);
+  transition:
+    opacity var(--t-mira) var(--ease-seco),
+    transform var(--t-mira) var(--ease-seco);
+}
+.aim:is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-sel)::after {
+  opacity: 1;
+  transform: none;
+}
+.aim:active::after {
+  transform: scale(0.94);
+  transition-duration: var(--t-toque);
+}
+
+/* ---------- Ticker (número que conta) ---------- */
+.ticker {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Famílias de movimento ---------- */
+/* Ligar: a moldura desenha (a faixa cresce em degraus) e o conteúdo entra em cascata, até 6 itens. */
+.fx-ligar > * {
+  animation: pc-ligar var(--t-ligar) var(--ease-seco) both;
+}
+.fx-ligar > :nth-child(2) {
+  animation-delay: var(--t-cascata);
+}
+.fx-ligar > :nth-child(3) {
+  animation-delay: calc(var(--t-cascata) * 2);
+}
+.fx-ligar > :nth-child(4) {
+  animation-delay: calc(var(--t-cascata) * 3);
+}
+.fx-ligar > :nth-child(5) {
+  animation-delay: calc(var(--t-cascata) * 4);
+}
+.fx-ligar > :nth-child(n + 6) {
+  animation-delay: calc(var(--t-cascata) * 5);
+}
+.fx-ligar .band::before {
+  animation: pc-desenha var(--t-ligar) steps(6, end) both;
+}
+.fx-ligar .band > * {
+  animation: pc-ligar var(--t-ligar) var(--ease-seco) var(--t-mira) both;
+}
+@keyframes pc-ligar {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sp-2));
+  }
+}
+@keyframes pc-desenha {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Leitura: a barra enche segmento por segmento na primeira vez que aparece (Pieces.tsx marca .is-seen). */
+.seg-bar.fx-leitura .seg-fill {
+  animation: pc-seg-fill var(--t-leitura) steps(var(--on), end) both;
+}
+.seg-bar.fx-leitura .seg-pat {
+  animation: pc-seg-pat var(--t-leitura) steps(var(--on), end) both;
+}
+.seg-bar.fx-leitura:not(.is-seen) :is(.seg-fill, .seg-pat) {
+  animation-play-state: paused;
+}
+@keyframes pc-seg-fill {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes pc-seg-pat {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/* Recompensa: falha rápida (glitch-main, já usada no aviso de recorde) + clarão por cima (lib/fx.ts playReward). */
+.fx-recompensa {
+  animation: glitch-main var(--t-recompensa) steps(1) 1;
+}
+.pc-flash {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--sector-hi);
+  animation: pc-clarao var(--t-recompensa) var(--ease-seco) forwards;
+}
+@keyframes pc-clarao {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+/* Ambiente: laço lento; pausa fora da vista (.fx-ambiente entra no PAUSABLE de lib/fx.ts). No máximo 2 por tela. */
+.pc-led {
+  display: inline-block;
+  width: var(--sp-2);
+  height: var(--sp-2);
+  flex-shrink: 0;
+  background: var(--sector);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sector) 70%, transparent);
+}
+.pc-led.fx-ambiente {
+  animation: led-breathe 3s ease-in-out infinite;
+}
+
+/* Textura: ruído fino fixo sobre a página, só no nível máximo de efeitos. Parado (não anima). */
+.pc-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Academia e mínimo: nada das famílias novas se move; tudo fica no estado final. */
+/* (Pseudo-elemento não entra em :is(): cada um tem a sua linha.) */
+:root:is(.fx-gym, .fx-min) :is(.fx-ligar > *, .fx-ligar .band > *, .seg-fill, .seg-pat, .fx-recompensa, .fx-ambiente),
+:root:is(.fx-gym, .fx-min) .fx-ligar .band::before {
+  animation: none;
+}
+:root:is(.fx-gym, .fx-min) .aim::after,
+:root:is(.fx-gym, .fx-min) .slot-face::before,
+:root:is(.fx-gym, .fx-min) .hex-face {
+  transition: none;
+}
+:root:is(.fx-gym, .fx-min) .pc-noise {
+  display: none;
+}
+
+/* ---------- Lista agrupada (M1): painel com linhas que abrem, linhas-link e interruptores ---------- */
+.group-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.group-label {
+  margin: 0;
+  font-weight: 400;
+}
+.group-box {
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--line);
+  background:
+    linear-gradient(var(--sector), var(--sector)) 14px 0 / 34px 2px no-repeat,
+    var(--surface);
+}
+.group-box > * + * {
+  border-top: 1px solid var(--line-2);
+}
+.fold-row > summary,
+.link-row,
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--sp-3) var(--sp-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fold-row > summary {
+  list-style: none;
+}
+.fold-row > summary::-webkit-details-marker {
+  display: none;
+}
+.row-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.row-icon img {
+  display: block;
+  border-radius: 50%;
+}
+.row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.row-title {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-4);
+  line-height: 1.25;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.row-value {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  overflow-wrap: break-word;
+}
+/* Uma seta só (R6): aponta para baixo fechada, gira ao abrir; na linha-link aponta para a direita. */
+.fold-chev {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin-right: var(--sp-1);
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform var(--t-mira) var(--ease-seco);
+}
+.fold-chev.is-link {
+  transform: rotate(-45deg);
+}
+.fold-row[open] > summary .fold-chev {
+  transform: rotate(-135deg);
+  border-color: var(--cyan);
+}
+/* Linha aberta: o corpo abre dentro do painel, com fundo mais claro e um filete ciano marcando a região. */
+.fold-row[open] {
+  background: var(--surface-2);
+  box-shadow: inset 2px 0 0 var(--cyan);
+}
+.fold-body {
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+.fold-row .fold-row > summary {
+  /* aninhar é proibido (R10); se acontecer, ao menos não parece um segundo nível */
+  padding-inline: 0;
+}
+/* Dentro da lista agrupada, opção de modo ligada = cheio claro; escolha múltipla (.multi) = ciano (R4, R6). */
+.group-box .toggle-chip[aria-pressed="true"] {
+  --aug-border-bg: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+.group-box .toggle-chip.multi[aria-pressed="true"] {
+  --aug-border-bg: var(--cyan);
+  background: var(--sel-soft);
+  color: var(--sel);
+}
+.switch-row:focus-visible,
+.link-row:focus-visible,
+.fold-row > summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+/* Interruptor: trilho 44 × 24; ligado = ciano. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  border: 1px solid var(--field-border);
+  background: var(--surface-3);
+  transition: background-color var(--t-mira) var(--ease-seco);
+}
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--ink-3);
+  transition: transform var(--t-mira) var(--ease-seco);
+}
+.switch-row[aria-checked="true"] .switch {
+  border-color: var(--cyan);
+  background: var(--sel-soft);
+}
+.switch-row[aria-checked="true"] .switch-knob {
+  transform: translateX(20px);
+  background: var(--cyan);
+}
+.fold-body .switch-row {
+  padding-inline: 0;
+}
+.fold-body .switch-row + .switch-row {
+  border-top: 1px solid var(--line-2);
+}
+:root:is(.fx-gym, .fx-min) :is(.switch, .switch-knob, .fold-chev) {
+  transition: none;
+}
+/* Ajustes: 24 px entre os painéis (R1: o vão entre grupos é o dobro do de dentro). */
+.set-screen {
+  gap: var(--sp-5);
+}
+
+/* ---------- Exercícios (M2): busca e filtros num bloco só, grade de músculos exata 3 × 2 ---------- */
+.ws-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.ws-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.ws-controls .ws-brackets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+  padding: 0 3px; /* espaço para a mira por fora (em cima e embaixo, o vão de 8 px já basta) */
+}
+.ws-controls .ws-bracket {
+  clip-path: none;
+}
+/* Tela de Exercícios: busca e filtros mais perto da lista (vão de 16 px antes da contagem). */
+.ws-screen {
+  gap: var(--sp-4);
+}
+
+/* ---------- Guia (M2): abas de texto numa linha, fixas no topo, com Índice sempre visível ---------- */
+.gnav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: stretch;
+  margin-inline: calc(var(--sp-4) * -1);
+  padding-inline: var(--sp-4);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.gnav-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, black 82%, transparent);
+  mask-image: linear-gradient(90deg, black 82%, transparent);
+}
+.gnav-tabs::-webkit-scrollbar {
+  display: none;
+}
+.gnav-tabs a {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.gnav-tabs a[aria-current="true"] {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--sector);
+}
+.gnav-index-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+  padding: 0 0 0 var(--sp-3);
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--sector);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.gnav-index-btn[aria-expanded="true"] {
+  color: var(--ink);
+}
+.gnav-index {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 16px 24px -12px rgb(0 0 0 / 0.8);
+}
+.gnav-index li {
+  border-top: 1px solid var(--line-2);
+}
+.gnav-index li:nth-child(odd) {
+  border-right: 1px solid var(--line-2);
+}
+.gnav-index a {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-4);
+  color: var(--ink);
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-3);
+  text-decoration: none;
+}
+.gnav-index a .idx {
+  width: auto;
+  color: var(--sector);
+}
+.gnav-index a[aria-current="true"] {
+  background: var(--sector-soft);
+}
+/* O índice é a lista completa: 15 itens = 7 fileiras de 2 + 1; o último ocupa a fileira toda (R7). */
+.gnav-index li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+@media (max-width: 359px) {
+  .gnav-index {
+    grid-template-columns: 1fr;
+  }
+  .gnav-index li:nth-child(odd) {
+    border-right: 0;
+  }
+}
+.guide-sec {
+  scroll-margin-top: 60px;
+}
+
+/* ---------- Ações pequenas (M3/M4): botão de texto e botão de contorno; nada de barra vermelha repetida ---------- */
+.text-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  background: none;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.text-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.btn.btn-ghost-line {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+
+/* ---------- Conta online (M3): cartão de identidade limpo, como o Figma ---------- */
+.op-cover {
+  height: 100px;
+  background: radial-gradient(60% 120% at 75% 20%, color-mix(in srgb, var(--red) 38%, transparent), transparent 60%),
+    radial-gradient(60% 120% at 10% 100%, color-mix(in srgb, var(--cyan) 16%, transparent), transparent 60%), var(--bg);
+}
+.op-main {
+  margin-top: -41px;
+  align-items: flex-end;
+  padding: 0 var(--sp-4) var(--sp-3);
+}
+.op-avatar {
+  width: 86px;
+  height: 86px;
+}
+.op-identity {
+  padding-top: 0;
+  padding-bottom: var(--sp-1);
+  gap: var(--sp-1);
+}
+.op-identity h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  font-weight: 800;
+  font-size: 17px;
+}
+.op-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.op-identity .op-rank {
+  align-self: center;
+  padding: 1px var(--sp-2);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+.op-tags {
+  margin: 0;
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+.op-stats {
+  border-top-color: var(--line-2);
+}
+.op-stats > div {
+  border-color: var(--line-2) !important;
+}
+.op-stat-link {
+  padding: 0 !important;
+}
+.op-stat-link a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  width: 100%;
+  min-height: 72px;
+  color: inherit;
+  text-decoration: none;
+}
+.op-stat-link dt {
+  color: var(--cyan);
+}
+.op-pending {
+  color: var(--amber) !important;
+}
+.op-foot {
+  padding: var(--sp-1) var(--sp-4);
+  border-top: 1px solid var(--line-2);
+}
+.op-foot .id-sync {
+  min-height: 44px;
+}
+.op-tabs.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.op-tabs button[aria-selected="true"] {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--sector);
+}
+.op-account {
+  gap: var(--sp-5);
+}
+/* Lembrete do código de recuperação: uma linha de texto e duas ações pequenas. */
+.recovery-nag {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 2px solid var(--amber);
+  background: var(--amber-soft);
+}
+.recovery-nag p {
+  margin: 0;
+}
+
+/* Cartão de treino (Atividade e feed): recorde é só a etiqueta (R4); números numa caixa única com filetes (R2). */
+.feed-post.pr {
+  --aug-border-bg: var(--line);
+  box-shadow: none;
+}
+.feed-post {
+  gap: var(--sp-2);
+}
+.feed-post-title {
+  font-weight: 700;
+  font-size: var(--fs-4);
+}
+.post-label {
+  color: var(--ink-3);
+}
+.workout-data {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: var(--sp-1) 0 0;
+  border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.workout-data > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+}
+.workout-data > div + div {
+  border-left: 1px solid var(--line-2);
+}
+.workout-data dt {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.workout-data dd {
+  margin: 0;
+  font-family: var(--tech);
+  font-size: var(--fs-4);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.icon-btn.lg {
+  width: 44px;
+  height: 44px;
+}
+
+/* ---------- Amigos (M4): ranking como .rank-row, busca como .search-box, listas num painel ---------- */
+.workout-data {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.squad-stats {
+  margin-top: 0;
+}
+.squad-stats dd.hot {
+  color: var(--amber);
+}
+.squad-me-name strong,
+.friend-name strong {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-4);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.squad-me-name strong {
+  font-size: var(--fs-5);
+}
+/* Ranking: filete entre as linhas, a sua linha com vermelho a 6% de ponta a ponta; traço do cartão em violeta. */
+.sq-rank {
+  background:
+    linear-gradient(var(--violet), var(--violet)) 14px 0 / 34px 2px no-repeat,
+    var(--surface);
+}
+.sq-rank-head span {
+  color: var(--ink);
+}
+.sq-rank-head small {
+  color: var(--ink-3);
+}
+.sq-rank li {
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom-color: var(--line-2);
+}
+.sq-rank li.you {
+  background: color-mix(in srgb, var(--red) 6%, transparent);
+  box-shadow: none;
+}
+.sq-rank li > span {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--fs-4);
+  text-transform: none;
+}
+.sq-rank li em {
+  background: transparent;
+  color: var(--red-hi);
+  border: 1px solid color-mix(in srgb, var(--red) 60%, transparent);
+}
+/* Caixa de busca: campo de 44 px com ícone. */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--field-border);
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.search-box:focus-within {
+  border-color: var(--focus-ring);
+}
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--fs-4);
+}
+.sq-add .suggest-list {
+  display: block;
+}
+.sq-add .suggest-list .sq-user {
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 0;
+}
+.sq-add .suggest-list .sq-user + .sq-user {
+  border-top: 1px solid var(--line-2);
+}
+.btn.btn-sm.btn-ghost-line {
+  min-height: 44px;
+  padding-inline: var(--sp-3);
+}
+/* Linhas dentro do painel de amigos e pedidos. */
+.group-box > .sq-friend,
+.group-box > .sq-request,
+.group-box > .sq-empty {
+  padding: var(--sp-1) var(--sp-4);
+}
+.group-box > .sq-empty {
+  margin: 0;
+  padding-block: var(--sp-4);
+}
+.sq-request .friend-row {
+  border-top: 0;
+}
+.sq-friend.open {
+  background: var(--surface-2);
+  box-shadow: inset 2px 0 0 var(--cyan);
+  padding-bottom: var(--sp-3);
+}
+.sq-friend.open > .friend-toggle .fold-chev {
+  transform: rotate(-135deg);
+  border-color: var(--cyan);
+}
+.sq-friend > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.group-box .friend-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.feed-post-head .friend-name strong {
+  font-size: var(--fs-3);
+}
+/* Transmissão no feed: uma linha (sigla, pessoa, treino e data, recorde) e os números. */
+.squad-screen .feed-post {
+  padding: var(--sp-3) var(--sp-4);
+}
+.feed-pr-tag {
+  flex-shrink: 0;
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.squad-screen .workout-data > div {
+  padding: var(--sp-1) var(--sp-3);
+}
+.squad-screen .squad-head {
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.squad-screen .squad-me .id-avatar {
+  width: 44px;
+  height: 44px;
+}
+.friend-toggle .friend-who {
+  flex: 1;
+  min-width: 0;
+}
+.sq-friend > .friend-toggle {
+  width: 100%;
+}
+.squad-screen .feed-posts {
+  gap: var(--sp-2);
+}
+
+/* ---------- Programas (M5): modelos como linhas de um painel por família ---------- */
+.tpl-note {
+  display: block;
+  margin-top: var(--sp-1);
+  color: var(--ink-3);
+  font-family: var(--body);
+  font-size: var(--fs-2);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.tpl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+}
+.tpl-top {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--sp-3);
+}
+.tpl-meta {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+}
+.tpl-use {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-width: 72px;
+}
+.tpl-days {
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.tpl-level {
+  padding: 1px var(--sp-2);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.tpl-pitch {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--fs-2);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.tpl-start {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.tpl-start .btn {
+  min-height: 48px;
+  padding-inline: var(--sp-2);
+  text-align: center;
+}
+
+/* ---------- MC1: entrada de tela única (família "ligar"): blocos em cascata de 40 ms, até 6 ---------- */
+.app > .stack-lg > * {
+  animation: pc-ligar var(--t-ligar) var(--ease-seco) backwards;
+}
+.app > .stack-lg > :nth-child(2) {
+  animation-delay: var(--t-cascata);
+}
+.app > .stack-lg > :nth-child(3) {
+  animation-delay: calc(var(--t-cascata) * 2);
+}
+.app > .stack-lg > :nth-child(4) {
+  animation-delay: calc(var(--t-cascata) * 3);
+}
+.app > .stack-lg > :nth-child(5) {
+  animation-delay: calc(var(--t-cascata) * 4);
+}
+.app > .stack-lg > :nth-child(6) {
+  animation-delay: calc(var(--t-cascata) * 5);
+}
+/* Do 7º bloco em diante, nada anima: quase sempre estão fora da tela, e animar 15 cartões de uma vez pesa. */
+.app > .stack-lg > :nth-child(n + 7) {
+  animation: none;
+}
+/* O painel com faixa que entra com a tela desenha a faixa antes do texto. */
+.app > .stack-lg > .band-panel .band::before {
+  animation: pc-desenha var(--t-ligar) steps(6, end) backwards;
+}
+:root:is(.fx-gym, .fx-min) .app > .stack-lg > *,
+:root:is(.fx-gym, .fx-min) .app > .stack-lg > .band-panel .band::before {
+  animation: none;
+}
+/* Mira nas abas (perfil e Guia): as cantoneiras ficam por dentro, porque a faixa recorta o que passa da borda. */
+.op-tabs .aim::after,
+.gnav-tabs .aim::after {
+  inset: 6px 2px;
+}
+.aim[aria-current="step"]::after {
+  opacity: 1;
+  transform: none;
+}
+/* Ambiente: no máximo 2 laços visíveis por tela. No Progresso ficam o fluxo de sinal e a varredura do mapa de
+   fadiga (dizem que o mapa está "lendo"); a órbita e o LED do título param. */
+.app:has(.fm) .eyebrow::before,
+.app:has(.fm) .fm-orbit,
+.app:has(.fm) .fm .holo-ring.front path,
+.app:has(.fm) .fm .reticle-outer {
+  animation: none;
+}
+
+/* ---------- MC2: posto com progresso e conquistas em hexágonos ---------- */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 var(--sp-4) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-1);
+  border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--sector) 5%, transparent);
+}
+.rank-row .hex {
+  min-width: 0;
+  padding: 0;
+}
+.rank-row .hex-label {
+  display: none;
+}
+.rank-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.rank-text strong {
+  font-family: var(--tech);
+  font-size: var(--fs-3);
+  letter-spacing: 0.08em;
+}
+.rank-need {
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: var(--sp-3) var(--sp-2);
+  justify-items: center;
+}
+.ach-grid .hex-label {
+  max-width: 96px;
+}
+.ach-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line-2);
+  border-left: 2px solid var(--sel);
+  background: var(--surface-2);
+}
+.ach-detail p {
+  margin: 0;
+  color: var(--ink-2);
+}
+.ach-ok {
+  color: var(--ok);
+}
+
+/* ---------- MC2: miniaturas de exercício num slot com tratamento de cor (só a grade; a página fica nítida) ---------- */
+.ws-photo {
+  position: relative;
+  border-bottom-color: var(--sector);
+}
+.ws-photo img {
+  filter: saturate(0.45) contrast(1.12) brightness(0.92);
+}
+/* Véu na cor do setor + linhas de varredura bem leves + cantoneiras do slot. */
+.ws-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 3px),
+    color-mix(in srgb, var(--sector) 14%, transparent);
+  mix-blend-mode: normal;
+}
+.ws-photo::after {
+  --cc: var(--sector);
+  --cl: 10px;
+  --cw: 2px;
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--cc), var(--cc)) left top / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) left top / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) right top / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) right top / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) left bottom / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) left bottom / var(--cw) var(--cl),
+    linear-gradient(var(--cc), var(--cc)) right bottom / var(--cl) var(--cw),
+    linear-gradient(var(--cc), var(--cc)) right bottom / var(--cw) var(--cl);
+  background-repeat: no-repeat;
+}
+.ws-tag {
+  z-index: 3;
+}
+
+/* ---------- MC2: estados vazios no desenho do slot vazio (hachura na cor do setor) ---------- */
+.no-signal,
+.card.flat.empty {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--sector) 10%, transparent) 0 2px, transparent 2px 10px),
+    var(--surface);
+}
+
+/* ---------- MC2: faixa cheia no bloco principal (Histórico: calendário; Amigos: ranking) ---------- */
+.band-card > .band:first-child {
+  margin: calc(var(--sp-4) * -1) calc(var(--sp-4) * -1) 0;
+}
+.sq-rank-head {
+  border-bottom: 0;
+  background: var(--sector);
+  color: var(--sector-ink);
+}
+.sq-rank-head span,
+.sq-rank-head small {
+  color: var(--sector-ink);
+}
+
+/* ---------- M6: traço vermelho só em cartão de seção. Em 3 ou mais cartões iguais seguidos, o traço sai ---------- */
+:is(.card:has(+ .card + .card), .card + .card:has(+ .card), .card + .card + .card):not(.data, .hot, .op-card) {
+  background-image: none;
+}
+
+/* ---------- M6: Orbitron é tempero (R5) ---------- */
+/* Abaixo de 13 px, Orbitron vira mono (rótulo e código curto). */
+.day-dot,
+.cal .wk,
+.cal .code,
+.md .md-h {
+  font-family: var(--mono);
+}
+/* Nome em lista (opção de aparência, atalho com nome) vai em Exo 2 600, caixa normal. */
+.persona-opt strong,
+.pg-entry strong {
+  font-family: var(--body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---------- M6: um só recolhível (R6): a mesma seta à direita que gira; contagem, se houver, antes dela ---------- */
+.sysmod-chev {
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+  border-color: var(--ink-3);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform var(--t-mira) var(--ease-seco);
+}
+.sysmod.open .sysmod-chev {
+  transform: rotate(-135deg);
+  border-color: var(--cyan);
+}
+.sysmod-meta {
+  font-family: var(--mono);
+}
+/* <details> que sobraram fora da lista agrupada (o treino em andamento fica como está: .how e .plan-more). */
+:is(.eg-why, .mod, .ob-others, .fm-zones, .crash details, .import-csv details, details.small, details.tiny) > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  list-style: none;
+  cursor: pointer;
+}
+:is(.eg-why, .mod, .ob-others, .fm-zones, .rec-row, details.small, details.tiny) > summary::-webkit-details-marker {
+  display: none;
+}
+:is(.eg-why, .mod, .ob-others, .fm-zones, .rec-row, details.small, details.tiny) > summary::after {
+  content: "";
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin-left: auto;
+  margin-right: var(--sp-1);
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform var(--t-mira) var(--ease-seco);
+}
+:is(.eg-why, .mod, .ob-others, .fm-zones, .rec-row, details.small, details.tiny)[open] > summary::after {
+  transform: rotate(-135deg);
+  border-color: var(--cyan);
+}
+.eg-why summary::before,
+.eg-why[open] summary::before {
+  content: none;
+}
+.fm-zones > summary > b::after {
+  display: none;
+}
+.rec-row summary {
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+}
+.eg-why summary {
+  min-height: 44px;
+}
+:root:is(.fx-gym, .fx-min) .sysmod-chev,
+:root:is(.fx-gym, .fx-min) :is(.eg-why, .mod, .ob-others, .fm-zones, .rec-row, details.small, details.tiny) > summary::after {
+  transition: none;
+}
+
+/* ---------- M6: Hoje, "Trocar o protocolo de hoje" e "Editar programa" empilhados e alinhados (lado a lado no tablet) ---------- */
+.today-links {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+@media (min-width: 560px) {
+  .today-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

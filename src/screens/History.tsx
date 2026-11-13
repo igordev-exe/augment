@@ -51,7 +51,14 @@ export function History() {
     <div className="stack-lg">
       <PageHead code="AUG.OS // REGISTRO DE MISSÕES" title="Histórico" sub={`${done.length} treinos registrados.`} />
 
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
+      <section data-augmented-ui="tl-clip br-clip border" className="card stack band-card">
+        <header className="band">
+          <span className="band-mark" aria-hidden="true" />
+          <span className="band-title">Calendário</span>
+          <span className="band-micro">
+            {monthSessions.length} {monthSessions.length === 1 ? "treino" : "treinos"} no mês
+          </span>
+        </header>
         <div className="spread">
           <button
             type="button"

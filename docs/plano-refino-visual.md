@@ -30,6 +30,24 @@ sessão nova. O objetivo é **refinar o que está pesado e manter o que já é b
 | MC2    | Momentos de jogo: posto e progresso, conquistas, fotos      | Opus 5.5        | médio   |
 | M6     | Passada geral: vermelho, Orbitron, recolhíveis, espaçamento | Sonnet 5.5      | médio   |
 
+## 1A. Andamento (13 nov 2026)
+
+Todos os módulos foram executados numa sessão só, na ordem M0 → MC0 → M1 → M2 → M3 → M4 → M5 → MC1 → MC2 → M6.
+M0 está no commit `33a8bed`; o resto aguarda revisão e commit do dono. Medidas finais em 390 px:
+
+| Módulo | Medida de aceite                                                 | Antes      | Depois                                                 |
+| ------ | ---------------------------------------------------------------- | ---------- | ------------------------------------------------------ |
+| M1     | Contêineres com borda entre "Ajustes" e "Pontos de restauração"  | 11         | 3 (vão 0 entre linhas, 24 px entre painéis)            |
+| M2     | Busca → 1º cartão em Exercícios                                  | ~350 px    | 279 px                                                 |
+| M2     | Altura da navegação do Guia                                      | ~190 px    | 49 px (+ Índice com as 15 seções)                      |
+| M3     | Conta online, aba Atividade                                      | 2.583 px   | 1.444 px                                               |
+| M4     | Amigos (2 amigos, 21 treinos no feed)                            | > 3.600 px | 1.886 px                                               |
+| M5     | Programas                                                        | ~2.430 px  | 1.800 px                                               |
+| MC1    | `@keyframes` fora de transform/opacity/cor                       | 25         | 0 (+ 8 exceções declaradas: boot, abas, log do treino) |
+| M6     | Botões vermelhos cheios no mesmo quadro (fora da zona de perigo) | até 2      | no máximo 1 em todas as telas                          |
+
+Detalhes do movimento em `docs/movimento.md`. Fotos de depois em `tools/verify/out/plano-depois/` (fora do git).
+
 ## 2. Diagnóstico (medido, não "no olho")
 
 O que foi medido no app rodando, em 390 px:

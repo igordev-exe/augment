@@ -73,3 +73,29 @@ export function tonnes(kg: number): string {
 export function rankOf(done: number): string {
   return done >= 200 ? "ELITE" : done >= 100 ? "VETERANO" : done >= 40 ? "AUMENTADO" : done >= 10 ? "EM CALIBRAGEM" : "RECRUTA";
 }
+
+/** Postos em ordem, com o mínimo de sessões concluídas de cada um (os mesmos cortes de `rankOf`). */
+export const RANKS: { name: string; min: number }[] = [
+  { name: "RECRUTA", min: 0 },
+  { name: "EM CALIBRAGEM", min: 10 },
+  { name: "AUMENTADO", min: 40 },
+  { name: "VETERANO", min: 100 },
+  { name: "ELITE", min: 200 },
+];
+
+/** Onde a pessoa está entre o posto atual e o próximo. `next` é null no último posto. */
+export function rankProgress(done: number): {
+  index: number;
+  rank: string;
+  next: string | null;
+  need: number;
+  into: number;
+  span: number;
+} {
+  let index = 0;
+  for (let i = 0; i < RANKS.length; i++) if (done >= RANKS[i].min) index = i;
+  const cur = RANKS[index];
+  const nxt = RANKS[index + 1];
+  if (!nxt) return { index, rank: cur.name, next: null, need: 0, into: 1, span: 1 };
+  return { index, rank: cur.name, next: nxt.name, need: nxt.min - done, into: done - cur.min, span: nxt.min - cur.min };
+}

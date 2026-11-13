@@ -21,6 +21,7 @@
     "build:ios": "tsc -b && vite build --base ./ && cap sync ios",
     "ios:open": "cap open ios",
     "verify:layout": "node tools/verify/audit.mjs",
+    "verify:keyframes": "node tools/verify/keyframes.mjs",
     "verify:e2e": "node tools/verify/e2e.mjs http://localhost:5173 tools/verify/out/e2e",
     "verify:webkit": "node tools/verify/webkit.mjs http://localhost:5173 tools/verify/out/webkit"
   },

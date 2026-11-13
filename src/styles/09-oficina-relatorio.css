@@ -184,15 +184,16 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -35%;
+  left: 0;
   width: 35%;
+  transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, #cfe80033, transparent);
   animation: scan-beam 1.3s linear infinite;
   pointer-events: none;
 }
 @keyframes scan-beam {
   to {
-    left: 100%;
+    transform: translateX(286%);
   }
 }
 
@@ -503,15 +504,17 @@
   left: 0;
   right: 0;
   top: 0;
-  height: 2px;
-  background: var(--cyan);
-  box-shadow: 0 0 12px var(--cyan);
+  height: 100%;
+  background: linear-gradient(var(--cyan), var(--cyan)) 0 0 / 100% 2px no-repeat;
   opacity: 0.6;
   animation: bm-sweep 3.4s linear infinite;
 }
 @keyframes bm-sweep {
+  from {
+    transform: translateY(0);
+  }
   to {
-    top: 100%;
+    transform: translateY(100%);
   }
 }
 .body-scan .scan-tag {
@@ -788,6 +791,6 @@
 }
 @keyframes hm-today {
   50% {
-    stroke-opacity: 0.3;
+    opacity: 0.3;
   }
 }

@@ -850,13 +850,21 @@
   }
 }
 @keyframes fm-ring-flow {
-  to {
-    stroke-dashoffset: -136;
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
   }
 }
 @keyframes fm-signal-flow {
-  to {
-    stroke-dashoffset: -172;
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
   }
 }
 @keyframes fm-anatomy-scan {

@@ -10,7 +10,7 @@ import { addDays, shortDate } from "../lib/dates";
 import { useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { tonnes } from "../lib/profile";
 import { sessionStats } from "../lib/sessions";
-import { PostLabel } from "../components/OperatorProfile";
+import { FoldRow, GroupPanel, LinkRow } from "../components/Pieces";
 import {
   acceptFriend,
   getBlocked,
@@ -39,6 +39,7 @@ export function Friends() {
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [offline, setOffline] = useState("");
   const [blocked, setBlocked] = useState<PublicUser[]>([]);
+  const [shown, setShown] = useState(5); // transmissões: as 5 mais recentes, depois de 5 em 5
   const user = online?.user;
 
   async function refresh() {
@@ -124,8 +125,11 @@ export function Friends() {
     }
   }
 
+  const noFriends = fr.friends.length === 0;
+  const add = <AddFriend onDone={refresh} />;
+
   return (
-    <div className="stack-lg">
+    <div className="stack-lg squad-screen">
       <PageHead back="/" code="AUG.NET // ESQUADRÃO" title="Amigos" />
 
       <section data-augmented-ui="tl-clip br-clip border" className="card squad-head">
@@ -134,14 +138,18 @@ export function Friends() {
             <img src={avatarSrc(settings.persona)} alt="" width={56} height={56} />
           </span>
           <div className="squad-me-name">
-            <span className="id-micro">SEU ID NA REDE</span>
             <strong>{user.displayName}</strong>
-            <button type="button" className="squad-handle" onClick={copyHandle} aria-label={`Copiar @${user.username}`}>
+            <button
+              type="button"
+              className="squad-handle"
+              onClick={copyHandle}
+              aria-label={`Copiar @${user.username} para passar a quem quiser te adicionar`}
+            >
               @{user.username} <span aria-hidden="true">⧉</span>
             </button>
           </div>
         </div>
-        <dl className="id-stats">
+        <dl className="workout-data squad-stats">
           <div>
             <dt>Amigos</dt>
             <dd>{fr.friends.length}</dd>
@@ -155,7 +163,6 @@ export function Friends() {
             <dd>{items.length}</dd>
           </div>
         </dl>
-        <p className="tiny faint">Passe o seu @ para quem quiser te adicionar.</p>
       </section>
 
       {offline && (
@@ -165,94 +172,34 @@ export function Friends() {
         </p>
       )}
 
-      <AddFriend onDone={refresh} />
+      {/* Sem nenhum amigo, adicionar é a primeira coisa a fazer. */}
+      {noFriends && add}
 
       {fr.incoming.length > 0 && (
-        <section data-augmented-ui="tl-clip br-clip border" className="card hot stack">
-          <h2 className="h-sec">Pedidos de amizade</h2>
-          <ul className="friend-list">
-            {fr.incoming.map((u) => (
-              <li key={u.id} className="stack" style={{ gap: 6 }}>
-                <div className="friend-row">
-                  <Name u={u} />
-                  <span className="actions">
-                    <button
-                      type="button"
-                      data-augmented-ui="tl-clip br-clip border"
-                      className="btn btn-sm btn-primary"
-                      onClick={() => act(() => acceptFriend(u.id), `Agora você e ${u.displayName} são amigos.`)}
-                    >
-                      Aceitar
-                    </button>
-                    <button
-                      type="button"
-                      data-augmented-ui="tl-clip br-clip border"
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => act(() => removeFriend(u.id), "Pedido recusado.")}
-                    >
-                      Recusar
-                    </button>
-                  </span>
-                </div>
-                <UserModeration user={u} onDone={refresh} />
-              </li>
-            ))}
-          </ul>
-        </section>
+        <GroupPanel label={`Pedidos de amizade (${fr.incoming.length})`}>
+          {fr.incoming.map((u) => (
+            <div key={u.id} className="sq-request">
+              <div className="friend-row">
+                <Name u={u} />
+                <span className="actions">
+                  <button
+                    type="button"
+                    data-augmented-ui="tl-clip br-clip border"
+                    className="btn btn-sm btn-primary"
+                    onClick={() => act(() => acceptFriend(u.id), `Agora você e ${u.displayName} são amigos.`)}
+                  >
+                    Aceitar
+                  </button>
+                  <button type="button" className="text-btn" onClick={() => act(() => removeFriend(u.id), "Pedido recusado.")}>
+                    Recusar
+                  </button>
+                </span>
+              </div>
+              <UserModeration user={u} onDone={refresh} />
+            </div>
+          ))}
+        </GroupPanel>
       )}
-
-      <section className="stack">
-        <h2 className="h-sec">Transmissões do esquadrão</h2>
-        {items.length === 0 ? (
-          <div data-augmented-ui="tl-clip br-clip border" className="card flat no-signal">
-            <span className="radar" aria-hidden="true" />
-            <strong>SEM SINAL</strong>
-            <span className="small muted">
-              {fr.friends.length
-                ? "Nenhum treino dos seus amigos nos últimos 30 dias."
-                : "Quando você tiver amigos, os treinos deles aparecem aqui."}
-            </span>
-          </div>
-        ) : (
-          <ul className="feed-posts">
-            {items.map((it) => (
-              <li
-                key={`${it.user.id}-${it.id}`}
-                data-augmented-ui="tl-clip br-clip border"
-                className={`card feed-post${it.prs ? " pr" : ""}`}
-              >
-                <div className="feed-post-head">
-                  <Sigil name={it.user.displayName} />
-                  <span className="friend-name">
-                    <strong>{it.user.displayName}</strong>
-                    <span className="tiny faint mono">
-                      @{it.user.username} · {shortDate(it.date)}
-                    </span>
-                  </span>
-                </div>
-                <PostLabel pr={it.prs} />
-                <p className="feed-post-title">{it.title}</p>
-                <dl className="feed-post-stats">
-                  <div>
-                    <dt>Séries</dt>
-                    <dd>{it.sets}</dd>
-                  </div>
-                  <div>
-                    <dt>Volume</dt>
-                    <dd>{formatWeight(Math.round(it.volumeKg / 100) / 10)} t</dd>
-                  </div>
-                  {it.minutes > 0 && (
-                    <div>
-                      <dt>Tempo</dt>
-                      <dd>{it.minutes} min</dd>
-                    </div>
-                  )}
-                </dl>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
 
       {ranking.length > 1 && (
         <section data-augmented-ui="tl-clip br-clip border" className="card sq-rank" aria-label="Ranking da semana">
@@ -282,59 +229,102 @@ export function Friends() {
       )}
 
       <section className="stack">
-        <h2 className="h-sec">Seus amigos ({fr.friends.length})</h2>
-        {fr.friends.length === 0 ? (
+        <h2 className="list-label group-label">Transmissões do esquadrão</h2>
+        {items.length === 0 ? (
           <div data-augmented-ui="tl-clip br-clip border" className="card flat no-signal">
             <span className="radar" aria-hidden="true" />
-            <strong>ESQUADRÃO VAZIO</strong>
-            <span className="small muted">Adicione pelo nome de usuário logo acima.</span>
+            <strong>SEM SINAL</strong>
+            <span className="small muted">
+              {fr.friends.length
+                ? "Nenhum treino dos seus amigos nos últimos 30 dias."
+                : "Quando você tiver amigos, os treinos deles aparecem aqui."}
+            </span>
           </div>
         ) : (
-          <div data-augmented-ui="tl-clip br-clip border" className="card">
-            <ul className="friend-list">
-              {fr.friends.map((f) => (
-                <FriendRow key={f.id} friend={f} onRemove={() => act(() => removeFriend(f.id), "Amizade desfeita.")} onChange={refresh} />
+          <>
+            <ul className="feed-posts">
+              {items.slice(0, shown).map((it) => (
+                <li key={`${it.user.id}-${it.id}`} data-augmented-ui="tl-clip br-clip border" className="card feed-post">
+                  <div className="feed-post-head">
+                    <Sigil name={it.user.displayName} />
+                    <span className="friend-name">
+                      <strong>{it.user.displayName}</strong>
+                      <span className="tiny faint mono">
+                        {it.title} · {shortDate(it.date)}
+                      </span>
+                    </span>
+                    {it.prs > 0 && (
+                      <span className="post-pr feed-pr-tag">
+                        ★ {it.prs} recorde{it.prs > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <dl className="workout-data">
+                    <div>
+                      <dt>Séries</dt>
+                      <dd>{it.sets}</dd>
+                    </div>
+                    <div>
+                      <dt>Volume</dt>
+                      <dd>{formatWeight(Math.round(it.volumeKg / 100) / 10)} t</dd>
+                    </div>
+                    {it.minutes > 0 && (
+                      <div>
+                        <dt>Tempo</dt>
+                        <dd>{it.minutes} min</dd>
+                      </div>
+                    )}
+                  </dl>
+                </li>
               ))}
             </ul>
-          </div>
+            {items.length > shown && (
+              <button
+                type="button"
+                className="btn btn-ghost-line"
+                data-augmented-ui="tl-clip br-clip border"
+                onClick={() => setShown((n) => n + 5)}
+              >
+                Mostrar mais ({items.length - shown})
+              </button>
+            )}
+          </>
         )}
       </section>
 
-      {fr.outgoing.length > 0 && (
-        <section className="stack">
-          <h2 className="h-sec">Pedidos enviados</h2>
-          <div data-augmented-ui="tl-clip br-clip border" className="card">
+      {!noFriends && add}
+
+      <GroupPanel label={`Seus amigos (${fr.friends.length})`}>
+        {fr.friends.length === 0 ? (
+          <p className="small muted sq-empty">Ninguém ainda. Adicione pelo nome de usuário.</p>
+        ) : (
+          fr.friends.map((f) => (
+            <FriendRow key={f.id} friend={f} onRemove={() => act(() => removeFriend(f.id), "Amizade desfeita.")} onChange={refresh} />
+          ))
+        )}
+        {fr.outgoing.length > 0 && (
+          <FoldRow title="Pedidos enviados" value={`${fr.outgoing.length} esperando resposta`}>
             <ul className="friend-list">
               {fr.outgoing.map((u) => (
                 <li key={u.id} className="friend-row">
                   <Name u={u} />
-                  <button
-                    type="button"
-                    data-augmented-ui="tl-clip br-clip border"
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => act(() => removeFriend(u.id), "Pedido cancelado.")}
-                  >
+                  <button type="button" className="text-btn" onClick={() => act(() => removeFriend(u.id), "Pedido cancelado.")}>
                     Cancelar
                   </button>
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      )}
-
-      {blocked.length > 0 && (
-        <section className="stack">
-          <h2 className="h-sec">Bloqueados ({blocked.length})</h2>
-          <div data-augmented-ui="tl-clip br-clip border" className="card">
+          </FoldRow>
+        )}
+        {blocked.length > 0 && (
+          <FoldRow title="Bloqueados" value={`${blocked.length} ${blocked.length === 1 ? "pessoa" : "pessoas"}`}>
             <ul className="friend-list">
               {blocked.map((u) => (
                 <li key={u.id} className="friend-row">
                   <Name u={u} />
                   <button
                     type="button"
-                    data-augmented-ui="tl-clip br-clip border"
-                    className="btn btn-sm btn-ghost"
+                    className="text-btn"
                     onClick={() => act(() => unblockUser(u.id), `${u.displayName} foi desbloqueado.`)}
                   >
                     Desbloquear
@@ -342,13 +332,10 @@ export function Friends() {
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      )}
-
-      <Link to="/privacidade" className="tap small">
-        Privacidade e regras de convivência &gt;
-      </Link>
+          </FoldRow>
+        )}
+        <LinkRow to="/privacidade" title="Privacidade e regras de convivência" />
+      </GroupPanel>
     </div>
   );
 }
@@ -422,51 +409,60 @@ function AddFriend({ onDone }: { onDone: () => void }) {
     }
   }
 
+  const term = q.trim().toLowerCase();
+  const exact = found.some((u) => u.username === term);
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <h2 className="h-sec">Recrutar para o esquadrão</h2>
+    <section className="stack sq-add" aria-labelledby="fr-q-label">
+      <h2 className="list-label group-label" id="fr-q-label">
+        Adicionar amigo
+      </h2>
       <form
-        className="stack"
+        className="search-box"
+        role="search"
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          if (q.trim()) void send(q.trim().toLowerCase().replace(/^@/, ""));
+          if (term) void send(term.replace(/^@/, ""));
         }}
       >
-        <label className="id-label" htmlFor="fr-q">
-          Nome de usuário <i>UID</i>
-        </label>
-        <span className="id-frame">
-          <span className="id-icon" aria-hidden="true">
-            @
-          </span>
-          <input
-            id="fr-q"
-            className="input"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            value={q}
-            onChange={(e) => setQ(e.target.value.replace(/\s/g, "").replace(/^@/, ""))}
-            placeholder="usuario"
-          />
-        </span>
-        {found.length > 0 && (
-          <ul className="suggest-list" aria-label="Usuários encontrados">
-            {found.map((u) => (
-              <li key={u.id} className="sq-user">
-                <Name u={u} />
-                <button type="button" className="sq-follow" disabled={busy} onClick={() => send(u.username)}>
-                  Adicionar
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="submit" className="id-submit" disabled={busy || q.trim().length < 3}>
-          <span>Enviar pedido</span>
-          <b aria-hidden="true">↗</b>
-        </button>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          id="fr-q"
+          aria-labelledby="fr-q-label"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="send"
+          value={q}
+          onChange={(e) => setQ(e.target.value.replace(/\s/g, "").replace(/^@/, ""))}
+          placeholder="Nome de usuário"
+        />
       </form>
+      {(found.length > 0 || (term.length >= 3 && !exact)) && (
+        <ul className="suggest-list group-box" data-augmented-ui="tl-clip br-clip border" aria-label="Usuários encontrados">
+          {found.map((u) => (
+            <li key={u.id} className="sq-user">
+              <Name u={u} />
+              <button type="button" className="btn btn-sm btn-ghost-line" disabled={busy} onClick={() => send(u.username)}>
+                Adicionar
+              </button>
+            </li>
+          ))}
+          {term.length >= 3 && !exact && (
+            <li className="sq-user">
+              <span className="friend-name">
+                <strong>@{term}</strong>
+                <span className="tiny faint mono">mandar pedido para este nome</span>
+              </span>
+              <button type="button" className="btn btn-sm btn-ghost-line" disabled={busy} onClick={() => send(term)}>
+                Adicionar
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
     </section>
   );
 }
@@ -491,12 +487,10 @@ function FriendRow({ friend, onRemove, onChange }: { friend: PublicUser; onRemov
     .sort((a, b) => (libraryName(a.lib) ?? a.lib).localeCompare(libraryName(b.lib) ?? b.lib));
 
   return (
-    <li className="stack" style={{ gap: 8, padding: "6px 0" }}>
+    <div className={`sq-friend${open ? " open" : ""}`}>
       <button type="button" className="friend-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <Name u={friend} />
-        <span className="arrow" aria-hidden="true">
-          {open ? "−" : "+"}
-        </span>
+        <span className="fold-chev" aria-hidden="true" />
       </button>
       {open && (
         <div className="stack" style={{ gap: 8 }}>
@@ -541,6 +535,6 @@ function FriendRow({ friend, onRemove, onChange }: { friend: PublicUser; onRemov
           <UserModeration user={friend} onDone={onChange} />
         </div>
       )}
-    </li>
+    </div>
   );
 }

@@ -12,6 +12,7 @@ import { PrivacyPolicy } from "./screens/PrivacyPolicy";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { applyFxLevel, bootBeam, installTapFx } from "./lib/fx";
 import { weekFor } from "./lib/mesocycle";
+import { applySector, sectorFor } from "./lib/sector";
 import { TimerProvider, useTimer } from "./lib/timer";
 import { ExerciseDetail } from "./screens/ExerciseDetail";
 import { Exercises } from "./screens/Exercises";
@@ -29,6 +30,8 @@ import { Friends } from "./screens/Friends";
 
 // O treinador carrega o SDK da Anthropic: só baixa quando a tela abre.
 const Coach = lazy(() => import("./screens/Coach").then((m) => ({ default: m.Coach })));
+// Vitrine das peças de jogo (#/kit): só no desenvolvimento. Em produção o Vite troca DEV por false e o chunk some.
+const Kit = import.meta.env.DEV ? lazy(() => import("./screens/Kit").then((m) => ({ default: m.Kit }))) : null;
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -57,6 +60,8 @@ function Shell() {
     return off;
   }, []);
   useEffect(() => applyFxLevel(settings.fx, pathname.startsWith("/treino/")), [settings.fx, pathname]);
+  // Setor da rota (Operação, Telemetria, Rede, Treinador): troca o --sector das peças de jogo.
+  useEffect(() => applySector(sectorFor(pathname)), [pathname]);
   useEffect(() => setToastVibrate(settings.vibrate), [settings.vibrate]);
   useEffect(
     () => configure({ sound: settings.sound, vibrate: settings.vibrate, notify: settings.notify }),
@@ -64,7 +69,7 @@ function Shell() {
   );
 
   // Instalação nova (sem treinos e sem ter passado pelo assistente): primeiro uso no lugar das telas.
-  if (settingsLoaded && sessions && sessions.length === 0 && !settings.onboarded && !/^\/(online|ajustes|privacidade)/.test(pathname)) {
+  if (settingsLoaded && sessions && sessions.length === 0 && !settings.onboarded && !/^\/(online|ajustes|privacidade|kit)/.test(pathname)) {
     return (
       <ErrorBoundary resetKey="primeiro-uso">
         <Onboarding />
@@ -102,6 +107,16 @@ function Shell() {
                 </Suspense>
               }
             />
+            {Kit && (
+              <Route
+                path="/kit"
+                element={
+                  <Suspense fallback={null}>
+                    <Kit />
+                  </Suspense>
+                }
+              />
+            )}
             <Route path="*" element={<Today />} />
           </Routes>
         </ErrorBoundary>

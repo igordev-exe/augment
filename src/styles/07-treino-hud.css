@@ -831,19 +831,15 @@
 @keyframes glitch-a {
   0% {
     opacity: 0.9;
-    clip-path: inset(10% 0 60% 0);
     transform: translate(-3px, 1px);
   }
   25% {
-    clip-path: inset(60% 0 10% 0);
     transform: translate(3px, -1px);
   }
   50% {
-    clip-path: inset(30% 0 45% 0);
     transform: translate(-2px, 0);
   }
   75% {
-    clip-path: inset(80% 0 4% 0);
     transform: translate(2px, 1px);
   }
   100% {
@@ -853,19 +849,15 @@
 @keyframes glitch-b {
   0% {
     opacity: 0.9;
-    clip-path: inset(55% 0 20% 0);
     transform: translate(3px, 0);
   }
   25% {
-    clip-path: inset(5% 0 75% 0);
     transform: translate(-3px, 1px);
   }
   50% {
-    clip-path: inset(70% 0 8% 0);
     transform: translate(2px, -1px);
   }
   75% {
-    clip-path: inset(20% 0 60% 0);
     transform: translate(-2px, 0);
   }
   100% {

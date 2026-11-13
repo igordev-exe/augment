@@ -94,22 +94,21 @@ export function Exercises() {
   });
 
   return (
-    <div className="stack-lg">
+    <div className="stack-lg ws-screen">
       <PageHead
         code="AUG.OS // OFICINA DE MÓDULOS"
         title="Exercícios"
         sub="Execução, erros comuns, vídeo e progresso de cada exercício da ficha."
       />
-      <input
-        className="input"
-        type="search"
-        placeholder="Buscar exercício ou músculo"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        aria-label="Buscar exercício"
-      />
-
-      <div className="stack" style={{ gap: 8 }}>
+      <div className="ws-controls">
+        <input
+          className="input"
+          type="search"
+          placeholder="Buscar exercício ou músculo"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Buscar exercício"
+        />
         <div className="ws-switch" role="group" aria-label="Biblioteca">
           <button type="button" aria-pressed={!full} onClick={() => setFull(false)}>
             Curada · {LIBRARY.length}
@@ -124,14 +123,24 @@ export function Exercises() {
             busca aceita o nome em português ou em inglês. As fotos baixam na primeira vez.
           </p>
         )}
-        <div className="ws-brackets" role="group" aria-label="Filtrar por músculo">
-          {GROUPS.map((g) => (
-            <button key={g.id} type="button" className="ws-bracket" aria-pressed={group === g.id} onClick={() => setGroup(g.id)}>
+        {/* Sem músculo ligado já é "todos"; tocar de novo no ligado desliga. 6 células = grade exata de 3 × 2 (R7). */}
+        <div className="ws-brackets" role="group" aria-label="Filtrar por músculo (opcional)">
+          {GROUPS.filter((g) => g.id !== "todos").map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              className="ws-bracket aim"
+              aria-pressed={group === g.id}
+              onClick={() => setGroup(group === g.id ? "todos" : g.id)}
+            >
               {g.label}
               <small>{countGroup(g.id)}</small>
             </button>
           ))}
         </div>
+        <span className="sr-only" aria-live="polite">
+          {group === "todos" ? "Sem filtro de músculo" : `Filtro de músculo: ${GROUPS.find((g) => g.id === group)?.label}`}
+        </span>
         <div className="ws-switch" role="group" aria-label="Filtrar por equipamento">
           {EQUIPS.map((e) => (
             <button key={e.id} type="button" aria-pressed={equip === e.id} onClick={() => setEquip(e.id)}>
@@ -141,54 +150,56 @@ export function Exercises() {
         </div>
       </div>
 
-      <div className="spread">
-        <span className="label">{shown.length} módulos</span>
-        <span className="tiny faint">1RM est. · última carga</span>
-      </div>
+      <div className="ws-results">
+        <div className="spread">
+          <span className="label">{shown.length} módulos</span>
+          <span className="tiny faint">1RM est. · última carga</span>
+        </div>
 
-      <div className="ws-grid">
-        {shown.slice(0, full ? 120 : undefined).map(({ lib, exs, name, muscles, inProgram, equipGroup, equipLabel }) => {
-          // Histórico do exercício mais recente entre os dias em que ele aparece (ou pela biblioteca se fora do programa).
-          const hist =
-            (exs.length ? exs.map((e) => historyOf(done, e.id)) : [historyOf(done, lib, undefined, lib)]).sort((a, b) =>
-              (b[b.length - 1]?.session.date ?? "").localeCompare(a[a.length - 1]?.session.date ?? ""),
-            )[0] ?? [];
-          const last = hist[hist.length - 1];
-          const best = hist.length ? Math.max(...hist.map((h) => bestE1rm(h.entry))) : 0;
-          const lastLoad = last
-            ? loadRef(workSets(last.entry, false).length ? workSets(last.entry, false) : workSets(last.entry)).load
-            : null;
-          const ev = EXERCISE_EVIDENCE[lib];
-          const img = exerciseImages(lib)[0];
-          return (
-            <Link
-              key={lib}
-              to={`/exercicios/${lib}`}
-              data-augmented-ui="tl-clip br-clip border"
-              className={`ws-card${inProgram ? "" : " off-program"}`}
-            >
-              <span className="ws-photo">{img ? <img src={img} alt="" loading="lazy" /> : null}</span>
-              {ev && (
-                <span className={`ws-tag ${LEVEL[ev.why] === "evidencia" ? "ok" : "warn"}`} title={whyLabel(ev.why) ?? undefined}>
-                  {ev.tag}
+        <div className="ws-grid">
+          {shown.slice(0, full ? 120 : undefined).map(({ lib, exs, name, muscles, inProgram, equipGroup, equipLabel }) => {
+            // Histórico do exercício mais recente entre os dias em que ele aparece (ou pela biblioteca se fora do programa).
+            const hist =
+              (exs.length ? exs.map((e) => historyOf(done, e.id)) : [historyOf(done, lib, undefined, lib)]).sort((a, b) =>
+                (b[b.length - 1]?.session.date ?? "").localeCompare(a[a.length - 1]?.session.date ?? ""),
+              )[0] ?? [];
+            const last = hist[hist.length - 1];
+            const best = hist.length ? Math.max(...hist.map((h) => bestE1rm(h.entry))) : 0;
+            const lastLoad = last
+              ? loadRef(workSets(last.entry, false).length ? workSets(last.entry, false) : workSets(last.entry)).load
+              : null;
+            const ev = EXERCISE_EVIDENCE[lib];
+            const img = exerciseImages(lib)[0];
+            return (
+              <Link
+                key={lib}
+                to={`/exercicios/${lib}`}
+                data-augmented-ui="tl-clip br-clip border"
+                className={`ws-card${inProgram ? "" : " off-program"}`}
+              >
+                <span className="ws-photo">{img ? <img src={img} alt="" loading="lazy" /> : null}</span>
+                {ev && (
+                  <span className={`ws-tag ${LEVEL[ev.why] === "evidencia" ? "ok" : "warn"}`} title={whyLabel(ev.why) ?? undefined}>
+                    {ev.tag}
+                  </span>
+                )}
+                <span className="ws-name">{name}</span>
+                <span className="ws-muscle">
+                  {muscles.map((m) => MUSCLE_LABEL[m]).join(" e ") || "—"} · {equipLabel ?? EQUIPS.find((e) => e.id === equipGroup)!.label}
+                  {!inProgram && " · fora do programa"}
                 </span>
-              )}
-              <span className="ws-name">{name}</span>
-              <span className="ws-muscle">
-                {muscles.map((m) => MUSCLE_LABEL[m]).join(" e ") || "—"} · {equipLabel ?? EQUIPS.find((e) => e.id === equipGroup)!.label}
-                {!inProgram && " · fora do programa"}
-              </span>
-              <span className="ws-stats">
-                <span>
-                  1RM <b>{best ? `${Math.round(best)}` : "—"}</b>
+                <span className="ws-stats">
+                  <span>
+                    1RM <b>{best ? `${Math.round(best)}` : "—"}</b>
+                  </span>
+                  <span>
+                    <b>{lastLoad != null ? formatWeight(lastLoad) : "—"}</b> {last?.entry.unit ?? "kg"}
+                  </span>
                 </span>
-                <span>
-                  <b>{lastLoad != null ? formatWeight(lastLoad) : "—"}</b> {last?.entry.unit ?? "kg"}
-                </span>
-              </span>
-            </Link>
-          );
-        })}
+              </Link>
+            );
+          })}
+        </div>
       </div>
       {shown.length === 0 && <p className="small muted">Nenhum exercício com esses filtros.</p>}
       {full && shown.length > 120 && (

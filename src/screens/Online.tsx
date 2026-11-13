@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { USERNAME_RE, type BackupMeta, type Sex } from "../../server/src/protocol";
 import { BrandMark } from "../components/Brand";
-import { OperatorProfile } from "../components/OperatorProfile";
+import { OperatorProfile, type ProfileTab } from "../components/OperatorProfile";
+import { FoldRow, GroupPanel, LinkRow } from "../components/Pieces";
 import { weekFor } from "../lib/mesocycle";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
@@ -36,7 +37,17 @@ export function Online() {
   const online = useOnline();
   const [freshCode, setFreshCode] = useState<string | null>(null);
   const [, setServerTick] = useState(0);
+  const [tab, setTab] = useState<ProfileTab>("atividade");
   const url = apiUrl();
+  const signedIn = !!(url && online?.user);
+  const showServer = !import.meta.env.VITE_API_URL || hasCustomApiUrl() || location.hash.includes("servidor");
+  const extras = (
+    <>
+      <HowItWorks />
+      <LinkRow to="/privacidade" title="Política de privacidade" value="O que vai para o servidor" />
+      {showServer && <ServerCard onChange={() => setServerTick((n) => n + 1)} />}
+    </>
+  );
 
   return (
     <div className="stack-lg">
@@ -44,7 +55,26 @@ export function Online() {
         back="/ajustes"
         code="AUG.NET // CONTA ONLINE"
         title="Conta online"
-        sub="Opcional. Sem conta, o app funciona igual, só no aparelho."
+        sub={signedIn ? "Seu perfil na rede e os dados da conta." : "Opcional. Sem conta, o app funciona igual, só no aparelho."}
+        right={
+          signedIn ? (
+            <button
+              type="button"
+              data-augmented-ui="tl-clip br-clip border"
+              className="icon-btn lg"
+              aria-label="Dados da conta"
+              onClick={() => {
+                setTab("conta");
+                requestAnimationFrame(() => document.querySelector(".op-tabs")?.scrollIntoView({ block: "start" }));
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+              </svg>
+            </button>
+          ) : undefined
+        }
       />
 
       {freshCode && (
@@ -66,19 +96,13 @@ export function Online() {
           </p>
         </section>
       ) : online === undefined ? null : online.user ? (
-        <SignedIn online={online} showingCode={!!freshCode} onRecoveryCode={setFreshCode} />
+        <SignedIn online={online} showingCode={!!freshCode} onRecoveryCode={setFreshCode} tab={tab} onTab={setTab} extras={extras} />
       ) : (
         <SignedOut onRecoveryCode={setFreshCode} lastError={online.lastError} />
       )}
 
-      <HowItWorks />
-      <Link to="/privacidade" className="tap small">
-        Política de privacidade: o que vai para o servidor &gt;
-      </Link>
-      {/* Só aparece para quem hospeda o próprio servidor (app sem servidor embutido, endereço trocado ou #/online?servidor). */}
-      {(!import.meta.env.VITE_API_URL || hasCustomApiUrl() || location.hash.includes("servidor")) && (
-        <ServerCard onChange={() => setServerTick((n) => n + 1)} />
-      )}
+      {/* Logado, isto vai para a aba Conta. O Servidor só aparece para quem hospeda o próprio (ou #/online?servidor). */}
+      {!signedIn && <GroupPanel label="Sobre o online">{extras}</GroupPanel>}
     </div>
   );
 }
@@ -393,20 +417,12 @@ function RecoveryCodeCard({ code, onDone }: { code: string; onDone: () => void }
 
 // ---------- com conta ----------
 
-/** Bloco recolhido do online: uma linha com o resumo; abre para mexer. */
-function Fold({ code, title, value, children }: { code: string; title: string; value: string; children: ReactNode }) {
+/** Linha recolhida do online: a mesma linha da lista agrupada (FoldRow). */
+function Fold({ title, value, children }: { code?: string; title: string; value: string; children: ReactNode }) {
   return (
-    <details data-augmented-ui="tl-clip br-clip border" className="card set-group">
-      <summary>
-        <span className="set-code">{code}</span>
-        <span className="set-title">
-          <strong>{title}</strong>
-          <small>{value}</small>
-        </span>
-        <span className="set-chev" aria-hidden="true" />
-      </summary>
-      <div className="stack set-body">{children}</div>
-    </details>
+    <FoldRow title={title} value={value}>
+      {children}
+    </FoldRow>
   );
 }
 
@@ -414,14 +430,20 @@ function SignedIn({
   online,
   showingCode,
   onRecoveryCode,
+  tab,
+  onTab,
+  extras,
 }: {
   online: OnlineState;
   showingCode: boolean;
   onRecoveryCode: (code: string) => void;
+  tab: ProfileTab;
+  onTab: (t: ProfileTab) => void;
+  extras: ReactNode;
 }) {
   const user = online.user!;
   const toast = useToast();
-  const [settings, saveSettings] = useSettings();
+  const [settings] = useSettings();
   const sessions = useSessions();
   const [syncing, setSyncing] = useState(false);
   const [backups, setBackups] = useState<BackupMeta[] | null>(null);
@@ -447,6 +469,19 @@ function SignedIn({
     void refreshBackups();
   }, [online.backupAt]);
 
+  const backupRow = (
+    <BackupFold
+      online={online}
+      backups={backups}
+      backupError={backupError}
+      localDone={localDone}
+      restoring={restoring}
+      setRestoring={setRestoring}
+      merging={merging}
+      setMerging={setMerging}
+    />
+  );
+
   async function syncClick() {
     setSyncing(true);
     const st = await syncNow("manual");
@@ -457,36 +492,68 @@ function SignedIn({
 
   return (
     <>
-      {!showingCode && <RecoveryCard remind={!online.recoveryAck} onCode={onRecoveryCode} />}
       <OperatorProfile
         user={user}
         persona={settings.persona}
         sessions={sessions ?? []}
         friends={online.social?.friends.friends.length ?? 0}
+        pendingFriends={incoming}
         today={today}
         weeklyTarget={settings.trainingDays.length}
         tags={[program.name, week ? `Semana ${week}/7` : "Periodização fixa", `${settings.trainingDays.length}× por semana`]}
+        tab={tab}
+        onTab={onTab}
+        notice={!showingCode && !online.recoveryAck ? <RecoveryCard remind onCode={onRecoveryCode} /> : undefined}
+        account={
+          <>
+            <GroupPanel label="Conta">
+              {backupRow}
+              <Privacy online={online} />
+              <FairCompare online={online} />
+              {online.recoveryAck && <RecoveryCard remind={false} onCode={onRecoveryCode} />}
+              <ChangePassword />
+              <Logout />
+              {extras}
+            </GroupPanel>
+            <DeleteAccount />
+          </>
+        }
       >
         <p className="id-sync small" role="status">
           <span className={`sync-led${online.lastError ? " off" : ""}`} aria-hidden="true" />
-          {online.lastError ? online.lastError : `Nuvem sincronizada ${agoText(online.lastSyncAt)}`}
-        </p>
-        <div className="row-wrap">
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="btn btn-primary"
-            onClick={syncClick}
-            disabled={syncing}
-          >
-            {syncing ? "Sincronizando…" : "Sincronizar agora"}
+          <span className="grow">{online.lastError ? online.lastError : `Nuvem sincronizada ${agoText(online.lastSyncAt)}`}</span>
+          <button type="button" className="text-btn" onClick={syncClick} disabled={syncing}>
+            {syncing ? "Sincronizando…" : "Sincronizar"}
           </button>
-          <Link to="/amigos" data-augmented-ui="tl-clip br-clip border" className="btn">
-            Amigos{incoming ? ` (${incoming} pedido${incoming > 1 ? "s" : ""})` : ""}
-          </Link>
-        </div>
+        </p>
       </OperatorProfile>
+    </>
+  );
+}
 
+function BackupFold({
+  online,
+  backups,
+  backupError,
+  localDone,
+  restoring,
+  setRestoring,
+  merging,
+  setMerging,
+}: {
+  online: OnlineState;
+  backups: BackupMeta[] | null;
+  backupError: string;
+  localDone: number;
+  restoring: string | null;
+  setRestoring: (id: string | null) => void;
+  merging: string | null;
+  setMerging: (id: string | null) => void;
+}) {
+  const toast = useToast();
+  const [settings, saveSettings] = useSettings();
+  return (
+    <>
       <Fold code="B1" title="Backup automático" value={online.backupAt ? `Último: ${agoText(online.backupAt)}` : "Ainda nenhum"}>
         <p className="small muted">
           Ao terminar um treino, ao sair do app e a cada 15 minutos (se algo mudou), uma cópia de tudo vai para a nuvem. Ficam as 5 mais
@@ -590,10 +657,6 @@ function SignedIn({
             : "Desligado: as fotos do corpo ficam só neste aparelho e nunca vão para o servidor. Para guardar as fotos, use Ajustes > Exportar backup."}
         </p>
       </Fold>
-
-      <Privacy online={online} />
-      <FairCompare online={online} />
-      <Security />
     </>
   );
 }
@@ -790,42 +853,31 @@ function RecoveryCard({ remind, onCode }: { remind: boolean; onCode: (code: stri
 
   if (!remind) {
     return (
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <details>
-          <summary className="h-sec" style={{ cursor: "pointer" }}>
-            Código de recuperação
-          </summary>
-          <p className="small muted" style={{ marginTop: 10 }}>
-            Perdeu o código que recebeu ao criar a conta? Gere outro aqui, enquanto ainda está logado. Sem ele, quem esquece a senha não
-            consegue voltar para a conta.
-          </p>
-          {form}
-        </details>
-      </section>
+      <FoldRow title="Código de recuperação" value="Gerar outro, se perdeu o seu">
+        <p className="small muted">
+          Perdeu o código que recebeu ao criar a conta? Gere outro aqui, enquanto ainda está logado. Sem ele, quem esquece a senha não
+          consegue voltar para a conta.
+        </p>
+        {form}
+      </FoldRow>
     );
   }
 
+  // Lembrete compacto: uma linha de texto e duas ações pequenas, depois do cartão do perfil.
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card hot stack">
-      <h2 className="h-sec">Você guardou o código de recuperação?</h2>
+    <section className="recovery-nag" aria-label="Código de recuperação">
       <p className="small">
-        Esta conta não usa e-mail. Se você esquecer a senha, o código de recuperação é o único jeito de voltar. Se perdeu ou não anotou,
-        gere um novo agora.
+        <strong>Guardou o código de recuperação?</strong> Sem e-mail, ele é o único jeito de voltar se esquecer a senha.
       </p>
       {asking ? (
         form
       ) : (
         <div className="row-wrap">
-          <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn btn-primary" onClick={() => setAsking(true)}>
-            Gerar um código novo
+          <button type="button" className="btn btn-sm btn-ghost-line" onClick={() => setAsking(true)}>
+            Gerar outro
           </button>
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="btn"
-            onClick={() => saveOnline({ recoveryAck: true })}
-          >
-            Já tenho guardado
+          <button type="button" className="text-btn" onClick={() => saveOnline({ recoveryAck: true })}>
+            Já guardei
           </button>
         </div>
       )}
@@ -833,134 +885,137 @@ function RecoveryCard({ remind, onCode }: { remind: boolean; onCode: (code: stri
   );
 }
 
-function Security() {
+function ChangePassword() {
   const toast = useToast();
   const [cur, setCur] = useState("");
   const [next, setNext] = useState("");
+  return (
+    <FoldRow title="Trocar a senha" value="Os outros aparelhos pedem login de novo">
+      <form
+        className="stack"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            await changePassword(cur, next);
+            setCur("");
+            setNext("");
+            toast("Senha trocada. Os outros aparelhos vão pedir login de novo.", "ok");
+          } catch (err) {
+            toast(onlineErrorText(err), "warn");
+          }
+        }}
+      >
+        <label className="label" htmlFor="pw-cur">
+          Senha atual
+        </label>
+        <input
+          id="pw-cur"
+          className="input"
+          type="password"
+          autoComplete="current-password"
+          value={cur}
+          onChange={(e) => setCur(e.target.value)}
+        />
+        <label className="label" htmlFor="pw-new">
+          Senha nova
+        </label>
+        <input
+          id="pw-new"
+          className="input"
+          type="password"
+          autoComplete="new-password"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+        />
+        <button type="submit" data-augmented-ui="tl-clip br-clip border" className="btn" disabled={!cur || next.length < 8}>
+          Trocar a senha
+        </button>
+      </form>
+    </FoldRow>
+  );
+}
+
+function Logout() {
+  const toast = useToast();
+  return (
+    <FoldRow title="Sair da conta" value="Os treinos continuam neste aparelho">
+      <p className="small muted">Sair não apaga nada do celular: só para de sincronizar.</p>
+      <button
+        type="button"
+        data-augmented-ui="tl-clip br-clip border"
+        className="btn"
+        onClick={async () => {
+          await logout();
+          toast("Você saiu da conta. Os treinos continuam neste aparelho.", "info");
+        }}
+      >
+        Sair da conta
+      </button>
+    </FoldRow>
+  );
+}
+
+function DeleteAccount() {
+  const toast = useToast();
   const [delPass, setDelPass] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
-
   return (
-    <>
-      <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-        <details>
-          <summary className="h-sec" style={{ cursor: "pointer" }}>
-            Trocar a senha
-          </summary>
-          <form
-            className="stack"
-            style={{ marginTop: 10 }}
-            onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                await changePassword(cur, next);
-                setCur("");
-                setNext("");
-                toast("Senha trocada. Os outros aparelhos vão pedir login de novo.", "ok");
-              } catch (err) {
-                toast(onlineErrorText(err), "warn");
-              }
-            }}
-          >
-            <label className="label" htmlFor="pw-cur">
-              Senha atual
-            </label>
-            <input
-              id="pw-cur"
-              className="input"
-              type="password"
-              autoComplete="current-password"
-              value={cur}
-              onChange={(e) => setCur(e.target.value)}
-            />
-            <label className="label" htmlFor="pw-new">
-              Senha nova
-            </label>
-            <input
-              id="pw-new"
-              className="input"
-              type="password"
-              autoComplete="new-password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-            />
-            <button type="submit" data-augmented-ui="tl-clip br-clip border" className="btn" disabled={!cur || next.length < 8}>
-              Trocar a senha
+    <section className="danger-zone" aria-labelledby="del-title">
+      <div className="dz-head">
+        <div>
+          <span className="dz-code">[ PERIGO ]</span>
+          <h2 id="del-title">Apagar conta online</h2>
+          <span className="dz-sub">Servidor · irreversível</span>
+        </div>
+      </div>
+      <p className="dz-text">
+        Apaga do servidor sua conta, amizades, recordes, treinos resumidos e backups. O que está neste celular continua.
+      </p>
+      {confirmDelete ? (
+        <div className="stack">
+          <label className="label" htmlFor="del-pass">
+            Sua senha
+          </label>
+          <input
+            id="del-pass"
+            className="input"
+            type="password"
+            autoComplete="current-password"
+            value={delPass}
+            onChange={(e) => setDelPass(e.target.value)}
+          />
+          <div className="row">
+            <HoldButton
+              className="btn-danger dz-btn grow"
+              label="Apagar conta"
+              ms={1400}
+              onConfirm={async () => {
+                try {
+                  await deleteAccount(delPass);
+                  toast("Conta apagada do servidor.", "danger");
+                } catch (err) {
+                  toast(onlineErrorText(err), "warn");
+                }
+              }}
+            >
+              Apagar conta
+            </HoldButton>
+            <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setConfirmDelete(false)}>
+              Cancelar
             </button>
-          </form>
-        </details>
-        <div className="divider" />
+          </div>
+        </div>
+      ) : (
         <button
           type="button"
           data-augmented-ui="tl-clip br-clip border"
-          className="btn"
-          onClick={async () => {
-            await logout();
-            toast("Você saiu da conta. Os treinos continuam neste aparelho.", "info");
-          }}
+          className="btn btn-danger dz-btn"
+          onClick={() => setConfirmDelete(true)}
         >
-          Sair da conta
+          Apagar minha conta
         </button>
-        <p className="tiny faint">Sair não apaga nada do celular: só para de sincronizar.</p>
-      </section>
-
-      <section className="danger-zone" aria-labelledby="del-title">
-        <div className="dz-head">
-          <div>
-            <span className="dz-code">[ PERIGO ]</span>
-            <h2 id="del-title">Apagar conta online</h2>
-            <span className="dz-sub">Servidor · irreversível</span>
-          </div>
-        </div>
-        <p className="dz-text">
-          Apaga do servidor sua conta, amizades, recordes, treinos resumidos e backups. O que está neste celular continua.
-        </p>
-        {confirmDelete ? (
-          <div className="stack">
-            <label className="label" htmlFor="del-pass">
-              Sua senha
-            </label>
-            <input
-              id="del-pass"
-              className="input"
-              type="password"
-              autoComplete="current-password"
-              value={delPass}
-              onChange={(e) => setDelPass(e.target.value)}
-            />
-            <div className="row">
-              <HoldButton
-                className="btn-danger dz-btn grow"
-                label="Apagar conta"
-                ms={1400}
-                onConfirm={async () => {
-                  try {
-                    await deleteAccount(delPass);
-                    toast("Conta apagada do servidor.", "danger");
-                  } catch (err) {
-                    toast(onlineErrorText(err), "warn");
-                  }
-                }}
-              >
-                Apagar conta
-              </HoldButton>
-              <button type="button" data-augmented-ui="tl-clip br-clip border" className="btn grow" onClick={() => setConfirmDelete(false)}>
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            data-augmented-ui="tl-clip br-clip border"
-            className="btn btn-danger dz-btn"
-            onClick={() => setConfirmDelete(true)}
-          >
-            Apagar minha conta
-          </button>
-        )}
-      </section>
-    </>
+      )}
+    </section>
   );
 }
 
@@ -968,23 +1023,18 @@ function Security() {
 
 function HowItWorks() {
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <details>
-        <summary className="h-sec" style={{ cursor: "pointer" }}>
-          Como o online funciona
-        </summary>
-        <ul className="small muted prose-list">
-          <li>O celular é o principal: você treina, registra e vê tudo sem internet, como sempre.</li>
-          <li>Com conta e internet, o app envia uma cópia: suas melhores marcas, o resumo de cada treino e o backup completo.</li>
-          <li>Sem internet, nada se perde: o envio fica para quando a conexão voltar (o app tenta ao abrir, ao sair e a cada 15 min).</li>
-          <li>Em outro celular, entre na mesma conta e restaure o backup mais recente.</li>
-          <li>
-            A comparação usa o 1RM estimado e a maior carga, em kg, no mesmo exercício da biblioteca. Aparelhos de marcas diferentes podem
-            pesar diferente: trate como referência, não como placar exato.
-          </li>
-        </ul>
-      </details>
-    </section>
+    <FoldRow title="Como o online funciona" value="O celular é o principal; a nuvem guarda cópias">
+      <ul className="small muted prose-list">
+        <li>O celular é o principal: você treina, registra e vê tudo sem internet, como sempre.</li>
+        <li>Com conta e internet, o app envia uma cópia: suas melhores marcas, o resumo de cada treino e o backup completo.</li>
+        <li>Sem internet, nada se perde: o envio fica para quando a conexão voltar (o app tenta ao abrir, ao sair e a cada 15 min).</li>
+        <li>Em outro celular, entre na mesma conta e restaure o backup mais recente.</li>
+        <li>
+          A comparação usa o 1RM estimado e a maior carga, em kg, no mesmo exercício da biblioteca. Aparelhos de marcas diferentes podem
+          pesar diferente: trate como referência, não como placar exato.
+        </li>
+      </ul>
+    </FoldRow>
   );
 }
 
@@ -992,70 +1042,65 @@ function ServerCard({ onChange }: { onChange: () => void }) {
   const toast = useToast();
   const [value, setValue] = useState(apiUrl());
   return (
-    <section data-augmented-ui="tl-clip br-clip border" className="card stack">
-      <details>
-        <summary className="h-sec" style={{ cursor: "pointer" }}>
-          Servidor
-        </summary>
-        <div className="stack" style={{ marginTop: 10 }}>
-          <label className="label" htmlFor="on-url">
-            Endereço do servidor
-          </label>
-          <input
-            id="on-url"
-            className="input mono"
-            inputMode="url"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="https://augment-api.seu-nome.workers.dev"
-          />
-          <div className="row-wrap">
+    <FoldRow title="Servidor" value={apiUrl() || "Padrão do app"}>
+      <div className="stack">
+        <label className="label" htmlFor="on-url">
+          Endereço do servidor
+        </label>
+        <input
+          id="on-url"
+          className="input mono"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="https://augment-api.seu-nome.workers.dev"
+        />
+        <div className="row-wrap">
+          <button
+            type="button"
+            data-augmented-ui="tl-clip br-clip border"
+            className="btn"
+            onClick={async () => {
+              const v = value.trim();
+              if (v && !/^https?:\/\//.test(v)) return toast("O endereço começa com https://", "warn");
+              setApiUrl(v);
+              onChange();
+              if (!v) return toast("Usando o servidor padrão do app.", "info");
+              try {
+                const r = await fetch(`${apiUrl()}/health`);
+                toast(
+                  r.ok
+                    ? "Servidor respondeu. Pode entrar ou criar a conta."
+                    : "O endereço respondeu, mas não parece um servidor do AUGMENT.",
+                  r.ok ? "ok" : "warn",
+                );
+              } catch {
+                toast("Não consegui falar com esse endereço.", "warn");
+              }
+            }}
+          >
+            Salvar e testar
+          </button>
+          {hasCustomApiUrl() && (
             <button
               type="button"
               data-augmented-ui="tl-clip br-clip border"
-              className="btn"
-              onClick={async () => {
-                const v = value.trim();
-                if (v && !/^https?:\/\//.test(v)) return toast("O endereço começa com https://", "warn");
-                setApiUrl(v);
+              className="btn btn-ghost"
+              onClick={() => {
+                setApiUrl("");
+                setValue(apiUrl());
                 onChange();
-                if (!v) return toast("Usando o servidor padrão do app.", "info");
-                try {
-                  const r = await fetch(`${apiUrl()}/health`);
-                  toast(
-                    r.ok
-                      ? "Servidor respondeu. Pode entrar ou criar a conta."
-                      : "O endereço respondeu, mas não parece um servidor do AUGMENT.",
-                    r.ok ? "ok" : "warn",
-                  );
-                } catch {
-                  toast("Não consegui falar com esse endereço.", "warn");
-                }
               }}
             >
-              Salvar e testar
+              Voltar ao padrão
             </button>
-            {hasCustomApiUrl() && (
-              <button
-                type="button"
-                data-augmented-ui="tl-clip br-clip border"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setApiUrl("");
-                  setValue(apiUrl());
-                  onChange();
-                }}
-              >
-                Voltar ao padrão
-              </button>
-            )}
-          </div>
-          <p className="tiny faint">Só mexa aqui se você hospedou o próprio servidor. Contas de um servidor não existem nos outros.</p>
+          )}
         </div>
-      </details>
-    </section>
+        <p className="tiny faint">Só mexa aqui se você hospedou o próprio servidor. Contas de um servidor não existem nos outros.</p>
+      </div>
+    </FoldRow>
   );
 }

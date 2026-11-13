@@ -36,17 +36,17 @@
 .id-glyph-scan {
   position: absolute;
   inset: 0;
+  bottom: auto;
+  height: 40%;
   background: linear-gradient(transparent, rgb(63 216 224 / 0.28), transparent);
-  background-size: 100% 40%;
-  background-repeat: no-repeat;
   animation: id-scan 2.6s linear infinite;
 }
 @keyframes id-scan {
   from {
-    background-position: 0 -60%;
+    transform: translateY(-100%);
   }
   to {
-    background-position: 0 160%;
+    transform: translateY(250%);
   }
 }
 .id-micro {

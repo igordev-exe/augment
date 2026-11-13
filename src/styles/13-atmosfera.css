@@ -27,15 +27,6 @@ body::after {
   transform-origin: 50% 100%;
   -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
   mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
-  animation: horizon-drift 7s linear infinite;
-}
-@keyframes horizon-drift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 56px;
-  }
 }
 /* Luz fria no alto e cantos mais escuros: o brilho parece vir do próprio sistema, não da tela. */
 body {
@@ -48,32 +39,6 @@ body {
     64px 64px,
     64px 64px;
   background-attachment: fixed, fixed, scroll, scroll;
-}
-
-/* ---------- Entrada de tela: cada bloco "liga" (varredura da esquerda + flash curto), ainda em ≤ 300 ms ---------- */
-.app > .stack-lg > * {
-  animation: route-power 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-}
-/* Só opacidade e deslocamento (baratos e seguros): nada de máscara, clip-path (os cartões já usam, pelo
-   augmented-ui) nem filter em blocos grandes, que deixavam a tela sem pintar até o próximo repaint.
-   O "ligar" é o pisco duplo de um painel acendendo. */
-@keyframes route-power {
-  0% {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  30% {
-    opacity: 0.8;
-  }
-  42% {
-    opacity: 0.3;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    transform: none;
-  }
 }
 
 /* ---------- Cartão quente (missão em andamento, avisos): cantoneiras HUD ---------- */
@@ -169,7 +134,9 @@ body {
 :root:is(.fx-gym, .fx-min) body::after {
   display: none;
 }
-:root:is(.fx-gym, .fx-min) :is(.list > li:first-child > .list-item::before, .eyebrow::before) {
+/* Pseudo-elemento não entra em :is(): uma linha para cada (antes a regra inteira era descartada). */
+:root:is(.fx-gym, .fx-min) .list > li:first-child > .list-item::before,
+:root:is(.fx-gym, .fx-min) .eyebrow::before {
   animation: none !important;
 }
 /* Telas largas (tablet): o horizonte fica mais baixo para não competir com o conteúdo. */
@@ -406,77 +373,6 @@ body {
 }
 .toc a {
   flex-shrink: 1;
-}
-
-/* ---------- Ajustes: blocos recolhidos (uma linha com o valor atual) ---------- */
-.set-group {
-  padding: 0;
-}
-.set-group > summary {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 10px 16px;
-  cursor: pointer;
-  list-style: none;
-}
-.set-group > summary::-webkit-details-marker {
-  display: none;
-}
-.set-code {
-  flex-shrink: 0;
-  width: 34px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border-top: 1px solid var(--cyan);
-  border-bottom: 1px solid var(--cyan);
-  color: var(--cyan);
-  font-family: var(--mono);
-  font-size: var(--fs-1);
-  transform: skew(-12deg);
-}
-.set-icon {
-  flex-shrink: 0;
-}
-.set-title {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.set-title strong {
-  font-family: var(--tech);
-  font-size: var(--fs-4);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.set-title small {
-  font-family: var(--mono);
-  font-size: var(--fs-2);
-  color: var(--ink-3);
-  overflow-wrap: break-word;
-}
-.set-chev {
-  flex-shrink: 0;
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid var(--ink-3);
-  border-bottom: 2px solid var(--ink-3);
-  transform: rotate(45deg) translate(-2px, -2px);
-  transition: transform 0.2s;
-}
-.set-group[open] > summary .set-chev {
-  transform: rotate(-135deg);
-  border-color: var(--cyan);
-}
-.set-group[open] > summary {
-  border-bottom: 1px solid var(--line);
-}
-.set-body {
-  padding: 14px 16px 16px;
 }
 
 /* Fila com botões: em tela estreita o botão desce de linha em vez de cortar a palavra (botão nunca parte palavra). */

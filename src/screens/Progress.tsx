@@ -1,4 +1,6 @@
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState } from "react";
+import { AchievementGrid } from "../components/AchievementGrid";
+import { Ticker } from "../components/Ticker";
 import { Link } from "react-router-dom";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { dayName, PageHead } from "../components/bits";
@@ -248,20 +250,22 @@ export function Progress() {
         <div className="stats-grid">
           <div>
             <span className="label">Treinos</span>
-            <strong className="num">{grid.totalSessions}</strong>
+            <strong className="num">
+              <Ticker value={grid.totalSessions} />
+            </strong>
             <span className="tiny faint">53 semanas</span>
           </div>
           <div>
             <span className="label">Sequência</span>
             <strong className="num">
-              {grid.streak} {grid.streak === 1 ? "semana" : "semanas"}
+              <Ticker value={grid.streak} /> {grid.streak === 1 ? "semana" : "semanas"}
             </strong>
             <span className="tiny faint">com {settings.trainingDays.length}+ treinos</span>
           </div>
           <div>
             <span className="label">Recorde</span>
             <strong className="num">
-              {grid.longestStreak} {grid.longestStreak === 1 ? "semana" : "semanas"}
+              <Ticker value={grid.longestStreak} /> {grid.longestStreak === 1 ? "semana" : "semanas"}
             </strong>
             <span className="tiny faint">seguidas na meta</span>
           </div>
@@ -534,25 +538,7 @@ export function Progress() {
           tone="green"
           meta={`${unlockedCount}/${achievements.length}`}
         >
-          <div className="mod-grid">
-            {achievements.map((a, i) => (
-              <div
-                key={a.id}
-                style={{ "--i": i } as CSSProperties}
-                data-augmented-ui="tl-clip br-clip border"
-                className={`card flat stack mod-card${a.unlocked ? " unlocked" : ""}`}
-              >
-                <div className="spread">
-                  <span className="tiny mono" style={{ color: a.unlocked ? "var(--ok)" : "var(--muted)" }}>
-                    {a.code}
-                  </span>
-                  <span className="tiny mono">{a.unlocked ? "ATIVO" : a.progress}</span>
-                </div>
-                <strong className="small">{a.title}</strong>
-                <span className="tiny muted">{a.detail}</span>
-              </div>
-            ))}
-          </div>
+          <AchievementGrid items={achievements} />
         </SysModule>
 
         <SysModule id="recordes" code="REC.04" title="Recordes recentes" hint="Últimos 20 treinos" tone="amber" meta={recent.length || "—"}>

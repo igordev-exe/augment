@@ -588,7 +588,7 @@ function CoachSetup({ config, onSave, onCancel }: { config: CoachConfig; onSave:
         <button
           type="button"
           data-augmented-ui="tl-clip br-clip border"
-          className="btn btn-primary grow"
+          className="btn btn-ghost-line grow"
           disabled={!c.apiKey}
           onClick={() => onSave(c)}
         >

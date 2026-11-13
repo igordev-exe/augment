@@ -48,3 +48,13 @@ describe("perfil do operador", () => {
     expect(rankOf(120)).toBe("VETERANO");
   });
 });
+
+describe("rankProgress", () => {
+  it("bate com rankOf e conta quanto falta para o próximo posto", async () => {
+    const { rankProgress, rankOf, RANKS } = await import("./profile");
+    for (const n of [0, 9, 10, 39, 40, 99, 100, 199, 200, 350]) expect(rankProgress(n).rank).toBe(rankOf(n));
+    expect(rankProgress(0)).toMatchObject({ index: 0, next: "EM CALIBRAGEM", need: 10, into: 0, span: 10 });
+    expect(rankProgress(31)).toMatchObject({ rank: "EM CALIBRAGEM", next: "AUMENTADO", need: 9, into: 21, span: 30 });
+    expect(rankProgress(250)).toMatchObject({ index: RANKS.length - 1, next: null, need: 0 });
+  });
+});
