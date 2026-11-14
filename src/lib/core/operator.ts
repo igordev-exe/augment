@@ -302,6 +302,12 @@ export interface BehaviorTwin {
   adherenceRate: number;
   /** Taxa de aceitação da carga sugerida pelo motor (0..1; 1.0 = segue a sugestão). */
   loadAcceptanceRate: number;
+  /**
+   * Erro próprio na sobra (reps): sobra declarada − sobra conferida. Positivo = diz que sobrou mais do que sobrou.
+   * Conferida quando uma série com sobra é seguida, na mesma carga, por uma série até a falha ({@link rirBiasOf}).
+   */
+  rirBias: number;
+  rirBiasConfidence: number;
 }
 
 /** Peso corporal: só a tendência recente (kg por semana) e se ela está rápida demais para progredir carga com folga. */
@@ -773,6 +779,7 @@ export function operatorState(
   }
   const restConfidence = Number(clamp(restRatios.length / 12, 0, 1).toFixed(2));
   const restRatio = restRatios.length >= 6 ? Number(clamp(median(restRatios), 0.2, 2.0).toFixed(2)) : 1.0;
+  const rirCheck = rirBiasOf(done.slice(-20));
   const loadAcceptanceRate = suggestionChecks >= 2 ? Number(clamp(suggestionMatches / suggestionChecks, 0, 1).toFixed(2)) : 1.0;
 
   return {
@@ -792,6 +799,8 @@ export function operatorState(
       restConfidence,
       adherenceRate,
       loadAcceptanceRate,
+      rirBias: rirCheck.bias,
+      rirBiasConfidence: rirCheck.confidence,
     },
     activeConstraints: activeConstraints(memory, today),
     body,
@@ -842,6 +851,32 @@ export function predictFirstSetReps(
     baselineOneRm: Number(effectiveOneRm.toFixed(1)),
     confidence,
   };
+}
+
+/**
+ * Erro próprio no RIR. Uma série A marcada com sobra r, seguida na mesma carga por uma série B até a falha: a sobra
+ * real de A é ~ (reps de B + 1 de queda) − reps de A. Viés = mediana(r − real), encolhida para 0 (6 amostras = metade).
+ * As pessoas erram a sobra em ~1 rep, menos perto da falha (Halperin et al., Sports Med 2022).
+ */
+export function rirBiasOf(sessions: Session[]): { bias: number; confidence: number; samples: number } {
+  const diffs: number[] = [];
+  for (const s of sessions) {
+    if (s.status !== "done") continue;
+    for (const e of s.exercises) {
+      const work = workSets(e, false);
+      for (let i = 1; i < work.length; i++) {
+        const a = work[i - 1];
+        const b = work[i];
+        if (a.rir == null || a.rir < 1 || a.rir >= 4 || Math.abs(a.weight! - b.weight!) > 1e-6) continue;
+        if (!(b.failure || b.rir === 0)) continue;
+        const real = Math.max(0, b.reps! + 1 - a.reps!);
+        diffs.push(a.rir - real);
+      }
+    }
+  }
+  const n = diffs.length;
+  if (!n) return { bias: 0, confidence: 0, samples: 0 };
+  return { bias: Number(((n * median(diffs)) / (n + 6)).toFixed(2)), confidence: Number(clamp(n / 8, 0, 1).toFixed(2)), samples: n };
 }
 
 export interface SyntheticOperatorSpec {

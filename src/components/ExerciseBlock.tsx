@@ -24,13 +24,11 @@ import {
 import { newSet } from "../lib/sessions";
 import { suspiciousSet } from "../lib/sanity";
 import { useToast } from "../lib/hooks";
-import { liveNudges } from "../lib/engine";
 import type { OperatorState } from "../lib/core/operator";
 import { explainLoad } from "../lib/core/planner";
 import { ExerciseDemo } from "./ExerciseDemo";
 import { Icon } from "./Icon";
 import { PlanCard, type SetPlan } from "./PlanCard";
-import { NudgeList } from "./NudgeList";
 import { RadialMenu, type RadialAction } from "./RadialMenu";
 import { Choice, SetRow } from "./SetRow";
 
@@ -58,6 +56,8 @@ export function ExerciseBlock({
   onAlt,
   onClearReminder,
   onUnit,
+  liveAdjust,
+  said = [],
 }: {
   index: number;
   ex: ProgramExercise;
@@ -87,6 +87,10 @@ export function ExerciseBlock({
   onAlt: (alt: string | undefined) => void;
   onClearReminder: () => void;
   onUnit: (u: Unit) => void;
+  /** Núcleo ao vivo: proposta de baixar a carga antes da próxima série (nunca aplicada sozinha). */
+  liveAdjust?: { weight: number; why: string };
+  /** O que o núcleo disse neste exercício hoje (histórico recolhido). */
+  said?: string[];
 }) {
   const lib = useLibraryEntry(ex.lib);
   const toast = useToast();
@@ -116,19 +120,7 @@ export function ExerciseBlock({
   );
   const stop = stopFor(ex.stop, week);
   const showInt = !!ex.intensifier && intensifierToday && WEEK_RULES[week].intensifiers > 0;
-  const nudges = active
-    ? liveNudges({
-        ex,
-        entry,
-        week,
-        lowDay,
-        history: recentHistory,
-        plannedSets: planned,
-        step,
-        availableWeights,
-        intensifier: intensifierToday,
-      })
-    : [];
+  const [showSaid, setShowSaid] = useState(false);
   const [showNote, setShowNote] = useState(!!entry.notes);
   const [pickAlt, setPickAlt] = useState(false);
   /** Série com o menu circular aberto (segurar o número da série). */
@@ -540,10 +532,38 @@ export function ExerciseBlock({
             </PlanCard>
           )}
 
-          {active && nudges.length > 0 && (
-            <div className="stack" style={{ gap: 6 }}>
-              <span className="label">Leitura ao vivo</span>
-              <NudgeList nudges={nudges} />
+          {active && liveAdjust && (
+            <button
+              type="button"
+              className="btn small live-adjust"
+              data-augmented-ui="tl-clip br-clip border"
+              onClick={() =>
+                void mutate((e) => {
+                  for (const s of e.sets) if (s.kind === "work" && !s.done) (s.weight = liveAdjust.weight), (s.suggested = false);
+                })
+              }
+            >
+              Baixar para {formatWeight(liveAdjust.weight)} {entry.unit} agora
+            </button>
+          )}
+
+          {active && said.length > 0 && (
+            <div className="live-said">
+              <button type="button" className="live-said-head" aria-expanded={showSaid} onClick={() => setShowSaid((v) => !v)}>
+                <span className="label">Dito hoje · {said.length}</span>
+                <span className="live-said-chev">
+                  <Icon name="chev" size={18} />
+                </span>
+              </button>
+              {showSaid && (
+                <ul className="live-said-list">
+                  {said.map((t, k) => (
+                    <li key={k} className="small">
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

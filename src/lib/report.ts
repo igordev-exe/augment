@@ -6,6 +6,7 @@ import { addDays, bySessionAsc, daysBetween, shortDate, todayISO } from "./dates
 import { rirRange, setsFor, weekFor } from "./mesocycle";
 import { bestE1rm, entryE1rm, formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "./progression";
 import { restsBefore, volumeAdvice, type VolumeAdvice } from "./engine";
+import { ignoredRules, RULE_LABEL } from "./core/director";
 import { plannedVolume, sessionStats, weeklyVolume } from "./sessions";
 
 // Relatório da semana (seg–dom) e do mesociclo (6 semanas + deload): regras fixas, sem IA.
@@ -215,6 +216,16 @@ export function weeklyReport(
     signals.push(
       `${list(belowMinimum.map((m) => MUSCLE_LABEL[m]))} abaixo de ${SCIENCE.volume.minEffective} séries fracionadas: ` +
         "dose mínima para manter o estímulo de hipertrofia (Pelland 2026).",
+    );
+  }
+
+  // Fala do núcleo que a pessoa nunca segue: sai do treino e aparece aqui uma vez (na semana em que saiu).
+  const mutedNow = ignoredRules(upToEnd.slice(-40));
+  const mutedBefore = ignoredRules(done.filter((s) => s.date < weekStart).slice(-40));
+  const newlyMuted = [...mutedNow].filter((r) => !mutedBefore.has(r) && RULE_LABEL[r]);
+  if (newlyMuted.length) {
+    signals.push(
+      `Avisos que você não seguiu nenhuma vez (${list(newlyMuted.map((r) => RULE_LABEL[r]))}) saíram do treino. Se faz sentido para você, siga; se não, tudo bem.`,
     );
   }
 

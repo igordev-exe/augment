@@ -27,11 +27,11 @@ import {
 } from "../lib/coach/chat";
 import { describeProposal, parseProposal, proposalPatch, turnContext, type CoachData } from "../lib/coach/context";
 import { TOOL_LABEL } from "../lib/coach/tools";
-import { handleIntent, type IntentProposal } from "../lib/core/intents";
-import type { DataCard, DataContext } from "../lib/core/data-answers";
-import { isUrgent, localReply, STARTERS, type LocalMeta } from "../lib/core/localchat";
+import type { DataCard } from "../lib/core/data-answers";
+import { coreReply, STARTERS, type ChatContext, type CoreProposal, type CoreReply, type LocalMeta } from "../lib/core/localchat";
+import { useTimer } from "../lib/timer";
 import { LEVEL_LABEL, type EvidenceLevel } from "../data/science";
-import { addAbsence, upsertConstraint } from "../lib/db";
+import { addAbsence, db, uid, upsertBodyEntry, upsertConstraint } from "../lib/db";
 import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
 import { shareOrDownload } from "../lib/files";
@@ -234,16 +234,19 @@ function LocalExtras({
   meta,
   onAsk,
   onHandoff,
+  onWeb,
   disabled,
 }: {
   meta: LocalMeta;
   onAsk?: (q: string) => void;
   onHandoff?: () => void;
+  /** "Pesquisar na web" (só com internet e fora de assunto travado). */
+  onWeb?: () => void;
   disabled?: boolean;
 }) {
   const links = meta.level || meta.principle || meta.route;
   const chips = onAsk ? (meta.chips ?? []) : [];
-  if (!links && !chips.length && !onHandoff) return null;
+  if (!links && !chips.length && !onHandoff && !onWeb) return null;
   return (
     <div className="local-extras">
       {links && (
@@ -260,7 +263,7 @@ function LocalExtras({
           )}
           {meta.route && (
             <Link className="link-btn" to={meta.route}>
-              Abrir no app
+              {meta.routeLabel ?? "Abrir no app"}
             </Link>
           )}
         </div>
@@ -277,6 +280,11 @@ function LocalExtras({
       {onHandoff && (
         <button type="button" className="link-btn" onClick={onHandoff}>
           Levar a pergunta para outro chat
+        </button>
+      )}
+      {onWeb && (
+        <button type="button" className="link-btn" onClick={onWeb}>
+          Pesquisar na web
         </button>
       )}
     </div>
@@ -315,11 +323,12 @@ export function Coach() {
   const [tool, setTool] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingIntent, setPendingIntent] = useState<IntentProposal | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<CoreProposal | null>(null);
   /** Última pergunta respondida pelo núcleo na hora: a pessoa pode mandar para o treinador mesmo assim. */
   const [answeredLocally, setAnsweredLocally] = useState<string | null>(null);
   /** Última entidade das respostas prontas, para continuações ("e no agachamento?"). */
-  const [localCtx, setLocalCtx] = useState<DataContext>({});
+  const [localCtx, setLocalCtx] = useState<ChatContext>({});
+  const timer = useTimer();
   const toast = useToast();
   /** Gaveta de conversas (a barra lateral do mockup). */
   const [sideOpen, setSideOpen] = useState(false);
@@ -427,43 +436,50 @@ export function Coach() {
     setAnsweredLocally(null);
     if (params.get("q") || params.get("auto")) setParams({}, { replace: true });
     const notes = chat.notes?.length ? `\n[${chat.notes.join(" ")}]` : "";
-    // Urgência (dor no peito, falta de ar, desmaio) vem antes das intenções: "dor no peito" não pode virar
-    // proposta de proteger o peitoral. Cai na trava do `localReply` logo abaixo.
-    const localIntent =
-      skipLocal || isUrgent(t)
-        ? { matched: false as const, reply: "" }
-        : handleIntent(t, { sessions: sessions!, settings, today, memory: operatorMemory });
-    if (localIntent.matched) {
-      setPendingIntent(localIntent.proposal ?? null);
-      if (config?.apiKey) setAnsweredLocally(t);
-      const nextChat: CoachChat = {
-        ...chat,
-        notes: [],
-        messages: [
-          ...chat.messages,
-          { role: "user", content: [{ type: "text", text: `${turnContext(data)}${notes}\n\n${t}` }] },
-          { role: "assistant", content: [{ type: "text", text: localIntent.reply }] },
-        ],
-      };
-      updateChat(nextChat);
-      return;
-    }
-    // Respostas prontas: sem chave, sempre; com chave, só as certeiras (o resto vai para o treinador completo).
     const hasKey = !!config?.apiKey;
-    const local = skipLocal ? null : localReply(t, { ...data, bodyLog: bodyLog ?? [] }, localCtx);
-    if (local && (!hasKey || local.meta.kind === "answer" || local.meta.kind === "data" || local.meta.kind === "guard")) {
+    // Núcleo local em camadas: travas → comandos → intenções → consultas → respostas prontas → papo → saída honesta.
+    const local: CoreReply | null = skipLocal
+      ? null
+      : coreReply(t, { ...data, bodyLog: bodyLog ?? [] }, localCtx, { timerActive: !!timer.state, now: Date.now() });
+    // Com chave, papo, "você quis dizer" e "não sei" vão para o treinador completo.
+    const keepLocal = local && (!hasKey || !["smalltalk", "maybe", "none"].includes(local.layer));
+    if (local && keepLocal) {
       setLocalCtx(local.ctx);
-      setPendingIntent(null);
-      if (hasKey && local.meta.kind !== "guard") setAnsweredLocally(t);
+      if (local.action?.kind === "timer-start") timer.start(local.action.seconds, "Descanso");
+      if (local.action?.kind === "timer-stop") timer.stop();
+      if (local.action?.kind === "timer-add") timer.add(local.action.seconds);
+      let extraNote: string | undefined;
+      if (local.answerProposal && pendingIntent) {
+        const p = pendingIntent;
+        setPendingIntent(null);
+        if (local.answerProposal === "yes") {
+          await applyProposal(p);
+          extraNote = `Aplicou proposta do núcleo: ${p.confirmLabel}.`;
+        } else extraNote = `Recusou proposta do núcleo: ${p.confirmLabel}.`;
+      } else if (local.layer !== "pending" || local.proposal) setPendingIntent(local.proposal ?? null);
+      if (hasKey && local.layer !== "guard" && local.layer !== "command" && local.layer !== "pending" && local.layer !== "proposal")
+        setAnsweredLocally(t);
+      const meta: LocalMeta = local.layer === "intent" ? { kind: "command" } : local.meta;
       updateChat({
         ...chat,
-        notes: [],
+        notes: extraNote ? [extraNote] : [],
         messages: [
           ...chat.messages,
-          { role: "user", content: [{ type: "text", text: `${turnContext(data)}${notes}\n\n${t}` }] },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `${turnContext(data)}${notes}
+
+${t}`,
+              },
+            ],
+          },
           { role: "assistant", content: [{ type: "text", text: local.text }] },
         ],
-        local: { ...chat.local, [chat.messages.length + 1]: local.meta },
+        // Intenção sem extras (como antes); o resto leva o rótulo, os atalhos e as perguntas tocáveis.
+        local: local.layer === "intent" ? chat.local : { ...chat.local, [chat.messages.length + 1]: meta },
       });
       return;
     }
@@ -505,6 +521,40 @@ export function Coach() {
       setTool(null);
       abort.current = null;
     }
+  }
+
+  /** Grava a proposta do núcleo (só depois de Aplicar ou "sim"). */
+  async function applyProposal(p: CoreProposal) {
+    if (p.source === "intent") {
+      if (p.constraint) await upsertConstraint(p.constraint);
+      if (p.absence) await addAbsence(p.absence);
+      return;
+    }
+    if (p.kind === "settings") await updateSettings(p.patch);
+    if (p.kind === "body-weight") {
+      const same = (bodyLog ?? []).find((b) => b.date === p.date);
+      await upsertBodyEntry({ ...(same ?? { id: uid(), date: p.date }), weightKg: p.weightKg });
+    }
+    if (p.kind === "log-set" || p.kind === "swap") {
+      const s = await db.sessions.get(p.sessionId);
+      const e = s?.exercises.find((x) => x.exId === p.exId);
+      if (!s || !e || s.status !== "active") return;
+      if (p.kind === "log-set") {
+        const set = e.sets.find((x) => x.id === p.setId);
+        if (!set) return;
+        Object.assign(set, { weight: p.weight, reps: p.reps, done: true, doneAt: Date.now(), suggested: undefined });
+      } else {
+        e.alt = p.alt;
+        // Carga da alternativa é outra: limpa as sugestões pendentes (o treino sugere de novo ao abrir a série).
+        for (const x of e.sets) if (x.kind === "work" && !x.done) Object.assign(x, { weight: null, suggested: undefined });
+      }
+      await db.sessions.put(s);
+    }
+  }
+
+  /** "Pesquisar na web": só sai do aparelho quando a pessoa toca. Abre o navegador do sistema. */
+  function searchWeb(question: string) {
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(question)}`, "_blank", "noopener");
   }
 
   /** "Não sei": leva o documento do treinador, com a pergunta no fim, para outro chat. */
@@ -793,6 +843,7 @@ export function Coach() {
                     disabled={busy}
                     onAsk={last ? (q) => void send(q) : undefined}
                     onHandoff={asked ? () => void handoff(asked) : undefined}
+                    onWeb={asked && meta.web && navigator.onLine ? () => searchWeb(asked) : undefined}
                   />
                 )}
                 {texts.length > 0 && (
@@ -800,7 +851,11 @@ export function Coach() {
                     <button type="button" onClick={() => void copy(allText)}>
                       <CxIcon name="copy" size={14} /> COPIAR
                     </button>
-                    <span>{meta ? `NÚCLEO LOCAL // ${meta.kind === "data" ? "SEUS DADOS" : "OFFLINE"}` : "CLAUDE // NUVEM"}</span>
+                    <span>
+                      {meta
+                        ? `NÚCLEO LOCAL // ${meta.kind === "data" ? "SEUS DADOS" : meta.kind === "command" ? "COMANDO" : "OFFLINE"}`
+                        : "CLAUDE // NUVEM"}
+                    </span>
                   </div>
                 )}
               </div>
@@ -843,8 +898,8 @@ export function Coach() {
                 onClick={async () => {
                   const p = pendingIntent;
                   setPendingIntent(null);
-                  if (p.constraint) await upsertConstraint(p.constraint);
-                  if (p.absence) await addAbsence(p.absence);
+                  setLocalCtx((c) => ({ ...c, proposalOpen: false }));
+                  await applyProposal(p);
                   updateChat({
                     ...chat,
                     notes: [...(chat.notes ?? []), `Aplicou proposta do núcleo: ${p.confirmLabel}.`],
@@ -860,6 +915,7 @@ export function Coach() {
                 onClick={() => {
                   const p = pendingIntent;
                   setPendingIntent(null);
+                  setLocalCtx((c) => ({ ...c, proposalOpen: false }));
                   updateChat({
                     ...chat,
                     notes: [...(chat.notes ?? []), `Recusou proposta do núcleo: ${p.confirmLabel}.`],

@@ -288,3 +288,153 @@ para mudar, edite o texto em `answers.ts` (não aqui). O nível de evidência ve
 - **Nível:** Consenso (sem princípio no Guia: nível declarado na resposta)
 
 > Um cochilo de 20 a 30 minutos ajuda a disposição e compensa um pouco uma noite curta. Cochilos longos ou no fim da tarde podem atrapalhar o sono da noite, que é o que mais importa.
+
+## Chat amplo (Parte 3 de `docs/prompt-nucleo-vivo.md`)
+
+Respostas novas do chat sem chave que tocam alimentação e recuperação. O glossário fica em `src/data/glossary.ts` e o
+papo em `src/data/smalltalk.ts`: edite lá, não aqui. As respostas geradas da biblioteca (séries e frequência por
+músculo) usam os números de `SCIENCE` e do programa ativo; as respostas por princípio repetem a primeira frase do Guia.
+
+## Glossário: alimentação (14)
+
+### [ ] `sarcoplasmatica`: o que é hipertrofia sarcoplasmatica
+
+- **Nível:** Hipótese (princípio `sarcoplasmatica`)
+
+> **hipertrofia sarcoplasmatica**: Ideia de que existe um crescimento "de líquido" separado do de fibra. Na prática, o treino comum faz os dois juntos.
+
+### [ ] `pump`: o que é pump
+
+- **Nível:** sem nível (definição de palavra) (princípio `pump`)
+
+> **pump**: O músculo cheio e inchado durante o treino, por causa do sangue. É sensação boa, mas não prova de crescimento.
+
+### [ ] `carboidrato`: o que é carboidrato
+
+- **Nível:** Evidência (princípio `carboidrato`)
+
+> **carboidrato**: A principal fonte de energia dos treinos pesados. Pouco carboidrato tende a piorar o rendimento em treinos longos.
+
+### [ ] `proteina`: o que é proteina
+
+- **Nível:** Evidência (princípio `proteina`)
+
+> **proteina**: O nutriente que constrói músculo. Para quem treina, uns 1,6 a 2,2 g por kg de peso por dia.
+
+### [ ] `bulking`: o que é bulking
+
+- **Nível:** sem nível (definição de palavra)
+
+> **bulking**: Fase comendo um pouco acima do gasto para ganhar músculo. Ritmo bom: uns 0,25 a 0,5% do peso por semana.
+
+### [ ] `cutting`: o que é cutting
+
+- **Nível:** sem nível (definição de palavra)
+
+> **cutting**: Fase comendo abaixo do gasto para perder gordura, mantendo o treino pesado para segurar o músculo.
+
+### [ ] `recomposicao`: o que é recomposicao
+
+- **Nível:** sem nível (definição de palavra) (princípio `recomposicao`)
+
+> **recomposicao**: Perder gordura e ganhar músculo ao mesmo tempo. Mais comum em quem está começando ou voltando.
+
+### [ ] `deficit`: o que é deficit calorico
+
+- **Nível:** sem nível (definição de palavra)
+
+> **deficit calorico**: Comer menos energia do que gasta. É o que faz perder peso.
+
+### [ ] `superavit`: o que é superavit calorico
+
+- **Nível:** sem nível (definição de palavra)
+
+> **superavit calorico**: Comer mais energia do que gasta. Junto do treino, ajuda a ganhar músculo.
+
+### [ ] `tmb`: o que é TMB
+
+- **Nível:** sem nível (definição de palavra)
+
+> **TMB**: A energia que o corpo gasta parado, só para funcionar.
+
+### [ ] `creatina`: o que é creatina
+
+- **Nível:** Evidência
+
+> **creatina**: Suplemento mais estudado do esporte: 3 a 5 g por dia aumentam um pouco a força e o volume de treino.
+
+### [ ] `whey`: o que é whey
+
+- **Nível:** sem nível (definição de palavra)
+
+> **whey**: Proteína do soro do leite em pó. É comida prática, não mágica: conta junto com a proteína do dia.
+
+### [ ] `catabolismo`: o que é catabolismo
+
+- **Nível:** sem nível (definição de palavra)
+
+> **catabolismo**: Quebra de tecido do corpo. O medo de "catabolizar" em poucas horas sem comer é exagerado.
+
+### [ ] `anabolismo`: o que é anabolismo
+
+- **Nível:** sem nível (definição de palavra)
+
+> **anabolismo**: Construção de tecido. A "janela" depois do treino é bem mais larga do que se dizia: o total do dia pesa mais.
+
+## Glossário: recuperação (7)
+
+### [ ] `deload`: o que é deload
+
+- **Nível:** sem nível (definição de palavra) (princípio `deload`)
+
+> **deload**: Semana mais leve para o corpo se recuperar: metade das séries, mesma carga, longe da falha. No app é a semana 7.
+
+### [ ] `descanso`: o que é descanso entre series
+
+- **Nível:** Evidência (princípio `descanso`)
+
+> **descanso entre series**: A pausa entre séries. Uns 2 minutos ou mais nos compostos rendem mais repetições e mais músculo que pausas curtas.
+
+### [ ] `autorregulacao`: o que é autorregulacao
+
+- **Nível:** sem nível (definição de palavra) (princípio `autorregulacao`)
+
+> **autorregulacao**: Ajustar carga e séries pelo dia: se rendeu menos, o plano se adapta em vez de forçar.
+
+### [ ] `check-in`: o que é check in
+
+- **Nível:** sem nível (definição de palavra)
+
+> **check in**: As perguntas rápidas antes do treino (sono, energia, dor). Num dia ruim, o app oferece tirar séries dos isolados.
+
+### [ ] `doms`: o que é DOMS
+
+- **Nível:** sem nível (definição de palavra)
+
+> **DOMS**: A dor muscular que aparece 1 ou 2 dias depois do treino. É normal e não mede o quanto você cresceu.
+
+### [ ] `sexos-fadiga`: o que é fadiga em mulheres
+
+- **Nível:** Evidência (princípio `sexos-fadiga`)
+
+> **fadiga em mulheres**: Mulheres costumam cansar menos entre séries e aguentar mais repetições com a mesma porcentagem de carga.
+
+### [ ] `femoropatelar`: o que é femoropatelar
+
+- **Nível:** Evidência (princípio `dor-femoropatelar`)
+
+> **femoropatelar**: Dor na frente do joelho, ao redor da patela. Treino de força bem dosado costuma ajudar; dor forte pede avaliação profissional.
+
+## Papo que toca recuperação (3)
+
+### [ ] `boa-noite`
+
+> Boa noite. {dado} Dormir bem também é treino. (`{dado}`: músculos que ficam prontos amanhã cedo)
+
+### [ ] `cansado`
+
+> Anotado. {dado} Se quiser, diga "só tenho 40 minutos" e eu encurto o treino.
+
+### [ ] `desanimo`
+
+> Normal ter semana assim. Faça o treino mais curto hoje: aparecer conta mais que o treino perfeito.

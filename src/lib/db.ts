@@ -4,6 +4,7 @@ import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
 import { PERSONAS } from "../data/personas";
 import { closeFinishedMesos, mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
+import { sanitizeLiveLog } from "./core/director";
 import type { Absence } from "./visual";
 import { addDays, mondayOf, todayISO } from "./dates";
 import { createRestorePoint } from "./restore";
@@ -494,6 +495,11 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
   // Guarda o estado atual antes de mexer.
   if (opts.snapshot !== false) await createRestorePoint("antes-importar");
   const sessions = b.sessions.filter(isSession);
+  for (const s of sessions) {
+    const log = sanitizeLiveLog(s.liveLog);
+    if (log) s.liveLog = log;
+    else delete s.liveLog;
+  }
   const incomingBody = Array.isArray(b.bodyLog) ? b.bodyLog.filter(isBodyEntry) : [];
   const incomingPrograms = Array.isArray(b.programs) ? b.programs.filter(isProgram) : [];
   await db.transaction("rw", db.sessions, db.kv, db.programs, async () => {

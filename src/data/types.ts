@@ -208,6 +208,8 @@ export interface Session {
   lowDayTrim?: boolean;
   /** Sessão criada a partir de "repetir treino". */
   repeatedFrom?: string;
+  /** O que o núcleo disse no treino e se a pessoa seguiu (memória do diretor; `core/director.ts`). */
+  liveLog?: { id: string; at: number; setId?: string; acted?: boolean; text?: string }[];
 }
 
 /** Efeitos visuais: máximo sempre, automático (calmo durante o treino) ou mínimo. */

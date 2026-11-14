@@ -236,7 +236,7 @@ export function matchData(text: string, ctx: DataContext = {}): { kind: DataKind
 const done = (d: AnswerData) => d.sessions.filter((s) => s.status === "done" && s.date <= d.today);
 const kg = (v: number) => `${formatWeight(Math.round(v * 2) / 2)} kg`;
 
-function historyFor(d: AnswerData, ex: ExerciseRef): ExerciseHistoryItem[] {
+export function historyFor(d: AnswerData, ex: ExerciseRef): ExerciseHistoryItem[] {
   if (ex.exId) {
     const own = historyOf(done(d), ex.exId, d.settings.swaps?.[ex.exId] || undefined);
     if (own.length) return own;

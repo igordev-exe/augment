@@ -13,13 +13,15 @@ import { SysModule } from "../components/SysModule";
 import { exById, shortName, exOf, dayOf } from "../data/program";
 import { afterSet } from "../lib/superset";
 import { trimIsolatesForLowDay } from "../lib/core/planner";
+import { liveState, restAfter } from "../lib/core/live";
+import { finishCueLine, isLowForm, judgeLog, logCue } from "../lib/core/director";
 import type { CardioEntry, Checkin, ProgramExercise, Session, SessionExercise } from "../data/types";
 import { daysBetween, formatDuration, longDate, todayISO } from "../lib/dates";
 import { db, exportBackup } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
 import { useBodyLog, useOperatorState, useSession, useSessions, useSettings, useToast, useWakeLock } from "../lib/hooks";
 import { syncNow } from "../lib/online/sync";
-import { checkinAdvice, defaultRest, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
+import { checkinAdvice, isLowDay, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
 import {
   backoffWeight,
   formatWeight,
@@ -159,6 +161,25 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   const lowDay = isLowDay(checkin);
   const intensifiers = intensifierPlan(day.exercises, week, lowDay);
 
+  // Núcleo ao vivo: o que vem agora e a única fala do HUD (puro; a memória do que foi dito fica em `liveLog`).
+  const focusExId = open >= 0 ? session.exercises[open]?.exId : undefined;
+  const live = isActive ? liveState(session, before, operator, settings, Date.now(), focusExId) : null;
+  const cueId = live?.cue?.id;
+  useEffect(() => {
+    if (!isActive) return;
+    void db.transaction("rw", db.sessions, async () => {
+      const cur = await db.sessions.get(session.id);
+      if (!cur || cur.status !== "active") return;
+      const judged = judgeLog(cur);
+      if (judged) cur.liveLog = judged;
+      const fresh = liveState(cur, before, operator, settings, Date.now(), focusExId);
+      const logged = logCue(cur, fresh.cue, Date.now());
+      if (logged) cur.liveLog = logged;
+      if (judged || logged) await db.sessions.put(cur);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cueId, isActive, session.id]);
+
   /** Recado do motor que vale um aviso na hora para este exercício (`only`: restringe às regras listadas). */
   function liveToast(entry: SessionExercise, only?: string[]): Nudge | null {
     const ex = exOf(entry);
@@ -178,7 +199,8 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
   }
 
   // Check-in que age (M6): com dia de baixa ou dor, oferece tirar 1 série dos isolados, uma vez por treino.
-  const lowOrPain = lowDay || (!!checkin && !checkin.skipped && (checkin.pain === "leve" || checkin.pain === "forte"));
+  const lowOrPain =
+    lowDay || (!!checkin && !checkin.skipped && (checkin.pain === "leve" || checkin.pain === "forte")) || (!!live && isLowForm(live.form));
   const trimOffer = lowOrPain && !session.lowDayTrim ? trimIsolatesForLowDay(session, exOf).removed : 0;
   async function trimLowDay() {
     const cur = await db.sessions.get(session.id);
@@ -249,9 +271,9 @@ function SessionView({ session, sessions, onGone }: { session: Session; sessions
     const next = fresh;
     // Motor de decisões: recorde, descanso curto, intensificador na última série, teto batido.
     // As regras de RIR esperam a marcação de "sobraram" (onRirMarked).
-    const live =
-      set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps", "descanso-curto", "intensificador", "meta-batida"]);
-    if (live) toast(live.text, NUDGE_TONE[live.tone], live.id === "recorde-reps" || live.id === "meta-batida" ? "glitch" : undefined);
+    // Os recados viram a linha do HUD (núcleo ao vivo); só o recorde segue com a recompensa na hora.
+    const live = set.kind === "warmup" || warned ? null : liveToast(next, ["recorde-reps"]);
+    if (live) toast(live.text, NUDGE_TONE[live.tone], "glitch");
 
     // Timer de descanso e foco (superset alterna A1 → A2; o que sobra de um lado segue como exercício normal).
     const remaining = next.sets.filter((s) => s.kind !== "warmup" && !s.done).length;
@@ -274,7 +296,11 @@ ${shortName(ex)}`,
       const partnerDef = partner && exOf(partner);
       if (!live && !warned) toast(`Superset: vá direto para A2${partnerDef ? `, ${shortName(partnerDef).toLowerCase()}` : ""}.`);
     } else {
-      const rest = flow.rest === "superset" ? 60 : defaultRest(ex.rest);
+      // Descanso que acompanha a série: dentro da faixa da ficha (topo depois da falha, piso no isolado folgado).
+      const doneNow = next.sets.filter((s) => s.done && s.kind !== "warmup" && s.reps != null);
+      const fit = restAfter(ex, doneNow[doneNow.length - 1] ?? set, doneNow[doneNow.length - 2]);
+      const rest = flow.rest === "superset" ? 60 : fit.sec;
+      const restNote = flow.rest !== "superset" && fit.why ? ` · ${fit.why}` : "";
       const workAll = next.sets.filter((s) => s.kind !== "warmup");
       const nextSet = workAll.find((s) => !s.done);
       const nextN = nextSet ? workAll.indexOf(nextSet) + 1 : 0;
@@ -285,7 +311,7 @@ ${shortName(ex)}`,
       timer.start(
         rest,
         remaining
-          ? `Série ${nextN}/${workAll.length}${nextWhat}
+          ? `Série ${nextN}/${workAll.length}${nextWhat}${restNote}
 ${shortName(ex)}`
           : `Próximo exercício${
               nextExDef
@@ -413,7 +439,7 @@ ${shortName(nextExDef)}`
       else if (next.kind === "down") down += 1;
       else same += 1;
     }
-    return finishLogLines({
+    const lines = finishLogLines({
       dayCode: day.code,
       dayName: day.name,
       setsDone: done,
@@ -427,6 +453,9 @@ ${shortName(nextExDef)}`
       backupAt: settings.lastBackupAt,
       today,
     });
+    const core = finishCueLine(session);
+    if (core) lines.splice(lines.length - 1, 0, core);
+    return lines;
   })();
 
   // F8: Debrief automático pós-treino
@@ -434,7 +463,9 @@ ${shortName(nextExDef)}`
 
   return (
     <div className="stack-lg">
-      {isActive && <SessionHud session={session} code={`${day.code} // ${rule.label.toUpperCase()}`} now={Date.now()} />}
+      {isActive && (
+        <SessionHud session={session} code={`${day.code} // ${rule.label.toUpperCase()}`} now={Date.now()} cue={live?.cue ?? null} />
+      )}
       <PageHead
         back={isActive ? "/" : "/historico"}
         code={isActive ? `MISSÃO ATIVA // PROTOCOLO ${day.code}` : `REGISTRO // PROTOCOLO ${day.code}`}
@@ -628,10 +659,9 @@ ${shortName(nextExDef)}`
               intensifierToday={intensifiers.has(ex.id)}
               setAdjust={settings.setAdjust?.[ex.id] ?? 0}
               operator={operator}
-              onRirMarked={(e) => {
-                const n = isActive ? liveToast(e, ["falha-composto", "longe-da-falha"]) : null;
-                if (n) toast(n.text, NUDGE_TONE[n.tone]);
-              }}
+              onRirMarked={() => undefined}
+              liveAdjust={live?.next?.exId === entry.exId ? live.next.adjust : undefined}
+              said={(session.liveLog ?? []).filter((l) => l.id.split(":")[1] === entry.exId && l.text).map((l) => l.text!)}
               onToggle={() => setOpen(open === i ? -1 : i)}
               mutate={(fn) => mutateEntry(entry.exId, fn)}
               onSetDone={(e, setId) => onSetDone(i, e, setId)}

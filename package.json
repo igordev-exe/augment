@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "check": "tsc -b && tsc -p server && vite-node scripts/lint.ts && prettier --check . && vitest run",
     "coach": "vite-node scripts/coach.ts",
+    "backtest": "vite-node scripts/backtest.ts",
     "server": "vite-node server/src/node.ts",
     "server:deploy": "cd server && npx wrangler deploy",
     "build:ios": "tsc -b && vite build --base ./ && cap sync ios",

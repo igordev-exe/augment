@@ -167,6 +167,11 @@ export interface LiveInput {
   availableWeights?: number[];
   /** Intensificador liberado hoje para este exercício (cota da semana). */
   intensifier: boolean;
+  /**
+   * Erro próprio na sobra (`OperatorState.behavior.rirBias`), só quando confiável. Positivo: a pessoa declara mais
+   * sobra do que tem, então "longe da falha" exige sobra declarada maior.
+   */
+  rirBias?: number;
 }
 
 const TONE_ORDER: Record<NudgeTone, number> = { warn: 0, info: 1, good: 2 };
@@ -204,7 +209,7 @@ export function liveNudges(i: LiveInput): Nudge[] {
         text: `Sobrou ${latest.rir}, e a semana ${week} pede ${tLabel}. Segure um pouco: chegar na falha cedo no mesociclo gasta recuperação que vai faltar nas semanas 5–6.`,
         why: "rir-consenso",
       });
-    } else if (latest.rir >= target[1] + 2) {
+    } else if (latest.rir - Math.max(0, i.rirBias ?? 0) >= target[1] + 2) {
       const left = latest.rir >= 4 ? "4+" : String(latest.rir);
       out.push({
         id: "longe-da-falha",

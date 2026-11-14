@@ -59,12 +59,13 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (293 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (321 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
 | `npm run android:open`                                     | abre o Android Studio                                                                                                      |
 | `npm run coach -- backup.json`                             | debrief do treinador no terminal (`scripts/coach.ts`)                                                                      |
+| `npm run backtest -- backup.json`                          | erro das previsões do núcleo ao vivo num backup real, base × vivo (`scripts/backtest.ts`)                                  |
 | `python -I scripts/import-exercise-db.py <exercises.json>` | regenera a biblioteca estendida (free-exercise-db)                                                                         |
 | `python scripts/android-assets.py`                         | ícones e splash do Android                                                                                                 |
 | `npm run server`                                           | servidor online local na porta 8787 (banco em `server/data/augment.db`; preview `augment-server`)                          |
@@ -369,8 +370,34 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   da sessão. **Nunca altera `db.programs`.** Pisos: 2 séries em composto, 1 em isolado.
 - `intents.ts`: `matchIntent` (6 intenções, por palavra) e `handleIntent` (resposta na hora, offline; mudanças viram
   `IntentProposal` que só grava com confirmação). Negar dor não é queixa. Exporta `norm`, `hasWord`, `hasAny`.
-- **Chat sem chave** (fase 1 de `docs/prompt-chat-local.md`; sem modelo de linguagem, sem rede). Ordem na tela:
-  intenções → `localReply` (trava → dados → busca). Com chave, só as respostas certeiras ficam locais.
+- **Chat sem chave** (fase 1 de `docs/prompt-chat-local.md` + Parte 3 de `docs/prompt-nucleo-vivo.md`; sem modelo de
+  linguagem, sem rede). A tela chama só `coreReply` (`localchat.ts`), em camadas (a de cima ganha): urgência e
+  travas → pedido em aberto / "sim"-"não" de proposta → **comandos** → intenções → glossário ("o que é X") →
+  **consultas** (`queryAnswer`) → respostas geradas da biblioteca → **papo** (só mensagem inteira e curta) → respostas
+  prontas → "você quis dizer" → **saída honesta**. Com chave, papo, "você quis dizer" e "não sei" vão para o Claude.
+  Nada grava sem confirmação: o que muda dado volta como `CoreProposal` (intenção ou comando) e a tela grava em
+  `applyProposal` só depois de Aplicar ou "sim".
+  - `templates.ts`: frases-modelo no estilo hassil (`[opcional]`, `(a|b)`, `{campo}`, `<regra>`), compiladas uma vez;
+    `prepare` tira cortesia ("por favor", "ei"); `templateSet`. `readers.ts`: `readNumber` (algarismo e por extenso
+    até 999, "meia", "e meio"), `readUnit`, `readLoad`, `readDuration`, `findPeriod`/`readPeriod` (hoje, ontem, essa
+    semana, mês passado, "em outubro", últimos N dias, esse ciclo, esse ano, ano passado, sempre).
+  - `commands.ts`: 24 comandos (navegar, timer, treino, corpo, contas, calendário, ajustes); `matchCommand`,
+    `runCommand` → texto + `CommandAction` (timer, sem gravar) ou `CommandProposal` (série, troca, peso, ajuste);
+    `WRITE_COMMANDS`; campo faltando vira `PendingCommand` (`continuePending`, expira em 5 min).
+  - `query.ts`: gramática métrica × alvo (exercício, músculo, dia do programa, tudo) × período × conta (último,
+    melhor, média, total, tendência, comparação, quando, ranking); `parseQuery`, `runQuery`, `queryAnswer` (quando um
+    dos 12 tipos antigos cobre os mesmos eixos, a resposta é a dele).
+  - `generated.ts`: `glossaryAnswer` (`data/glossary.ts`, 80+ termos), `libraryAnswer` (equipamento, exercícios para
+    músculo, séries e frequência por músculo do programa), `principleAnswer` (todo princípio do Guia responde).
+  - `data/smalltalk.ts`: 30 situações de papo com 2–3 variações; `{dado}` puxa um número real; variação por semente
+    (dia + contagem). Perguntado se é IA, diz que são respostas prontas e contas no aparelho.
+  - Saída honesta (`localchat.ts`, `OUT_OF_SCOPE`): clima, notícia, receita, esporte, outro app, conta geral, pessoal,
+    conhecimento; 3 perguntas próximas, "Levar a pergunta para outro chat" e "Pesquisar na web" (abre o navegador só
+    ao tocar; nunca em assunto travado).
+  - Memória curta (`ChatContext`): eixos da última consulta, entidade, pedido em aberto, proposta aberta; até 3 trocas
+    ou 5 minutos. "não, o inclinado" vira continuação.
+  - Medição do chat amplo: `chat.golden.ts` + `chat.test.ts` (87 comandos, 100 consultas com conta independente, 60
+    de papo, 60 fora do escopo, 35 travas, 172 respostas prontas que não podem ser sequestradas) e `readers.test.ts`.
   - `data/answers.ts`: `ANSWERS` (136 respostas prontas: treino, alimentação, recuperação, app, iniciante; 4+ `asks`,
     `level` ou `principle` obrigatório fora do app), `GUARD_REPLY`. Revisão do dono: `docs/respostas-para-revisar.md`.
   - `answers.ts`: buscador próprio (radical leve `stem`, `SYNONYMS` com abreviações de celular, BM25 por campo
@@ -388,6 +415,33 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     peitoral.
   - Medição: `answers.golden.ts` (172 dentro, 40 fora; nenhuma cópia de `asks`) e `answers.test.ts` exige top-1 ≥ 85%,
     top-3 ≥ 95%, fora respondido ≤ 5%, trava 100%. Ao mexer em sinônimo ou limiar, rode e olhe a lista de erros.
+- **Núcleo ao vivo** (fases 0–4 de `docs/prompt-nucleo-vivo.md`, no repositório principal; a 5, voz, adiada):
+  - `backtest.ts`: `backtest(sessions, settings, "base" | "live")` prevê cada série só com o passado (erro médio da 1ª
+    série, das séries 2+ e acerto de carga ±1 passo); `simulateLiveOperator` (pessoas com queda real entre séries).
+    Linha de base e números depois da fase 1 no comentário de `backtest.test.ts`. **Fase nova só entra se não piorar.**
+  - `live.ts`: `liveState(session, history, operator, settings, now, focusExId?)` → `LiveState` (`next` com carga, faixa,
+    reps previstas, confiança, descanso e `adjust`; `form` = leitura do dia; `clock` com término e `overCapMin`;
+    `cue`). Queda entre séries aprendida (`dropSamples`/`dropPool`/`dropModel`, encolhe para o grupo e para 1 rep),
+    `predictFromPrevious`, `restAfter` (topo da faixa após falha ou queda de 2+, piso no isolado com 3+ sobrando; nunca
+    abaixo do mínimo nem 30 s acima do topo; o motivo vai no rótulo do timer), `liveClock`.
+  - Fase 3, leitura do dia (`dayForm`): 1ª série de cada exercício feito hoje × última vez (reps + sobra), check-in de
+    baixa como ponto de partida, neutra no deload; ±0,5 = ±3%. Entra na previsão da 1ª série dos próximos. Dia abaixo
+    (`isLowForm`, confiança ≥ 0,5): a carga que subiu volta para a da última vez nos exercícios do mesmo músculo (só
+    proposta), sem intensificador, oferece o corte de isolados e substitui o "abaixo-do-normal"; dia acima: só "pode
+    passar do topo".
+  - Fase 4, conhecer a pessoa: `personalEpley` (constante da curva carga × reps por exercício, encolhe para 30; só
+    para prever, a régua de 1RM não muda), `firstSetBias`/`biasPool` (viés próprio da 1ª série; vale a partir de
+    `PERSONAL_MIN_PAIRS` = 2 pares, antes disso fica a meta da sugestão), `rirBiasOf` → `behavior.rirBias` no
+    `OperatorState` (sobra declarada × conferida pela série seguinte à falha; usado no limiar de "longe-da-falha" via
+    `LiveInput.rirBias`) e `ignoredRules` (regra conferida `MUTE_MIN` = 4 vezes e nunca seguida sai do treino e aparece
+    uma vez nos sinais do relatório semanal).
+  - `director.ts`: `Cue` (momento, prioridade 0 segurança … 3 fato bom, `meta` = linha padrão), `cueCandidates` (recados
+    de `liveNudges` reescritos curtos com o número da pessoa, 3 variações por semente), `pickCue` (1 fala por série,
+    teto `CUE_CAP` = 8, id não repete, regra ignorada 2× seguidas não volta), `logCue`/`judgeLog` (memória em
+    `Session.liveLog`, sanitizada no import por `sanitizeLiveLog`) e `finishCueLine` (linha do `TerminalLog`).
+  - Tela: a fala é a linha `.hud-cue` do `SessionHud` (`aria-live`); toasts de recado saíram (só o recorde segue com a
+    recompensa); o cartão mostra "Dito hoje" recolhido e o botão "Baixar para X agora" quando há `adjust`.
+  - Testes: `backtest.test.ts` e `live.test.ts` (garantias). Fotos e medidas do HUD: `node tools/verify/hud.mjs`.
 - Hooks: `useOperatorMemory`, `useOperatorState` (`hooks.tsx`); `db.ts`: `loadOperatorMemory`, `saveOperatorMemory`,
   `upsertConstraint`, `removeConstraint`, `ensureMesoHistory`.
 - Telas: Hoje (linha do banner só quando `!silent`, `planDay` na duração e no `buildSession`), ExerciseBlock
@@ -538,6 +592,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - `roadmap-apk.md`: 6 fases; até a fase 4, concluídas;
   - `melhorias-fable-argon.md`: auditoria externa conferida no código + plano de 15 mudanças em 4 ondas (M1–M14
     feitos; M15, voz, adiado até confirmar um plugin nativo);
+  - `prompt-nucleo-vivo.md`: análise + dois prompts mestres ainda não implementados: núcleo ao vivo no treino
+    (previsão da próxima série, descanso que acompanha, uma fala só no HUD, backtest) e chat amplo (comandos por
+    frases-modelo, gramática de consultas, papo, saída honesta);
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.
 - `.claude/skills/treinador`: skill de debrief a partir de um backup.
