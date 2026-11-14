@@ -1579,7 +1579,7 @@ button.hex:active .hex-face {
   font-family: var(--mono);
 }
 /* <details> que sobraram fora da lista agrupada (o treino em andamento fica como está: .how e .plan-more). */
-:is(.eg-why, .mod, .ob-others, .fm-zones, .crash details, .import-csv details, details.small, details.tiny) > summary {
+:is(.eg-why, .mod, .ob-others, .fm-zones, .crash details, details.small, details.tiny) > summary {
   display: flex;
   align-items: center;
   gap: var(--sp-2);

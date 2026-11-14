@@ -16,7 +16,6 @@ import {
   type DataReply,
   type ExerciseRef,
 } from "./data-answers";
-import { hasAny, norm } from "./intents";
 import { clean, findPeriod, type Period } from "./readers";
 
 // AUG.CORE — gramática de consultas aos dados. Em vez de um tipo por pergunta, quatro eixos que se combinam:
@@ -737,9 +736,4 @@ export function queryAnswer(text: string, data: AnswerData, ctx: DataContext & Q
     muscle: q.target.kind === "musculo" ? q.target.muscle : undefined,
     query: q,
   };
-}
-
-/** Palavras que só existem para não confundir o detector com a pergunta de conselho (para os testes). */
-export function isAdvice(text: string): boolean {
-  return ADVICE.test(clean(text)) || hasAny(norm(text), ["devo fazer"]);
 }

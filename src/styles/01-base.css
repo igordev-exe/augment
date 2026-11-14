@@ -392,17 +392,7 @@ p {
   width: auto;
   color: var(--ink);
 }
-.brand-name {
-  font-family: var(--tech);
-  font-weight: 900;
-  font-size: 21px;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.brand-name i {
-  color: var(--red);
-  font-style: normal;
-}
+
 .status {
   font-family: var(--mono);
   font-size: var(--fs-1);

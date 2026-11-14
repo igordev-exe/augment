@@ -270,7 +270,12 @@ export async function listCloudBackups(): Promise<BackupMeta[]> {
  */
 export async function restoreCloudBackup(id: string, mode: "replace" | "merge" = "replace"): Promise<number> {
   const { data } = await api<{ data: string }>("GET", `/backups/${encodeURIComponent(id)}`, undefined, 120_000);
-  const parsed: unknown = JSON.parse(data);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(data);
+  } catch {
+    parsed = null;
+  }
   if (!isBackup(parsed)) throw new ApiError("O backup da nuvem está danificado.", 422);
   // As fotos do corpo normalmente não vão para a nuvem: as que estão neste aparelho voltam para os mesmos registros.
   const photos = new Map((await loadBodyLog()).filter((e) => e.photoDataUrl).map((e) => [e.id, e.photoDataUrl]));

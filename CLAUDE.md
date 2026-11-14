@@ -338,7 +338,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     `feedbackFactor` (pump, volume) e `noteFactor` (nota do treino ou do exercício: "ruim", "leve" × "pesado",
     "intenso"). Escala o pico (`fatiguePct`) e as horas (`neededHours`, ±25%). `fatigueColor(pct)` dá o tom contínuo
     ciano → âmbar → vermelho (lista, medidor e corpo).
-- `slots.ts`: `volumeSlots`, `slotCells` e `SLOT_COLUMNS` (o antebraço fica em "Tronco").
+- `slots.ts`: `volumeSlots` e `slotCells`.
 - `attributes.ts`: `attributes()`, com seis atributos: forca, volume, consistencia, recuperacao, intensidade e
   composicao.
 - `achievements.ts`: `computeAchievements`.
@@ -524,7 +524,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 | `TimerBar`                                                   | barra de descanso fixa                                                                                                                                                                                          |
 | `SessionHud`                                                 | HUD fixo do treino                                                                                                                                                                                              |
 | `HoldButton`                                                 | segurar para confirmar                                                                                                                                                                                          |
-| `RadialMenu`                                                 | roda de ações; `useLongPress`                                                                                                                                                                                   |
+| `RadialMenu`                                                 | roda de ações                                                                                                                                                                                                   |
 | `TerminalLog`                                                | log de fim de treino                                                                                                                                                                                            |
 | `ShareWorkoutCard`                                           | imagem do treino em canvas para compartilhar                                                                                                                                                                    |
 | `FatigueMap` + `Anatomy`                                     | mapa de fadiga (SVG frente/costas; o antebraço é zona própria)                                                                                                                                                  |

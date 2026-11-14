@@ -1,5 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type PointerEvent as RPointerEvent } from "react";
-import { vibrate } from "../lib/native";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 
 // Roda de ações rápidas: toque no número da série e escolha com o polegar. Cada ação tem uma fatia fixa no anel
@@ -13,42 +12,6 @@ export interface RadialAction {
   tone?: "action" | "ok" | "warn";
   disabled?: boolean;
   onPick: () => void;
-}
-
-/** Gesto de segurar (padrão 450 ms). Cancela se o dedo andar mais de 10 px (é rolagem). */
-export function useLongPress(onLong: () => void, ms = 450) {
-  const t = useRef<number>();
-  const origin = useRef<{ x: number; y: number } | null>(null);
-  const fired = useRef(false);
-  const clear = () => {
-    window.clearTimeout(t.current);
-    origin.current = null;
-  };
-  return {
-    onPointerDown: (e: RPointerEvent) => {
-      fired.current = false;
-      origin.current = { x: e.clientX, y: e.clientY };
-      t.current = window.setTimeout(() => {
-        fired.current = true;
-        vibrate(15);
-        onLong();
-      }, ms);
-    },
-    onPointerMove: (e: RPointerEvent) => {
-      const o = origin.current;
-      if (o && Math.hypot(e.clientX - o.x, e.clientY - o.y) > 10) clear();
-    },
-    onPointerUp: clear,
-    onPointerCancel: clear,
-    onPointerLeave: clear,
-    onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
-    /** Depois de um toque longo, o clique que vem junto não deve disparar outra coisa. */
-    consumedClick: () => {
-      const f = fired.current;
-      fired.current = false;
-      return f;
-    },
-  };
 }
 
 const C = 150;

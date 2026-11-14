@@ -451,14 +451,7 @@
   width: 0.34em;
   text-align: center;
 }
-.timer-label {
-  font-family: var(--mono);
-  font-size: var(--fs-2);
-  opacity: 1;
-  line-height: 1.35;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+
 .timer button {
   min-height: 44px;
   min-width: 50px;

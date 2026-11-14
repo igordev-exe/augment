@@ -365,15 +365,6 @@ body {
   opacity: 1;
 }
 /* Guia: atalhos das seções em linhas, sem rolagem lateral escondida. */
-.toc {
-  flex-wrap: wrap;
-  overflow: visible;
-  margin-inline: 0;
-  padding-inline: 0;
-}
-.toc a {
-  flex-shrink: 1;
-}
 
 /* Fila com botões: em tela estreita o botão desce de linha em vez de cortar a palavra (botão nunca parte palavra). */
 :is(.row, .spread, .cloud-item, .friend-row, .actions):has(> .btn) {

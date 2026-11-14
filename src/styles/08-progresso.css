@@ -1437,19 +1437,7 @@
 }
 
 /* Foto com etiquetas de medida. */
-.scan-photo {
-  position: relative;
-  margin: 0;
-  border: 1px solid var(--lab-line);
-  background: #000;
-}
-.scan-photo img {
-  display: block;
-  width: 100%;
-  max-height: 440px;
-  object-fit: contain;
-  filter: grayscale(1) contrast(1.15) brightness(0.95);
-}
+
 .scan-tag {
   position: absolute;
   padding: 3px 6px;

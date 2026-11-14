@@ -53,9 +53,18 @@ describe("chat potente, bloco A: o que o chat aprende", () => {
   it("frase livre que não grava diz como entendeu; dúvida vira pergunta com botões", () => {
     const r = coreReply("me da 2 min de descanso ai", FULL_DATA, {}, { now: NOW_MS });
     expect(r.action).toEqual({ kind: "timer-start", seconds: 120 });
-    expect(r.meta.understood).toMatch(/Entendi/);
+    // Leitura de nota alta não repete o pedido; a de nota média ("90s" sozinho) diz como entendeu.
+    expect(r.meta.understood).toBeUndefined();
+    expect(coreReply("90s", FULL_DATA, {}, { now: NOW_MS }).meta.understood).toBe("Entendi: descanso de 1 min 30 s.");
     const doubt = coreReply("10 com 20", FULL_DATA, {}, { now: NOW_MS });
     expect(doubt.layer === "maybe" || doubt.layer === "command").toBe(true);
     expect(coreReply("nao anota 8 com 80", FULL_DATA, {}, { now: NOW_MS }).proposal).toBeUndefined();
+  });
+});
+
+describe("chat potente, bloco A: esquecer atalho não pega resposta comum", () => {
+  it("'não, isso' e 'desfaz isso' não apagam atalho", () => {
+    for (const q of ["nao isso", "desfaz isso", "apaga isso", "esquece isso"])
+      expect(coreReply(q, FULL_DATA, {}, { now: NOW_MS }).forgetAlias).toBeUndefined();
   });
 });

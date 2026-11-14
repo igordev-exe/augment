@@ -31,15 +31,6 @@ export interface MuscleSlots {
   sources: SlotSource[];
 }
 
-/** Grupos do mapa: tronco à esquerda, pernas e core à direita. */
-export const SLOT_COLUMNS: { title: string; muscles: MuscleId[] }[] = [
-  {
-    title: "Tronco",
-    muscles: ["costas", "peito", "deltLateral", "deltAnterior", "deltPosterior", "trapezio", "biceps", "triceps", "antebraco"],
-  },
-  { title: "Pernas e core", muscles: ["quadriceps", "posterior", "gluteo", "panturrilha", "abdomen"] },
-];
-
 /** Volume fracionado da semana (seg–dom) que contém `today`, por músculo, contra o plano da semana do mesociclo. */
 export function volumeSlots(sessions: Session[], today: string, week: number, adjust?: Record<string, number>): MuscleSlots[] {
   const start = mondayOf(today);

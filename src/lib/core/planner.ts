@@ -1,6 +1,6 @@
 import { LIB_BY_ID } from "../../data/library";
 import { dayById, MUSCLE_LABEL, shortName } from "../../data/program";
-import type { MuscleId, ProgramExercise, Session, Settings, StopKind } from "../../data/types";
+import type { ProgramExercise, Session, Settings, StopKind } from "../../data/types";
 import { shortDate } from "../dates";
 import { defaultRest, setsFor } from "../mesocycle";
 import { formatWeight, type historyOf, suggestNext, workSets, type Suggestion } from "../progression";
@@ -398,11 +398,6 @@ export function planDay(
     reasons,
     exercises,
   };
-}
-
-/** Verifica se uma entrada da sessão pertence a um músculo específico. */
-export function touchesMuscle(ex: ProgramExercise | undefined, muscle: MuscleId): boolean {
-  return !!ex && ex.muscles.includes(muscle);
 }
 
 /** Resolve o exercício para explicação pelo id do programa ou trecho do nome. */

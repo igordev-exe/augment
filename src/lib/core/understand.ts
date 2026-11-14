@@ -398,7 +398,7 @@ export function freeReadings(text: string, asked = false): FreeRead[] {
     // Anotar não pode ser uma conta escondida ("80% de 100") nem comida ("comi 8 ovos").
     if (a.id === "treino-anotar" && /(%|por cento|ovos|arroz|gramas|g de|horas|anos)/.test(t)) continue;
     const coverage = 0.6 + (a.needs.length ? 0.3 : 0.15) + (s.onlyNumbers ? 0.1 : 0);
-    out.push({ id: a.id, values, score: Math.min(1, coverage) });
+    out.push({ id: a.id, values, score: Math.min(1, Math.round(coverage * 100) / 100) });
   }
 
   // Tela citada sozinha ("historico"): atalho.
@@ -406,6 +406,13 @@ export function freeReadings(text: string, asked = false): FreeRead[] {
     out.push({ id: "navegar", values: { tela: s.tela }, score: 0.7 });
 
   return out.sort((a, b) => b.score - a.score);
+}
+
+/** "90" → "1 min 30 s"; "120" → "2 min"; "45" → "45 s". */
+function secs(n: number): string {
+  const m = Math.floor(n / 60);
+  const r = n % 60;
+  return m ? `${m} min${r ? ` ${r} s` : ""}` : `${r} s`;
 }
 
 /** Rótulo curto do pedido lido ("descanso de 90 s", "anotar 8 × 80 kg"), para o "Entendi:". */
@@ -419,11 +426,11 @@ export function readingLabel(m: CommandMatch): string {
     case "treino-anotar":
       return `anotar ${v.reps} × ${kg(v.carga)}`;
     case "timer-iniciar":
-      return `descanso de ${v.duracao} s`;
+      return `descanso de ${secs(v.duracao as number)}`;
     case "timer-somar":
-      return `mais ${v.duracao} s no descanso`;
+      return `mais ${secs(v.duracao as number)} no descanso`;
     case "timer-tirar":
-      return `menos ${v.duracao} s no descanso`;
+      return `menos ${secs(v.duracao as number)} no descanso`;
     case "timer-parar":
       return "parar o descanso";
     case "navegar":

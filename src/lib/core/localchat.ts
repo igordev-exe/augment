@@ -415,8 +415,9 @@ export function coreReply(
     if (m) {
       const c = runCommand(m, data, text, { ...env, now });
       const r = commandToReply(c, ctx);
-      // Leitura livre que não grava: diz como entendeu. Gravação já repete os campos na proposta.
-      if (m.free && !c.proposal && !c.pending) r.meta.understood = `Entendi: ${readingLabel(m)}.`;
+      // Leitura livre de nota média que não grava: diz como entendeu (a de nota alta não precisa; a gravação já
+      // repete os campos na proposta).
+      if (m.free && (m.score ?? 1) < 0.9 && !c.proposal && !c.pending) r.meta.understood = `Entendi: ${readingLabel(m)}.`;
       if (alias) r.meta.alias = alias.from;
       return stamp({ ...r, layer: "command" });
     }

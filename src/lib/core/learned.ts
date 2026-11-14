@@ -1,7 +1,6 @@
-import { stem } from "./answers";
-import { norm } from "./intents";
-
-// AUG.CORE — o que o chat aprende no aparelho (bloco A do chat potente). Puro: a gravação fica em `db.ts`.
+// AUG.CORE — o que o chat aprende no aparelho (bloco A do chat potente). Puro: a gravação fica em `db.ts`. Sem
+// import nenhum de propósito: o `db.ts` (pacote inicial) usa este arquivo, e o buscador das respostas prontas só
+// carrega com a tela do treinador.
 //
 // - Perguntas não entendidas (kv `chat-misses`): para o dono ver o que as pessoas perguntam (`npm run misses`) e
 //   escrever frases de teste e respostas novas a partir disso. Fica no aparelho e no backup; não sobe ao servidor.
@@ -33,12 +32,17 @@ export interface ChatAlias {
 }
 
 /** Chave estável da frase: sem acento, sem pontuação, pelo radical. "Qto de proteína?" = "qto de proteina". */
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+/** Plural e singular contam igual ("series" = "serie"). */
+const light = (w: string) => (w.length > 3 ? w.replace(/(oes|aes|ns|es|s)$/, "") : w);
+
 export function phraseKey(text: string): string {
   return norm(text)
     .replace(/[^a-z0-9 ]+/g, " ")
     .split(/\s+/)
     .filter(Boolean)
-    .map(stem)
+    .map(light)
     .join(" ");
 }
 
@@ -84,8 +88,7 @@ export function forgetAlias(list: ChatAlias[], text?: string): ChatAlias[] {
 }
 
 /** Pedido para esquecer o que foi aprendido. */
-export const FORGET_ALIAS =
-  /^(esquece|esqueca|apaga|desfaz|nao) (esse|este|o|isso|esse) ?(apelido|atalho|aprendizado|que voce aprendeu)?$|^esquece (isso|esse apelido|o apelido)$/;
+export const FORGET_ALIAS = /^(esquece|esqueca|apaga|tira|remove) (esse|este|o|o ultimo|esse ultimo) (apelido|atalho)$/;
 
 export function sanitizeMisses(x: unknown): ChatMiss[] {
   if (!Array.isArray(x)) return [];

@@ -8,7 +8,7 @@ import { barWeightIn, formatWeight, platesForBarbell, setE1rm, toKg, workSets } 
 import { suspiciousSet } from "../sanity";
 import { planAhead } from "../schedule";
 import { detectExercise, type AnswerData, type DataCard, type ExerciseRef } from "./data-answers";
-import { hasAny, norm } from "./intents";
+import { hasAny } from "./intents";
 import { clean, readDuration, readLoad, readNumber, readUnit } from "./readers";
 import { prepare, templateSet, type FieldReader } from "./templates";
 
@@ -437,11 +437,6 @@ export function commandVocabulary(): string[] {
   for (const d of DEFS) d.templates.forEach(add);
   Object.values(RULES).forEach(add);
   return [...words];
-}
-
-/** Quantos modelos existem (para a medição). */
-export function commandTemplateCount(): number {
-  return SET.all().length;
 }
 
 // ---------- Respostas ----------
@@ -917,9 +912,4 @@ export function continuePending(text: string, p: PendingCommand, d: AnswerData, 
     return c ? runCommand({ id: p.id, values: { carga: c } }, d, text, env) : null;
   }
   return null;
-}
-
-/** Texto normalizado (para testes e para a camada de conversa). */
-export function commandText(text: string): string {
-  return prepare(spaced(norm(text)));
 }
