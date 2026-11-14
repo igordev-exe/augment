@@ -41,6 +41,58 @@ export interface CoachChat {
   lastTurnAt?: number;
   /** Respostas prontas (sem chave), pelo índice da mensagem: nível de evidência, atalhos e perguntas tocáveis. */
   local?: Record<number, LocalMeta>;
+  /** Hora (ms) de cada mensagem, pelo índice: o rótulo "OPERADOR 09:41" da conversa. */
+  times?: Record<number, number>;
+}
+
+/** Conversa guardada no histórico (a barra lateral do treinador). */
+export interface CoachArchiveItem {
+  id: string;
+  title: string;
+  at: number;
+  chat: CoachChat;
+}
+
+/** No máximo tantas conversas guardadas; as mais antigas saem. */
+export const ARCHIVE_MAX = 20;
+
+/** Primeira pergunta da conversa, sem a linha de contexto que o app põe na frente: vira o título no histórico. */
+export function chatTitle(chat: CoachChat): string {
+  const first = chat.messages.find((m) => m.role === "user");
+  const blocks = typeof first?.content === "string" ? [{ type: "text", text: first.content }] : (first?.content ?? []);
+  const t = blocks.find((b): b is Anthropic.Beta.BetaTextBlockParam => b.type === "text")?.text ?? "";
+  const clean = t.replace(/^(\[[^\]]*\]\n+)+/, "").trim();
+  return clean.length > 60 ? `${clean.slice(0, 57)}…` : clean || "Conversa";
+}
+
+/** Marca a hora das mensagens que ainda não têm (as novas). */
+export function stampTimes(chat: CoachChat, now = Date.now()): CoachChat {
+  const times = { ...(chat.times ?? {}) };
+  let changed = false;
+  chat.messages.forEach((_, i) => {
+    if (times[i] == null) {
+      times[i] = now;
+      changed = true;
+    }
+  });
+  return changed ? { ...chat, times } : chat;
+}
+
+/** Guarda a conversa atual no topo do histórico (se tiver mensagens). */
+export function archiveChat(list: CoachArchiveItem[], chat: CoachChat, now = Date.now()): CoachArchiveItem[] {
+  if (!chat.messages.length) return list;
+  const times = Object.values(chat.times ?? {});
+  const at = times.length ? Math.max(...times) : now;
+  return [{ id: `c${at}-${list.length}`, title: chatTitle(chat), at, chat }, ...list].slice(0, ARCHIVE_MAX);
+}
+
+export async function loadCoachArchive(): Promise<CoachArchiveItem[]> {
+  const row = await db.kv.get("coach-archive");
+  return Array.isArray(row?.value) ? (row!.value as CoachArchiveItem[]) : [];
+}
+
+export async function saveCoachArchive(list: CoachArchiveItem[]): Promise<void> {
+  await db.kv.put({ key: "coach-archive", value: list });
 }
 
 export const EMPTY_CHAT: CoachChat = { messages: [], usage: { input: 0, cacheRead: 0, output: 0 }, proposals: {} };

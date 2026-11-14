@@ -93,9 +93,20 @@ describe("AUG.CORE — respostas com os dados da pessoa", () => {
 
   it("proteína usa o peso da pessoa quando há registro, e pede o registro quando não há", () => {
     const w = latestWeight(bodyLog)!;
-    const text = localReply("quanta proteina eu devo comer por dia?", FULL).text;
-    expect(text).toContain(`${Math.round(w * 1.6)} a ${Math.round(w * 2.2)} g de proteína por dia`);
-    expect(localReply("quanta proteina eu devo comer por dia?", EMPTY).text).toMatch(/Registre o seu peso/);
+    // A conta vai no bloco de análise do núcleo, separada do texto pronto.
+    const insight = localReply("quanta proteina eu devo comer por dia?", FULL).meta.insight?.text;
+    expect(insight).toContain(`${Math.round(w * 1.6)} a ${Math.round(w * 2.2)} g de proteína por dia`);
+    expect(localReply("quanta proteina eu devo comer por dia?", EMPTY).meta.insight?.text).toMatch(/Registre o seu peso/);
+    // Pergunta sem conta pessoal não ganha bloco de análise.
+    expect(localReply("creatina funciona?", FULL).meta.insight).toBeUndefined();
+  });
+
+  it("respostas com dados trazem o cartão de protocolo com 2 ou 4 células", () => {
+    for (const q of ["qual meu proximo treino", "em que semana estou", "recorde no supino inclinado", "qual minha sequencia"]) {
+      const card = localReply(q, FULL).meta.card;
+      expect(card, q).toBeDefined();
+      expect([2, 4], q).toContain(card!.cells.length);
+    }
   });
 
   it("assunto proibido ganha de tudo, inclusive de pergunta com exercício", () => {

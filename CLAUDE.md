@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (289 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (290 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -104,7 +104,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 #/ajustes               SettingsScreen   Operador, dias, unidade, som, efeitos, backup, pontos de restauração
 #/programas             Programs         Lista de programas + modelos prontos (TEMPLATE_GROUPS)
 #/programas/:id         ProgramEditor    Montador de programa (dias, exercícios, volume, teto/sessão)
-#/treinador             Coach (lazy)     Chat com Claude (BYOK) ou documento sem chave
+#/treinador             Coach (lazy)     Chat no layout "Chat IA Cyberpunk" (16-chat.css): respostas prontas sem chave, Claude com chave
 #/online                Online           Conta online: cadastro/login/recuperação, sync, backups da nuvem, privacidade
 #/amigos                Friends          Adicionar amigo, pedidos, feed, comparação de recordes, bloquear e denunciar
 #/primeiro-uso          Onboarding       Assistente (dias, experiência, foco) que sugere um programa; `inApp`
@@ -379,8 +379,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - `data-answers.ts`: `detectExercise` (programa → 34 curados → 569 estendidos, pt e en), `matchData` e
     `dataAnswer` (recorde, última vez, trocar, como faz, o que trabalha, próximo treino, semana do ciclo, músculo
     pronto, séries da semana, peso, minha semana, sequência). Continuação curta ("e no hack?") herda o tipo.
-  - `localchat.ts`: `localReply` → `{ text, meta: LocalMeta, ctx }`; `personalize` põe o peso da pessoa em proteína e
-    ritmo de ganho/perda; `STARTERS`. `CoachChat.local[índice]` guarda o `LocalMeta` (nível, "Ler mais" no Guia
+  - `localchat.ts`: `localReply` → `{ text, meta: LocalMeta, ctx }`; `personalInsight` põe a conta com o peso da
+    pessoa (proteína, ritmo de ganho/perda) em `meta.insight` (bloco "Análise do núcleo"); `meta.card` é o
+    `DataCard` das respostas com dados (cartão de "protocolo", sempre 2 ou 4 células); `STARTERS`. `CoachChat.local[índice]` guarda o `LocalMeta` (nível, "Ler mais" no Guia
     `#/guia?p=<id>`, atalho, perguntas tocáveis, "Levar a pergunta para outro chat"). `isUrgent`: na tela, a urgência
     (dor no peito, falta de ar, desmaio) roda ANTES das intenções, senão "dor no peito" vira proposta de proteger o
     peitoral.
@@ -408,6 +409,8 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - configuração: `CoachConfig`, `MODELS` (com preço), `DEFAULT_CONFIG` (modelo `claude-opus-5-5`),
     `load/saveCoachConfig` (no aparelho a chave vai para a secure storage, não para o kv);
   - conversa: `load/saveCoachChat`, `coachTurn()` (laço de streaming com ferramentas), `pruneExpiredToolResults`;
+    `CoachChat.times` (hora de cada mensagem, `stampTimes`); histórico de conversas no kv `coach-archive`
+    (`archiveChat`, `chatTitle`, `load/saveCoachArchive`, no máximo `ARCHIVE_MAX` = 20), a gaveta lateral da tela;
   - `errorText`.
 - `handoff.ts`: `coachHandoffText(data)`, o documento "sem chave" para colar no Claude, Gemini ou ChatGPT.
 
@@ -564,7 +567,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - **Datas** são strings locais `AAAA-MM-DD` (`dates.ts`). Nada de `Date` em UTC para dia. `trainingDays` vai de 0 =
   domingo a 6 = sábado; `ProgramDay.weekday` usa 1 = segunda.
 
-## 7. Sistema visual (`src/styles/`, 15 arquivos)
+## 7. Sistema visual (`src/styles/`, 16 arquivos)
 
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
@@ -586,6 +589,7 @@ Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/style
 | `13-atmosfera`               | horizonte em perspectiva, cartões que "ligam", LEDs, carga nos botões, varredura biométrica, filtros que quebram linha, blocos recolhidos dos Ajustes (`.set-group`) |
 | `14-rede`                    | portão de identidade (login), perfil do operador (capa, abas Atividade/Telemetria), esquadrão (feed, ranking semanal, sigla)                                         |
 | `15-pecas`                   | peças de jogo (MC0): tokens de setor e de movimento, as seis peças, barra segmentada, mira, famílias de movimento, ruído                                             |
+| `16-chat`                    | treinador no layout do mockup do dono (`.cx-*`): gaveta de conversas, topo fixo, núcleo neural, cartão de protocolo, análise, caixa de mensagem fixa acima das abas  |
 
 **Peças de jogo** (`15-pecas.css` + `components/Pieces.tsx` + `components/Ticker.tsx`; vitrine em `#/kit`, só no
 dev, `screens/Kit.tsx`). Os módulos M1–M6 montam as telas com elas; cada peça tem um papel só:

@@ -50,10 +50,24 @@ export interface ExerciseRef {
   exId?: string;
 }
 
+/** Cartão de números da pessoa (o "protocolo" do chat): 2 ou 4 células, nunca uma sobrando. */
+export interface DataCard {
+  title: string;
+  tag: string;
+  cells: { k: string; v: string; s?: string }[];
+}
+
+/** Corta para 2 ou 4 células (grade de 2 colunas no celular sem célula órfã). */
+function cardOf(title: string, tag: string, cells: DataCard["cells"]): DataCard | undefined {
+  const n = cells.length >= 4 ? 4 : cells.length >= 2 ? 2 : 0;
+  return n ? { title, tag, cells: cells.slice(0, n) } : undefined;
+}
+
 export interface DataReply {
   kind: DataKind;
   text: string;
   route?: string;
+  card?: DataCard;
   /** Entidade da resposta, para continuações ("e no agachamento?"). */
   exercise?: ExerciseRef;
   muscle?: MuscleId;
@@ -260,7 +274,13 @@ function recordeReply(d: AnswerData, ex?: ExerciseRef): DataReply {
     lines.push(`A carga mais pesada que você já usou foi ${formatWeight(h.weight)} ${h.unit} × ${h.reps} (${shortDate(h.date)}).`);
   }
   lines.push(`São ${rec.sessions} ${rec.sessions === 1 ? "treino registrado" : "treinos registrados"} nesse exercício.`);
-  return { kind: "recorde", exercise: ex, route: exerciseRoute(ex), text: lines.join(" ") };
+  const card = cardOf("Telemetria // recorde", "1RM EST.", [
+    { k: "Máximo estimado", v: kg(b.value), s: "1 repetição" },
+    { k: "Série de origem", v: `${formatWeight(b.weight)} × ${b.reps}`, s: shortDate(b.date) },
+    { k: "Mais pesada", v: h ? `${formatWeight(h.weight)} ${h.unit}` : "–", s: h ? `× ${h.reps}` : undefined },
+    { k: "Treinos", v: String(rec.sessions), s: "registrados" },
+  ]);
+  return { kind: "recorde", exercise: ex, route: exerciseRoute(ex), text: lines.join(" "), card };
 }
 
 function ultimaReply(d: AnswerData, ex: ExerciseRef): DataReply {
@@ -406,8 +426,22 @@ function proximoReply(d: AnswerData, muscle?: MuscleId): DataReply {
         : `Nenhum dia do seu programa treina ${MUSCLE_LABEL[muscle].toLowerCase()} direto nas próximas 2 semanas.`,
     };
   }
-  const lines = ahead.slice(0, 3).map((p) => `- **${when(p.date)}:** ${dayById(p.dayId).name}`);
-  return { kind: "proximo", route: "/", text: ["Seus próximos treinos:", ...lines].join("\n") };
+  const first = ahead[0];
+  const card = cardOf(
+    "Protocolo // próximos treinos",
+    `${Math.min(4, ahead.length)}X`,
+    ahead.slice(0, 4).map((p) => ({
+      k: shortDate(p.date),
+      v: dayById(p.dayId).name,
+      s: p.date === d.today ? "hoje" : p.date === addDays(d.today, 1) ? "amanhã" : weekdayName(p.date).toLowerCase(),
+    })),
+  );
+  return {
+    kind: "proximo",
+    route: "/",
+    text: `Próximo treino: **${when(first.date)}**, ${dayById(first.dayId).name}.`,
+    card,
+  };
 }
 
 function semanaReply(d: AnswerData): DataReply {
@@ -418,12 +452,13 @@ function semanaReply(d: AnswerData): DataReply {
   return {
     kind: "semana",
     route: "/relatorio",
-    text: [
-      `Você está na **semana ${w} de 7** (${r.label}). ${r.summary}`,
-      `- **Compostos:** ${r.compounds}`,
-      `- **Isolados:** ${r.isolations}`,
-      w < 7 ? `Semana que vem: ${next.label}.` : "Depois desta, começa um ciclo novo na semana 1.",
-    ].join("\n"),
+    text: `Você está na **semana ${w} de 7** (${r.label}). ${r.summary}`,
+    card: cardOf("Protocolo // mesociclo", `SEMANA ${w}/7`, [
+      { k: "Semana", v: `${w} de 7`, s: r.label },
+      { k: "Próxima", v: w < 7 ? next.label : "Ciclo novo", s: w < 7 ? `semana ${w + 1}` : "semana 1" },
+      { k: "Compostos", v: r.compounds },
+      { k: "Isolados", v: r.isolations },
+    ]),
   };
 }
 
@@ -443,7 +478,13 @@ function prontoReply(d: AnswerData, muscle: MuscleId): DataReply {
       : pct <= 50
         ? `**${MUSCLE_LABEL[muscle]}** está quase lá (${100 - pct}% recuperado). Dá para treinar, talvez com 1 ou 2 repetições a menos. ${lastLine}`
         : `**${MUSCLE_LABEL[muscle]}** ainda está se recuperando (${100 - pct}%). Faltam cerca de ${hours} h. Se puder, treine outro músculo hoje. ${lastLine}`;
-  return { kind: "pronto", muscle, route: "/progresso", text };
+  const card = cardOf("Telemetria // recuperação", MUSCLE_LABEL[muscle].toUpperCase(), [
+    { k: "Recuperado", v: `${100 - pct}%`, s: pct <= 20 ? "pronto" : pct <= 50 ? "quase" : "recuperando" },
+    { k: "Falta", v: hours > 0 ? `~${hours} h` : "0 h", s: "para 100%" },
+    { k: "Último treino", v: shortDate(st.lastDate), s: weekdayName(st.lastDate).toLowerCase() },
+    { k: "Séries", v: String(st.lastSets), s: "no último treino" },
+  ]);
+  return { kind: "pronto", muscle, route: "/progresso", text, card };
 }
 
 function volumeReply(d: AnswerData, muscle: MuscleId): DataReply {
@@ -483,7 +524,19 @@ function pesoReply(d: AnswerData): DataReply {
     else if (goal.pace === "devagar") lines.push("Está mais devagar que o ritmo da meta.");
     else if (goal.pace === "contrario") lines.push("O peso está indo para o lado contrário da meta.");
   }
-  return { kind: "peso", route: "/progresso", text: lines.join(" ") };
+  const cells: DataCard["cells"] = [
+    { k: "Peso atual", v: `${formatWeight(trend.current)} kg`, s: shortDate(trend.currentDate) },
+    { k: "Ritmo", v: `${trend.kgPerWeek > 0 ? "+" : ""}${formatWeight(Math.round(trend.kgPerWeek * 10) / 10)} kg`, s: "por semana" },
+  ];
+  if (goal && d.settings.bodyGoal?.targetKg) {
+    cells.push({ k: "Meta", v: `${formatWeight(d.settings.bodyGoal.targetKg)} kg`, s: goal.reached ? "alcançada" : "alvo" });
+    cells.push({
+      k: "Previsão",
+      v: goal.etaWeeks ? `~${goal.etaWeeks} sem` : "–",
+      s: goal.pace === "no-ritmo" ? "no ritmo" : "fora do ritmo",
+    });
+  }
+  return { kind: "peso", route: "/progresso", text: lines.join(" "), card: cardOf("Telemetria // biometria", "PESO", cells) };
 }
 
 function minhaSemanaReply(d: AnswerData, text: string): DataReply {
@@ -531,7 +584,13 @@ function sequenciaReply(d: AnswerData): DataReply {
       ? `Sequência atual: **${streak} ${streak === 1 ? "semana" : "semanas"}** cumprindo a meta de ${target} treinos (recorde: ${longest}).`
       : `A sequência de semanas está zerada${longest ? ` (seu recorde é ${longest})` : ""}: feche ${target} treinos nesta semana para começar.`,
   ];
-  return { kind: "sequencia", route: "/progresso", text: lines.join(" ") };
+  const card = cardOf("Telemetria // constância", rank.rank, [
+    { k: "Treinos", v: String(finished.length), s: "registrados" },
+    { k: "Posto", v: rank.rank, s: rank.next ? `faltam ${rank.need}` : "máximo" },
+    { k: "Sequência", v: `${streak} sem`, s: `meta ${target}/sem` },
+    { k: "Recorde", v: `${longest} sem`, s: "seguidas" },
+  ]);
+  return { kind: "sequencia", route: "/progresso", text: lines.join(" "), card };
 }
 
 /** Responde uma pergunta sobre os dados da pessoa, ou null se ela não for desse tipo. */

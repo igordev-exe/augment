@@ -1,7 +1,7 @@
 import { ANSWERS, type Answer } from "../../data/answers";
 import { formatWeight } from "../progression";
 import { findAnswer, guardTopic, levelOf } from "./answers";
-import { dataAnswer, latestWeight, type AnswerData, type DataContext } from "./data-answers";
+import { dataAnswer, latestWeight, type AnswerData, type DataCard, type DataContext } from "./data-answers";
 import type { EvidenceLevel } from "../../data/science";
 
 // AUG.CORE — o chat sem chave: junta a trava de assuntos proibidos, as respostas com os dados da pessoa e o buscador
@@ -18,6 +18,10 @@ export interface LocalMeta {
   chips?: string[];
   /** "Não sei": oferece levar a pergunta para outro chat. */
   handoff?: boolean;
+  /** Cartão de "protocolo" com números da pessoa (próximos treinos, semana do ciclo, recorde…). */
+  card?: DataCard;
+  /** Bloco de "análise do núcleo": a conta feita com os dados da pessoa (peso → proteína, ritmo). */
+  insight?: { label: string; text: string };
 }
 
 export interface LocalReply {
@@ -50,38 +54,31 @@ export const STARTERS = [
 
 const DEFAULT_SUGGESTIONS = ["Quantas séries por músculo na semana?", "Quanta proteína devo comer por dia?", "Qual o meu próximo treino?"];
 
-/** Acrescenta a conta com o peso da pessoa nas respostas que dependem dele. */
-function personalize(a: Answer, data: AnswerData): string {
+const WEIGHT_BASED = ["proteina-quanto", "ganhar-massa-comer", "perder-gordura-ritmo"];
+
+/** A conta com o peso da pessoa nas respostas que dependem dele (vira o bloco de análise). */
+export function personalInsight(a: Answer, data: AnswerData): LocalMeta["insight"] {
+  if (!WEIGHT_BASED.includes(a.id)) return undefined;
   const w = latestWeight(data.bodyLog);
+  if (!w) return { label: "Cálculo pessoal", text: "Registre o seu peso em Progresso e eu faço a conta para você." };
   const f = (n: number) => formatWeight(Math.round(n));
-  if (!w) {
-    return ["proteina-quanto", "ganhar-massa-comer", "perder-gordura-ritmo"].includes(a.id)
-      ? `${a.answer}\n\nRegistre o seu peso em Progresso e eu faço a conta para você.`
-      : a.answer;
-  }
+  const kg = (pct: number) => formatWeight(Math.round(w * pct * 10) / 10);
+  const base = `Com o seu peso (~${f(w)} kg):`;
   if (a.id === "proteina-quanto")
-    return `${a.answer}\n\nCom o seu peso (~${f(w)} kg): **${f(w * 1.6)} a ${f(w * 2.2)} g de proteína por dia**.`;
-  if (a.id === "ganhar-massa-comer") {
-    const lo = Math.round(w * 0.002 * 10) / 10;
-    const hi = Math.round(w * 0.005 * 10) / 10;
-    return `${a.answer}\n\nCom o seu peso (~${f(w)} kg): **${formatWeight(lo)} a ${formatWeight(hi)} kg por semana**.`;
-  }
-  if (a.id === "perder-gordura-ritmo") {
-    const lo = Math.round(w * 0.005 * 10) / 10;
-    const hi = Math.round(w * 0.007 * 10) / 10;
-    return `${a.answer}\n\nCom o seu peso (~${f(w)} kg): **${formatWeight(lo)} a ${formatWeight(hi)} kg por semana**.`;
-  }
-  return a.answer;
+    return { label: "Cálculo pessoal", text: `${base} **${f(w * 1.6)} a ${f(w * 2.2)} g de proteína por dia**.` };
+  if (a.id === "ganhar-massa-comer") return { label: "Cálculo pessoal", text: `${base} **${kg(0.002)} a ${kg(0.005)} kg por semana**.` };
+  return { label: "Cálculo pessoal", text: `${base} **${kg(0.005)} a ${kg(0.007)} kg por semana**.` };
 }
 
 function answerReply(a: Answer, data: AnswerData, ctx: DataContext): LocalReply {
   return {
-    text: personalize(a, data),
+    text: a.answer,
     meta: {
       kind: "answer",
       level: levelOf(a),
       principle: a.principle,
       route: a.route,
+      insight: personalInsight(a, data),
       chips: (a.related ?? [])
         .map((id) => BY_ID.get(id))
         .filter((x): x is Answer => !!x)
@@ -109,7 +106,7 @@ export function localReply(text: string, data: AnswerData, ctx: DataContext = {}
   if (d) {
     return {
       text: d.text,
-      meta: { kind: "data", route: d.route },
+      meta: { kind: "data", route: d.route, card: d.card },
       ctx: { lastKind: d.kind, exercise: d.exercise ?? ctx.exercise, muscle: d.muscle ?? ctx.muscle },
     };
   }
