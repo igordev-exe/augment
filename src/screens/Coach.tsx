@@ -31,8 +31,9 @@ import type { DataCard } from "../lib/core/data-answers";
 import { coreReply, STARTERS, type ChatContext, type CoreProposal, type CoreReply, type LocalMeta } from "../lib/core/localchat";
 import { useTimer } from "../lib/timer";
 import { LEVEL_LABEL, type EvidenceLevel } from "../data/science";
-import { addAbsence, db, uid, upsertBodyEntry, upsertConstraint } from "../lib/db";
-import { useBodyLog, useCoreTyping, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { addAbsence, addChatMiss, db, saveChatAliases, uid, upsertBodyEntry, upsertConstraint } from "../lib/db";
+import { forgetAlias, learnAlias } from "../lib/core/learned";
+import { useBodyLog, useChatAliases, useCoreTyping, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
 import { shareOrDownload } from "../lib/files";
 import { addDays, shortDate } from "../lib/dates";
@@ -246,9 +247,10 @@ function LocalExtras({
 }) {
   const links = meta.level || meta.principle || meta.route;
   const chips = onAsk ? (meta.chips ?? []) : [];
-  if (!links && !chips.length && !onHandoff && !onWeb) return null;
+  if (!links && !chips.length && !onHandoff && !onWeb && !meta.understood) return null;
   return (
     <div className="local-extras">
+      {meta.understood && <p className="local-understood">{meta.understood}</p>}
       {links && (
         <div className="local-links">
           {meta.level && (
@@ -312,6 +314,9 @@ export function Coach() {
   const bodyLog = useBodyLog();
   const [settings, updateSettings] = useSettings();
   const [operatorMemory] = useOperatorMemory();
+  const aliases = useChatAliases();
+  /** Última frase que o núcleo não entendeu: se a pessoa tocar numa sugestão, o chat aprende o atalho. */
+  const lastMiss = useRef<string | null>(null);
   const today = useToday();
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<CoachConfig | null>(null);
@@ -430,9 +435,12 @@ export function Coach() {
     }
   }
 
-  async function send(text: string, skipLocal = false) {
+  async function send(text: string, skipLocal = false, fromChip = false) {
     const t = text.trim();
     if (!t || busy) return;
+    // Tocou numa sugestão logo depois de um "não sei"/"você quis dizer": a frase antiga passa a levar a esta pergunta.
+    if (fromChip && lastMiss.current) void saveChatAliases(learnAlias(aliases, lastMiss.current, t, today));
+    lastMiss.current = null;
     setError(null);
     setDraft("");
     setAnsweredLocally(null);
@@ -442,7 +450,12 @@ export function Coach() {
     // Núcleo local em camadas: travas → comandos → intenções → consultas → respostas prontas → papo → saída honesta.
     const local: CoreReply | null = skipLocal
       ? null
-      : coreReply(t, { ...data, bodyLog: bodyLog ?? [] }, localCtx, { timerActive: !!timer.state, now: Date.now() });
+      : coreReply(t, { ...data, bodyLog: bodyLog ?? [], aliases }, localCtx, { timerActive: !!timer.state, now: Date.now() });
+    if (local && (local.layer === "none" || local.layer === "maybe")) {
+      void addChatMiss(t, local.layer, today);
+      lastMiss.current = t;
+    }
+    if (local?.forgetAlias) void saveChatAliases(forgetAlias(aliases));
     // Com chave, papo, "você quis dizer" e "não sei" vão para o treinador completo.
     const keepLocal = local && (!hasKey || !["smalltalk", "maybe", "none"].includes(local.layer));
     if (local && keepLocal) {
@@ -843,7 +856,7 @@ ${t}`,
                   <LocalExtras
                     meta={meta}
                     disabled={busy}
-                    onAsk={last ? (q) => void send(q) : undefined}
+                    onAsk={last ? (q) => void send(q, false, true) : undefined}
                     onHandoff={asked ? () => void handoff(asked) : undefined}
                     onWeb={asked && meta.web && navigator.onLine ? () => searchWeb(asked) : undefined}
                   />

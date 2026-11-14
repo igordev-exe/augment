@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { mergeAliases, mergeMisses, recordMiss, sanitizeAliases, sanitizeMisses, type ChatAlias, type ChatMiss } from "./core/learned";
 import { rememberPrograms, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, NoticeChannel, NoticeSettings, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
@@ -392,6 +393,28 @@ export function uid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+// ---------- O que o chat aprende (AUG.CORE, bloco A do chat potente) ----------
+
+export async function loadChatMisses(): Promise<ChatMiss[]> {
+  return sanitizeMisses((await db.kv.get("chat-misses"))?.value);
+}
+
+/** Soma uma pergunta não entendida ao registro (no aparelho; não sobe ao servidor). */
+export async function addChatMiss(text: string, layer: ChatMiss["layer"], today: string): Promise<void> {
+  await db.transaction("rw", db.kv, async () => {
+    const cur = sanitizeMisses((await db.kv.get("chat-misses"))?.value);
+    await db.kv.put({ key: "chat-misses", value: recordMiss(cur, text, layer, today) });
+  });
+}
+
+export async function loadChatAliases(): Promise<ChatAlias[]> {
+  return sanitizeAliases((await db.kv.get("chat-aliases"))?.value);
+}
+
+export async function saveChatAliases(list: ChatAlias[]): Promise<void> {
+  await db.kv.put({ key: "chat-aliases", value: sanitizeAliases(list) });
+}
+
 // ---------- Memória do Operador (AUG.CORE) ----------
 
 export async function loadOperatorMemory(): Promise<OperatorMemory> {
@@ -461,15 +484,21 @@ export interface Backup {
   programs?: Program[];
   /** Memória declarada do gêmeo digital (restrições temporárias, janela de calibração e histórico de ciclos). */
   operatorMemory?: OperatorMemory;
+  /** Perguntas que o chat não entendeu (só no aparelho e no backup; não sobem ao servidor). */
+  chatMisses?: ChatMiss[];
+  /** Frases que o chat aprendeu a levar para uma pergunta conhecida. */
+  chatAliases?: ChatAlias[];
 }
 
 export async function exportBackup(): Promise<Backup> {
-  const [settings, sessions, bodyLog, programs, operatorMemory] = await Promise.all([
+  const [settings, sessions, bodyLog, programs, operatorMemory, chatMisses, chatAliases] = await Promise.all([
     loadSettings(),
     db.sessions.toArray(),
     loadBodyLog(),
     db.programs.toArray(),
     loadOperatorMemory(),
+    loadChatMisses(),
+    loadChatAliases(),
   ]);
   return {
     app: "augment",
@@ -480,6 +509,8 @@ export async function exportBackup(): Promise<Backup> {
     bodyLog,
     programs,
     operatorMemory,
+    chatMisses,
+    chatAliases,
   };
 }
 
@@ -538,6 +569,8 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
         key: "operator-memory",
         value: sanitizeOperatorMemory(b.operatorMemory),
       });
+      await db.kv.put({ key: "chat-misses", value: sanitizeMisses(b.chatMisses) });
+      await db.kv.put({ key: "chat-aliases", value: sanitizeAliases(b.chatAliases) });
     } else {
       const cur = await loadSettings();
       const merged = sanitizeSettings({
@@ -581,6 +614,9 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
         const mergedMem = mergeOperatorMemory(curMem, sanitizeOperatorMemory(b.operatorMemory));
         await db.kv.put({ key: "operator-memory", value: mergedMem });
       }
+      if (b.chatMisses) await db.kv.put({ key: "chat-misses", value: mergeMisses(await loadChatMisses(), sanitizeMisses(b.chatMisses)) });
+      if (b.chatAliases)
+        await db.kv.put({ key: "chat-aliases", value: mergeAliases(await loadChatAliases(), sanitizeAliases(b.chatAliases)) });
     }
     await db.sessions.bulkPut(sessions);
   });

@@ -8,20 +8,14 @@ import { formatWeight } from "../progression";
 import { planAhead } from "../schedule";
 import { fatiguePct, hoursToReady, muscleStatus } from "../visual";
 import { findAnswer, guardTopic, levelOf } from "./answers";
-import {
-  continuePending,
-  matchCommand,
-  runCommand,
-  type CommandAction,
-  type CommandEnv,
-  type CommandProposal,
-  type PendingCommand,
-} from "./commands";
+import { continuePending, runCommand, type CommandAction, type CommandEnv, type CommandProposal, type PendingCommand } from "./commands";
 import { detectExercise, latestWeight, type AnswerData, type DataCard, type DataContext } from "./data-answers";
 import { glossaryAnswer, libraryAnswer, principleAnswer, type GeneratedReply } from "./generated";
 import { handleIntent, norm, type IntentProposal } from "./intents";
 import { queryAnswer, type QueryContext } from "./query";
 import { prepare } from "./templates";
+import { FORGET_ALIAS, lookupAlias, type ChatAlias } from "./learned";
+import { readCommand, readingLabel } from "./understand";
 
 // AUG.CORE — o chat sem chave, em camadas (a de cima ganha): urgência e assuntos travados → comandos → intenções →
 // consultas aos dados → respostas prontas (com glossário e respostas geradas da biblioteca) → papo → saída honesta.
@@ -46,6 +40,10 @@ export interface LocalMeta {
   card?: DataCard;
   /** Bloco de "análise do núcleo": a conta feita com os dados da pessoa (peso → proteína, ritmo). */
   insight?: { label: string; text: string };
+  /** Frase livre: como o núcleo entendeu o pedido ("Entendi: descanso de 90 s"), para a pessoa conferir. */
+  understood?: string;
+  /** Pergunta que veio de um apelido aprendido (a tela oferece "Esquecer esse atalho"). */
+  alias?: string;
 }
 
 /** Memória curta da conversa: até 3 trocas, 5 minutos. */
@@ -78,6 +76,8 @@ export interface CoreReply extends LocalReply {
   action?: CommandAction;
   /** "Sim"/"não" respondendo a uma proposta aberta. */
   answerProposal?: "yes" | "no";
+  /** "Esquece esse apelido": a tela tira o último aprendido. */
+  forgetAlias?: boolean;
   /** Camada que respondeu (para a medição e o rótulo da tela). */
   layer:
     | "guard"
@@ -339,7 +339,12 @@ const NO = /^(nao|n|nao quero|cancela|cancelar|deixa|deixa pra la|esquece|recusa
  * Uma mensagem, todas as camadas. `env` diz se há timer correndo. A tela aplica `action` na hora (timer) e mostra
  * `proposal` com Aplicar/Recusar; nada daqui grava.
  */
-export function coreReply(text: string, data: AnswerData, prev: ChatContext = {}, env: CommandEnv = {}): CoreReply {
+export function coreReply(
+  text: string,
+  data: AnswerData & { aliases?: ChatAlias[] },
+  prev: ChatContext = {},
+  env: CommandEnv = {},
+): CoreReply {
   const now = env.now ?? data.now ?? Date.now();
   const fresh = prev.at != null && now - prev.at <= TTL && (prev.turns ?? 0) < 3;
   const ctx: ChatContext = fresh ? { ...prev, turns: (prev.turns ?? 0) + 1 } : { count: prev.count, turns: 0 };
@@ -354,6 +359,20 @@ export function coreReply(text: string, data: AnswerData, prev: ChatContext = {}
     const r = localReply(text, data, {});
     return stamp({ ...r, layer: "guard" });
   }
+
+  // Pedido para esquecer o que o chat aprendeu.
+  if (!guard && FORGET_ALIAS.test(prepare(text)))
+    return stamp({
+      text: "Esqueci o último atalho que eu tinha aprendido.",
+      meta: { kind: "command" },
+      ctx,
+      forgetAlias: true,
+      layer: "command",
+    });
+
+  // Frase que a pessoa já ensinou: vai direto para a pergunta escolhida (nunca em assunto travado).
+  const alias = !guard ? lookupAlias(data.aliases, text) : undefined;
+  if (alias) text = alias.to;
 
   const t = prepare(text);
   // "Sim"/"não" respondendo a uma proposta aberta.
@@ -382,12 +401,24 @@ export function coreReply(text: string, data: AnswerData, prev: ChatContext = {}
     if (c) return stamp({ ...commandToReply(c, ctx), layer: "pending" });
   }
 
-  // 2. Comandos.
+  // 2. Comandos: frases-modelo e, se nenhuma casar, a frase livre (campos em qualquer ordem).
   if (!guard) {
-    const m = matchCommand(text);
+    const m = readCommand(text, data);
+    if (m?.ask) {
+      return stamp({
+        text: "Não entendi bem qual dos dois. Toque no que você quis:",
+        meta: { kind: "maybe", chips: m.ask },
+        ctx: { ...ctx, pending: undefined },
+        layer: "maybe",
+      });
+    }
     if (m) {
       const c = runCommand(m, data, text, { ...env, now });
-      return stamp({ ...commandToReply(c, ctx), layer: "command" });
+      const r = commandToReply(c, ctx);
+      // Leitura livre que não grava: diz como entendeu. Gravação já repete os campos na proposta.
+      if (m.free && !c.proposal && !c.pending) r.meta.understood = `Entendi: ${readingLabel(m)}.`;
+      if (alias) r.meta.alias = alias.from;
+      return stamp({ ...r, layer: "command" });
     }
   }
 
@@ -416,6 +447,7 @@ export function coreReply(text: string, data: AnswerData, prev: ChatContext = {}
 
   // 4 a 7. Consultas, respostas prontas, papo e saída honesta.
   const r = localReply(q, data, ctx);
+  if (alias) r.meta = { ...r.meta, alias: alias.from };
   const layer: CoreReply["layer"] =
     r.meta.kind === "guard"
       ? "guard"

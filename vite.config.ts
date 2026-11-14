@@ -52,5 +52,7 @@ export default defineConfig({
   ],
   test: {
     environment: "node",
+    // Cópias do repositório em worktrees locais de outras sessões não entram na medição.
+    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**"],
   },
 });

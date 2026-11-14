@@ -3,7 +3,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { activeProgram, programVersion, rememberSessions, subscribeProgram } from "../data/program";
 import type { BodyEntry, Program, Session, Settings } from "../data/types";
 import { EMPTY_OPERATOR_MEMORY, operatorState, type OperatorMemory, type OperatorState } from "./core/operator";
-import { db, DEFAULT_SETTINGS, loadBodyLog, loadOperatorMemory, loadSettings, saveOperatorMemory, saveSettings } from "./db";
+import type { ChatAlias } from "./core/learned";
+import {
+  db,
+  DEFAULT_SETTINGS,
+  loadBodyLog,
+  loadChatAliases,
+  loadOperatorMemory,
+  loadSettings,
+  saveOperatorMemory,
+  saveSettings,
+} from "./db";
 import { todayISO } from "./dates";
 import { isNative, keepAwake, vibrate } from "./native";
 import { enqueue, isRepeat, makeBubble, remainingWithQueue, toastDuration, type BubbleItem, type ToastFn } from "./bubble";
@@ -51,6 +61,11 @@ export function useOperatorMemory(): [OperatorMemory, (patch: Partial<OperatorMe
     await saveOperatorMemory(patch);
   }, []);
   return [m ?? EMPTY_OPERATOR_MEMORY, update];
+}
+
+/** Frases que o chat aprendeu (apelidos). */
+export function useChatAliases(): ChatAlias[] {
+  return useLiveQuery(() => loadChatAliases(), []) ?? [];
 }
 
 export function useOperatorState(

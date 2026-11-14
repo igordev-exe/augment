@@ -65,6 +65,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                                       |
 | `npm run android:open`                                     | abre o Android Studio                                                                                                                      |
 | `npm run coach -- backup.json`                             | debrief do treinador no terminal (`scripts/coach.ts`)                                                                                      |
+| `npm run misses -- backup.json`                            | perguntas que o chat sem chave não entendeu, da mais repetida para a menos (`scripts/misses.ts`)                                           |
 | `npm run backtest -- backup.json`                          | erro das previsões do núcleo ao vivo num backup real, base × vivo (`scripts/backtest.ts`)                                                  |
 | `python -I scripts/import-exercise-db.py <exercises.json>` | regenera a biblioteca estendida (free-exercise-db)                                                                                         |
 | `python scripts/android-assets.py`                         | ícones e splash do Android                                                                                                                 |
@@ -239,14 +240,14 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 **`db.ts`**: Dexie `"augment"`.
 
-| Parte         | Conteúdo                                                                                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tabelas       | `sessions` (`id, date, dayId, status`); `kv` (`key`: `settings`, `body-log`, `coach-config`, `coach-chat`, `online`, `online-workouts`, `error-log`, `operator-memory`); `programs` (`id`) |
-| Migrações     | v2 cria `programs` com o PPL e faz backfill dos snaps; v3 faz backfill dos retratos de dia                                                                                                 |
-| Configurações | `DEFAULT_SETTINGS` (operator `""`; `mesoStart` = segunda da semana atual); `sanitizeSettings`, `loadSettings`, `saveSettings`                                                              |
-| Programas     | `loadActiveProgram`, `saveProgram`, `activateProgram`, `deleteProgram`, `backfillSnapshots`                                                                                                |
-| Corpo         | `loadBodyLog`, `saveBodyLog`, `upsertBodyEntry`, `deleteBodyEntry`                                                                                                                         |
-| Backup        | `exportBackup`, `isBackup`, `importBackup(b, "merge" \| "replace")`; `uid()`                                                                                                               |
+| Parte         | Conteúdo                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tabelas       | `sessions` (`id, date, dayId, status`); `kv` (`key`: `settings`, `body-log`, `coach-config`, `coach-chat`, `online`, `online-workouts`, `error-log`, `operator-memory`, `chat-misses`, `chat-aliases`); `programs` (`id`) |
+| Migrações     | v2 cria `programs` com o PPL e faz backfill dos snaps; v3 faz backfill dos retratos de dia                                                                                                                                |
+| Configurações | `DEFAULT_SETTINGS` (operator `""`; `mesoStart` = segunda da semana atual); `sanitizeSettings`, `loadSettings`, `saveSettings`                                                                                             |
+| Programas     | `loadActiveProgram`, `saveProgram`, `activateProgram`, `deleteProgram`, `backfillSnapshots`                                                                                                                               |
+| Corpo         | `loadBodyLog`, `saveBodyLog`, `upsertBodyEntry`, `deleteBodyEntry`                                                                                                                                                        |
+| Backup        | `exportBackup`, `isBackup`, `importBackup(b, "merge" \| "replace")`; `uid()`                                                                                                                                              |
 
 > Há um ciclo de import entre `db.ts` e `restore.ts`.
 
@@ -405,7 +406,19 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     `prepare` tira cortesia ("por favor", "ei"); `templateSet`. `readers.ts`: `readNumber` (algarismo e por extenso
     até 999, "meia", "e meio"), `readUnit`, `readLoad`, `readDuration`, `findPeriod`/`readPeriod` (hoje, ontem, essa
     semana, mês passado, "em outubro", últimos N dias, esse ciclo, esse ano, ano passado, sempre).
-  - `commands.ts`: 24 comandos (navegar, timer, treino, corpo, contas, calendário, ajustes); `matchCommand`,
+  - `understand.ts` (bloco A de `docs/prompt-chat-potente.md`): `readCommand` = frases-modelo no texto como veio →
+    no texto limpo (`tidy`: "tipo", "né", "hj", "acabei de fazer" → "fiz") e corrigido (`fixTypos`, 1 edição, só
+    contra o vocabulário dos modelos, das ações e dos exercícios curados) → frase livre (`freeReadings`: palavra de
+    ação + campos em qualquer ordem, "80x8", "8 reps 80 kg"). Duas leituras próximas = `ask` (botões); frase que
+    começa negando, pergunta (`?`, "é bom", "ou", "tenho que") e gravação com "não" em qualquer ponto nunca executam.
+    Leitura livre sem gravação mostra `meta.understood` ("Entendi: descanso de 120 s").
+  - `learned.ts`: perguntas não entendidas (`recordMiss`, kv `chat-misses`, 200, no backup, não sobe ao servidor;
+    `npm run misses -- backup.json`) e apelidos (`learnAlias`/`lookupAlias`, kv `chat-aliases`, 300): tocar numa
+    sugestão depois de "não sei"/"você quis dizer" ensina a frase; "esquece esse apelido" → `forgetAlias`. A trava de
+    saúde roda antes do apelido.
+  - `commands.ts`: 25 comandos (navegar, timer, treino, "próxima série" do treino aberto, corpo, contas, calendário,
+    ajustes); "anota 8" com treino aberto usa a carga já posta na série; série fora do normal sai com "Confere"
+    (`suspiciousSet`); `findScreenIn`, `commandVocabulary`; `matchCommand`,
     `runCommand` → texto + `CommandAction` (timer, sem gravar) ou `CommandProposal` (série, troca, peso, ajuste);
     `WRITE_COMMANDS`; campo faltando vira `PendingCommand` (`continuePending`, expira em 5 min).
   - `query.ts`: gramática métrica × alvo (exercício, músculo, dia do programa, tudo) × período × conta (último,
@@ -420,6 +433,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     ao tocar; nunca em assunto travado).
   - Memória curta (`ChatContext`): eixos da última consulta, entidade, pedido em aberto, proposta aberta; até 3 trocas
     ou 5 minutos. "não, o inclinado" vira continuação.
+  - Medição do bloco A: `free.golden.ts` (109 frases livres) + `understand.test.ts` (partida 53,2% → 99,1% de pedido
+    certo; paráfrase mecânica ≥ 95%; 5.000 mensagens aleatórias sem gravação com "não" nem vazamento da trava) e
+    `learned.test.ts`. Dados de teste em `chat.fixture.ts`.
   - Medição do chat amplo: `chat.golden.ts` + `chat.test.ts` (87 comandos, 100 consultas com conta independente, 60
     de papo, 60 fora do escopo, 35 travas, 172 respostas prontas que não podem ser sequestradas) e `readers.test.ts`.
   - `data/answers.ts`: `ANSWERS` (136 respostas prontas: treino, alimentação, recuperação, app, iniciante; 4+ `asks`,
@@ -624,6 +640,10 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - `prompt-nucleo-vivo.md`: análise + dois prompts mestres ainda não implementados: núcleo ao vivo no treino
     (previsão da próxima série, descanso que acompanha, uma fala só no HUD, backtest) e chat amplo (comandos por
     frases-modelo, gramática de consultas, papo, saída honesta);
+  - `prompt-chat-potente.md`: análise + prompt mestre em 5 blocos (A–E); **bloco A feito** (frase livre, registro,
+    apelidos; os filtros e o tempo falado das consultas, I4 e I5, ficaram para depois), B–E por fazer: frase livre,
+    pedido composto, contexto longo, desfazer, "por quê", "e se", conversas guiadas, memória do que foi dito e mais
+    respostas. Voz fica fora;
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.
 - `.claude/skills/treinador`: skill de debrief a partir de um backup.

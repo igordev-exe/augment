@@ -4,7 +4,8 @@ import { exOf, programDays, shortName } from "../../data/program";
 import type { Session, Settings, Unit } from "../../data/types";
 import { addDays, daysBetween, longDate, mondayOf, shortDate } from "../dates";
 import { weekFor } from "../mesocycle";
-import { barWeightIn, formatWeight, platesForBarbell, setE1rm, workSets } from "../progression";
+import { barWeightIn, formatWeight, platesForBarbell, setE1rm, toKg, workSets } from "../progression";
+import { suspiciousSet } from "../sanity";
 import { planAhead } from "../schedule";
 import { detectExercise, type AnswerData, type DataCard, type ExerciseRef } from "./data-answers";
 import { hasAny, norm } from "./intents";
@@ -31,6 +32,7 @@ export type CommandId =
   | "conta-1rm"
   | "conta-anilhas"
   | "conta-aritmetica"
+  | "treino-proxima"
   | "cal-hoje"
   | "cal-hora"
   | "cal-deload"
@@ -88,6 +90,8 @@ export interface CommandMatch {
   values: Record<string, unknown>;
   /** Casou um modelo sem os campos (pedido incompleto). */
   partial?: boolean;
+  /** Duas leituras próximas: a tela pergunta com estes botões em vez de executar. */
+  ask?: string[];
 }
 
 /** O que o comando precisa saber da tela. */
@@ -130,6 +134,18 @@ function readScreen(raw: string) {
     .replace(/^(o|a|os|as|meu|minha|meus|minhas)\s+/, "")
     .trim();
   return SCREENS.find((s) => s.words.includes(t));
+}
+
+/** Tela citada em qualquer ponto da frase ("cade meus graficos"). "hoje" e "treino" sozinhos não contam. */
+export function findScreenIn(text: string): (typeof SCREENS)[number] | undefined {
+  const t = ` ${clean(text)} `;
+  let best: { s: (typeof SCREENS)[number]; len: number } | undefined;
+  for (const s of SCREENS)
+    for (const w of s.words) {
+      if (w === "hoje" || w === "treino" || w === "conta" || w === "programa") continue;
+      if (t.includes(` ${w} `) && (!best || w.length > best.len)) best = { s, len: w.length };
+    }
+  return best?.s;
 }
 
 /** Pedaço que é só o nome de um exercício (sem palavra de pergunta: "meu recorde no supino" não é atalho). */
@@ -212,6 +228,16 @@ const DEFS: Entry[] = [
     ],
   },
   {
+    id: { cmd: "treino-proxima" },
+    templates: [
+      "(qual|como) [e|eh|vai ser|fica] [a|minha] proxima serie",
+      "[e a] proxima serie",
+      "(o que|que) (vem|faco|falta) agora",
+      "(quanto|quantas series|quantos exercicios) (falta|faltam) [no treino|pra acabar|para acabar|hoje]",
+      "(qual|que) [e] [o] proximo exercicio",
+    ],
+  },
+  {
     id: { cmd: "treino-trocar" },
     templates: [
       "(troca|trocar|troque|substitui|substituir|muda|mudar) [o|a] {exercicio} (hoje|agora|neste treino|nesse treino|so hoje|por hoje|pra hoje)",
@@ -284,6 +310,7 @@ const DEFS: Entry[] = [
       "[qual|quanto] [e|eh|o|meu|da] [o|meu] (1rm|rm|maximo|max|carga maxima|uma repeticao maxima) [estimado] [de|com|pra|para|se eu faco|se fiz|se eu fiz|fazendo|levantando] {carga} (por|x|com|vezes) {reps} [reps|repeticoes|rep|vezes]",
       "{carga} (por|x) {reps} [reps|repeticoes|vezes] (da|e|eh|equivale a|vale) [quanto|qual] [de] (1rm|rm|maximo)",
       "{carga} (por|x) {reps} [reps|repeticoes] (1rm|rm)",
+      "[se] [eu] (fiz|faco|fizer|fazendo|levantei|levanto) {carga} (por|x|com) {reps} [reps|repeticoes|vezes] (qual|quanto) [e|eh|seria|fica] [o] [meu] (maximo|1rm|rm|max)",
     ],
   },
   {
@@ -293,6 +320,7 @@ const DEFS: Entry[] = [
       "(quanto|o que) (coloco|ponho|boto|eu coloco|eu ponho|vai) [de cada lado|em cada lado|por lado|na barra] (pra|para|com|de) {carga}",
       "(como monto|montar|monta|montagem) {carga} [na barra]",
       "{carga} na barra [olimpica] [fica como|como fica|quanto de cada lado]",
+      "como fica {carga} na barra [olimpica]",
       "(anilhas|anilha) {carga}",
     ],
   },
@@ -305,6 +333,7 @@ const DEFS: Entry[] = [
     templates: [
       "[<quanto>] {numero} (%|por cento|porcento|porcentos) (de|do|da) {carga}",
       "(calcula|calcular|faz|me da) {numero} (%|por cento|porcento) (de|do|da) {carga}",
+      "{numero} (%|por cento|porcento) (de|do|da) {carga} (da|e|eh|fica|sao) quanto",
     ],
   },
   {
@@ -342,6 +371,7 @@ const DEFS: Entry[] = [
       "(falta|faltam) [quanto|quantos dias|quantas semanas|muito] (pro|para o|pra|ate o) deload",
       "[o] deload (e|eh|vai ser|cai) quando",
       "(proximo|proxima semana de) deload",
+      "[esta|ta|to|estou] (perto|longe) [do|de|para o] deload",
     ],
   },
   {
@@ -352,6 +382,8 @@ const DEFS: Entry[] = [
       "quantas semanas faltam [no|do|pro fim do] [ciclo|meso|mesociclo]",
       "(fim|final) do (ciclo|meso|mesociclo) [e|eh] quando",
       "quando (comeca|começa) [o] (proximo|novo) (ciclo|meso|mesociclo)",
+      "[o|esse|meu|este] (ciclo|meso|mesociclo) (acaba|termina|fecha) quando",
+      "quantas semanas (pro|para o|pra|ate o) (fim|final) do (ciclo|meso|mesociclo)",
     ],
   },
   {
@@ -359,16 +391,24 @@ const DEFS: Entry[] = [
     templates: [
       "(muda|mudar|troca|trocar|passa|passar|usa|usar|coloca|bota|deixa|deixar|altera|alterar) [tudo|o app|as cargas|a unidade|os pesos|unidade] (pra|para|em|no|por) {unidade}",
       "(quero|prefiro) (usar|ver|tudo em|em) {unidade}",
+      "(quero|prefiro) (usar|ver) [tudo] [em] {unidade}",
       "(unidade|cargas|pesos) em {unidade}",
     ],
   },
-  { id: { cmd: "som-liga" }, templates: ["<ligar> [o] (som|audio|bip|beep|apito)", "(com|quero) som"] },
+  { id: { cmd: "som-liga" }, templates: ["<ligar> [o|esse|esse o] (som|audio|bip|beep|apito)", "(com|quero) som"] },
   {
     id: { cmd: "som-desliga" },
-    templates: ["<desligar> [o] (som|audio|bip|beep|apito)", "(modo silencioso|silencio|silenciar)", "(sem|nao quero) (som|barulho|bip)"],
+    templates: [
+      "<desligar> [o|esse|essa] (som|audio|bip|beep|apito)",
+      "(modo silencioso|silencio|silenciar)",
+      "(sem|nao quero) (som|barulho|bip)",
+    ],
   },
-  { id: { cmd: "vibra-liga" }, templates: ["<ligar> [a] (vibracao|vibrar)", "(quero|pode) vibrar"] },
-  { id: { cmd: "vibra-desliga" }, templates: ["<desligar> [a] (vibracao|vibrar)", "(sem|nao quero) (vibracao|vibrar)", "para de vibrar"] },
+  { id: { cmd: "vibra-liga" }, templates: ["<ligar> [a|essa] (vibracao|vibrar)", "(quero|pode) vibrar", "(quero|pode) que vibre"] },
+  {
+    id: { cmd: "vibra-desliga" },
+    templates: ["<desligar> [a] (vibracao|vibrar)", "(sem|nao quero) (vibracao|vibrar)", "para de vibrar [o celular|o telefone]"],
+  },
 ];
 
 const SET = templateSet(DEFS, RULES);
@@ -386,6 +426,17 @@ export function matchCommand(text: string): CommandMatch | null {
   const m = SET.match(spaced(text), READERS);
   if (!m) return null;
   return { id: m.id.cmd, values: m.values, partial: m.id.partial };
+}
+
+/** Palavras dos modelos (para corrigir erro de digitação na frase livre). */
+export function commandVocabulary(): string[] {
+  const words = new Set<string>();
+  const add = (src: string) => {
+    for (const w of clean(src.replace(/\{[^}]*\}|<[^>]*>/g, " ").replace(/[()[\]|]/g, " ")).split(" ")) if (w.length >= 4) words.add(w);
+  };
+  for (const d of DEFS) d.templates.forEach(add);
+  Object.values(RULES).forEach(add);
+  return [...words];
 }
 
 /** Quantos modelos existem (para a medição). */
@@ -425,9 +476,41 @@ function ask(id: CommandId, values: Record<string, unknown>, text: string, env: 
   return { id, text, pending: { id, values, at: env.now ?? Date.now() } };
 }
 
+/** Próxima série de trabalho do treino aberto (exercício em foco = o primeiro com série por fazer). */
+function nextPending(s: Session) {
+  for (const e of s.exercises) {
+    const set = e.sets.find((x) => x.kind === "work" && !x.done);
+    if (set) return { e, set };
+  }
+  return undefined;
+}
+
+/** Maior carga de trabalho já feita nesse exercício, em kg (para a trava contra erro de digitação). */
+function maxKgOf(d: AnswerData, exId: string): number | undefined {
+  let max: number | undefined;
+  for (const s of d.sessions)
+    if (s.status === "done")
+      for (const e of s.exercises)
+        if (e.exId === exId)
+          for (const x of workSets(e))
+            if (x.weight != null) {
+              const kg = toKg(x.weight, e.unit);
+              if (max == null || kg > max) max = kg;
+            }
+  return max;
+}
+
 function logSet(d: AnswerData, values: Record<string, unknown>, env: CommandEnv): CommandReply {
   const reps = values.reps as number | undefined;
-  const carga = values.carga ? load(values.carga) : undefined;
+  let carga = values.carga ? load(values.carga) : undefined;
+  // Treino aberto e só as reps ("anota 8"): vale a carga já posta na próxima série (a sugerida ou a digitada).
+  const open = activeSession(d);
+  const pending = open && nextPending(open);
+  let usedSuggested = false;
+  if (reps != null && !carga && pending?.set.weight != null) {
+    carga = { value: pending.set.weight, unit: pending.e.unit };
+    usedSuggested = true;
+  }
   if (reps == null && !carga) return ask("treino-anotar", values, "Quantas repetições e com quanto? Por exemplo: **8 com 80**.", env);
   if (reps == null) return ask("treino-anotar", values, `Com ${formatWeight(carga!.value)}: quantas repetições?`, env);
   if (!carga) return ask("treino-anotar", values, `${reps} repetições com quanto de carga?`, env);
@@ -449,9 +532,15 @@ function logSet(d: AnswerData, values: Record<string, unknown>, env: CommandEnv)
     const weight =
       carga.unit && carga.unit !== e.unit ? Math.round((carga.unit === "lb" ? carga.value * LB : carga.value / LB) * 2) / 2 : carga.value;
     const n = workSets(e).length + 1;
+    const odd = suspiciousSet({ weight, reps }, e.unit, maxKgOf(d, e.exId));
+    const notes = [
+      unit !== e.unit ? ` (convertido de ${formatWeight(carga.value)} ${unit})` : "",
+      usedSuggested ? " Usei a carga que já estava na série." : "",
+      odd ? ` **Confere:** ${odd}` : "",
+    ].join("");
     return {
       id: "treino-anotar",
-      text: `Anotar **${reps} × ${formatWeight(weight)} ${e.unit}** em **${name}**, série ${n}?${unit !== e.unit ? ` (convertido de ${formatWeight(carga.value)} ${unit})` : ""}`,
+      text: `Anotar **${reps} × ${formatWeight(weight)} ${e.unit}** em **${name}**, série ${n}?${notes}`,
       route: `/treino/${s.id}`,
       routeLabel: "Abrir o treino",
       proposal: {
@@ -468,6 +557,31 @@ function logSet(d: AnswerData, values: Record<string, unknown>, env: CommandEnv)
   return {
     id: "treino-anotar",
     text: "Todas as séries de trabalho de hoje já estão marcadas. Para uma série a mais, use o treino.",
+    route: `/treino/${s.id}`,
+    routeLabel: "Abrir o treino",
+  };
+}
+
+function nextSetReply(d: AnswerData): CommandReply {
+  const s = activeSession(d);
+  if (!s) return { id: "treino-proxima", text: "Não há treino aberto. Para ver o de hoje: **qual o meu próximo treino?**" };
+  const p = nextPending(s);
+  if (!p)
+    return {
+      id: "treino-proxima",
+      text: "Todas as séries de trabalho de hoje estão feitas.",
+      route: `/treino/${s.id}`,
+      routeLabel: "Abrir o treino",
+    };
+  const ex = exOf(p.e);
+  const name = p.e.alt ?? (ex ? shortName(ex) : p.e.exId);
+  const n = workSets(p.e).length + 1;
+  const left = s.exercises.reduce((k, e) => k + e.sets.filter((x) => x.kind === "work" && !x.done).length, 0);
+  const range = ex ? `${ex.reps[0]}–${ex.reps[1]} reps` : "";
+  const loadTxt = p.set.weight != null ? `${formatWeight(p.set.weight)} ${p.e.unit}` : "carga livre";
+  return {
+    id: "treino-proxima",
+    text: `Próxima: **${name}**, série ${n}: **${loadTxt}**${range ? `, ${range}` : ""}. Faltam ${left} ${left === 1 ? "série" : "séries"} de trabalho hoje.`,
     route: `/treino/${s.id}`,
     routeLabel: "Abrir o treino",
   };
@@ -692,6 +806,8 @@ export function runCommand(m: CommandMatch, d: AnswerData, text: string, env: Co
     }
     case "treino-anotar":
       return logSet(d, v, env);
+    case "treino-proxima":
+      return nextSetReply(d);
     case "treino-trocar":
       return swap(d, v.exercicio as ExerciseRef);
     case "corpo-peso":
