@@ -59,7 +59,7 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 | Comando                                                    | O que faz                                                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (290 testes) |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (293 testes) |
 | `npm run format`                                           | prettier --write                                                                                                           |
 | `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
 | `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
@@ -98,14 +98,15 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 #/historico             History          Calendário e lista de sessões            ← aba "Histórico"
 #/progresso             Progress         Fadiga, séries/músculo, atributos, gráficos, biometria ← aba "Progresso"
 #/relatorio[/:week]     Report           Relatório semanal / do mesociclo
-#/exercicios            Exercises        Biblioteca (busca, filtro por equipamento) ← aba "Exercícios"
+#/exercicios            Exercises        Biblioteca (busca, filtro por equipamento) + botão holográfico do Guia ← aba "Exercícios"
 #/exercicios/:libId     ExerciseDetail   Execução, fotos, vídeo, histórico, "Adicionar ao programa"
-#/guia                  Guide            Princípios científicos com atalhos p/ exercícios ← aba "Guia"
+#/guia                  Guide            Princípios (?p=<princípio>, ?s=<seção>); abre pelo GuideHolo de Exercícios (a aba acende)
 #/ajustes               SettingsScreen   Operador, dias, unidade, som, efeitos, backup, pontos de restauração
 #/programas             Programs         Lista de programas + modelos prontos (TEMPLATE_GROUPS)
 #/programas/:id         ProgramEditor    Montador de programa (dias, exercícios, volume, teto/sessão)
 #/treinador             Coach (lazy)     Chat no layout "Chat IA Cyberpunk" (16-chat.css): respostas prontas sem chave, Claude com chave
 #/online                Online           Conta online: cadastro/login/recuperação, sync, backups da nuvem, privacidade
+#/perfil                Online asTab     Aba "Perfil": perfil na rede ou, sem conta, o do aparelho + convite ← aba "Perfil"
 #/amigos                Friends          Adicionar amigo, pedidos, feed, comparação de recordes, bloquear e denunciar
 #/primeiro-uso          Onboarding       Assistente (dias, experiência, foco) que sugere um programa; `inApp`
 #/privacidade           PrivacyPolicy    Política de privacidade e regras de convivência
@@ -126,8 +127,8 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 ├──────────────────────────────┤
 │ TimerBar (só com descanso)   │  fixa, acima da nav; 2 linhas; .timer-actions quebra
 ├──────────────────────────────┤
-│ nav: Treino Histórico        │  5 abas, --nav-h 66px
-│      Progresso Exercícios Guia│
+│ nav: Treino Histórico        │  5 abas, --nav-h 66px; Perfil = avatar da persona
+│      Progresso Exercícios Perfil│  com LED violeta se há pedido de amizade
 └──────────────────────────────┘
 BootScreen por cima de tudo ao abrir: completo (~3,6 s) na 1ª vez do dia, curto (~1,5 s) depois, nenhum com
 reduced-motion. Ver lib/brand.ts → bootModeFor/readBootMode/markBootDone.
@@ -444,6 +445,8 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 | `RankRow`, `AchievementGrid`                                 | posto com barra até o próximo (recompensa ao subir) e conquistas em hexágonos com painel de detalhe                                                                                                             |
 | `OperatorProfile`                                            | perfil da conta online: cartão limpo, abas Atividade/Telemetria/Conta, `WorkoutData` (3 números numa caixa)                                                                                                     |
 | `Ticker`                                                     | número que conta até o valor (família "leitura"; respeita reduzir movimento)                                                                                                                                    |
+| `Reactions`                                                  | emojis próprios em pixel 12×12 (`REACTION_ART`, `ReactionEmoji`) e `ReactionBar` (fichas com contagem + seletor holográfico 4×2) no feed dos Amigos                                                             |
+| `GuideHolo`                                                  | botão holográfico flutuante em Exercícios: painel com 6 atalhos de seção e "Abrir o Guia completo"                                                                                                              |
 
 ### `src/screens/`
 
@@ -470,7 +473,8 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - Recordes: `putRecords` (guarda sempre o MAIOR), `percentiles` (só mostra com ≥ `LIMITS.minOthers` = 5 outros;
     empate conta metade; respeita `share_percentiles`; com perfil, devolve também `group` = mesma faixa de sexo e
     peso ±10%, e `rel` = 1RM ÷ peso corporal), `friendsRanking`, `friendRecords`.
-  - Treinos e backup: `putActivity`, `feed` (amigos, 30 dias), `putBackup` (pedaços de 1,5 MB; ignora repetido; guarda
+  - Treinos e backup: `putActivity`, `feed` (amigos e os seus, 30 dias, com `reactions` e `mine`), `react` (`POST /feed/react`: uma reação por
+    pessoa por treino, só amigos ou o dono, emoji de `REACTIONS`), `putBackup` (pedaços de 1,5 MB; ignora repetido; guarda
     5), `getBackup`.
 - `protocol.ts`: tipos `Me`, `PublicUser`, `AuthResponse`, `RecordIn`, `Percentile`, `RankRow`, `ActivityIn`,
   `FeedItem`, `FriendsResponse` e `BackupMeta`, mais `LIMITS` e `USERNAME_RE`. **O app importa este arquivo**:
@@ -484,7 +488,8 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - `worker.ts`: entrada no Workers.
 - Tabelas em `migrations/0001_init.sql`: `users`, `auth_tokens` (só o hash do token), `friendships` (par a<b),
   `records` (lib, e1rm/load em kg), `activity`, `backups` + `backup_chunks`, `rate_limits`. Depois: `0002` `workouts`,
-  `0003` `error_reports`, `0004` `profiles`, `blocks` e `reports`.
+  `0003` `error_reports`, `0004` `profiles`, `blocks` e `reports`, `0005` `reactions` (apagada em `wipeUser` e no bloqueio).
+  No Cloudflare, aplique com `npx wrangler d1 migrations apply augment --remote` antes do deploy.
 
 **App** (`src/lib/online/`):
 
@@ -716,7 +721,7 @@ entre duas soluções, vence a que obedece mais regras:
   - novos campos no contrato vão em `server/src/protocol.ts`;
   - SQL novo precisa rodar no D1 **e** no `node:sqlite`. Use placeholders `?`/`?N`, nunca valores interpolados.
     `batch` é tudo ou nada;
-  - mudou o schema? Crie a próxima `server/migrations/000N_*.sql` (hoje vão até a `0004`), só com
+  - mudou o schema? Crie a próxima `server/migrations/000N_*.sql` (hoje vão até a `0005`), só com
     `CREATE ... IF NOT EXISTS` (o servidor Node roda todas a cada início); nunca edite as já aplicadas. Dado novo
     por pessoa vai em tabela própria (como `profiles`), não em `ALTER TABLE`;
   - toda tabela nova com `user_id` entra em `wipeUser` (apagar conta).

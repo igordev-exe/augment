@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { exerciseImages } from "../components/ExerciseDemo";
+import { GuideHolo } from "../components/GuideHolo";
 import { whyLabel } from "../components/NudgeList";
 import { LIBRARY, LIB_BY_ID, LIB_MUSCLES } from "../data/library";
 import { EQUIP_LABEL, EXTENDED, EXT_BY_ID } from "../data/library-extended";
@@ -205,6 +206,7 @@ export function Exercises() {
       {full && shown.length > 120 && (
         <p className="small muted">Mostrando 120 de {shown.length}. Use a busca ou os filtros para achar o resto.</p>
       )}
+      <GuideHolo />
     </div>
   );
 }

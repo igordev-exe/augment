@@ -88,7 +88,7 @@ export function OperatorProfile({
               <span className="op-name">{user.displayName}</span>
               <span className="op-rank">{rankOf(done.length)}</span>
             </h2>
-            <span className="op-handle">@{user.username}</span>
+            {user.username && <span className="op-handle">@{user.username}</span>}
           </div>
         </div>
         <RankRow done={done.length} />

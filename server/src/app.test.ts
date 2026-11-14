@@ -157,6 +157,48 @@ describe("amigos", () => {
     // Recordes de quem não é amigo: proibido.
     expect((await call("GET", `/users/${d.user.id}/records`, { token: a.token })).status).toBe(403);
   });
+
+  it("reações: uma por pessoa, troca, tira, só amigos, e somem ao bloquear e ao apagar a conta", async () => {
+    const a = await signup("rui");
+    const b = await signup("sara");
+    const c = await signup("tais");
+    const stranger = await signup("ugo");
+    await befriend(a, b);
+    await befriend(a, c);
+    await call("PUT", "/activity", {
+      token: a.token,
+      body: { activity: [{ id: "w1", date: "2027-01-10", title: "Pull A", sets: 16, volumeKg: 4800, minutes: 55, prs: 1 }] },
+    });
+    now = Date.parse("2027-01-12T12:00:00Z");
+    const react = (who: AuthResponse, emoji: string) =>
+      call<{ reactions: Record<string, number>; mine?: string }>("POST", "/feed/react", {
+        token: who.token,
+        body: { owner: a.user.id, activity: "w1", emoji },
+      });
+    expect((await react(b, "fogo")).data).toMatchObject({ reactions: { fogo: 1 }, mine: "fogo" });
+    await react(c, "fogo");
+    // Trocar de emoji substitui (uma reação por pessoa).
+    expect((await react(b, "forca")).data.reactions).toEqual({ fogo: 1, forca: 1 });
+    // Emoji fora da lista, quem não é amigo e treino que não existe: recusados.
+    expect((await react(b, "bomba")).status).toBe(400);
+    expect((await react(stranger, "fogo")).status).toBe(403);
+    expect(
+      (await call("POST", "/feed/react", { token: b.token, body: { owner: a.user.id, activity: "nao-existe", emoji: "fogo" } })).status,
+    ).toBe(404);
+    // O dono vê os próprios treinos no feed, com as reações recebidas.
+    const mine = (await call<{ feed: FeedItem[] }>("GET", "/feed", { token: a.token })).data.feed;
+    expect(mine[0]).toMatchObject({ id: "w1", reactions: { fogo: 1, forca: 1 } });
+    expect(mine[0].mine).toBeUndefined();
+    // Tirar a reação (emoji vazio).
+    expect((await react(c, "")).data.reactions).toEqual({ forca: 1 });
+    // Bloquear apaga as reações entre os dois.
+    await call("POST", "/users/block", { token: a.token, body: { userId: b.user.id } });
+    expect((await call<{ feed: FeedItem[] }>("GET", "/feed", { token: a.token })).data.feed[0].reactions).toBeUndefined();
+    // Apagar a conta leva as reações junto.
+    await react(c, "raio");
+    await call("POST", "/me/delete", { token: c.token, body: { password: "senha-forte-1" } });
+    expect((await call<{ feed: FeedItem[] }>("GET", "/feed", { token: a.token })).data.feed[0].reactions).toBeUndefined();
+  });
 });
 
 describe("recordes e comparação", () => {

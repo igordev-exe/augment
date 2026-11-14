@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import type { FeedItem, FriendsResponse, PublicUser, RecordIn } from "../../server/src/protocol";
+import type { FeedItem, FriendsResponse, PublicUser, ReactionId, RecordIn } from "../../server/src/protocol";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
+import { ReactionBar } from "../components/Reactions";
 import { UserModeration } from "../components/UserModeration";
 import { libraryName } from "../data/library-extended";
 import { avatarSrc } from "../data/personas";
@@ -16,6 +17,7 @@ import {
   getBlocked,
   getFeed,
   getFriends,
+  reactToPost,
   removeFriend,
   requestFriend,
   searchUsers,
@@ -115,6 +117,26 @@ export function Friends() {
     }
   }
 
+  /** Reação na hora (otimista); a resposta do servidor corrige a contagem. Sem rede, volta como estava. */
+  async function reactTo(it: FeedItem, emoji: ReactionId | "") {
+    const patch = (fn: (x: FeedItem) => FeedItem) =>
+      setFeed((cur) => (cur ?? items).map((x) => (x.user.id === it.user.id && x.id === it.id ? fn(x) : x)));
+    const before = { reactions: it.reactions, mine: it.mine };
+    patch((x) => {
+      const counts = { ...(x.reactions ?? {}) };
+      if (x.mine) counts[x.mine] = Math.max(0, (counts[x.mine] ?? 1) - 1);
+      if (emoji) counts[emoji] = (counts[emoji] ?? 0) + 1;
+      return { ...x, reactions: counts, mine: emoji || undefined };
+    });
+    try {
+      const r = await reactToPost(it.user.id, it.id, emoji);
+      patch((x) => ({ ...x, reactions: r.reactions, mine: r.mine }));
+    } catch (err) {
+      patch((x) => ({ ...x, ...before }));
+      toast(onlineErrorText(err), "warn");
+    }
+  }
+
   async function act(fn: () => Promise<unknown>, ok: string) {
     try {
       await fn();
@@ -160,7 +182,7 @@ export function Friends() {
           </div>
           <div>
             <dt>Treinos 30d</dt>
-            <dd>{items.length}</dd>
+            <dd>{items.filter((it) => it.user.id !== user.id).length}</dd>
           </div>
         </dl>
       </section>
@@ -275,6 +297,12 @@ export function Friends() {
                       </div>
                     )}
                   </dl>
+                  <ReactionBar
+                    reactions={it.reactions}
+                    mine={it.mine}
+                    label={it.user.id === user.id ? "você" : it.user.displayName}
+                    onReact={(emoji) => void reactTo(it, emoji)}
+                  />
                 </li>
               ))}
             </ul>

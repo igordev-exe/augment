@@ -7,6 +7,7 @@ import type {
   Me,
   PublicUser,
   RankRow,
+  ReactionId,
   RecordIn,
   ReportReason,
 } from "../../../server/src/protocol";
@@ -92,6 +93,10 @@ export const blockUser = (userId: string) => api("POST", "/users/block", { userI
 export const unblockUser = (userId: string) => api("POST", "/users/unblock", { userId });
 export const reportUser = (userId: string, reason: ReportReason, detail: string) => api("POST", "/reports", { userId, reason, detail });
 export const getFeed = async () => (await api<{ feed: FeedItem[] }>("GET", "/feed")).feed;
+
+/** Reage a um treino do feed (emoji vazio tira a reação). Devolve a contagem nova e a sua reação. */
+export const reactToPost = (owner: string, activity: string, emoji: ReactionId | "") =>
+  api<{ reactions: Partial<Record<ReactionId, number>>; mine?: ReactionId }>("POST", "/feed/react", { owner, activity, emoji });
 export const friendsRanking = async (lib: string) =>
   (await api<{ ranking: RankRow[] }>("GET", `/records/friends?lib=${encodeURIComponent(lib)}`)).ranking;
 export const userRecords = async (userId: string) =>

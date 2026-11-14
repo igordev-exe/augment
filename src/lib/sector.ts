@@ -14,7 +14,7 @@ export const SECTOR_LABEL: Record<Sector, string> = {
 };
 
 const TEL = /^\/(historico|progresso|relatorio|exercicios|guia)(\/|$)/;
-const NET = /^\/(online|amigos|privacidade)(\/|$)/;
+const NET = /^\/(online|perfil|amigos|privacidade)(\/|$)/;
 const COACH = /^\/treinador(\/|$)/;
 
 /** Setor de uma rota (o `pathname` do HashRouter). O que não for dos outros três é Operação. */

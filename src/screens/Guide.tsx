@@ -171,14 +171,22 @@ export function Guide() {
   // "Ler mais" do treinador abre direto no princípio (#/guia?p=<id>).
   const [params] = useSearchParams();
   const target = params.get("p");
+  // Atalhos do botão holográfico de Exercícios abrem numa seção (#/guia?s=<id>).
+  const section = params.get("s");
   useEffect(() => {
-    if (!target) return;
-    const t = window.setTimeout(() => goTo(`p-${target}`), 80);
+    const id = target ? `p-${target}` : section;
+    if (!id) return;
+    const t = window.setTimeout(() => goTo(id), 80);
     return () => window.clearTimeout(t);
-  }, [target]);
+  }, [target, section]);
   return (
     <div className="stack-lg">
-      <PageHead code="AUG.OS // MANUAL DO OPERADOR" title="Guia" sub="Protocolos de execução, progressão de carga e referências." />
+      <PageHead
+        back="/exercicios"
+        code="AUG.OS // MANUAL DO OPERADOR"
+        title="Guia"
+        sub="Protocolos de execução, progressão de carga e referências."
+      />
 
       <GuideNav />
 

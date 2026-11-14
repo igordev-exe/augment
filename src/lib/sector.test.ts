@@ -14,6 +14,7 @@ describe("sectorFor", () => {
     expect(sectorFor("/guia")).toBe("tel");
     expect(sectorFor("/online")).toBe("net");
     expect(sectorFor("/amigos")).toBe("net");
+    expect(sectorFor("/perfil")).toBe("net");
     expect(sectorFor("/treinador")).toBe("coach");
   });
 

@@ -139,7 +139,8 @@ describe("sincronização com o servidor", () => {
     expect(st.user?.username).toBe("bia");
     const pending = await import("./account").then((m) => m.getFriends());
     await acceptFriend(pending.incoming[0].id);
-    expect((await getFeed()).map((f) => f.user.username)).toEqual(["caio"]);
+    // O feed traz os treinos dos amigos e os seus (para ver as reações que você recebeu).
+    expect((await getFeed()).map((f) => f.user.username)).toEqual(["caio", "bia"]);
     expect((await friendsRanking(supino.lib)).map((x) => [x.user.username, x.loadKg])).toEqual([
       ["bia", 100],
       ["caio", 70],

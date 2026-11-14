@@ -69,8 +69,16 @@ export interface ActivityIn {
   prs: number;
 }
 
+/** Reações do feed: ids dos emojis próprios do app (o desenho fica em src/components/Reactions.tsx). */
+export const REACTIONS = ["forca", "fogo", "raio", "cranio", "coracao", "alvo", "chip", "olho"] as const;
+export type ReactionId = (typeof REACTIONS)[number];
+
 export interface FeedItem extends ActivityIn {
   user: PublicUser;
+  /** Quantas pessoas reagiram com cada emoji (só os que têm pelo menos 1). */
+  reactions?: Partial<Record<ReactionId, number>>;
+  /** A reação de quem está vendo, se houver (uma por pessoa por treino). */
+  mine?: ReactionId;
 }
 
 export interface Friend extends PublicUser {

@@ -27,6 +27,8 @@ import { SettingsScreen } from "./screens/SettingsScreen";
 import { Today } from "./screens/Today";
 import { Online } from "./screens/Online";
 import { Friends } from "./screens/Friends";
+import { avatarSrc } from "./data/personas";
+import { useOnline } from "./lib/online/sync";
 
 // O treinador carrega o SDK da Anthropic: só baixa quando a tela abre.
 const Coach = lazy(() => import("./screens/Coach").then((m) => ({ default: m.Coach })));
@@ -49,6 +51,10 @@ function Shell() {
   const [settings, , settingsLoaded] = useSettings();
   const sessions = useSessions();
   const today = useToday();
+  const online = useOnline();
+  /** Pedidos de amizade esperando: LED violeta no avatar da aba Perfil. */
+  const pending = online?.social?.friends.incoming.length ?? 0;
+  const inProfile = /^\/(perfil|online|amigos|privacidade)/.test(pathname);
   // Semana de deload: paleta mais calma no app inteiro (o vermelho de ação vira um azul-aço).
   const deload = weekFor(settings.mesoStart, today) === 7;
   useEffect(() => {
@@ -69,7 +75,13 @@ function Shell() {
   );
 
   // Instalação nova (sem treinos e sem ter passado pelo assistente): primeiro uso no lugar das telas.
-  if (settingsLoaded && sessions && sessions.length === 0 && !settings.onboarded && !/^\/(online|ajustes|privacidade|kit)/.test(pathname)) {
+  if (
+    settingsLoaded &&
+    sessions &&
+    sessions.length === 0 &&
+    !settings.onboarded &&
+    !/^\/(online|perfil|ajustes|privacidade|kit)/.test(pathname)
+  ) {
     return (
       <ErrorBoundary resetKey="primeiro-uso">
         <Onboarding />
@@ -96,6 +108,7 @@ function Shell() {
             <Route path="/programas" element={<Programs />} />
             <Route path="/programas/:id" element={<ProgramEditor />} />
             <Route path="/online" element={<Online />} />
+            <Route path="/perfil" element={<Online asTab />} />
             <Route path="/primeiro-uso" element={<Onboarding inApp />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/amigos" element={<Friends />} />
@@ -136,13 +149,22 @@ function Shell() {
             <Icon name="chart" />
             <span className="nav-label">Progresso</span>
           </NavLink>
-          <NavLink to="/exercicios">
+          {/* O Guia mora junto de Exercícios (botão holográfico na biblioteca): a aba acende nos dois. */}
+          <NavLink to="/exercicios" className={({ isActive }) => (isActive || pathname.startsWith("/guia") ? "active" : "")}>
             <Icon name="book" />
             <span className="nav-label">Exercícios</span>
           </NavLink>
-          <NavLink to="/guia">
-            <Icon name="guide" />
-            <span className="nav-label">Guia</span>
+          {/* Perfil na ponta direita, como nos apps de treino: o avatar da persona, com LED quando há pedido de amizade. */}
+          <NavLink
+            to="/perfil"
+            className={inProfile ? "active nav-me" : "nav-me"}
+            aria-label={pending ? `Perfil, ${pending} pedido${pending > 1 ? "s" : ""} de amizade` : undefined}
+          >
+            <span className="nav-avatar" aria-hidden="true">
+              <img src={avatarSrc(settings.persona)} alt="" width={26} height={26} />
+              {pending > 0 && <i className="nav-led" />}
+            </span>
+            <span className="nav-label">Perfil</span>
           </NavLink>
         </div>
       </nav>

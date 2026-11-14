@@ -33,7 +33,11 @@ function sizeText(bytes: number): string {
   return bytes < 1_000_000 ? `${Math.max(1, Math.round(bytes / 1000))} KB` : `${(bytes / 1_000_000).toFixed(1).replace(".", ",")} MB`;
 }
 
-export function Online() {
+/**
+ * Conta online. Com `asTab` é a aba Perfil (#/perfil): título "Perfil", sem voltar, e sem conta mostra o perfil do
+ * aparelho (posto, sequência, treinos) com o convite para a rede logo abaixo, nunca só um formulário de cadastro.
+ */
+export function Online({ asTab = false }: { asTab?: boolean } = {}) {
   const online = useOnline();
   const [freshCode, setFreshCode] = useState<string | null>(null);
   const [, setServerTick] = useState(0);
@@ -52,10 +56,16 @@ export function Online() {
   return (
     <div className="stack-lg">
       <PageHead
-        back="/ajustes"
-        code="AUG.NET // CONTA ONLINE"
-        title="Conta online"
-        sub={signedIn ? "Seu perfil na rede e os dados da conta." : "Opcional. Sem conta, o app funciona igual, só no aparelho."}
+        back={asTab ? undefined : "/ajustes"}
+        code={asTab ? "AUG.NET // PERFIL" : "AUG.NET // CONTA ONLINE"}
+        title={asTab ? "Perfil" : "Conta online"}
+        sub={
+          signedIn
+            ? "Seu perfil na rede e os dados da conta."
+            : asTab
+              ? "Seu histórico neste aparelho. Entre na rede para ter amigos, ranking e backup."
+              : "Opcional. Sem conta, o app funciona igual, só no aparelho."
+        }
         right={
           signedIn ? (
             <button
@@ -98,8 +108,12 @@ export function Online() {
       ) : online === undefined ? null : online.user ? (
         <SignedIn online={online} showingCode={!!freshCode} onRecoveryCode={setFreshCode} tab={tab} onTab={setTab} extras={extras} />
       ) : (
-        <SignedOut onRecoveryCode={setFreshCode} lastError={online.lastError} />
+        <>
+          {asTab && <LocalProfile />}
+          <SignedOut onRecoveryCode={setFreshCode} lastError={online.lastError} />
+        </>
       )}
+      {asTab && !url && <LocalProfile />}
 
       {/* Logado, isto vai para a aba Conta. O Servidor só aparece para quem hospeda o próprio (ou #/online?servidor). */}
       {!signedIn && <GroupPanel label="Sobre o online">{extras}</GroupPanel>}
@@ -108,6 +122,34 @@ export function Online() {
 }
 
 // ---------- sem conta ----------
+
+/** Perfil do aparelho (sem conta): o mesmo cartão do perfil online, com o nome dos Ajustes e sem @. */
+function LocalProfile() {
+  const sessions = useSessions();
+  const [settings] = useSettings();
+  const program = useProgram();
+  const today = useToday();
+  const week = weekFor(settings.mesoStart, today);
+  return (
+    <OperatorProfile
+      user={{ id: "local", displayName: settings.operator || "Operador", username: "" }}
+      persona={settings.persona}
+      sessions={sessions ?? []}
+      friends={0}
+      today={today}
+      weeklyTarget={settings.trainingDays.length}
+      tags={[program.name, week ? `Semana ${week}/7` : "Periodização fixa", `${settings.trainingDays.length}× por semana`]}
+    >
+      <p className="id-sync small">
+        <span className="sync-led off" aria-hidden="true" />
+        <span className="grow">Só neste aparelho</span>
+        <Link to="/ajustes" className="text-btn">
+          Ajustes
+        </Link>
+      </p>
+    </OperatorProfile>
+  );
+}
 
 type Mode = "entrar" | "criar" | "recuperar";
 

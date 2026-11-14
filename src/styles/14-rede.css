@@ -936,3 +936,105 @@
     opacity: 0;
   }
 }
+
+/* ---------- Reações do feed ---------- */
+/* Emojis próprios em pixel (components/Reactions.tsx). O seletor abre dentro do cartão (o augmented-ui recorta o que
+   sair dele), com moldura holográfica; a barra quebra linha em vez de rolar. */
+.rx-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.rx-emoji {
+  display: block;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 3px rgba(63, 216, 224, 0.35));
+}
+.rx-chip,
+.rx-add {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+.rx-chip.mine {
+  border-color: var(--cyan);
+  color: var(--ink);
+  background: var(--cyan-soft);
+}
+.rx-add {
+  color: var(--ink-3);
+  border-style: dashed;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-1);
+}
+.rx-add.open {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  border-style: solid;
+}
+.rx-picker {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: linear-gradient(135deg, rgba(63, 216, 224, 0.1), rgba(213, 128, 255, 0.1) 50%, rgba(239, 48, 44, 0.08)), var(--surface);
+  border: 1px solid rgba(63, 216, 224, 0.45);
+  box-shadow:
+    0 0 18px -6px rgba(63, 216, 224, 0.55),
+    inset 0 0 22px -12px rgba(213, 128, 255, 0.6);
+  animation: rx-in var(--t-mira, 140ms) var(--ease-seco, ease) both;
+}
+.rx-picker button {
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border: 1px solid transparent;
+  color: var(--ink-3);
+  background: transparent;
+  font-family: var(--mono);
+  font-size: var(--fs-1);
+  text-align: center;
+  cursor: pointer;
+}
+.rx-picker button span {
+  overflow-wrap: anywhere;
+}
+.rx-picker button:active,
+.rx-picker button.mine {
+  color: var(--ink);
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+@keyframes rx-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+:root:is(.fx-gym, .fx-min) .rx-picker {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rx-picker {
+    animation: none;
+  }
+}

@@ -3,6 +3,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
 import { avatarSrc } from "../data/personas";
+import { BrandMark } from "../components/Brand";
 import {
   archiveChat,
   chatTitle,
@@ -140,11 +141,42 @@ function CxIcon({ name, size = 18 }: { name: CxIconName; size?: number }) {
   );
 }
 
-/** Núcleo neural (o avatar das respostas): losango ciano com três pontos. */
-function NeuralCore() {
+/** Avatar das respostas: a marca do AUGMENT (anel, A e barra). Na trava de saúde, monocromática em âmbar. */
+function NeuralCore({ mono = false }: { mono?: boolean }) {
   return (
     <div className="cx-avatar" aria-hidden="true">
-      <div className="cx-core">
+      <BrandMark className="cx-avatar-mark" mono={mono} />
+    </div>
+  );
+}
+
+/**
+ * Leitura de sistema no topo: onda do núcleo (barras que oscilam), sincronia (avanço real até o próximo posto) e o
+ * relógio do núcleo correndo. Componente próprio para o relógio não redesenhar a conversa a cada segundo.
+ */
+function CoreReadout({ sync, cloud }: { sync: number; cloud: boolean }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+  return (
+    <div className="cx-hud" aria-hidden="true">
+      <div className="cx-wave">
+        {Array.from({ length: 9 }, (_, i) => (
+          <i key={i} style={{ animationDelay: `${(i % 5) * -0.21 - Math.floor(i / 3) * 0.09}s` }} />
+        ))}
+      </div>
+      <div className="cx-hud-read">
+        <span>
+          SINC <b>{sync}%</b>
+        </span>
+        <span>
+          {cloud ? "NUVEM" : "LOCAL"} <b>{now.toLocaleTimeString("pt-BR")}</b>
+        </span>
+      </div>
+      <div className="cx-hud-grid">
+        <i />
         <i />
         <i />
         <i />
@@ -543,11 +575,7 @@ export function Coach() {
 
       <aside ref={sideRef} className={`cx-side${sideOpen ? " open" : ""}`} aria-label="Conversas">
         <div className="cx-brand">
-          <div className="cx-brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
+          <BrandMark className="cx-brand-logo" />
           <div>
             <div className="cx-brand-name">
               AUGMENT<span>.</span>CORE
@@ -632,9 +660,7 @@ export function Coach() {
           <button type="button" className="cx-icon-btn cx-panel" aria-label="Abrir conversas" onClick={() => setSideOpen(true)}>
             <CxIcon name="panel" />
           </button>
-          <div className="cx-model-symbol" aria-hidden="true">
-            <span />
-          </div>
+          <BrandMark className="cx-model-logo" />
           <div>
             <h1 className="cx-model-name">
               AUG.CORE <span>v5.0</span>
@@ -644,15 +670,7 @@ export function Coach() {
             </div>
           </div>
         </div>
-        <div className="cx-top-meta">
-          <span>
-            LATÊNCIA <b>{hasKey ? "NUVEM" : "0ms"}</b>
-          </span>
-          <span>
-            DADOS <b>NO APARELHO</b>
-          </span>
-          <CxIcon name="shield" size={17} />
-        </div>
+        <CoreReadout sync={sync} cloud={hasKey} />
       </header>
 
       <div className="cx-stage">
@@ -710,7 +728,7 @@ export function Coach() {
           const allText = texts.map((b) => b.text).join("\n\n");
           return (
             <article key={i} className={`cx-row cx-ai${meta ? ` local-${meta.kind}` : ""}${isNew ? " cx-fresh" : ""}`}>
-              <NeuralCore />
+              <NeuralCore mono={meta?.kind === "guard"} />
               <div className="cx-ai-content">
                 <div className="cx-label cx-ai-label">
                   AUG.CORE <span>{hhmm(chat.times?.[i])}</span>

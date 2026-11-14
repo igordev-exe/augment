@@ -5,8 +5,10 @@ import { hashSecret, normalizeRecovery, randomId, randomToken, recoveryCode, sha
 import type { Db, DbStatement, Env } from "./db";
 import {
   LIMITS,
+  REACTIONS,
   REPORT_REASONS,
   USERNAME_RE,
+  type ReactionId,
   type ActivityIn,
   type AuthResponse,
   type BackupMeta,
@@ -340,6 +342,7 @@ function wipeUser(db: Db, id: string): DbStatement[] {
     db.prepare("DELETE FROM profiles WHERE user_id = ?").bind(id),
     db.prepare("DELETE FROM blocks WHERE blocker = ? OR blocked = ?").bind(id, id),
     db.prepare("DELETE FROM reports WHERE reporter = ? OR target = ?").bind(id, id),
+    db.prepare("DELETE FROM reactions WHERE owner_id = ? OR reactor_id = ?").bind(id, id),
     db.prepare("DELETE FROM auth_tokens WHERE user_id = ?").bind(id),
     db.prepare("DELETE FROM users WHERE id = ?").bind(id),
   ];
@@ -448,6 +451,9 @@ async function blockUser(req: Request, db: Db, user: UserRow, now: number): Prom
   await db.batch([
     db.prepare("INSERT OR IGNORE INTO blocks (blocker, blocked, created_at) VALUES (?, ?, ?)").bind(user.id, otherId, now),
     db.prepare("DELETE FROM friendships WHERE a = ? AND b = ?").bind(a, c),
+    db
+      .prepare("DELETE FROM reactions WHERE (owner_id = ?1 AND reactor_id = ?2) OR (owner_id = ?2 AND reactor_id = ?1)")
+      .bind(user.id, otherId),
   ]);
   return json({ ok: true });
 }
@@ -671,13 +677,73 @@ async function putActivity(req: Request, db: Db, user: UserRow, now: number): Pr
 }
 
 /** Treinos recentes dos amigos (30 dias), mais novos primeiro. */
+/** Reações agrupadas por treino ("dono|treino"): contagem por emoji e a de quem está vendo. */
+async function reactionsFor(
+  db: Db,
+  viewer: string,
+  owners: string[],
+): Promise<Map<string, { counts: Partial<Record<ReactionId, number>>; mine?: ReactionId }>> {
+  const out = new Map<string, { counts: Partial<Record<ReactionId, number>>; mine?: ReactionId }>();
+  const ids = [...new Set(owners)].slice(0, 100);
+  if (!ids.length) return out;
+  const marks = ids.map((_, i) => `?${i + 1}`).join(", ");
+  const { results } = await db
+    .prepare(`SELECT owner_id, activity_id, reactor_id, emoji FROM reactions WHERE owner_id IN (${marks})`)
+    .bind(...ids)
+    .all<{ owner_id: string; activity_id: string; reactor_id: string; emoji: string }>();
+  for (const r of results) {
+    if (!(REACTIONS as readonly string[]).includes(r.emoji)) continue;
+    const emoji = r.emoji as ReactionId;
+    const key = `${r.owner_id}|${r.activity_id}`;
+    const cur = out.get(key) ?? { counts: {} };
+    cur.counts[emoji] = (cur.counts[emoji] ?? 0) + 1;
+    if (r.reactor_id === viewer) cur.mine = emoji;
+    out.set(key, cur);
+  }
+  return out;
+}
+
+/** Reagir a um treino do feed (o próprio ou de um amigo). Emoji vazio tira a reação; outro emoji substitui. */
+async function react(req: Request, db: Db, user: UserRow, now: number): Promise<Response> {
+  if (!(await rateLimit(db, `react:${user.id}`, 300, 3600_000, now)))
+    throw new HttpError(429, "Muitas reações seguidas. Tente daqui a pouco.");
+  const b = await body<Record<string, unknown>>(req);
+  const owner = str(b.owner, 40);
+  const activity = str(b.activity, 80);
+  const emoji = str(b.emoji, 20);
+  if (!owner || !activity) throw bad("Treino inválido.");
+  if (emoji && !(REACTIONS as readonly string[]).includes(emoji)) throw bad("Reação inválida.");
+  if (owner !== user.id && !(await areFriends(db, user.id, owner))) throw new HttpError(403, "Só amigos podem reagir.");
+  const post = await db
+    .prepare(
+      "SELECT 1 FROM activity a JOIN users u ON u.id = a.user_id WHERE a.user_id = ? AND a.id = ? AND (u.share_activity = 1 OR u.id = ?)",
+    )
+    .bind(owner, activity, user.id)
+    .first();
+  if (!post) throw new HttpError(404, "Treino não encontrado.");
+  if (emoji) {
+    await db
+      .prepare("INSERT OR REPLACE INTO reactions (owner_id, activity_id, reactor_id, emoji, created_at) VALUES (?, ?, ?, ?, ?)")
+      .bind(owner, activity, user.id, emoji, now)
+      .run();
+  } else {
+    await db
+      .prepare("DELETE FROM reactions WHERE owner_id = ? AND activity_id = ? AND reactor_id = ?")
+      .bind(owner, activity, user.id)
+      .run();
+  }
+  const r = (await reactionsFor(db, user.id, [owner])).get(`${owner}|${activity}`);
+  return json({ ok: true, reactions: r?.counts ?? {}, mine: r?.mine });
+}
+
 async function feed(db: Db, user: UserRow, now: number): Promise<Response> {
   const since = new Date(now - 30 * 24 * 3600_000).toISOString().slice(0, 10);
+  // Os treinos dos amigos e os seus (para ver as reações que você recebeu).
   const { results } = await db
     .prepare(
       `SELECT a.*, u.username, u.display_name FROM activity a JOIN users u ON u.id = a.user_id
-       WHERE a.date >= ?2 AND u.share_activity = 1 AND EXISTS (
-         SELECT 1 FROM friendships f WHERE f.status = 'accepted' AND ((f.a = ?1 AND f.b = a.user_id) OR (f.b = ?1 AND f.a = a.user_id)))
+       WHERE a.date >= ?2 AND (a.user_id = ?1 OR (u.share_activity = 1 AND EXISTS (
+         SELECT 1 FROM friendships f WHERE f.status = 'accepted' AND ((f.a = ?1 AND f.b = a.user_id) OR (f.b = ?1 AND f.a = a.user_id)))))
        ORDER BY a.date DESC, a.created_at DESC LIMIT 60`,
     )
     .bind(user.id, since)
@@ -703,6 +769,17 @@ async function feed(db: Db, user: UserRow, now: number): Promise<Response> {
     prs: r.prs,
     user: { id: r.user_id, username: r.username, displayName: r.display_name },
   }));
+  const rx = await reactionsFor(
+    db,
+    user.id,
+    items.map((i) => i.user.id),
+  );
+  for (const it of items) {
+    const r = rx.get(`${it.user.id}|${it.id}`);
+    if (!r) continue;
+    it.reactions = r.counts;
+    if (r.mine) it.mine = r.mine;
+  }
   return json({ feed: items });
 }
 
@@ -945,6 +1022,7 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
 
   if (m === "PUT" && path === "/activity") return putActivity(req, db, user, now);
   if (m === "GET" && path === "/feed") return feed(db, user, now);
+  if (m === "POST" && path === "/feed/react") return react(req, db, user, now);
 
   if (m === "GET" && path === "/workouts") return pullWorkouts(url, db, user);
   if (m === "PUT" && path === "/workouts") return pushWorkouts(req, db, user, now);
