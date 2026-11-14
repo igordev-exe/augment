@@ -56,22 +56,22 @@ servidor nunca sobrescreve o celular, a não ser que a pessoa toque em "Restaura
 - **Servidor** (`server/`): sem dependências. `handle(request, env)` em `server/src/app.ts` roda no Workers
   (`worker.ts`, banco D1) e no Node (`node.ts`, `node:sqlite`).
 
-| Comando                                                    | O que faz                                                                                                                  |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                   |
-| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (321 testes) |
-| `npm run format`                                           | prettier --write                                                                                                           |
-| `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                       |
-| `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                       |
-| `npm run android:open`                                     | abre o Android Studio                                                                                                      |
-| `npm run coach -- backup.json`                             | debrief do treinador no terminal (`scripts/coach.ts`)                                                                      |
-| `npm run backtest -- backup.json`                          | erro das previsões do núcleo ao vivo num backup real, base × vivo (`scripts/backtest.ts`)                                  |
-| `python -I scripts/import-exercise-db.py <exercises.json>` | regenera a biblioteca estendida (free-exercise-db)                                                                         |
-| `python scripts/android-assets.py`                         | ícones e splash do Android                                                                                                 |
-| `npm run server`                                           | servidor online local na porta 8787 (banco em `server/data/augment.db`; preview `augment-server`)                          |
-| `npm run server:deploy`                                    | publica o Worker na Cloudflare (`cd server && npx wrangler deploy`)                                                        |
-| `npm run build:ios` / `npm run ios:open`                   | build com base `./` + `cap sync ios` / abre o Xcode (só no Mac)                                                            |
-| `python scripts/ios-assets.py <icone-1024.png>`            | ícone e splash do iOS                                                                                                      |
+| Comando                                                    | O que faz                                                                                                                                  |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                                              | Vite em `localhost:5173` (`.claude/launch.json` → preview `augment-dev`)                                                                   |
+| `npm run check`                                            | **portão de qualidade**: `tsc -b` + `tsc -p server` + `scripts/lint.ts` + `prettier --check .` + `vitest run` (+ `notices.test.ts`, ~30 s) |
+| `npm run format`                                           | prettier --write                                                                                                                           |
+| `npm run build`                                            | build web (base vem de `VITE_BASE`; o deploy do Pages define a dele)                                                                       |
+| `npm run build:android`                                    | `tsc -b && vite build --base ./ && cap sync android`                                                                                       |
+| `npm run android:open`                                     | abre o Android Studio                                                                                                                      |
+| `npm run coach -- backup.json`                             | debrief do treinador no terminal (`scripts/coach.ts`)                                                                                      |
+| `npm run backtest -- backup.json`                          | erro das previsões do núcleo ao vivo num backup real, base × vivo (`scripts/backtest.ts`)                                                  |
+| `python -I scripts/import-exercise-db.py <exercises.json>` | regenera a biblioteca estendida (free-exercise-db)                                                                                         |
+| `python scripts/android-assets.py`                         | ícones e splash do Android                                                                                                                 |
+| `npm run server`                                           | servidor online local na porta 8787 (banco em `server/data/augment.db`; preview `augment-server`)                                          |
+| `npm run server:deploy`                                    | publica o Worker na Cloudflare (`cd server && npx wrangler deploy`)                                                                        |
+| `npm run build:ios` / `npm run ios:open`                   | build com base `./` + `cap sync ios` / abre o Xcode (só no Mac)                                                                            |
+| `python scripts/ios-assets.py <icone-1024.png>`            | ícone e splash do iOS                                                                                                                      |
 
 **CI** (`.github/workflows/`):
 
@@ -138,6 +138,19 @@ reduced-motion. Ver lib/brand.ts → bootModeFor/readBootMode/markBootDone.
 **Primeiro uso**: instalação nova (zero sessões e `settings.onboarded` falso) mostra `<Onboarding/>` no lugar das
 telas, menos em `/online`, `/ajustes` e `/privacidade`. A lógica fica em `lib/onboarding.ts` (`recommendTemplate`,
 `applyOnboarding`, `skipOnboarding`).
+
+**Balão do núcleo** (`components/CoreBubble.tsx`, `17-balao.css`): todo aviso do app (`toast(...)`) sai num balão
+flutuante logo acima da nav, da TimerBar e da caixa do chat (a altura do rodapé é medida), com o avatar da persona
+num hexágono, a faixa "AUG.CORE // TÍTULO" e a cor do tom: `info` ciano, `ok` verde, `warn` âmbar, `danger` vermelho
+com listras (azul-aço no deload), `reward` violeta (recorde; `playReward` + `RECORD_BUZZ`). Até 2 botões, "Abrir" de
+`opts.route`, `sticky`. Uma por vez, por prioridade; a mesma frase da voz (info/warn/reward) não volta em 10 min.
+"Digitando…" (`useCoreTyping`) só no Coach com chave. O Hoje anuncia pelo balão, uma vez por dia por assunto, a
+retomada, o relatório da semana e o recado do núcleo (`components/CoreAnnounce.tsx`, localStorage
+`augment-bubble-day`). Vitrine: `#/kit?balao=<tom>&botoes=1`.
+
+**Avisos fora do app**: notificações locais agendadas no aparelho, sem servidor (`lib/core/notices.ts` →
+`lib/noticeSync.ts` → `native.ts` `syncNotices`). Canais em Ajustes → Sistema → Avisos fora do app
+(`settings.notices`). A permissão é pedida pelo balão uma vez, no Hoje, depois do 1º treino (`augment-notice-asked`).
 
 **Tela quebrada**: `components/ErrorBoundary` (chave = rota) mostra "Algo deu errado nesta tela" com três saídas e
 chama `lib/errors.ts` → `reportError` (guarda os 20 últimos no kv `error-log` e manda ao servidor sem dados pessoais).
@@ -244,8 +257,16 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
   `deleteRestorePoint`.
 
 **`hooks.tsx`**: `useSessions`, `usePrograms`, `useProgram`, `useSession(id)`, `useSettings()` → `[s, save, loaded]`,
-`useBodyLog`, `useToday`, `ToastProvider`/`useToast` e `useWakeLock`. Os dados vêm de `liveQuery` do Dexie. Aviso com efeito `glitch` (recorde, meta
-batida) vibra `RECORD_BUZZ` (curto-curto-longo), diferente do fim do descanso.
+`useBodyLog`, `useToday`, `ToastProvider`/`useToast` (o balão do núcleo; `toast(texto, tom, fx?, ação | opções?)`,
+`setBubblePersona`, `useCoreTyping`) e `useWakeLock`. Os dados vêm de `liveQuery` do Dexie. Aviso com efeito `glitch`
+vira o tom `reward` (recorde, meta batida) e vibra `RECORD_BUZZ` (curto-curto-longo), diferente do fim do descanso.
+
+**`bubble.ts`**: fila pura do balão: `ToastTone` (com `reward`), `ToastOpts` (`title`, `actions` até 2, `route`,
+`sticky`), `makeBubble`, `TONE_RANK` (danger > reward > warn > info > ok), `enqueue`, `isRepeat` (10 min; `ok`,
+`danger` e aviso com botão sempre aparecem), `remainingWithQueue`, `toastDuration`.
+
+**`noticeSync.ts`**: `useNoticeSync` (no Shell): reagenda os avisos 1,5 s depois de mudar treino, ajuste ou memória;
+pede a permissão pelo balão uma vez.
 
 **`sessions.ts`**:
 
@@ -338,7 +359,10 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - `timer.tsx`: `TimerProvider`/`useTimer` (descanso; som, vibração, notificação; estado em
   `localStorage["augment-timer"]`).
 - `native.ts`: `isNative`, `vibrate`, `keepAwake`, `requestNotifyPermission`, `scheduleRestAlarm`/`cancelRestAlarm`,
-  `shareFileNative`, `readSecretKey`/`writeSecretKey` (secure storage) e `setupBackButton`.
+  `notifyGranted`, `syncNotices(list, avatar)` (cancela e reagenda os ids 7100–7199, um canal Android `aviso-<canal>`,
+  ícone `ic_stat_augment`, cor `#ef302c`, `largeIcon` `avatar_<persona>` em `res/drawable-nodpi`, botões "Abrir" e
+  "Hoje não"; na web, só com a aba viva), `shareFileNative`, `readSecretKey`/`writeSecretKey` (secure storage) e
+  `setupBackButton`.
 - `brand.ts`:
   - geometria do logotipo Núcleo: `RING_SEGMENTS`, `CORE_A`, `BARBELL`, `WORDMARK_*`;
   - desenho em canvas: `drawBrandMark`, `drawWordmark`;
@@ -442,6 +466,11 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - Tela: a fala é a linha `.hud-cue` do `SessionHud` (`aria-live`); toasts de recado saíram (só o recorde segue com a
     recompensa); o cartão mostra "Dito hoje" recolhido e o botão "Baixar para X agora" quando há `adjust`.
   - Testes: `backtest.test.ts` e `live.test.ts` (garantias). Fotos e medidas do HUD: `node tools/verify/hud.mjs`.
+- `notices.ts` (voz fora do app, puro): `plannedNotices(sessions, settings, memory, state, today, now)` → `Notice[]`
+  dos próximos 7 dias nos canais `treino` (hora em `settings.notices.hour` ou `behavior.preferredHour`, 7–21h),
+  `pronto` (músculos do próximo treino), `semana` (domingo 20h), `retomada` (3+ dias, substitui o lembrete do dia),
+  `ciclo` (véspera do deload e do ciclo novo) e `backup` (14+ dias). Garantias em `notices.test.ts` (500 operadores
+  × 30 dias): 1 por canal por dia, nada entre 22h e 7h, nada em ausência, canal desligado não sai, números dos dados.
 - Hooks: `useOperatorMemory`, `useOperatorState` (`hooks.tsx`); `db.ts`: `loadOperatorMemory`, `saveOperatorMemory`,
   `upsertConstraint`, `removeConstraint`, `ensureMesoHistory`.
 - Telas: Hoje (linha do banner só quando `!silent`, `planDay` na duração e no `buildSession`), ExerciseBlock
@@ -629,7 +658,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - **Datas** são strings locais `AAAA-MM-DD` (`dates.ts`). Nada de `Date` em UTC para dia. `trainingDays` vai de 0 =
   domingo a 6 = sábado; `ProgramDay.weekday` usa 1 = segunda.
 
-## 7. Sistema visual (`src/styles/`, 16 arquivos)
+## 7. Sistema visual (`src/styles/`, 17 arquivos)
 
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
@@ -652,6 +681,7 @@ Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/style
 | `14-rede`                    | portão de identidade (login), perfil do operador (capa, abas Atividade/Telemetria), esquadrão (feed, ranking semanal, sigla)                                         |
 | `15-pecas`                   | peças de jogo (MC0): tokens de setor e de movimento, as seis peças, barra segmentada, mira, famílias de movimento, ruído                                             |
 | `16-chat`                    | treinador no layout do mockup do dono (`.cx-*`): gaveta de conversas, topo fixo, núcleo neural, cartão de protocolo, análise, caixa de mensagem fixa acima das abas  |
+| `17-balao`                   | balão do núcleo (`.core-bubble`, `.cb-*`): avatar em hexágono, faixa de título, tons, botões, barra de vida, "digitando…"                                            |
 
 **Peças de jogo** (`15-pecas.css` + `components/Pieces.tsx` + `components/Ticker.tsx`; vitrine em `#/kit`, só no
 dev, `screens/Kit.tsx`). Os módulos M1–M6 montam as telas com elas; cada peça tem um papel só:
@@ -812,6 +842,9 @@ entre duas soluções, vence a que obedece mais regras:
      anima sem eles) e mede o contraste da faixa cheia em cada setor.
    - `AUDIT_ROUTES=/kit node tools/verify/audit.mjs …` mede só as rotas citadas. A auditoria também acusa mais de 1
      botão vermelho cheio no mesmo quadro (`vermelho-demais`) e `<details>` fora do padrão.
+   - `bubble.mjs` (`node tools/verify/bubble.mjs [url] [pasta] [chromium|webkit]`): o balão do núcleo em cada tom,
+     320–820 px, texto 1× e 1,3×, com e sem TimerBar (inteiro na tela, acima do rodapé, sem corte, botões ≥ 44 px,
+     até 3 linhas); grava a foto de cada tom em 390 px.
    - `frames.mjs`: custo das animações num quadro de troca de tela com CPU 4× (com animações − sem, mediana de 3).
      Rode sozinho: outra ferramenta de navegador em paralelo distorce os números.
    - `login.mjs`: a entrada na conta de teste (`AUDIT_API`), usada por `audit.mjs` e `shots.mjs`. O `shots.mjs` aceita

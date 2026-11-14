@@ -13,11 +13,15 @@ import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup, loadActiveProgram } from "../lib/db";
 import { shareOrDownload } from "../lib/files";
+import { CHANNEL_INFO } from "../lib/core/notices";
 import { isNative, requestNotifyPermission } from "../lib/native";
+import type { NoticeChannel } from "../data/types";
 import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
+
+const CHANNELS = Object.keys(CHANNEL_INFO) as NoticeChannel[];
 
 export function SettingsScreen() {
   const [settings, update, loaded] = useSettings();
@@ -74,6 +78,16 @@ export function SettingsScreen() {
       toast(`${n} treinos importados.`, "ok");
     } catch {
       toast("Não consegui ler o arquivo. Use o .json exportado pelo próprio app.", "warn");
+    }
+  }
+
+  const noticeOff = settings.notices?.off ?? [];
+  async function toggleChannel(c: NoticeChannel, on: boolean) {
+    const off = on ? noticeOff.filter((x) => x !== c) : [...noticeOff, c];
+    await update({ notices: { ...settings.notices, off } });
+    // Ligar um canal é o momento de pedir a permissão, se ainda não foi dada.
+    if (on && (isNative || typeof Notification !== "undefined") && !(await requestNotifyPermission())) {
+      toast("Sem permissão de notificação: os avisos ficam só dentro do app.", "info");
     }
   }
 
@@ -367,6 +381,44 @@ export function SettingsScreen() {
           <Link to="/treinador?config=1" data-augmented-ui="tl-clip br-clip border" className="btn btn-sm">
             Configurar treinador
           </Link>
+        </FoldRow>
+        <FoldRow
+          title="Avisos fora do app"
+          value={`${CHANNELS.length - noticeOff.length} de ${CHANNELS.length} ligados · ${settings.notices?.hour != null ? `${settings.notices.hour}h` : "hora aprendida"}`}
+        >
+          <div>
+            {CHANNELS.map((c) => (
+              <SwitchRow
+                key={c}
+                label={CHANNEL_INFO[c].name}
+                hint={CHANNEL_INFO[c].description}
+                checked={!noticeOff.includes(c)}
+                onChange={(on) => void toggleChannel(c, on)}
+              />
+            ))}
+          </div>
+          <label className="stack" style={{ gap: 4 }}>
+            <span className="small">Hora do lembrete do dia de treino</span>
+            <select
+              className="input"
+              value={settings.notices?.hour ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                update({ notices: { off: noticeOff, ...(v ? { hour: Number(v) } : {}) } });
+              }}
+            >
+              <option value="">A hora em que você costuma treinar</option>
+              {Array.from({ length: 15 }, (_, i) => i + 7).map((h) => (
+                <option key={h} value={h}>
+                  {h}h
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="tiny faint">
+            Notificações do próprio aparelho, sem internet e sem servidor. Nunca entre 22h e 7h, nem nos dias em que você avisou que estaria
+            fora. O celular pode atrasar ou cortar avisos para poupar bateria: são lembretes, não regra.
+          </p>
         </FoldRow>
         <FoldRow title="Efeitos visuais" value={{ max: "Máximo", auto: "Automático", min: "Mínimo" }[settings.fx ?? "auto"]}>
           <div className="row-wrap" role="group" aria-label="Nível dos efeitos visuais">

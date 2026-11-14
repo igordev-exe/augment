@@ -794,9 +794,6 @@
   display: inline-block;
   animation: glitch-main 0.8s steps(1) 2 0.15s;
 }
-.toast b.glitch {
-  display: block;
-}
 .glitch::before,
 .glitch::after {
   content: attr(data-text);

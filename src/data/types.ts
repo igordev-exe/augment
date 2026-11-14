@@ -254,6 +254,8 @@ export interface Settings {
   backupDismissed?: string;
   /** Segunda-feira em que o aviso de retomada foi respondido (não pergunta de novo na mesma semana). */
   reentryDismissed?: string;
+  /** Avisos fora do app (Ajustes → Avisos): canais desligados e hora do lembrete do dia de treino. */
+  notices?: NoticeSettings;
   /** Segunda-feira em que o cartão do relatório da semana passada foi fechado. */
   reportSeen?: string;
   /** Já passou (ou pulou) o assistente de primeiro uso. */
@@ -262,4 +264,14 @@ export interface Settings {
   cloudPhotos?: boolean;
   /** Aparência do operador (herói do banner e avatar): id em `data/personas.ts`. */
   persona?: string;
+}
+
+/** Canais das notificações locais (lib/core/notices.ts). */
+export type NoticeChannel = "treino" | "pronto" | "semana" | "retomada" | "ciclo" | "backup";
+
+export interface NoticeSettings {
+  /** Canais desligados. */
+  off: NoticeChannel[];
+  /** Hora do lembrete do dia de treino (7–21). Sem ela, a hora em que a pessoa costuma treinar. */
+  hour?: number;
 }

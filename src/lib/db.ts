@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import { rememberPrograms, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
-import type { BodyEntry, BodyGoal, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
+import type { BodyEntry, BodyGoal, NoticeChannel, NoticeSettings, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
 import { PERSONAS } from "../data/personas";
 import { closeFinishedMesos, mergeOperatorMemory, sanitizeOperatorMemory, type Constraint, type OperatorMemory } from "./core/operator";
 import { sanitizeLiveLog } from "./core/director";
@@ -194,7 +194,18 @@ export function sanitizeSettings(raw: unknown): Settings {
     onboarded: s.onboarded === true ? true : undefined,
     cloudPhotos: s.cloudPhotos === true ? true : undefined,
     persona: PERSONAS.some((p) => p.id === s.persona) ? (s.persona as string) : undefined,
+    notices: sanitizeNotices(s.notices),
   };
+}
+
+const NOTICE_CHANNELS: NoticeChannel[] = ["treino", "pronto", "semana", "retomada", "ciclo", "backup"];
+
+function sanitizeNotices(raw: unknown): NoticeSettings | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Partial<NoticeSettings>;
+  const off = Array.isArray(r.off) ? NOTICE_CHANNELS.filter((c) => r.off!.includes(c)) : [];
+  const hour = typeof r.hour === "number" && Number.isInteger(r.hour) && r.hour >= 7 && r.hour <= 21 ? r.hour : undefined;
+  return { off, ...(hour != null ? { hour } : {}) };
 }
 
 export async function loadSettings(): Promise<Settings> {

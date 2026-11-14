@@ -6,6 +6,8 @@ import { EMPTY_OPERATOR_MEMORY, operatorState, type OperatorMemory, type Operato
 import { db, DEFAULT_SETTINGS, loadBodyLog, loadOperatorMemory, loadSettings, saveOperatorMemory, saveSettings } from "./db";
 import { todayISO } from "./dates";
 import { isNative, keepAwake, vibrate } from "./native";
+import { enqueue, isRepeat, makeBubble, remainingWithQueue, toastDuration, type BubbleItem, type ToastFn } from "./bubble";
+import { CoreBubble, CoreTyping } from "../components/CoreBubble";
 
 export function useSessions(): Session[] | undefined {
   return useLiveQuery(async () => {
@@ -78,142 +80,141 @@ export function useToday(): string {
   return t;
 }
 
-// ---------- Toast ----------
+// ---------- Balão do núcleo (antigo toast) ----------
+// Mesma API de sempre: toast(texto, tom, fx?, ação | opções?). A fila e as regras ficam em lib/bubble.ts; o desenho,
+// em components/CoreBubble.tsx.
 
-/** Tom do aviso: info = sistema (ciano), ok = feito/recorde (verde), warn = atenção (âmbar), danger = perigo (vermelho). */
-export type ToastTone = "info" | "ok" | "warn" | "danger";
-
-const TOAST_LABEL: Record<ToastTone, string> = {
-  info: "SYS // INFO",
-  ok: "SYS // OK",
-  warn: "SYS // ATENÇÃO",
-  danger: "SYS // ALERTA",
-};
-
-/** `fx: "glitch"`: recompensa visual (recorde, teto batido). */
-export type ToastFx = "glitch";
-
-/** Botão no próprio aviso (ex.: "Desfazer"). Com ação, o aviso fica pelo menos 8 s. */
-export interface ToastAction {
-  label: string;
-  run: () => void;
-}
-
-type ToastFn = (msg: string, tone?: ToastTone, fx?: ToastFx, action?: ToastAction) => void;
+export type { BubbleAction, ToastAction, ToastFx, ToastOpts, ToastTone } from "./bubble";
+export { toastDuration } from "./bubble";
 
 const ToastCtx = createContext<ToastFn>(() => {});
+const TypingCtx = createContext<(on: boolean) => void>(() => {});
 
 /** Vibrar nos avisos de atenção/perigo (o Shell liga conforme Ajustes → vibrar). */
 let vibrateOnWarn = true;
+/** Persona do operador (avatar do balão); o Shell atualiza. */
+let bubblePersona: string | undefined;
 /** Vibração do recorde: dois toques curtos e um longo (o fim do descanso é longo-longo-longo). */
 export const RECORD_BUZZ = [30, 50, 30, 50, 160];
 export function setToastVibrate(on: boolean) {
   vibrateOnWarn = on;
 }
-
-/** Tempo de leitura: ~55 ms por caractere, entre 4 e 10 s. */
-export function toastDuration(msg: string, hasAction: boolean): number {
-  const t = Math.min(10_000, Math.max(4_000, msg.length * 55));
-  return hasAction ? Math.max(8_000, t) : t;
+export function setBubblePersona(id: string | undefined) {
+  bubblePersona = id;
 }
 
+const LEAVE_MS = 120;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{ msg: string; tone: ToastTone; fx?: ToastFx; action?: ToastAction; at: number } | null>(null);
+  const [cur, setCur] = useState<BubbleItem | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const queue = useRef<BubbleItem[]>([]);
+  const curRef = useRef<BubbleItem | null>(null);
+  const recent = useRef(new Map<string, number>());
+  const nextId = useRef(1);
   const timer = useRef<number>();
-  /** Quando o aviso some (para pausar e retomar com o tempo que faltava). */
   const deadline = useRef(0);
   const left = useRef(0);
-  const [paused, setPaused] = useState(false);
+
+  const present = useCallback((item: BubbleItem | null) => {
+    window.clearTimeout(timer.current);
+    curRef.current = item;
+    setLeaving(false);
+    setPaused(false);
+    setCur(item);
+    if (!item) return;
+    recent.current.set(item.text, Date.now());
+    if (vibrateOnWarn && (item.tone === "warn" || item.tone === "danger")) vibrate([40, 60, 40]);
+    // Recorde e meta batida: pulso próprio, curto-curto-longo, diferente do fim do descanso.
+    else if (vibrateOnWarn && item.tone === "reward") vibrate(RECORD_BUZZ);
+    if (!item.sticky) arm(toastDuration(item.text, item.actions.length > 0));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const close = useCallback(() => {
     window.clearTimeout(timer.current);
-    setToast(null);
-  }, []);
-  const arm = useCallback((ms: number) => {
-    window.clearTimeout(timer.current);
-    deadline.current = Date.now() + ms;
-    timer.current = window.setTimeout(() => setToast(null), ms);
-  }, []);
+    if (!curRef.current) return;
+    setLeaving(true);
+    timer.current = window.setTimeout(() => {
+      const [next, ...rest] = queue.current;
+      queue.current = rest;
+      present(next ?? null);
+    }, LEAVE_MS);
+  }, [present]);
+
+  const arm = useCallback(
+    (ms: number) => {
+      window.clearTimeout(timer.current);
+      deadline.current = Date.now() + ms;
+      timer.current = window.setTimeout(close, ms);
+    },
+    [close],
+  );
+
+  const show = useCallback<ToastFn>(
+    (msg, tone = "info", fx, opts) => {
+      const now = Date.now();
+      const item = makeBubble(nextId.current++, msg, tone, fx, opts, now, (route) => {
+        location.hash = `#${route}`;
+      });
+      if (isRepeat(item, recent.current, now)) return;
+      const c = curRef.current;
+      if (!c) return present(item);
+      queue.current = enqueue(queue.current, item);
+      // Já tem balão na tela: o atual encurta (sem botão) para o próximo entrar logo.
+      if (!c.sticky && !c.actions.length) arm(remainingWithQueue(c, Math.max(0, deadline.current - now), now));
+    },
+    [arm, present],
+  );
+
   const pause = () => {
+    if (!curRef.current || curRef.current.sticky) return;
     window.clearTimeout(timer.current);
     left.current = Math.max(0, deadline.current - Date.now());
     setPaused(true);
   };
   const resume = () => {
+    if (!curRef.current || curRef.current.sticky) return;
     setPaused(false);
     arm(Math.max(1_500, left.current));
   };
-  const show = useCallback<ToastFn>(
-    (msg, tone = "info", fx, action) => {
-      setToast({ msg, tone, fx, action, at: Date.now() });
-      arm(toastDuration(msg, !!action));
-      if (vibrateOnWarn && (tone === "warn" || tone === "danger")) vibrate([40, 60, 40]);
-      // Recorde e meta batida (efeito glitch): pulso próprio, curto-curto-longo, diferente do fim do descanso.
-      else if (vibrateOnWarn && fx === "glitch") vibrate(RECORD_BUZZ);
-    },
-    [arm],
-  );
+
   return (
     <ToastCtx.Provider value={show}>
-      {children}
-      {toast && (
-        <div
-          key={toast.at}
-          className={`toast-wrap tone-${toast.tone}`}
-          role="status"
-          // Dedo em cima pausa; ao soltar, sobra tempo para terminar de ler.
-          onPointerDown={pause}
-          onPointerUp={resume}
-          onPointerCancel={resume}
-          onClick={() => !toast.action && close()}
-        >
-          <div data-augmented-ui="tl-clip br-clip border" className="toast">
-            <b className={toast.fx === "glitch" ? "glitch" : undefined} data-text={TOAST_LABEL[toast.tone]}>
-              {TOAST_LABEL[toast.tone]}
-            </b>
-            {toast.msg}
-            {toast.action && (
-              <span className="toast-actions">
-                <button
-                  type="button"
-                  className="toast-act"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toast.action!.run();
-                    close();
-                  }}
-                >
-                  {toast.action.label}
-                </button>
-                <button
-                  type="button"
-                  className="toast-close"
-                  aria-label="Fechar aviso"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    close();
-                  }}
-                >
-                  OK
-                </button>
-              </span>
-            )}
-            <i
-              className="toast-life"
-              style={{
-                animationDuration: `${toastDuration(toast.msg, !!toast.action)}ms`,
-                animationPlayState: paused ? "paused" : "running",
-              }}
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      )}
+      <TypingCtx.Provider value={setTyping}>
+        {children}
+        {cur ? (
+          <CoreBubble
+            key={cur.id}
+            item={cur}
+            persona={bubblePersona}
+            leaving={leaving}
+            paused={paused}
+            duration={toastDuration(cur.text, cur.actions.length > 0)}
+            onClose={close}
+            onPause={pause}
+            onResume={resume}
+          />
+        ) : (
+          typing && <CoreTyping persona={bubblePersona} />
+        )}
+      </TypingCtx.Provider>
     </ToastCtx.Provider>
   );
 }
 
 export function useToast() {
   return useContext(ToastCtx);
+}
+
+/** "Digitando…" no balão enquanto `on` (o treinador com chave respondendo). */
+export function useCoreTyping(on: boolean) {
+  const set = useContext(TypingCtx);
+  useEffect(() => {
+    set(on);
+    return () => set(false);
+  }, [on, set]);
 }
 
 // ---------- Wake lock (tela acesa durante o treino) ----------

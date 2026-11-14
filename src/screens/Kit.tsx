@@ -6,7 +6,7 @@ import { Ticker } from "../components/Ticker";
 import { avatarSrc, DEFAULT_PERSONA } from "../data/personas";
 import { shortDate, todayISO } from "../lib/dates";
 import { playReward } from "../lib/fx";
-import { RECORD_BUZZ } from "../lib/hooks";
+import { RECORD_BUZZ, useToast, type ToastTone } from "../lib/hooks";
 import { vibrate } from "../lib/native";
 import { SECTOR_LABEL, SECTORS, type Sector } from "../lib/sector";
 import "./Kit.css";
@@ -46,9 +46,33 @@ function SectorMatrix() {
   );
 }
 
+/** Uma frase por tom para a vitrine do balão (?balao=<tom> abre já com ele, para fotos). */
+const BUBBLE_DEMO: [ToastTone, string][] = [
+  ["info", "Pull A hoje: 7 exercícios, perto de 55 min. Costas prontas."],
+  ["ok", "Protocolo concluído e salvo."],
+  ["warn", "Descanso curto demais para composto: espere pelo menos 2 min."],
+  ["danger", "Dor no peito em treino: pare agora e procure atendimento."],
+  ["reward", "Recorde no supino: 82,5 kg × 8."],
+];
+
 export function Kit() {
   // #/kit?setor=tel&deload=1 abre já num setor (para as fotos de revisão).
   const [params] = useSearchParams();
+  const toast = useToast();
+  const balao = params.get("balao");
+  useEffect(() => {
+    const demo = BUBBLE_DEMO.find(([t]) => t === balao);
+    if (!demo) return;
+    if (params.get("botoes"))
+      toast(demo[1], demo[0], undefined, {
+        actions: [
+          { label: "Aplicar", onPress: () => {}, primary: true },
+          { label: "Recusar", onPress: () => {} },
+        ],
+        sticky: true,
+      });
+    else toast(demo[1], demo[0], undefined, { sticky: true });
+  }, [balao]); // eslint-disable-line react-hooks/exhaustive-deps
   const [sector, setSector] = useState<Sector>(() => SECTORS.find((s) => s === params.get("setor")) ?? "op");
   const [deload, setDeload] = useState(() => params.get("deload") === "1" || document.documentElement.classList.contains("mode-deload"));
   const [run, setRun] = useState(0); // remonta a vitrine: dispara "ligar" e "leitura" de novo
@@ -223,6 +247,25 @@ export function Kit() {
             <span className="small">Ambiente: LED respirando (pausa fora da vista)</span>
           </div>
         </section>
+
+        <ListPanel label="Balão do núcleo · toque para ver">
+          {BUBBLE_DEMO.map(([tone, text]) => (
+            <ListRow key={tone} title={tone} value={text.slice(0, 24) + "…"} onClick={() => toast(text, tone)} />
+          ))}
+          <ListRow
+            title="Com botões"
+            value="Aplicar · Recusar"
+            onClick={() =>
+              toast("Proteger o ombro por 7 dias? Troco os exercícios que pesam nele.", "info", undefined, {
+                title: "proposta",
+                actions: [
+                  { label: "Aplicar", onPress: () => {}, primary: true },
+                  { label: "Recusar", onPress: () => {} },
+                ],
+              })
+            }
+          />
+        </ListPanel>
 
         <ListPanel label="Tokens de movimento">
           {TOKENS.map(([k, v]) => (

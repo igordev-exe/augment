@@ -1,0 +1,206 @@
+/* Balão do núcleo (components/CoreBubble.tsx): aviso flutuante com avatar da persona, faixa de título, cor do tom
+   e botões. Fica logo acima da nav, da TimerBar e da caixa do chat (a altura é medida no componente). Movimento só
+   com transform e opacity; parado com reduzir movimento, fx-gym e fx-min. */
+
+/* ---------- Balão do núcleo ---------- */
+.core-bubble {
+  --tc: var(--sel);
+  --tc-label: var(--cyan);
+  position: fixed;
+  left: 50%;
+  z-index: 45;
+  width: min(calc(100% - 2 * var(--sp-4)), 420px);
+  margin-left: calc(min(calc(100% - 2 * var(--sp-4)), 420px) / -2);
+  filter: drop-shadow(0 10px 22px var(--bubble-shadow));
+  touch-action: pan-y;
+  cursor: pointer;
+  animation: cb-in var(--t-ligar) var(--ease-seco) both;
+}
+.core-bubble.is-leaving {
+  animation: cb-out var(--t-toque) linear forwards;
+}
+.core-bubble.tone-ok {
+  --tc: var(--ok);
+  --tc-label: var(--green);
+}
+.core-bubble.tone-warn {
+  --tc: var(--warn);
+  --tc-label: var(--amber);
+}
+.core-bubble.tone-danger {
+  --tc: var(--danger-line);
+  --tc-label: var(--red-hi);
+}
+.core-bubble.tone-reward {
+  --tc: var(--violet);
+  --tc-label: var(--violet);
+}
+/* Deload: o vermelho vira azul-aço, como no resto do app. */
+:root.mode-deload .core-bubble.tone-danger {
+  --tc: var(--steel);
+  --tc-label: var(--cyan);
+}
+
+.cb-body {
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--tc);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
+  background: color-mix(in srgb, var(--tc) 9%, var(--bg));
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--tc);
+}
+/* Perigo: listras da zona de perigo no topo. */
+.core-bubble.tone-danger .cb-body {
+  background:
+    repeating-linear-gradient(135deg, var(--tc) 0 6px, transparent 6px 12px) top / 100% 3px no-repeat,
+    color-mix(in srgb, var(--tc) 9%, var(--bg));
+}
+
+/* Avatar: hexágono com anel na cor do tom. */
+.cb-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--tc);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.cb-avatar img {
+  width: 40px;
+  height: 44px;
+  object-fit: cover;
+  background: var(--bg);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.cb-main {
+  flex: 1;
+  min-width: 0;
+}
+.cb-title {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-1);
+  letter-spacing: 0.08em;
+  color: var(--tc-label);
+  text-transform: uppercase;
+  margin-bottom: var(--sp-1);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  overflow-wrap: anywhere;
+}
+.cb-text {
+  margin: 0;
+  font-family: var(--body);
+  font-size: var(--fs-3);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.cb-act {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--field-border);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--fs-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.cb-act.primary {
+  flex-grow: 2;
+  border-color: var(--tc);
+  background: color-mix(in srgb, var(--tc) 18%, transparent);
+  color: var(--ink);
+}
+.cb-act:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+/* Barra de vida: encolhe no tempo de leitura (pausa com o dedo em cima). */
+.cb-life {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--tc);
+  opacity: 0.7;
+  transform-origin: left;
+  animation: cb-life linear forwards;
+}
+
+/* "Digitando…": três pontos. */
+.cb-dots {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: center;
+  min-height: 1.35em;
+}
+.cb-dots i {
+  width: 6px;
+  height: 6px;
+  background: var(--tc);
+  animation: cb-dot 1s var(--ease-seco) infinite;
+}
+.cb-dots i:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.cb-dots i:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+@keyframes cb-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes cb-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes cb-life {
+  to {
+    transform: scaleX(0);
+  }
+}
+@keyframes cb-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Parado: reduzir movimento, academia e mínimo. A barra de vida fica cheia (o tempo continua contando). */
+:root:is(.fx-gym, .fx-min) :is(.core-bubble, .cb-life, .cb-dots i) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .core-bubble,
+  .cb-life,
+  .cb-dots i {
+    animation: none;
+  }
+}

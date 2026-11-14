@@ -37,6 +37,7 @@
   --cyan-soft: #0e2a2e;
   --info-bg: #111f2d;
   --violet: #d580ff;
+  --bubble-shadow: #000c; /* sombra do balão do núcleo */
   /* Verde de sinal (Fase 0): concluído, aplicado, recorde. */
   --green: #4ff08f;
   --green-soft: #0d2a1a;
@@ -185,8 +186,6 @@ svg {
     .rir-ask button,
     .choice button,
     .timer button,
-    .toast-act,
-    .toast-close,
     .hm-nav button
   ):focus-visible {
   outline-offset: -3px;

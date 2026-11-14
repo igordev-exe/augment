@@ -6,7 +6,8 @@ import { TimerBar } from "./components/TimerBar";
 import { markBootDone, readBootMode, type BootMode } from "./lib/brand";
 import { todayISO } from "./lib/dates";
 import { loadActiveProgram } from "./lib/db";
-import { setToastVibrate, ToastProvider, useProgram, useSessions, useSettings, useToday } from "./lib/hooks";
+import { useNoticeSync } from "./lib/noticeSync";
+import { setBubblePersona, setToastVibrate, ToastProvider, useProgram, useSessions, useSettings, useToday } from "./lib/hooks";
 import { Onboarding } from "./screens/Onboarding";
 import { PrivacyPolicy } from "./screens/PrivacyPolicy";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -69,6 +70,9 @@ function Shell() {
   // Setor da rota (Operação, Telemetria, Rede, Treinador): troca o --sector das peças de jogo.
   useEffect(() => applySector(sectorFor(pathname)), [pathname]);
   useEffect(() => setToastVibrate(settings.vibrate), [settings.vibrate]);
+  useEffect(() => setBubblePersona(settings.persona), [settings.persona]);
+  // Avisos fora do app: reagenda a cada mudança de treino ou ajuste; o balão pede a permissão depois do 1º treino.
+  useNoticeSync(sessions, settings, settingsLoaded, pathname);
   useEffect(
     () => configure({ sound: settings.sound, vibrate: settings.vibrate, notify: settings.notify }),
     [settings.sound, settings.vibrate, settings.notify, configure],

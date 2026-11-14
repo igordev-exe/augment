@@ -17,6 +17,11 @@ const config: CapacitorConfig = {
       initialViewportFitValueHint: "cover",
       style: "DARK",
     },
+    // Avisos fora do app (lib/native.ts → syncNotices): ícone pequeno próprio e cor de destaque do app.
+    LocalNotifications: {
+      smallIcon: "ic_stat_augment",
+      iconColor: "#ef302c",
+    },
   },
 };
 

@@ -3,6 +3,7 @@ import { BrandMark, Wordmark } from "../components/Brand";
 import { Link, useNavigate } from "react-router-dom";
 import { dayCode, dayName, StopBadge, WeekStrip } from "../components/bits";
 import { SysModule } from "../components/SysModule";
+import { CoreAnnounce, type Announcement } from "../components/CoreAnnounce";
 import { HoldButton } from "../components/HoldButton";
 import { Icon } from "../components/Icon";
 import { OnlineStrip, useOnlineStatus } from "../components/OnlineStrip";
@@ -122,8 +123,39 @@ export function Today() {
     toast("Backup exportado.", "ok");
   }
 
+  // O balão anuncia, uma vez por dia, o que pede atenção aqui (a tela continua com os módulos).
+  const announce: Announcement[] = [];
+  if (!active && reentry) {
+    announce.push({
+      key: "retomada",
+      tone: "warn",
+      text:
+        reentry.kind === "restart"
+          ? `${reentry.gapDays} dias sem treinar. Antes de voltar pesado, veja a retomada aqui no Hoje.`
+          : `Semana passada: ${reentry.done} de ${reentry.planned} treinos. Veja a retomada aqui no Hoje.`,
+      opts: { title: "Retomada" },
+    });
+  }
+  if (showReport && report) {
+    announce.push({
+      key: "relatorio",
+      tone: report.prs.length ? "reward" : "info",
+      text: `Relatório da semana pronto: ${report.done} de ${report.planned} ${report.planned === 1 ? "treino" : "treinos"}${report.prs.length ? `, ${report.prs.length} ${report.prs.length === 1 ? "recorde" : "recordes"}` : ""}.`,
+      opts: { title: "Relatório", route: "/relatorio" },
+    });
+  }
+  if (coreLine) {
+    announce.push({
+      key: "nucleo",
+      tone: coreLine.tone === "good" ? "ok" : coreLine.tone,
+      text: coreLine.headline,
+      opts: { title: coreLine.code.split("//")[1]?.trim() || "Núcleo" },
+    });
+  }
+
   return (
     <div className="stack-lg">
+      <CoreAnnounce items={announce} today={today} />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="AUGMENT">
           <BrandMark />

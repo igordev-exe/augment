@@ -32,7 +32,7 @@ import { coreReply, STARTERS, type ChatContext, type CoreProposal, type CoreRepl
 import { useTimer } from "../lib/timer";
 import { LEVEL_LABEL, type EvidenceLevel } from "../data/science";
 import { addAbsence, db, uid, upsertBodyEntry, upsertConstraint } from "../lib/db";
-import { useBodyLog, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { useBodyLog, useCoreTyping, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
 import { shareOrDownload } from "../lib/files";
 import { addDays, shortDate } from "../lib/dates";
@@ -330,6 +330,8 @@ export function Coach() {
   const [localCtx, setLocalCtx] = useState<ChatContext>({});
   const timer = useTimer();
   const toast = useToast();
+  // "Digitando…" no balão do núcleo só enquanto o treinador com chave responde.
+  useCoreTyping(busy && !!config?.apiKey);
   /** Gaveta de conversas (a barra lateral do mockup). */
   const [sideOpen, setSideOpen] = useState(false);
   const [archive, setArchive] = useState<CoachArchiveItem[]>([]);
