@@ -3,7 +3,7 @@ import { applyTaste } from "./notes";
 import { LIBRARY, LIB_BY_ID, LIB_MUSCLES } from "../../data/library";
 import { EQUIP_LABEL, EXT_BY_ID, libraryName } from "../../data/library-extended";
 import { MUSCLE_LABEL, programDays, shortName } from "../../data/program";
-import { PRINCIPLES, SCIENCE, type EvidenceLevel, type Principle } from "../../data/science";
+import { EXERCISE_EVIDENCE, PRINCIPLES, SCIENCE, type EvidenceLevel, type Principle } from "../../data/science";
 import type { MuscleId } from "../../data/types";
 import { weekFor } from "../mesocycle";
 import { formatWeight } from "../progression";
@@ -104,6 +104,8 @@ export function libraryAnswer(text: string, d: AnswerData): GeneratedReply | nul
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  const cmp = compareAnswer(t);
+  if (cmp) return cmp;
   // Equipamento do exercício.
   if (/\b(qual|que) (equipamento|aparelho|maquina)\b|\b(usa|precisa de) (o )?que\b|\bfaz (com|em) que\b|\bequipamento\b/.test(t)) {
     const ex = detectExercise(t);
@@ -174,6 +176,42 @@ export function libraryAnswer(text: string, d: AnswerData): GeneratedReply | nul
     };
   }
   return null;
+}
+
+// ---------- "X ou Y?" (bloco E do chat potente) ----------
+
+/** "Supino ou crucifixo?", "diferença entre leg press e agachamento": os dois lado a lado, com o que a biblioteca sabe. */
+function compareAnswer(t: string): GeneratedReply | null {
+  // "Começo pelo supino ou pelo crucifixo?" é pergunta de ordem, não de escolha.
+  if (/\b(comeco|comecar|primeiro|antes|depois|ordem|juntos|os dois|mesmo dia)\b/.test(t)) return null;
+  const m =
+    t.match(
+      /^(?:qual (?:e )?(?:o )?melhor[, ]+|o que e melhor[, ]+|melhor )?(.+?) (?:ou|vs|versus|x) (.+?)(?: qual (?:e )?(?:o )?melhor| qual e melhor| o que e melhor)?$/,
+    ) ?? t.match(/^(?:qual (?:e )?a )?diferenca entre (?:o |a )?(.+?) e (?:o |a )?(.+)$/);
+  if (!m) return null;
+  const a = detectExercise(m[1]);
+  const b = detectExercise(m[2]);
+  if (!a || !b || a.libId === b.libId) return null;
+  const inProgram = new Set(programDays().flatMap((day) => day.exercises.map((e) => e.lib)));
+  const line = (x: ExerciseRef) => {
+    const name = libraryName(x.libId) ?? x.name;
+    const muscles = (LIB_MUSCLES[x.libId] ?? EXT_BY_ID[x.libId]?.muscles ?? []).map((mu) => MUSCLE_LABEL[mu].toLowerCase());
+    const eq = equipOf(x);
+    const ev = EXERCISE_EVIDENCE[x.libId];
+    return `**${name}**: ${muscles.length ? `trabalha ${muscles.join(", ")}` : "sem músculos cadastrados"}${eq ? `; ${eq.charAt(0).toLowerCase() + eq.slice(1)}` : ""}${ev ? `; ${ev.tag.toLowerCase()}` : ""}${inProgram.has(x.libId) ? " (está no seu programa)" : ""}.`;
+  };
+  return {
+    kind: "biblioteca",
+    id: `comparar-${a.libId}-${b.libId}`,
+    text: `${line(a)}
+
+${line(b)}
+
+Os dois servem quando trabalham o mesmo músculo: escolha o que você faz com boa técnica e consegue progredir carga. O que já está no programa ganha no empate, porque tem histórico.`,
+    level: "consenso",
+    principle: "equipamento",
+    route: `/exercicios/${a.libId}`,
+  };
 }
 
 // ---------- Por princípio ----------

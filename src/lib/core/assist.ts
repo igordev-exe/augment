@@ -152,6 +152,8 @@ export function stateChips(d: AnswerData, ex: ExerciseRef | undefined, muscle: M
     if (st && st.target > 0 && st.sets < st.target) out.push(`Exercícios para ${MUSCLE_LABEL[muscle].toLowerCase()}`);
   }
   if (weekFor(d.settings.mesoStart, d.today) === 6) out.push("O que muda no deload?");
+  // Resposta sobre um exercício ou músculo sem alerta: o "Por quê?" explica o número (estagnação, cansaço).
+  if ((ex || muscle) && !out.some((c) => c.startsWith("Por que"))) out.push("Por quê?");
   const a = norm(asked);
   return out.filter((c) => norm(c) !== a).slice(0, 3);
 }

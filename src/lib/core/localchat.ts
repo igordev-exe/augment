@@ -23,7 +23,7 @@ import { asideFor, capabilitiesAnswer, stateChips, summaryAnswer, traceAnswer } 
 import { PRINCIPLES } from "../../data/science";
 import { CONTINUE, continueFlow, FLOW_TTL, startFlow, type FlowReply, type FlowState } from "./flows";
 import { aboutMe, detectNote, forgetNote } from "./notes";
-import { EMPTY_OPERATOR_MEMORY } from "./operator";
+import { EMPTY_OPERATOR_MEMORY, operatorState } from "./operator";
 
 export type { CoreProposal } from "./undo";
 
@@ -144,6 +144,8 @@ const WEIGHT_BASED = ["proteina-quanto", "ganhar-massa-comer", "perder-gordura-r
 
 /** A conta com o peso da pessoa nas respostas que dependem dele (vira o bloco de análise). */
 export function personalInsight(a: Answer, data: AnswerData): LocalMeta["insight"] {
+  const own = trainingInsight(a.id, data);
+  if (own) return own;
   if (!WEIGHT_BASED.includes(a.id)) return undefined;
   const w = latestWeight(data.bodyLog);
   if (!w) return { label: "Cálculo pessoal", text: "Registre o seu peso em Progresso e eu faço a conta para você." };
@@ -154,6 +156,42 @@ export function personalInsight(a: Answer, data: AnswerData): LocalMeta["insight
     return { label: "Cálculo pessoal", text: `${base} **${f(w * 1.6)} a ${f(w * 2.2)} g de proteína por dia**.` };
   if (a.id === "ganhar-massa-comer") return { label: "Cálculo pessoal", text: `${base} **${kg(0.002)} a ${kg(0.005)} kg por semana**.` };
   return { label: "Cálculo pessoal", text: `${base} **${kg(0.005)} a ${kg(0.007)} kg por semana**.` };
+}
+
+/** Bloco E: a conta com os treinos da pessoa nas respostas de volume, frequência e descanso. */
+function trainingInsight(id: string, d: AnswerData): LocalMeta["insight"] {
+  if (id === "series-por-semana") {
+    const week = weekFor(d.settings.mesoStart, d.today);
+    const st = muscleStatus(d.sessions, week, d.today, d.now ?? Date.now(), d.settings.setAdjust);
+    const rows = (Object.values(st) as (typeof st)[keyof typeof st][])
+      .filter((x) => x && x.target > 0)
+      .sort((a, b) => b.target - a.target)
+      .slice(0, 4)
+      .map((x) => `${MUSCLE_LABEL[x.muscle].toLowerCase()} ${formatWeight(x.sets)} de ${x.target}`);
+    return rows.length ? { label: "Seus números", text: `Nesta semana: ${rows.join(", ")} séries.` } : undefined;
+  }
+  if (id === "frequencia-musculo") {
+    const days = programDays();
+    if (!days.length) return undefined;
+    const per = d.settings.trainingDays.length / days.length;
+    const count = new Map<string, number>();
+    for (const day of days) for (const m of new Set(day.exercises.map((e) => e.muscles[0]))) count.set(m, (count.get(m) ?? 0) + 1);
+    const rows = [...count.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([m, n]) => `${MUSCLE_LABEL[m as keyof typeof MUSCLE_LABEL].toLowerCase()} ${formatWeight(Math.round(n * per * 10) / 10)}×`);
+    return { label: "Seus números", text: `No seu programa, por semana: ${rows.join(", ")}.` };
+  }
+  if (id === "descanso-series") {
+    const b = operatorState(d.sessions, d.bodyLog, d.settings, d.memory, d.today).behavior;
+    if (b.restConfidence < 0.5) return undefined;
+    const pct = Math.round(b.restRatio * 100);
+    return {
+      label: "Seus números",
+      text: `Você descansa em média **${pct}%** do descanso mínimo da ficha${pct < 85 ? ": nos compostos, o descanso curto custa reps nas séries seguintes" : pct > 140 ? ": bem acima do indicado, o treino fica longo" : ""}.`,
+    };
+  }
+  return undefined;
 }
 
 function answerReply(a: Answer, data: AnswerData, ctx: ChatContext): LocalReply {

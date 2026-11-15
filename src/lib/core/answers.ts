@@ -43,6 +43,8 @@ const SYNONYMS: Record<string, string[]> = {
   tudo: ["td"],
   muito: ["mt", "mto", "mts"],
   hoje: ["hj"],
+  // Bloco E do chat potente, guiado pelos erros medidos: "configurar os pesos da máquina".
+  mudar: ["configurar", "configuro", "configura", "alterar", "altero", "ajustar", "ajusto"],
   nao: ["n"],
   demais: ["dms"],
   vale: ["vale a pena", "valem a pena", "compensa"],

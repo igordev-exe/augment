@@ -142,3 +142,20 @@ describe("chat potente, blocos C e E: botões do estado, aliás e profundidade",
     expect(long.text.length).toBeGreaterThan(a.text.length);
   });
 });
+
+describe("chat potente, bloco E: respostas geradas e números da pessoa", () => {
+  it("'X ou Y?' compara pela biblioteca; pergunta de ordem não vira comparação", () => {
+    const r = coreReply("supino inclinado ou crucifixo qual melhor", FULL_DATA, {}, { now: NOW_MS });
+    expect(r.text).toMatch(/trabalha/);
+    expect(r.text.match(/\*\*/g)?.length).toBeGreaterThanOrEqual(4);
+    const o = coreReply("comeco pelo supino ou pelo crucifixo", FULL_DATA, {}, { now: NOW_MS });
+    expect(o.text).not.toMatch(/Os dois servem/);
+  });
+
+  it("resposta de volume e de frequência traz os números do programa e da semana", () => {
+    const v = coreReply("quantas series por musculo na semana", FULL_DATA, {}, { now: NOW_MS });
+    expect(v.meta.insight?.label).toBe("Seus números");
+    const f = coreReply("quantas vezes por semana devo treinar cada musculo", FULL_DATA, {}, { now: NOW_MS });
+    expect(f.meta.insight?.text ?? f.text).toMatch(/×|vezes|dias/);
+  });
+});

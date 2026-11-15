@@ -379,8 +379,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - `operator.ts`:
   - memória declarada `OperatorMemory` (kv `operator-memory`, entra no backup): restrições com validade (`time-cap`,
     `equipment`, `pain`, `schedule`), `mesoHistory`, `lastMesoStart`, `calibrationUntil`, `absences` (doença, viagem; `addAbsence` em `db.ts`, proposta pela
-    intenção "faltei"/"fiquei doente"/"viajei" no Coach); `sanitizeOperatorMemory`,
-    `mergeOperatorMemory`, `activeConstraints`;
+    intenção "faltei"/"fiquei doente"/"viajei" no Coach), `notes` (`OperatorNote`: "não gosto de agachamento", "prefiro
+    halter", "treino em casa"; até `NOTES_MAX` = 40; propostas pelo chat, lista em Ajustes → O que o núcleo guardou);
+    `sanitizeOperatorMemory`, `mergeOperatorMemory` (guarda `lastMesoStart` e `notes` no "Juntar"), `activeConstraints`;
   - estado derivado `operatorState(sessions, bodyLog, settings, memory, today)`: por músculo (`recoveryMultiplier`,
     `volumeTolerance`), por exercício (`responsiveness`, `jointRisk`), comportamento (`restRatio`, `weekdayMissRate`,
     `preferredHour`, `loadAcceptanceRate`), `body` (tendência de peso) e `calibration`; cada um com `confidence`. Treino
@@ -431,8 +432,39 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - Saída honesta (`localchat.ts`, `OUT_OF_SCOPE`): clima, notícia, receita, esporte, outro app, conta geral, pessoal,
     conhecimento; 3 perguntas próximas, "Levar a pergunta para outro chat" e "Pesquisar na web" (abre o navegador só
     ao tocar; nunca em assunto travado).
-  - Memória curta (`ChatContext`): eixos da última consulta, entidade, pedido em aberto, proposta aberta; até 3 trocas
-    ou 5 minutos. "não, o inclinado" vira continuação.
+  - Contexto (`ChatContext`): eixos da última consulta, exercício e músculo do assunto, último comando, última resposta
+    pronta, roteiro aberto. O assunto vale 10 trocas ou 15 minutos e sobrevive a resposta pronta e papo; a proposta
+    aberta e o pedido em aberto expiram em 5. "não, o inclinado" vira continuação; "ele/nele/esse exercício" vira o
+    último exercício (`resolveRefs`); "repete", "de novo", "repete com 85" refazem o último comando.
+  - **Chat potente, blocos B–E** (`docs/prompt-chat-potente.md`):
+    - Pedido composto (`splitRequest` em `understand.ts` + `compoundReply`): quebra em "e", "depois", vírgula, ";" só
+      quando cada lado é pedido sozinho ou continuação ("e de costas"); até 3 partes; a 2ª série vai para a série
+      seguinte; propostas viram um cartão `batch` com "Aplicar tudo" e o descanso depois de uma gravação espera o
+      Aplicar (`then`). Queixa (intenção) nunca quebra.
+    - `undo.ts`: `CoreProposal` (intent, command, note, batch, undo), `applyPure`/`undoFor`/`revertPure` (aplicar e
+      desfazer puros; a tela grava só o que mudou), pilha `pushUndo`/`latestUndo` (5, 10 min). "Desfaz" pergunta o
+      que vai desfazer; o balão de "Feito" tem o botão Desfazer.
+    - `why.ts` (`whyAnswer`): estagnação/regressão, cansaço, menos séries/deload, recorde que não contou, sequência,
+      posto, descanso maior, por que esse exercício; conclusão + até 3 fatores com o número da pessoa + "o que fazer"
+      com princípio. "Por quê?" sozinho usa o assunto. A carga do próximo treino segue na intenção `explicar_carga`.
+    - `whatif.ts` (`whatIfAnswer`): N dias por semana (proposta de dias), carga a mais (curva pessoal), quanto falta
+      para X kg (ritmo do 1RM, em faixa, 4+ treinos), faltar amanhã, pular o deload, peso daqui a N semanas; "monta
+      um treino de 40 min" vira a intenção de tempo curto. Nunca grava.
+    - `assist.ts`: resumo ("como estou?"), de onde saiu o número (`traceAnswer`, usa `ctx.query`), o que o chat sabe
+      fazer, `stateChips` (botões do estado: "Por que travei…", "Quanto falta para N kg…", "Por quê?") e `asideFor`
+      ("Aliás", 1 por resposta, 1 vez por dia por assunto).
+    - `notes.ts`: `detectNote` (só com confirmação; saúde nunca vira lembrança), `aboutMe`, `forgetNote`,
+      `applyTaste` (trocas e "exercícios para…" tiram o que a pessoa não gosta e põem o preferido na frente; o
+      planejador não muda por gosto).
+    - `flows.ts`: 5 roteiros de até 3 perguntas com botões (trocar de programa, montar o treino de hoje, voltei de
+      pausa, meta de peso, incômodo); "cancela" sai; pergunta fora do roteiro é respondida com o botão "Continuar de
+      onde paramos"; duas seguidas encerram; expira em 10 min.
+    - Respostas prontas de volume, frequência e descanso trazem "Seus números" (`trainingInsight`); "X ou Y?" é
+      gerado da biblioteca (`compareAnswer` em `generated.ts`); "resumindo" e "explica melhor" refazem a última
+      resposta pronta noutro tamanho.
+    - Medição: `converse.test.ts` (compostos 0 → 100%, controles 0% quebrados, conversas 71,4% → 100%, desfazer
+      devolve o estado exato), `reason.test.ts` (por quê e e se 100%, números conferidos por conta independente),
+      `memory.test.ts` (lembranças 97,5%+, saúde 0, os 5 roteiros terminam, cancelam, retomam e expiram).
   - Medição do bloco A: `free.golden.ts` (109 frases livres) + `understand.test.ts` (partida 53,2% → 99,1% de pedido
     certo; paráfrase mecânica ≥ 95%; 5.000 mensagens aleatórias sem gravação com "não" nem vazamento da trava) e
     `learned.test.ts`. Dados de teste em `chat.fixture.ts`.
@@ -640,10 +672,9 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - `prompt-nucleo-vivo.md`: análise + dois prompts mestres ainda não implementados: núcleo ao vivo no treino
     (previsão da próxima série, descanso que acompanha, uma fala só no HUD, backtest) e chat amplo (comandos por
     frases-modelo, gramática de consultas, papo, saída honesta);
-  - `prompt-chat-potente.md`: análise + prompt mestre em 5 blocos (A–E); **bloco A feito** (frase livre, registro,
-    apelidos; os filtros e o tempo falado das consultas, I4 e I5, ficaram para depois), B–E por fazer: frase livre,
-    pedido composto, contexto longo, desfazer, "por quê", "e se", conversas guiadas, memória do que foi dito e mais
-    respostas. Voz fica fora;
+  - `prompt-chat-potente.md`: análise + prompt mestre em 5 blocos (A–E), **todos feitos** em 14/11/2026. Ficaram de
+    fora: filtros, negação e superlativos nas consultas (I4), tempo falado novo (I5), carga explicada para qualquer
+    exercício (só o próximo treino), respostas escritas novas (esperam a lista real do `npm run misses`). Voz fica fora;
   - `ux-discovery/`: jornada do operador, avaliação de UI/UX e comparativo;
   - `brand/augment-logo.html`: estudo da marca.
 - `.claude/skills/treinador`: skill de debrief a partir de um backup.
