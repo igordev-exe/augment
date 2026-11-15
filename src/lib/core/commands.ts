@@ -6,6 +6,7 @@ import { addDays, daysBetween, longDate, mondayOf, shortDate } from "../dates";
 import { weekFor } from "../mesocycle";
 import { barWeightIn, formatWeight, platesForBarbell, setE1rm, toKg, workSets } from "../progression";
 import { suspiciousSet } from "../sanity";
+import { applyTaste } from "./notes";
 import { planAhead } from "../schedule";
 import { detectExercise, type AnswerData, type DataCard, type ExerciseRef } from "./data-answers";
 import { hasAny } from "./intents";
@@ -584,7 +585,10 @@ function nextSetReply(d: AnswerData): CommandReply {
 }
 
 function swap(d: AnswerData, ex: ExerciseRef): CommandReply {
-  const alts = LIB_BY_ID[ex.libId]?.alternatives ?? [];
+  // O que a pessoa disse que não gosta sai da lista; o equipamento preferido vem primeiro.
+  const taste = applyTaste(LIB_BY_ID[ex.libId]?.alternatives ?? [], d.memory?.notes);
+  const alts = taste.names;
+  const tasteNote = taste.changed ? " (levei em conta o que você me contou)" : "";
   const s = activeSession(d);
   const entry = s?.exercises.find((e) => e.exId === ex.exId || exOf(e)?.lib === ex.libId);
   if (!alts.length) {
@@ -609,7 +613,7 @@ function swap(d: AnswerData, ex: ExerciseRef): CommandReply {
   const alt = alts.find((a) => a !== entry.alt) ?? alts[0];
   return {
     id: "treino-trocar",
-    text: `Trocar **${ex.name}** por **${alt}** só neste treino? O programa não muda. Outras opções: ${
+    text: `Trocar **${ex.name}** por **${alt}** só neste treino?${tasteNote} O programa não muda. Outras opções: ${
       alts
         .filter((a) => a !== alt)
         .slice(0, 2)

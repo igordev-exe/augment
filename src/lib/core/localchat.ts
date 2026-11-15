@@ -21,6 +21,8 @@ import { whyAnswer, type ReasonReply } from "./why";
 import { whatIfAnswer } from "./whatif";
 import { asideFor, capabilitiesAnswer, stateChips, summaryAnswer, traceAnswer } from "./assist";
 import { PRINCIPLES } from "../../data/science";
+import { CONTINUE, continueFlow, FLOW_TTL, startFlow, type FlowReply, type FlowState } from "./flows";
+import { aboutMe, detectNote, forgetNote } from "./notes";
 import { EMPTY_OPERATOR_MEMORY } from "./operator";
 
 export type { CoreProposal } from "./undo";
@@ -67,6 +69,8 @@ export type ChatContext = DataContext &
     lastAnswer?: string;
     /** "Aliás" já dito hoje, por assunto (atravessa o fim do assunto, como a contagem). */
     asides?: Record<string, string>;
+    /** Conversa guiada aberta (até 3 perguntas). */
+    flow?: FlowState;
     /** Pedido de comando esperando um campo. */
     pending?: PendingCommand;
     /** Há proposta esperando "sim" ou "não". */
@@ -108,6 +112,7 @@ export interface CoreReply extends LocalReply {
     | "why"
     | "whatif"
     | "assist"
+    | "flow"
     | "maybe"
     | "none";
 }
@@ -403,7 +408,11 @@ export function coreReply(text: string, data: CoreData, prev: ChatContext = {}, 
     });
     if (split) return compoundReply(split, data, prev, env);
   }
-  return singleReply(text, data, prev, env);
+  const r = singleReply(text, data, prev, env);
+  // Pergunta fora do roteiro: respondida, e o chat oferece voltar para a conversa guiada.
+  if (prev.flow && r.ctx.flow && r.ctx.flow.off > prev.flow.off)
+    r.meta = { ...r.meta, chips: [CONTINUE, ...(r.meta.chips ?? [])].slice(0, 3) };
+  return r;
 }
 
 function compoundReply(split: NonNullable<ReturnType<typeof splitRequest>>, data: CoreData, prev: ChatContext, env: CoreEnv): CoreReply {
@@ -524,6 +533,23 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
       });
   }
 
+  // Conversa guiada aberta: a mensagem responde à pergunta, cancela, ou sai do roteiro (e a conversa segue normal).
+  if (!guard && ctx.flow) {
+    if (now - ctx.flow.at > FLOW_TTL) ctx.flow = undefined;
+    else {
+      const fr = continueFlow(text, ctx.flow, data, now);
+      if (fr === "cancel")
+        return stamp({
+          text: "Ok, parei por aqui. Nada mudou.",
+          meta: { kind: "command" },
+          ctx: { ...ctx, flow: undefined },
+          layer: "flow",
+        });
+      if (fr === "off") ctx.flow = ctx.flow.off >= 1 ? undefined : { ...ctx.flow, off: ctx.flow.off + 1 };
+      else return stamp(flowReply(fr, ctx));
+    }
+  }
+
   // "Desfaz": mostra o que vai ser desfeito e desfaz com um toque (ou "sim").
   if (!guard && UNDO.test(t)) {
     if (!env.undoLabel) return stamp({ text: "Não há nada recente para desfazer.", meta: { kind: "command" }, ctx, layer: "command" });
@@ -596,6 +622,39 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
 
   // 3b. Raciocínio com os dados: "por quê", "e se", resumo, de onde saiu o número, o que o chat sabe, mais curto/longo.
   if (!guard) {
+    // Memória do que a pessoa contou: guardar (com confirmação), listar e esquecer.
+    const about = aboutMe(text, data.memory, data.today);
+    if (about)
+      return stamp({ text: about, meta: { kind: "data", route: "/ajustes", routeLabel: "Abrir os ajustes" }, ctx, layer: "assist" });
+    const forget = forgetNote(text, data.memory);
+    if (forget === "none")
+      return stamp({
+        text: 'Não achei isso no que eu guardei. Pergunte "o que você sabe sobre mim" para ver a lista.',
+        meta: { kind: "command" },
+        ctx,
+        layer: "assist",
+      });
+    if (forget) {
+      const { text: ft, ...fp } = forget;
+      return stamp({
+        text: ft,
+        meta: { kind: "command" },
+        ctx: { ...ctx, proposalOpen: true },
+        proposal: { source: "note", ...fp },
+        layer: "assist",
+      });
+    }
+    const note = detectNote(text, data.today, () => `n${now.toString(36)}`);
+    if (note) {
+      const { text: nt, ...np } = note;
+      return stamp({
+        text: nt,
+        meta: { kind: "command" },
+        ctx: { ...ctx, proposalOpen: true },
+        proposal: { source: "note", ...np },
+        layer: "assist",
+      });
+    }
     const why = whyAnswer(text, data, { exercise: ctx.exercise, muscle: ctx.muscle });
     if (why) return stamp({ ...reasonReply(why, ctx), layer: "why" });
     const wi = whatIfAnswer(text, data, { exercise: ctx.exercise, muscle: ctx.muscle });
@@ -625,6 +684,8 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
     if (trace) return stamp({ text: trace, meta: { kind: "data" }, ctx, layer: "assist" });
     const caps = capabilitiesAnswer(text);
     if (caps) return stamp({ text: caps.text, meta: { kind: "answer", chips: caps.chips }, ctx, layer: "assist" });
+    const flow = startFlow(text, now);
+    if (flow) return stamp(flowReply(flow, ctx));
     const depth = fresh && ctx.lastAnswer ? depthReply(t, ctx.lastAnswer) : null;
     if (depth)
       return stamp({ text: depth, meta: { kind: "answer", principle: BY_ID.get(ctx.lastAnswer!)?.principle }, ctx, layer: "assist" });
@@ -672,6 +733,16 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
   }
   const keep = layer === "data" ? r.ctx : { ...r.ctx, pending: undefined, proposalOpen: false };
   return stamp({ ...r, ctx: keep, layer });
+}
+
+function flowReply(fr: FlowReply, ctx: ChatContext): Omit<CoreReply, "layer"> & { layer: "flow" } {
+  return {
+    text: fr.text,
+    meta: { kind: "command", chips: fr.chips, route: fr.end?.route, routeLabel: fr.end?.routeLabel },
+    ctx: { ...ctx, flow: fr.flow, proposalOpen: !!fr.end?.proposal, pending: undefined },
+    proposal: fr.end?.proposal,
+    layer: "flow",
+  };
 }
 
 function reasonReply(r: ReasonReply, ctx: ChatContext): Omit<CoreReply, "layer"> {

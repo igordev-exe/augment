@@ -370,3 +370,26 @@ body {
 :is(.row, .spread, .cloud-item, .friend-row, .actions):has(> .btn) {
   flex-wrap: wrap;
 }
+
+/* Ajustes → O que o núcleo guardou: uma lembrança por linha, com filete entre elas. */
+.core-memory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.core-memory li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--line-2);
+}
+.core-memory li:first-child {
+  border-top: 0;
+}
+.core-memory li > span {
+  flex: 1 1 12rem;
+  min-width: 0;
+}

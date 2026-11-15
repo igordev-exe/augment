@@ -1,4 +1,5 @@
 import { GLOSSARY, type GlossaryTerm } from "../../data/glossary";
+import { applyTaste } from "./notes";
 import { LIBRARY, LIB_BY_ID, LIB_MUSCLES } from "../../data/library";
 import { EQUIP_LABEL, EXT_BY_ID, libraryName } from "../../data/library-extended";
 import { MUSCLE_LABEL, programDays, shortName } from "../../data/program";
@@ -126,12 +127,13 @@ export function libraryAnswer(text: string, d: AnswerData): GeneratedReply | nul
     ) &&
     !/\b(fiz|treinei|quantas|quantos|quando)\b/.test(t)
   ) {
-    const list = exercisesFor(muscle).slice(0, 6);
+    const taste = applyTaste(exercisesFor(muscle), d.memory?.notes);
+    const list = taste.names.slice(0, 6);
     if (!list.length) return null;
     return {
       kind: "biblioteca",
       id: `exercicios-${muscle}`,
-      text: `Exercícios para **${lower(muscle)}** (primeiro os do seu programa):\n${list.map((x) => `- ${x}`).join("\n")}\nNa biblioteca há fotos e o passo a passo de cada um.`,
+      text: `Exercícios para **${lower(muscle)}** (primeiro os do seu programa):\n${list.map((x) => `- ${x}`).join("\n")}\nNa biblioteca há fotos e o passo a passo de cada um.${taste.changed ? " Levei em conta o que você me contou." : ""}`,
       route: "/exercicios",
     };
   }

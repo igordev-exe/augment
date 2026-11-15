@@ -16,7 +16,7 @@ import { shareOrDownload } from "../lib/files";
 import { CHANNEL_INFO } from "../lib/core/notices";
 import { isNative, requestNotifyPermission } from "../lib/native";
 import type { NoticeChannel } from "../data/types";
-import { useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
+import { useOperatorMemory, useSessions, useSettings, useToast, useToday, useProgram } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
 import { createRestorePoint } from "../lib/restore";
 import { formatWeight, workSets } from "../lib/progression";
@@ -160,6 +160,7 @@ export function SettingsScreen() {
             onBlur={(e) => update({ operator: e.target.value.trim() })}
           />
         </FoldRow>
+        <CoreMemoryRow />
         {apiUrl() && (
           <LinkRow
             to="/online"
@@ -552,5 +553,44 @@ export function SettingsScreen() {
         )}
       </section>
     </div>
+  );
+}
+
+/** "O que o núcleo guardou": o que a pessoa contou no chat ("não gosto de agachamento"), com o botão de esquecer. */
+function CoreMemoryRow() {
+  const [memory, save] = useOperatorMemory();
+  const notes = memory.notes ?? [];
+  return (
+    <FoldRow
+      title="O que o núcleo guardou"
+      value={notes.length ? `${notes.length} ${notes.length === 1 ? "lembrança" : "lembranças"}` : "Nada guardado"}
+    >
+      {notes.length ? (
+        <ul className="core-memory">
+          {notes.map((n) => (
+            <li key={n.id}>
+              <span>
+                <strong>{n.kind === "dislike" ? "Não gosta de" : n.kind === "prefer" ? "Prefere" : "Disse"}</strong>{" "}
+                {n.label ?? `"${n.text}"`}
+                <span className="muted small"> · {shortDate(n.at)}</span>
+              </span>
+              <button
+                type="button"
+                data-augmented-ui="tl-clip br-clip border"
+                className="btn btn-sm btn-ghost"
+                onClick={() => void save({ notes: notes.filter((x) => x.id !== n.id) })}
+              >
+                Esquecer
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="small muted">
+          Conte ao treinador do que você gosta ou não (&quot;não gosto de agachamento&quot;, &quot;prefiro halter&quot;). Ele pergunta antes
+          de guardar, e isso muda só as sugestões do chat, nunca o treino planejado.
+        </p>
+      )}
+    </FoldRow>
   );
 }
