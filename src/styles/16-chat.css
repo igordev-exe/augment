@@ -968,3 +968,12 @@
   color: var(--ink-3);
   letter-spacing: 0.02em;
 }
+
+/* Pedido composto: a lista do que vai ser aplicado. */
+.proposal-list {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: grid;
+  gap: var(--sp-1);
+  font-weight: 600;
+}

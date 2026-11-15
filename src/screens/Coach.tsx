@@ -31,7 +31,19 @@ import type { DataCard } from "../lib/core/data-answers";
 import { coreReply, STARTERS, type ChatContext, type CoreProposal, type CoreReply, type LocalMeta } from "../lib/core/localchat";
 import { useTimer } from "../lib/timer";
 import { LEVEL_LABEL, type EvidenceLevel } from "../data/science";
-import { addAbsence, addChatMiss, db, saveChatAliases, uid, upsertBodyEntry, upsertConstraint } from "../lib/db";
+import {
+  addChatMiss,
+  db,
+  loadBodyLog,
+  loadOperatorMemory,
+  loadSettings,
+  saveBodyLog,
+  saveChatAliases,
+  saveOperatorMemory,
+  uid,
+} from "../lib/db";
+import { applyPure, latestUndo, pushUndo, revertPure, undoFor, type ChatState, type UndoRecord } from "../lib/core/undo";
+import type { CommandAction } from "../lib/core/commands";
 import { forgetAlias, learnAlias } from "../lib/core/learned";
 import { useBodyLog, useChatAliases, useCoreTyping, useOperatorMemory, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { coachHandoffText } from "../lib/coach/handoff";
@@ -317,6 +329,8 @@ export function Coach() {
   const aliases = useChatAliases();
   /** Última frase que o núcleo não entendeu: se a pessoa tocar numa sugestão, o chat aprende o atalho. */
   const lastMiss = useRef<string | null>(null);
+  /** O que o chat aplicou nesta conversa e ainda dá para desfazer (5 últimas, 10 minutos). */
+  const undoStack = useRef<UndoRecord[]>([]);
   const today = useToday();
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<CoachConfig | null>(null);
@@ -450,7 +464,11 @@ export function Coach() {
     // Núcleo local em camadas: travas → comandos → intenções → consultas → respostas prontas → papo → saída honesta.
     const local: CoreReply | null = skipLocal
       ? null
-      : coreReply(t, { ...data, bodyLog: bodyLog ?? [], aliases }, localCtx, { timerActive: !!timer.state, now: Date.now() });
+      : coreReply(t, { ...data, bodyLog: bodyLog ?? [], aliases }, localCtx, {
+          timerActive: !!timer.state,
+          now: Date.now(),
+          undoLabel: latestUndo(undoStack.current, Date.now())?.label,
+        });
     if (local && (local.layer === "none" || local.layer === "maybe")) {
       void addChatMiss(t, local.layer, today);
       lastMiss.current = t;
@@ -460,9 +478,7 @@ export function Coach() {
     const keepLocal = local && (!hasKey || !["smalltalk", "maybe", "none"].includes(local.layer));
     if (local && keepLocal) {
       setLocalCtx(local.ctx);
-      if (local.action?.kind === "timer-start") timer.start(local.action.seconds, "Descanso");
-      if (local.action?.kind === "timer-stop") timer.stop();
-      if (local.action?.kind === "timer-add") timer.add(local.action.seconds);
+      for (const a of local.actions ?? (local.action ? [local.action] : [])) runAction(a);
       let extraNote: string | undefined;
       if (local.answerProposal && pendingIntent) {
         const p = pendingIntent;
@@ -538,33 +554,58 @@ ${t}`,
     }
   }
 
-  /** Grava a proposta do núcleo (só depois de Aplicar ou "sim"). */
+  function runAction(a: CommandAction) {
+    if (a.kind === "timer-start") timer.start(a.seconds, "Descanso");
+    if (a.kind === "timer-stop") timer.stop();
+    if (a.kind === "timer-add") timer.add(a.seconds);
+  }
+
+  /** Estado que o chat pode mudar, lido do banco na hora (o dos hooks pode estar um passo atrás). */
+  async function chatState(): Promise<ChatState> {
+    const [active, body, st, memory] = await Promise.all([
+      db.sessions.where("status").equals("active").toArray(),
+      loadBodyLog(),
+      loadSettings(),
+      loadOperatorMemory(),
+    ]);
+    return { sessions: active, bodyLog: body, settings: st, memory };
+  }
+
+  /** Grava só o que mudou de um estado para o outro. */
+  async function persist(before: ChatState, after: ChatState) {
+    for (const s of after.sessions) if (before.sessions.find((x) => x.id === s.id) !== s) await db.sessions.put(s);
+    if (after.bodyLog !== before.bodyLog) await saveBodyLog(after.bodyLog);
+    if (after.settings !== before.settings) {
+      const patch = Object.fromEntries(
+        Object.keys(after.settings)
+          .filter((k) => after.settings[k as keyof typeof after.settings] !== before.settings[k as keyof typeof before.settings])
+          .map((k) => [k, after.settings[k as keyof typeof after.settings]]),
+      );
+      await updateSettings(patch);
+    }
+    if (after.memory !== before.memory)
+      await saveOperatorMemory({ constraints: after.memory.constraints, absences: after.memory.absences, notes: after.memory.notes });
+  }
+
+  /** Desfaz a última aplicação do chat (pela proposta "desfaz" ou pelo botão do aviso). */
+  async function undoLast() {
+    const rec = latestUndo(undoStack.current, Date.now());
+    if (!rec) return;
+    undoStack.current = undoStack.current.filter((r) => r !== rec);
+    const before = await chatState();
+    await persist(before, revertPure(before, rec));
+    toast(`Desfeito: ${rec.label}.`, "ok");
+  }
+
+  /** Grava a proposta do núcleo (só depois de Aplicar ou "sim"). Guarda o "antes" para poder desfazer. */
   async function applyProposal(p: CoreProposal) {
-    if (p.source === "intent") {
-      if (p.constraint) await upsertConstraint(p.constraint);
-      if (p.absence) await addAbsence(p.absence);
-      return;
-    }
-    if (p.kind === "settings") await updateSettings(p.patch);
-    if (p.kind === "body-weight") {
-      const same = (bodyLog ?? []).find((b) => b.date === p.date);
-      await upsertBodyEntry({ ...(same ?? { id: uid(), date: p.date }), weightKg: p.weightKg });
-    }
-    if (p.kind === "log-set" || p.kind === "swap") {
-      const s = await db.sessions.get(p.sessionId);
-      const e = s?.exercises.find((x) => x.exId === p.exId);
-      if (!s || !e || s.status !== "active") return;
-      if (p.kind === "log-set") {
-        const set = e.sets.find((x) => x.id === p.setId);
-        if (!set) return;
-        Object.assign(set, { weight: p.weight, reps: p.reps, done: true, doneAt: Date.now(), suggested: undefined });
-      } else {
-        e.alt = p.alt;
-        // Carga da alternativa é outra: limpa as sugestões pendentes (o treino sugere de novo ao abrir a série).
-        for (const x of e.sets) if (x.kind === "work" && !x.done) Object.assign(x, { weight: null, suggested: undefined });
-      }
-      await db.sessions.put(s);
-    }
+    if (p.source === "undo") return undoLast();
+    const before = await chatState();
+    const rec = undoFor(before, p, p.confirmLabel, Date.now());
+    await persist(before, applyPure(before, p, uid));
+    undoStack.current = pushUndo(undoStack.current, rec, Date.now());
+    if (p.source === "batch") for (const a of p.then ?? []) runAction(a);
+    if (rec) toast(`Feito: ${p.confirmLabel}.`, "ok", undefined, { label: "Desfazer", run: () => void undoLast() });
   }
 
   /** "Pesquisar na web": só sai do aparelho quando a pessoa toca. Abre o navegador do sistema. */
@@ -904,7 +945,15 @@ ${t}`,
         {pendingIntent && (
           <div data-augmented-ui="tl-clip br-clip border" className="card stack proposal cx-aside-card" style={{ gap: 8 }}>
             <span className="label">Proposta do núcleo</span>
-            <strong>{pendingIntent.confirmLabel}</strong>
+            {pendingIntent.source === "batch" ? (
+              <ol className="proposal-list">
+                {pendingIntent.items.map((it, i) => (
+                  <li key={i}>{it.confirmLabel}</li>
+                ))}
+              </ol>
+            ) : (
+              <strong>{pendingIntent.confirmLabel}</strong>
+            )}
             <div className="row">
               <button
                 type="button"
@@ -921,7 +970,7 @@ ${t}`,
                   });
                 }}
               >
-                Aplicar
+                {pendingIntent.source === "batch" ? "Aplicar tudo" : "Aplicar"}
               </button>
               <button
                 type="button"

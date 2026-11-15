@@ -26,3 +26,16 @@ const bodyLog: BodyEntry[] = Array.from({ length: 21 }, (_, i) => ({
 }));
 
 export const FULL_DATA: AnswerData = { sessions, settings: SETTINGS, today: TODAY, bodyLog, now: NOW_MS };
+
+/** Os mesmos dados com um treino em andamento hoje (cópia do último, séries por fazer e carga sugerida). */
+export function withOpenSession(base: AnswerData = FULL_DATA) {
+  const last = [...base.sessions].filter((s) => s.status === "done").sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+  const open = {
+    ...last,
+    id: "aberta",
+    date: base.today,
+    status: "active" as const,
+    exercises: last.exercises.map((e) => ({ ...e, sets: e.sets.map((x) => ({ ...x, done: false, reps: null, suggested: true })) })),
+  };
+  return { data: { ...base, sessions: [...base.sessions, open] }, open };
+}

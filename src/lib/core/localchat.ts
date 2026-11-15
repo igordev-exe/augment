@@ -8,14 +8,18 @@ import { formatWeight } from "../progression";
 import { planAhead } from "../schedule";
 import { fatiguePct, hoursToReady, muscleStatus } from "../visual";
 import { findAnswer, guardTopic, levelOf } from "./answers";
-import { continuePending, runCommand, type CommandAction, type CommandEnv, type CommandProposal, type PendingCommand } from "./commands";
-import { detectExercise, latestWeight, type AnswerData, type DataCard, type DataContext } from "./data-answers";
+import { continuePending, runCommand, type CommandAction, type CommandEnv, type CommandMatch, type PendingCommand } from "./commands";
+import { detectExercise, detectMuscleWord, latestWeight, type AnswerData, type DataCard, type DataContext } from "./data-answers";
 import { glossaryAnswer, libraryAnswer, principleAnswer, type GeneratedReply } from "./generated";
-import { handleIntent, norm, type IntentProposal } from "./intents";
-import { queryAnswer, type QueryContext } from "./query";
+import { handleIntent, matchIntent, norm } from "./intents";
+import { parseQuery, queryAnswer, type QueryContext } from "./query";
 import { prepare } from "./templates";
 import { FORGET_ALIAS, lookupAlias, type ChatAlias } from "./learned";
-import { readCommand, readingLabel } from "./understand";
+import { readCommand, readingLabel, splitRequest } from "./understand";
+import { applyPure, type CoreProposal } from "./undo";
+import { EMPTY_OPERATOR_MEMORY } from "./operator";
+
+export type { CoreProposal } from "./undo";
 
 // AUG.CORE — o chat sem chave, em camadas (a de cima ganha): urgência e assuntos travados → comandos → intenções →
 // consultas aos dados → respostas prontas (com glossário e respostas geradas da biblioteca) → papo → saída honesta.
@@ -49,10 +53,12 @@ export interface LocalMeta {
 /** Memória curta da conversa: até 3 trocas, 5 minutos. */
 export type ChatContext = DataContext &
   QueryContext & {
-    /** Hora da última troca (expira em 5 min). */
+    /** Hora da última troca (o assunto vale 15 min). */
     at?: number;
-    /** Trocas desde que o assunto começou (expira depois de 3). */
+    /** Trocas desde que o assunto começou (vale por 10). */
     turns?: number;
+    /** Último comando feito ("repete", "de novo", "repete com 85"). */
+    lastCommand?: Pick<CommandMatch, "id" | "values">;
     /** Pedido de comando esperando um campo. */
     pending?: PendingCommand;
     /** Há proposta esperando "sim" ou "não". */
@@ -68,12 +74,13 @@ export interface LocalReply {
   ctx: ChatContext;
 }
 
-/** Proposta que a tela mostra com Aplicar/Recusar. Intenção (restrição, ausência) ou comando (série, peso, ajuste). */
-export type CoreProposal = ({ source: "intent" } & IntentProposal) | ({ source: "command" } & CommandProposal);
-
 export interface CoreReply extends LocalReply {
   proposal?: CoreProposal;
   action?: CommandAction;
+  /** Pedido composto: ações sem gravação que rodam na hora, na ordem (o timer de "anota… e começa o descanso"). */
+  actions?: CommandAction[];
+  /** Pedido composto: a resposta de cada parte, na ordem em que foram ditas. */
+  parts?: CoreReply[];
   /** "Sim"/"não" respondendo a uma proposta aberta. */
   answerProposal?: "yes" | "no";
   /** "Esquece esse apelido": a tela tira o último aprendido. */
@@ -148,7 +155,7 @@ function answerReply(a: Answer, data: AnswerData, ctx: ChatContext): LocalReply 
         .slice(0, 3)
         .map(askLabel),
     },
-    ctx: { ...ctx, lastKind: undefined, query: undefined },
+    ctx,
   };
 }
 
@@ -156,7 +163,7 @@ function generatedReply(g: GeneratedReply, ctx: ChatContext): LocalReply {
   return {
     text: g.text,
     meta: { kind: "answer", level: g.level, principle: g.principle, route: g.route, chips: g.chips },
-    ctx: { ...ctx, lastKind: undefined, query: undefined },
+    ctx,
   };
 }
 
@@ -291,11 +298,21 @@ export function localReply(text: string, data: AnswerData, ctx: ChatContext = {}
   const found = findAnswer(text);
   if (found.kind === "guard") return { text: found.reply, meta: { kind: "guard" }, ctx: {} };
 
-  const strong = !matchSmalltalk(text) && OUT_OF_SCOPE.find((c) => STRONG.includes(c.kind) && c.re.test(norm(text)));
+  // Assunto claramente de fora ganha das respostas prontas, mas não de uma pergunta sobre o próprio treino ("quando
+  // foi a última vez que fiz supino" tem o "quando foi" do conhecimento geral).
+  const own = !!detectMuscleWord(text) || /\b(treinei|treino|treinos|fiz|serie|series|carga|recorde|ultima vez)\b/.test(norm(text));
+  const strong = !matchSmalltalk(text) && !own && OUT_OF_SCOPE.find((c) => STRONG.includes(c.kind) && c.re.test(norm(text)));
   if (strong) return honestExit(text, found, ctx);
 
   const g = glossaryAnswer(text, "def") ?? principleAnswer(text);
   if (g) return generatedReply(g, ctx);
+
+  // Papo curto ("valeu", "show") não é continuação da consulta anterior, mesmo com o assunto aberto.
+  const chat = matchSmalltalk(text);
+  if (chat && !detectExercise(text) && !detectMuscleWord(text)) {
+    const seed = Number(data.today.replace(/-/g, "")) + (ctx.count ?? 0);
+    return { text: smalltalkReply(chat, data, seed), meta: { kind: "smalltalk" }, ctx };
+  }
 
   const d = queryAnswer(text, data, ctx);
   if (d) {
@@ -330,7 +347,23 @@ export function localReply(text: string, data: AnswerData, ctx: ChatContext = {}
 
 // ---------- A conversa inteira ----------
 
-const TTL = 5 * 60_000;
+const TTL = 15 * 60_000;
+const MAX_TURNS = 10;
+const PROPOSAL_TTL = 5 * 60_000;
+const UNDO =
+  /^(desfaz|desfazer|desfaca|desfaz isso|desfaz o ultimo|desfaz a ultima|volta atras|cancela isso|anula|anula isso|apaga o que voce fez|errei desfaz)$/;
+const REPEAT = /^(repete|repetir|de novo|outra vez|mesma coisa|faz de novo|repete isso)(?: (?:com|de|so que com|mas com|para|pra) (.+))?$/;
+
+/** Troca "ele", "nele", "esse exercício" pelo último exercício citado. Sem exercício na frase e com um no assunto. */
+export function resolveRefs(text: string, ctx: ChatContext): string {
+  if (!ctx.exercise || detectExercise(text)) return text;
+  // Sem o parêntese do nome do programa ("Supino inclinado com halteres (30–45°)").
+  const name = ctx.exercise.name.replace(/\s*\(.*?\)/g, "").trim();
+  return text
+    .replace(/\b(nele|nesse exercicio|neste exercicio|no mesmo exercicio)\b/gi, `no ${name}`)
+    .replace(/\b(dele|desse exercicio|deste exercicio|do mesmo exercicio)\b/gi, `do ${name}`)
+    .replace(/\b(ele|esse exercicio|este exercicio|o mesmo exercicio)\b/gi, name);
+}
 const YES =
   /^(sim|s|pode|pode sim|confirma|confirmo|aplica|aplicar|isso|isso mesmo|manda|manda ver|bora|ok|beleza|certo|claro|quero|faz|faca|anota|registra|salva)$/;
 const NO = /^(nao|n|nao quero|cancela|cancelar|deixa|deixa pra la|esquece|recusa|recusar|nem|negativo)$/;
@@ -339,14 +372,95 @@ const NO = /^(nao|n|nao quero|cancela|cancelar|deixa|deixa pra la|esquece|recusa
  * Uma mensagem, todas as camadas. `env` diz se há timer correndo. A tela aplica `action` na hora (timer) e mostra
  * `proposal` com Aplicar/Recusar; nada daqui grava.
  */
-export function coreReply(
-  text: string,
-  data: AnswerData & { aliases?: ChatAlias[] },
-  prev: ChatContext = {},
-  env: CommandEnv = {},
-): CoreReply {
+export interface CoreEnv extends CommandEnv {
+  /** O que "desfaz" desfaria agora (a tela guarda a pilha; o núcleo só pergunta). */
+  undoLabel?: string;
+}
+
+type CoreData = AnswerData & { aliases?: ChatAlias[] };
+
+export function coreReply(text: string, data: CoreData, prev: ChatContext = {}, env: CoreEnv = {}): CoreReply {
+  const guard = guardTopic(text);
+  // Pedido composto: cada parte passa por todas as camadas; a trava de qualquer parte trava a mensagem inteira.
+  // Queixa e intenção ("perdi o treino de ontem e de hoje") são um pedido só, mesmo com "e".
+  if (!guard && !(prev.proposalOpen || prev.pending) && !matchIntent(text)) {
+    const split = splitRequest(text, (piece) => {
+      if (guardTopic(piece)) return null;
+      const m = readCommand(piece, data);
+      if (m && !m.ask && !m.partial) return "command";
+      return parseQuery(piece, data) ? "query" : null;
+    });
+    if (split) return compoundReply(split, data, prev, env);
+  }
+  return singleReply(text, data, prev, env);
+}
+
+function compoundReply(split: NonNullable<ReturnType<typeof splitRequest>>, data: CoreData, prev: ChatContext, env: CoreEnv): CoreReply {
+  const replies: CoreReply[] = [];
+  let ctx = prev;
+  let d = data;
+  let lastLoad: unknown;
+  const proposals: CoreProposal[] = [];
+  const now: CommandAction[] = [];
+  const then: CommandAction[] = [];
+  for (const part of split.parts) {
+    let q = part.text;
+    // "anota 8 com 80 e depois 7": o número sozinho herda a carga da série anterior.
+    if (part.kind === "number" && ctx.lastCommand?.id === "treino-anotar" && lastLoad) {
+      const l = lastLoad as { value: number; unit?: string };
+      q = `anota ${part.text} com ${String(l.value).replace(".", ",")}${l.unit ? ` ${l.unit}` : ""}`;
+    }
+    // "quantas séries de peito e de costas": a continuação vira "e de costas" com o assunto da anterior.
+    if (part.kind === "fragment") q = `e ${part.text.replace(/^e /, "")}`;
+    const r = singleReply(q, d, { ...ctx, proposalOpen: false }, env);
+    replies.push(r);
+    ctx = r.ctx;
+    if (ctx.lastCommand?.id === "treino-anotar" && ctx.lastCommand.values.carga) lastLoad = ctx.lastCommand.values.carga;
+    if (r.proposal) {
+      proposals.push(r.proposal);
+      // A próxima parte enxerga o que esta propôs (a 2ª série vai para a série seguinte, não para a mesma).
+      const st = applyPure(
+        { sessions: d.sessions, bodyLog: d.bodyLog, settings: d.settings, memory: d.memory ?? EMPTY_OPERATOR_MEMORY },
+        r.proposal,
+        () => "virtual",
+      );
+      d = { ...d, sessions: d.sessions.map((s) => st.sessions.find((x) => x.id === s.id) ?? s), bodyLog: st.bodyLog };
+    }
+    if (r.action) (proposals.length ? then : now).push(r.action);
+  }
+  const proposal: CoreProposal | undefined =
+    proposals.length === 1 && !then.length
+      ? proposals[0]
+      : proposals.length
+        ? {
+            source: "batch",
+            items: proposals,
+            then: then.length ? then : undefined,
+            confirmLabel: proposals.map((p) => p.confirmLabel).join(" + "),
+          }
+        : undefined;
+  const text = [
+    ...replies.map((r) => r.text),
+    ...(split.leftover ? [`Esta parte eu não entendi: “${split.leftover}”.`] : []),
+    ...(then.length ? ["O descanso começa quando você aplicar."] : []),
+  ].join("\n\n");
+  const first = replies.find((r) => r.meta.card) ?? replies[0];
+  const anyCommand = replies.some((r) => r.layer === "command" || r.layer === "pending");
+  return {
+    text,
+    meta: { ...first.meta, kind: anyCommand ? "command" : first.meta.kind, chips: undefined, understood: undefined },
+    ctx: { ...ctx, proposalOpen: !!proposal },
+    proposal,
+    action: now[0],
+    actions: now.length ? now : undefined,
+    parts: replies,
+    layer: anyCommand ? "command" : replies[0].layer,
+  };
+}
+
+function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreEnv): CoreReply {
   const now = env.now ?? data.now ?? Date.now();
-  const fresh = prev.at != null && now - prev.at <= TTL && (prev.turns ?? 0) < 3;
+  const fresh = prev.at != null && now - prev.at <= TTL && (prev.turns ?? 0) < MAX_TURNS;
   const ctx: ChatContext = fresh ? { ...prev, turns: (prev.turns ?? 0) + 1 } : { count: prev.count, turns: 0 };
   const stamp = (r: Omit<CoreReply, "ctx"> & { ctx: ChatContext }): CoreReply => ({
     ...r,
@@ -374,9 +488,13 @@ export function coreReply(
   const alias = !guard ? lookupAlias(data.aliases, text) : undefined;
   if (alias) text = alias.to;
 
+  // "Ele", "nele", "esse exercício": o último exercício citado.
+  if (fresh) text = resolveRefs(text, ctx);
+
   const t = prepare(text);
   // "Sim"/"não" respondendo a uma proposta aberta.
-  if (fresh && prev.proposalOpen && !guard) {
+  // A proposta aberta expira como antes (5 min), mesmo com o assunto valendo mais tempo.
+  if (fresh && prev.proposalOpen && now - (prev.at ?? 0) <= PROPOSAL_TTL && !guard) {
     if (YES.test(t))
       return stamp({
         text: "Aplicado.",
@@ -393,6 +511,35 @@ export function coreReply(
         answerProposal: "no",
         layer: "proposal",
       });
+  }
+
+  // "Desfaz": mostra o que vai ser desfeito e desfaz com um toque (ou "sim").
+  if (!guard && UNDO.test(t)) {
+    if (!env.undoLabel) return stamp({ text: "Não há nada recente para desfazer.", meta: { kind: "command" }, ctx, layer: "command" });
+    return stamp({
+      text: `Desfazer **${env.undoLabel}**?`,
+      meta: { kind: "command" },
+      ctx: { ...ctx, proposalOpen: true },
+      proposal: { source: "undo", confirmLabel: `Desfazer: ${env.undoLabel}` },
+      layer: "command",
+    });
+  }
+
+  // "Repete", "de novo", "repete com 85": o último comando, trocando só o campo dito.
+  const again = !guard && fresh && ctx.lastCommand ? t.match(REPEAT) : null;
+  if (again && ctx.lastCommand) {
+    const values = { ...ctx.lastCommand.values };
+    if (again[2]) {
+      const over = readCommand(`anota 1 com ${again[2]}`, data)?.values.carga;
+      const dur = readCommand(`descanso de ${again[2]}`, data)?.values.duracao;
+      if (ctx.lastCommand.id.startsWith("timer") && dur != null) values.duracao = dur;
+      else if (over) values.carga = over;
+    }
+    const m = { id: ctx.lastCommand.id, values };
+    const c = runCommand(m, data, text, { ...env, now });
+    const r = commandToReply(c, ctx);
+    r.ctx.lastCommand = m;
+    return stamp({ ...r, layer: "command" });
   }
 
   // Pedido em aberto esperando o campo que faltou.
@@ -415,6 +562,7 @@ export function coreReply(
     if (m) {
       const c = runCommand(m, data, text, { ...env, now });
       const r = commandToReply(c, ctx);
+      if (!c.pending) r.ctx.lastCommand = { id: m.id, values: m.values };
       // Leitura livre de nota média que não grava: diz como entendeu (a de nota alta não precisa; a gravação já
       // repete os campos na proposta).
       if (m.free && (m.score ?? 1) < 0.9 && !c.proposal && !c.pending) r.meta.understood = `Entendi: ${readingLabel(m)}.`;

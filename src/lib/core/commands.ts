@@ -372,6 +372,7 @@ const DEFS: Entry[] = [
       "[o] deload (e|eh|vai ser|cai) quando",
       "(proximo|proxima semana de) deload",
       "[esta|ta|to|estou] (perto|longe) [do|de|para o] deload",
+      "quanto (falta|tempo falta|ainda falta) (pro|para o|pra|ate o) deload",
     ],
   },
   {

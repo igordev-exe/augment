@@ -70,6 +70,36 @@ export interface OperatorMemory {
   lastMesoStart?: string;
   /** Ausências declaradas (doença, viagem): a semana coberta não quebra a sequência. Ficam guardadas depois de passar. */
   absences?: Absence[];
+  /** O que a pessoa contou no chat e pediu para guardar ("não gosto de agachamento", "prefiro halter"). */
+  notes?: OperatorNote[];
+}
+
+/** Lembrança declarada no chat. Gosto muda as sugestões do chat; o planejador só muda por restrição. */
+export interface OperatorNote {
+  id: string;
+  kind: "dislike" | "prefer" | "fact";
+  /** Alvo: id da biblioteca, músculo ou equipamento (`lib:…`, `muscle:…`, `equip:…`), quando houver. */
+  target?: string;
+  /** Nome do alvo para mostrar ("Agachamento livre", "halter"). */
+  label?: string;
+  /** A frase como a pessoa disse. */
+  text: string;
+  at: string;
+}
+
+export const NOTES_MAX = 40;
+
+function isNote(n: unknown): n is OperatorNote {
+  const x = n as OperatorNote;
+  return (
+    !!x &&
+    typeof x.id === "string" &&
+    (x.kind === "dislike" || x.kind === "prefer" || x.kind === "fact") &&
+    typeof x.text === "string" &&
+    typeof x.at === "string" &&
+    (x.target == null || typeof x.target === "string") &&
+    (x.label == null || typeof x.label === "string")
+  );
 }
 
 export const EMPTY_OPERATOR_MEMORY: OperatorMemory = {
@@ -150,6 +180,12 @@ export function sanitizeOperatorMemory(raw: unknown): OperatorMemory {
         .map((a) => ({ from: a.from, until: a.until }))
         .slice(-50)
     : [];
+  const notes = Array.isArray(obj.notes)
+    ? obj.notes
+        .filter(isNote)
+        .map((n) => ({ ...n, text: n.text.slice(0, 200) }))
+        .slice(-NOTES_MAX)
+    : [];
   return {
     version: 1,
     ...(calibrationUntil ? { calibrationUntil } : {}),
@@ -157,6 +193,7 @@ export function sanitizeOperatorMemory(raw: unknown): OperatorMemory {
     constraints,
     mesoHistory,
     ...(absences.length ? { absences } : {}),
+    ...(notes.length ? { notes } : {}),
   };
 }
 
@@ -237,6 +274,8 @@ export function mergeOperatorMemory(current: OperatorMemory, incoming: OperatorM
   return {
     version: 1,
     calibrationUntil: current.calibrationUntil ?? incoming.calibrationUntil,
+    // Sem isto o "Juntar" perdia o último início de ciclo visto e o ciclo anterior não fechava direito.
+    ...(current.lastMesoStart || incoming.lastMesoStart ? { lastMesoStart: current.lastMesoStart ?? incoming.lastMesoStart } : {}),
     constraints: [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     mesoHistory: [...byStart.values()].sort((a, b) => a.start.localeCompare(b.start)),
     ...(current.absences?.length || incoming.absences?.length
@@ -245,6 +284,9 @@ export function mergeOperatorMemory(current: OperatorMemory, incoming: OperatorM
             ...new Map([...(incoming.absences ?? []), ...(current.absences ?? [])].map((a) => [`${a.from}|${a.until}`, a])).values(),
           ].sort((a, b) => a.from.localeCompare(b.from)),
         }
+      : {}),
+    ...(current.notes?.length || incoming.notes?.length
+      ? { notes: [...new Map([...(incoming.notes ?? []), ...(current.notes ?? [])].map((n) => [n.id, n])).values()].slice(-NOTES_MAX) }
       : {}),
   };
 }

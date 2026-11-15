@@ -485,3 +485,81 @@ function fixOrder(m: CommandMatch): CommandMatch {
     return { ...m, values: { ...m.values, reps: carga.value, carga: { value: reps } } };
   return m;
 }
+
+// ---------- Bloco B: pedido composto ----------
+
+/** O que cada pedaço da frase é: um comando inteiro, uma consulta, uma continuação ("de costas") ou só número. */
+export type PartKind = "command" | "query" | "fragment" | "number";
+
+export interface SplitPart {
+  text: string;
+  kind: PartKind;
+}
+
+const SEP = /\s*(?:,|;|\be depois\b|\bdepois\b|\be tambem\b|\be\b)\s*/;
+const STRONG_SEP = /,|;|\bdepois\b/;
+const FRAGMENT = /^(de|do|da|dos|das|no|na|nos|nas|em|e|o|a|os|as|pro|pra|para)\b/;
+const NUMBER_ONLY = /^\d+(?:[.,]\d+)?$/;
+
+/**
+ * Quebra "anota 8 com 80 e começa o descanso" em partes, só quando cada lado vira sozinho um pedido (ou é a
+ * continuação do anterior: "quantas séries de peito e de costas"). "Supino e agachamento", "peito e tríceps" e
+ * "arroz e feijão" não quebram. No máximo 3 partes; uma parte não entendida só vale com vírgula ou "depois".
+ * `kindOf` diz se um pedaço sozinho é comando ou consulta (vem de quem chama, para não criar ciclo de import).
+ */
+export function splitRequest(
+  text: string,
+  kindOf: (s: string) => "command" | "query" | null,
+): { parts: SplitPart[]; leftover?: string } | null {
+  // Como o `clean`, mas guardando a vírgula e o ponto e vírgula (são separadores fortes).
+  const raw = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/(\d),(\d)/g, "$1.$2")
+    .replace(/[^a-z0-9,;.%:+ ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!SEP.test(raw)) return null;
+  const strong = STRONG_SEP.test(raw);
+  const pieces = raw
+    .split(SEP)
+    .map((p) => p.trim().replace(/\.$/, ""))
+    .filter(Boolean);
+  if (pieces.length < 2) return null;
+  const parts: SplitPart[] = [];
+  let leftover: string | undefined;
+  /** Pedaço que ainda não é pedido: espera o próximo ("que dia" + "hoje" = "que dia é hoje"). */
+  let carry: string | null = null;
+  for (const piece of pieces) {
+    const cand: string = carry ? `${carry} e ${piece}` : piece;
+    const k = kindOf(cand);
+    const prev = parts[parts.length - 1];
+    if (k) {
+      parts.push({ text: cand, kind: k });
+      carry = null;
+      continue;
+    }
+    if (carry) {
+      carry = cand;
+      continue;
+    }
+    if (prev && (prev.kind === "command" || prev.kind === "number") && NUMBER_ONLY.test(piece)) parts.push({ text: piece, kind: "number" });
+    else if (prev && (prev.kind === "query" || prev.kind === "fragment") && FRAGMENT.test(piece) && piece.split(" ").length <= 5)
+      parts.push({ text: piece, kind: "fragment" });
+    else if (prev && kindOf(`${prev.text} e ${piece}`))
+      parts[parts.length - 1] = { text: `${prev.text} e ${piece}`, kind: kindOf(`${prev.text} e ${piece}`)! };
+    else carry = piece;
+  }
+  if (carry) {
+    const prev = parts[parts.length - 1];
+    const merged = prev ? kindOf(`${prev.text} e ${carry}`) : null;
+    if (prev && merged) parts[parts.length - 1] = { text: `${prev.text} e ${carry}`, kind: merged };
+    else if (strong && parts.length >= 2) leftover = carry;
+    else return null;
+  }
+  if (parts.length < 2 || parts.length > 3) return null;
+  // Duas partes só de pergunta, sem comando, só quebram com vírgula, "depois" ou continuação explícita.
+  if (parts.every((p) => p.kind === "query") && !strong) return null;
+  return { parts, leftover };
+}
