@@ -191,7 +191,8 @@ describe("AUG.CORE — chat amplo: papo, fora do escopo e travas", () => {
     for (const g of GOLDEN_SMALLTALK) {
       const r = coreReply(g.q, FULL, {}, { now: NOW });
       const id = matchSmalltalk(g.q)?.id;
-      if (r.layer === "smalltalk" && id === g.id) small++;
+      // "O que você sabe fazer" passou a ser respondido pela lista real de capacidades (bloco C do chat potente).
+      if ((r.layer === "smalltalk" || (g.id === "o-que-faz" && r.layer === "assist")) && id === g.id) small++;
       else misses.push(`[papo] "${g.q}" → esperado ${g.id}, veio ${r.layer}/${id ?? "-"}`);
     }
     let outWrong = 0;

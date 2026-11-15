@@ -17,6 +17,10 @@ import { prepare } from "./templates";
 import { FORGET_ALIAS, lookupAlias, type ChatAlias } from "./learned";
 import { readCommand, readingLabel, splitRequest } from "./understand";
 import { applyPure, type CoreProposal } from "./undo";
+import { whyAnswer, type ReasonReply } from "./why";
+import { whatIfAnswer } from "./whatif";
+import { asideFor, capabilitiesAnswer, stateChips, summaryAnswer, traceAnswer } from "./assist";
+import { PRINCIPLES } from "../../data/science";
 import { EMPTY_OPERATOR_MEMORY } from "./operator";
 
 export type { CoreProposal } from "./undo";
@@ -59,6 +63,10 @@ export type ChatContext = DataContext &
     turns?: number;
     /** Último comando feito ("repete", "de novo", "repete com 85"). */
     lastCommand?: Pick<CommandMatch, "id" | "values">;
+    /** Última resposta pronta ("resumindo", "explica melhor"). */
+    lastAnswer?: string;
+    /** "Aliás" já dito hoje, por assunto (atravessa o fim do assunto, como a contagem). */
+    asides?: Record<string, string>;
     /** Pedido de comando esperando um campo. */
     pending?: PendingCommand;
     /** Há proposta esperando "sim" ou "não". */
@@ -97,6 +105,9 @@ export interface CoreReply extends LocalReply {
     | "generated"
     | "answer"
     | "smalltalk"
+    | "why"
+    | "whatif"
+    | "assist"
     | "maybe"
     | "none";
 }
@@ -155,7 +166,7 @@ function answerReply(a: Answer, data: AnswerData, ctx: ChatContext): LocalReply 
         .slice(0, 3)
         .map(askLabel),
     },
-    ctx,
+    ctx: { ...ctx, lastAnswer: a.id },
   };
 }
 
@@ -461,7 +472,7 @@ function compoundReply(split: NonNullable<ReturnType<typeof splitRequest>>, data
 function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreEnv): CoreReply {
   const now = env.now ?? data.now ?? Date.now();
   const fresh = prev.at != null && now - prev.at <= TTL && (prev.turns ?? 0) < MAX_TURNS;
-  const ctx: ChatContext = fresh ? { ...prev, turns: (prev.turns ?? 0) + 1 } : { count: prev.count, turns: 0 };
+  const ctx: ChatContext = fresh ? { ...prev, turns: (prev.turns ?? 0) + 1 } : { count: prev.count, asides: prev.asides, turns: 0 };
   const stamp = (r: Omit<CoreReply, "ctx"> & { ctx: ChatContext }): CoreReply => ({
     ...r,
     ctx: { ...r.ctx, at: now, count: (prev.count ?? 0) + 1, turns: ctx.turns ?? 0 },
@@ -583,6 +594,42 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
     });
   }
 
+  // 3b. Raciocínio com os dados: "por quê", "e se", resumo, de onde saiu o número, o que o chat sabe, mais curto/longo.
+  if (!guard) {
+    const why = whyAnswer(text, data, { exercise: ctx.exercise, muscle: ctx.muscle });
+    if (why) return stamp({ ...reasonReply(why, ctx), layer: "why" });
+    const wi = whatIfAnswer(text, data, { exercise: ctx.exercise, muscle: ctx.muscle });
+    if (wi?.redirect) {
+      const ir = handleIntent(wi.redirect, { sessions: data.sessions, settings: data.settings, today: data.today, memory: data.memory });
+      if (ir.matched)
+        return stamp({
+          text: ir.reply,
+          meta: { kind: "command" },
+          ctx: { ...ctx, proposalOpen: !!ir.proposal, pending: undefined },
+          proposal: ir.proposal ? { source: "intent", ...ir.proposal } : undefined,
+          layer: "intent",
+        });
+    } else if (wi) {
+      const r = reasonReply(wi, ctx);
+      return stamp({ ...r, ctx: { ...r.ctx, proposalOpen: !!wi.proposal }, proposal: wi.proposal, layer: "whatif" });
+    }
+    const sum = summaryAnswer(text, data);
+    if (sum)
+      return stamp({
+        text: sum.text,
+        meta: { kind: "data", card: sum.card, route: sum.route, routeLabel: "Abrir o relatório" },
+        ctx,
+        layer: "assist",
+      });
+    const trace = traceAnswer(text, data, ctx.query);
+    if (trace) return stamp({ text: trace, meta: { kind: "data" }, ctx, layer: "assist" });
+    const caps = capabilitiesAnswer(text);
+    if (caps) return stamp({ text: caps.text, meta: { kind: "answer", chips: caps.chips }, ctx, layer: "assist" });
+    const depth = fresh && ctx.lastAnswer ? depthReply(t, ctx.lastAnswer) : null;
+    if (depth)
+      return stamp({ text: depth, meta: { kind: "answer", principle: BY_ID.get(ctx.lastAnswer!)?.principle }, ctx, layer: "assist" });
+  }
+
   // Correção curta ("não, o inclinado"): vira continuação com o mesmo movimento da pergunta anterior.
   const fix = fresh
     ? t.match(/^(?:nao|n|errado|errei)\s+(?:e\s+)?(?:o|a|no|na|era o|era a|quis dizer|eu quis dizer|o do|a do)?\s*(.+)$/)
@@ -611,8 +658,45 @@ function singleReply(text: string, data: CoreData, prev: ChatContext, env: CoreE
               : "answer";
   // Trava: sem web, sem memória.
   if (layer === "guard") return stamp({ ...r, ctx: {}, layer });
+  // Resposta com dados: botões que saem do estado da pessoa e, se houver, um "Aliás" de verdade.
+  if (layer === "data") {
+    const ex = r.ctx.exercise && detectExercise(q) ? r.ctx.exercise : undefined;
+    const mu = detectMuscleWord(q) ? r.ctx.muscle : undefined;
+    const chips = stateChips(data, ex, mu, q);
+    if (chips.length) r.meta = { ...r.meta, chips };
+    const aside = asideFor(data, ex, r.ctx.asides ?? {});
+    if (aside) {
+      r.text = `${r.text}\n\n${aside.text}`;
+      r.ctx = { ...r.ctx, asides: { ...(r.ctx.asides ?? {}), [aside.key]: data.today } };
+    }
+  }
   const keep = layer === "data" ? r.ctx : { ...r.ctx, pending: undefined, proposalOpen: false };
   return stamp({ ...r, ctx: keep, layer });
+}
+
+function reasonReply(r: ReasonReply, ctx: ChatContext): Omit<CoreReply, "layer"> {
+  return {
+    text: r.text,
+    meta: { kind: "data", level: r.level, principle: r.principle, route: r.route, routeLabel: r.routeLabel, card: r.card, chips: r.chips },
+    ctx: { ...ctx, exercise: r.exercise ?? ctx.exercise, muscle: r.muscle ?? ctx.muscle },
+  };
+}
+
+const SHORTER = /^(resumindo|resume|resumo disso|mais simples|mais curto|em uma frase|explica simples|simplifica|tl ?dr)$/;
+const LONGER = /^(explica melhor|explica mais|mais detalhe|mais detalhes|detalha|aprofunda|quero saber mais|fala mais|me explica isso)$/;
+
+/** A última resposta pronta noutro tamanho: a primeira frase, ou a resposta com o que o Guia diz. */
+function depthReply(t: string, answerId: string): string | null {
+  const a = BY_ID.get(answerId);
+  if (!a) return null;
+  if (SHORTER.test(t)) return a.answer.replace(/\*\*/g, "").split(/(?<=[.!?])\s/)[0];
+  if (LONGER.test(t)) {
+    const p = a.principle ? PRINCIPLES.find((x) => x.id === a.principle) : undefined;
+    return p
+      ? `${a.answer}\n\n**No Guia (${p.tema}):** ${p.texto}${p.app ? ` ${p.app}` : ""}`
+      : `${a.answer}\n\nNão tenho mais detalhe sobre isso além do que está acima.`;
+  }
+  return null;
 }
 
 function commandToReply(c: ReturnType<typeof runCommand>, ctx: ChatContext): Omit<CoreReply, "layer"> {

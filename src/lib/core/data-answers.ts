@@ -58,7 +58,7 @@ export interface DataCard {
 }
 
 /** Corta para 2 ou 4 células (grade de 2 colunas no celular sem célula órfã). */
-function cardOf(title: string, tag: string, cells: DataCard["cells"]): DataCard | undefined {
+export function cardOf(title: string, tag: string, cells: DataCard["cells"]): DataCard | undefined {
   const n = cells.length >= 4 ? 4 : cells.length >= 2 ? 2 : 0;
   return n ? { title, tag, cells: cells.slice(0, n) } : undefined;
 }
