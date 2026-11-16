@@ -44,9 +44,98 @@ const SINCE_ALWAYS: Period = { key: "sempre", from: "0000-01-01", to: "9999-12-3
 
 // ---------- Eixos ----------
 
-/** Pergunta de conselho ("quantas séries devo fazer"): não é consulta aos dados, vai para as respostas prontas. */
-const ADVICE =
-  /\b(devo|deveria|ideal|recomendad\w*|recomenda|precis[ao]|tenho que|tem que|e normal|normal|o que e|pra crescer|para crescer|pra ganhar|para ganhar|por musculo|quanto descansar|vale a pena|e bom|faz mal|ajuda|funciona|melhor (fazer|horario|divisao|exercicio pra|exercicio para))\b/;
+/** Pergunta de conselho, uso do app ou explicação geral: não é consulta aos dados, vai para as respostas prontas. */
+const ADVICE = new RegExp(
+  "\\b(" +
+    [
+      "devo",
+      "deveria",
+      "ideal",
+      "recomendad\\w*",
+      "recomenda",
+      "precis[ao]",
+      "tenho que",
+      "tem que",
+      "e normal",
+      "normal",
+      "o que e",
+      "o que significa",
+      "o que significam",
+      "para que serve",
+      "pra que serve",
+      "pra crescer",
+      "para crescer",
+      "pra ganhar",
+      "para ganhar",
+      "por musculo",
+      "quanto descansar",
+      "vale a pena",
+      "e bom",
+      "faz mal",
+      "ajuda",
+      "funciona",
+      "melhor (fazer|horario|divisao|exercicio pra|exercicio para)",
+      "como (eu )?(posso|consigo|faco|fazer|melhor\\w*|aument\\w*|cresc\\w*|ganh\\w*|perd\\w*|sec\\w*|emagrec\\w*|defin\\w*|progred\\w*|evolu\\w*|mont\\w*|divid\\w*|organiz\\w*|trein\\w*|comec\\w*|recuper\\w*|dorm\\w*|com\\w*|aquec\\w*|along\\w*|corrig\\w*|evit\\w*|sab\\w*|escolh\\w*|mud\\w*|troc\\w*|salv\\w*|apag\\w*|exclu\\w*|delet\\w*|export\\w*|import\\w*|registr\\w*|anot\\w*|configur\\w*|us\\w*)",
+      "quando (eu )?(subo|aumento|troco|mudo|paro|comeco|uso|descanso)",
+      "por onde comec\\w*",
+      "nunca",
+      "bulking",
+      "cutting",
+      "hipertrofia",
+      "(ganhar|perder) (massa|gordura|peso)",
+      "o que mostra",
+      "onde (eu )?(vejo|ficam?|esta|estao|registro|anoto|coloco|informo|acho|encontro|olho|marco|salvo)",
+      "quem ve",
+      "ficam publicos",
+      "faco backup",
+      "salvar meus dados",
+      "importar",
+      "exportar",
+      "trocar de celular",
+      "apagar",
+      "excluir",
+      "deletar",
+      "por que",
+      "porque",
+      "pq",
+      "demais",
+      "exagero",
+      "e muito",
+      "e pouco",
+      "suficiente",
+      "basta",
+      "atrapalha",
+      "estraga",
+      "engorda",
+      "emagrece",
+      "machuca",
+      "perigoso",
+      "seguro",
+      "obrigatorio",
+      "necessario",
+      "adianta",
+      "compensa",
+      "dica",
+      "dicas",
+      "conselho",
+      "sugestao",
+      "certo",
+      "errado",
+      "sobe e desce",
+      "de um dia para o outro",
+      "varia tanto",
+      "oscila",
+      "travou na dieta",
+      "nao desce mais",
+      "nao mudou nada",
+      "nada mudou",
+      "vergonha",
+      "medo",
+      "ansiedade",
+      "julgado",
+    ].join("|") +
+    ")\\b",
+);
 /** Sinal de que a pessoa fala dela mesma (e não de treino em geral). */
 const SELF =
   /\b(meu|minha|meus|minhas|eu|fiz|treinei|peguei|pego|levanto|aguento|levantei|malhei|usei|subi|evolui|pesei|pesava|to|estou|ja|consegui|fui|bati|fechei|tenho feito|venho)\b/;
@@ -72,7 +161,10 @@ function detectMetric(t: string, hasExercise: boolean, hasMuscle: boolean): Metr
     )
   )
     return "tempo";
-  if (/\b(meu peso|peso corporal|media de peso|peso medio|pesava|eu pesei|quanto (eu )?(peso|pesava|pesei)|balanca)\b/.test(t))
+  if (
+    /\b(meu peso|peso corporal|media de peso|peso medio|pesava|eu pesei|quanto (eu )?(pesava|pesei)|balanca)\b/.test(t) ||
+    /\bquanto (eu )?peso(?! (ganhar|perder|subir|baixar|colocar|usar|pegar|levantar))\b/.test(t)
+  )
     return "peso-corporal";
   if (/\b(sequencia|streak|semanas seguidas)\b/.test(t)) return "sequencia";
   if (
@@ -84,9 +176,21 @@ function detectMetric(t: string, hasExercise: boolean, hasMuscle: boolean): Metr
   if (/\bseries?\b/.test(t)) return "series";
   if (/\b(volume)\b/.test(t)) return "series";
   if (/\b(repeticoes|reps|repeticao)\b/.test(t)) return "reps";
-  if (/\b(1rm|rm|forca|recorde|recordes|maximo|maxima|pr|prs)\b/.test(t)) return "1rm";
+  if (
+    /\b(1rm|rm|recorde|recordes|maximo|maxima|pr|prs)\b/.test(t) ||
+    (/\bforca\b/.test(t) && (hasExercise || /\b(caiu|subiu|evolu\w*|compar\w*)\b/.test(t)))
+  )
+    return "1rm";
   if (hasExercise && /\b(pego|levanto|aguento)\b/.test(t)) return "1rm";
-  if (/\b(treinos?|treinei|malhei|vezes|academia)\b/.test(t) && !hasExercise) return "treinos";
+  if (
+    !hasExercise &&
+    (/\b(treinei|malhei)\b/.test(t) ||
+      (/\b(treinos?|vezes|academia)\b/.test(t) &&
+        /\b(quantos|quantas|fiz|fui|tenho|ja|quando|que dia|ultim[oa]s?|melhor|media|mais|menos|total|soma|compar\w*|subiu|caiu)\b/.test(
+          t,
+        )))
+  )
+    return "treinos";
   if (hasMuscle && !hasExercise && /\b(quando|ultima vez|fiz)\b/.test(t)) return "treinos";
   if (
     hasExercise &&
@@ -185,7 +289,7 @@ function findExercise(t: string, periodMatch: string | undefined, muscle: Muscle
 }
 
 const RANKING =
-  /\bqual (exercicio|musculo)\b.*\bmais\b|\bmais evolu\w*\b|\bo que mais (evoluiu|subiu|cresceu|melhorou)\b|\bexercicio mais\b/;
+  /\bqual (exercicio|musculo)\b.*\bmais (evolu\w*|subi\w*|melhor\w*|progred\w*|trein\w*|fiz|pegu\w*|cai\w*)\b|\bmais evolu\w*\b|\bo que mais (evoluiu|subiu|melhorou)\b|\bexercicio mais\b/;
 
 /** Lê os quatro eixos. Null quando não é pergunta sobre os dados da pessoa. */
 export function parseQuery(text: string, d: Pick<AnswerData, "today" | "settings">, ctx: DataContext & QueryContext = {}): Query | null {
@@ -197,9 +301,10 @@ export function parseQuery(text: string, d: Pick<AnswerData, "today" | "settings
   );
   if (!t || ADVICE.test(t)) return null;
   const o = { today: d.today, mesoStart: d.settings.mesoStart };
-  const p = findPeriod(t.replace(/\bpor semana\b/g, " "), o);
-  // "semana do ciclo" é a pergunta da semana (outro caso), não um período.
-  const period = p && !/\bsemana do (ciclo|meso)/.test(t) ? p : undefined;
+  const p = findPeriod(t.replace(/\bpor (semana|mes|ano|dia)\b/g, " "), o);
+  // "semana do ciclo" é a pergunta da semana (outro caso), e "na semana" sem referência pessoal é pergunta geral.
+  const generalWeek = p?.match && /^(a|na) semana$/.test(p.match) && !SELF.test(t);
+  const period = p && !/\bsemana do (ciclo|meso)/.test(t) && !generalWeek ? p : undefined;
   const day = detectDay(t);
   const muscle = day ? undefined : detectMuscleWord(t);
   const ranking = RANKING.test(t);

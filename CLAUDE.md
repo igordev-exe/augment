@@ -425,8 +425,11 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - `query.ts`: gramática métrica × alvo (exercício, músculo, dia do programa, tudo) × período × conta (último,
     melhor, média, total, tendência, comparação, quando, ranking); `parseQuery`, `runQuery`, `queryAnswer` (quando um
     dos 12 tipos antigos cobre os mesmos eixos, a resposta é a dele).
-  - `generated.ts`: `glossaryAnswer` (`data/glossary.ts`, 80+ termos), `libraryAnswer` (equipamento, exercícios para
-    músculo, séries e frequência por músculo do programa), `principleAnswer` (todo princípio do Guia responde).
+  - `generated.ts`: motor composicional a partir dos dados do app: `glossaryAnswer` (`data/glossary.ts`, 80+ termos),
+    `libraryAnswer` (equipamento, erros/dicas, séries/reps/descanso, composto vs isolado por exercício nos 603
+    exercícios; exercícios por músculo com filtro opcional de equipamento e composto/isolado; séries, frequência e
+    tempo de recuperação por músculo; detalhes dos 8 modelos em `data/templates/index.ts`; "X ou Y?"), e
+    `principleAnswer` (os 48 princípios + as 10 auditorias `AUDITS` de `data/science.ts`, incluindo "é verdade/mito…").
   - `data/smalltalk.ts`: 30 situações de papo com 2–3 variações; `{dado}` puxa um número real; variação por semente
     (dia + contagem). Perguntado se é IA, diz que são respostas prontas e contas no aparelho.
   - Saída honesta (`localchat.ts`, `OUT_OF_SCOPE`): clima, notícia, receita, esporte, outro app, conta geral, pessoal,
@@ -469,13 +472,14 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     certo; paráfrase mecânica ≥ 95%; 5.000 mensagens aleatórias sem gravação com "não" nem vazamento da trava) e
     `learned.test.ts`. Dados de teste em `chat.fixture.ts`.
   - Medição do chat amplo: `chat.golden.ts` + `chat.test.ts` (87 comandos, 100 consultas com conta independente, 60
-    de papo, 60 fora do escopo, 35 travas, 172 respostas prontas que não podem ser sequestradas) e `readers.test.ts`.
-  - `data/answers.ts`: `ANSWERS` (136 respostas prontas: treino, alimentação, recuperação, app, iniciante; 4+ `asks`,
+    de papo, 60 fora do escopo, 35 travas, 248 respostas prontas que não podem ser sequestradas) e `readers.test.ts`.
+  - `data/answers.ts`: `ANSWERS` (247 respostas prontas: treino, alimentação, recuperação, app, iniciante; 4+ `asks`,
     `level` ou `principle` obrigatório fora do app), `GUARD_REPLY`. Revisão do dono: `docs/respostas-para-revisar.md`.
-  - `answers.ts`: buscador próprio (radical leve `stem`, `SYNONYMS` com abreviações de celular, BM25 por campo
-    `BM25`, 1 erro de digitação), `guardTopic` (dor no peito, lesão, remédio, hormônio, transtorno alimentar,
-    gravidez, doença, dieta < 1.200 kcal, menor de idade), `rank`, `findAnswer` → answer/maybe/none/guard com
-    `THRESHOLDS` calibrados. Nome de exercício ou músculo que nenhuma resposta cita sai da conta.
+  - `answers.ts`: buscador próprio (radical leve `stem`, `SYNONYMS` com abreviações de celular e gírias de academia,
+    BM25 por campo `BM25`, 1 erro de digitação, redução de penalidade de palavra desconhecida quando 2+ termos casam
+    no cabeçalho), `guardTopic` (dor no peito, lesão, remédio, hormônio, transtorno alimentar, gravidez, doença,
+    dieta < 1.200 kcal, menor de idade), `rank`, `findAnswer` → answer/maybe/none/guard com `THRESHOLDS` calibrados.
+    Nome de exercício ou músculo que nenhuma resposta cita sai da conta.
   - `data-answers.ts`: `detectExercise` (programa → 34 curados → 569 estendidos, pt e en), `matchData` e
     `dataAnswer` (recorde, última vez, trocar, como faz, o que trabalha, próximo treino, semana do ciclo, músculo
     pronto, séries da semana, peso, minha semana, sequência). Continuação curta ("e no hack?") herda o tipo.
@@ -485,7 +489,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
     `#/guia?p=<id>`, atalho, perguntas tocáveis, "Levar a pergunta para outro chat"). `isUrgent`: na tela, a urgência
     (dor no peito, falta de ar, desmaio) roda ANTES das intenções, senão "dor no peito" vira proposta de proteger o
     peitoral.
-  - Medição: `answers.golden.ts` (172 dentro, 40 fora; nenhuma cópia de `asks`) e `answers.test.ts` exige top-1 ≥ 85%,
+  - Medição: `answers.golden.ts` (248 dentro, 40 fora; nenhuma cópia de `asks`) e `answers.test.ts` exige top-1 ≥ 85%,
     top-3 ≥ 95%, fora respondido ≤ 5%, trava 100%. Ao mexer em sinônimo ou limiar, rode e olhe a lista de erros.
 - **Núcleo ao vivo** (fases 0–4 de `docs/prompt-nucleo-vivo.md`, no repositório principal; a 5, voz, adiada):
   - `backtest.ts`: `backtest(sessions, settings, "base" | "live")` prevê cada série só com o passado (erro médio da 1ª

@@ -119,11 +119,17 @@ function programCandidates(): Candidate[] {
  * outras desempatam. Programa ativo ganha da biblioteca; nome mais curto ganha no empate ("supino" → o supino mais
  * simples, não a variação mais longa).
  */
+const EX_STOP = new Set(
+  "como onde quando qual quais quanto quantos quantas faco faca faz fazer posso pode devo preciso quero tenho treinar treino para pra".split(
+    " ",
+  ),
+);
+
 export function detectExercise(text: string): ExerciseRef | undefined {
   const q = new Set(
     norm(text)
       .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 1)
+      .filter((w) => w.length > 1 && !EX_STOP.has(w))
       .map(stem),
   );
   let best: { c: Candidate; score: number } | undefined;
@@ -195,7 +201,7 @@ const PATTERNS: { kind: DataKind; re: RegExp; needs?: "exercise" | "muscle" }[] 
   },
   {
     kind: "peso",
-    re: /\b(meu peso|peso atual|quanto (eu )?peso|(to|estou) (emagrecendo|engordando|perdendo|ganhando)|minha meta|meta de peso|tendencia do peso|minha balanca)\b/,
+    re: /\b(meu peso|peso atual|quanto (eu )?peso(?! (ganhar|perder|subir|baixar))|(to|estou) (emagrecendo|engordando|perdendo|ganhando)|minha meta|meta de peso|tendencia do peso|minha balanca)\b/,
   },
   {
     kind: "sequencia",
@@ -209,10 +215,50 @@ export interface DataContext {
   muscle?: MuscleId;
 }
 
+const NON_DATA = new RegExp(
+  "\\b(" +
+    [
+      "onde (eu )?(vejo|ficam?|esta|estao|registro|anoto|coloco|informo|acho|encontro|olho|marco|salvo)",
+      "lista de recordes",
+      "como (eu )?(posso|consigo|registro|anoto|vejo|funciona|melhor\\w*|aument\\w*|cresc\\w*|ganh\\w*|perd\\w*|sec\\w*|emagrec\\w*|defin\\w*|progred\\w*|evolu\\w*|mont\\w*|divid\\w*|organiz\\w*|comec\\w*|recuper\\w*|dorm\\w*|aquec\\w*|along\\w*|corrig\\w*|evit\\w*|sab\\w*|escolh\\w*|mud\\w*|troc\\w*|salv\\w*|apag\\w*|exclu\\w*|delet\\w*|export\\w*|import\\w*|configur\\w*|us\\w*)",
+      "por que",
+      "porque",
+      "pq",
+      "o que e",
+      "o que sao",
+      "o que tem",
+      "o que mostra",
+      "o que significa",
+      "o que significam",
+      "trabalha.*(todo|toda|inteir[oa]|complet[oa])",
+      "devo",
+      "deveria",
+      "ideal",
+      "recomendad\\w*",
+      "e muito",
+      "demais",
+      "sobe e desce",
+      "todo dia",
+      "todos os dias",
+      "de um dia para o outro",
+      "varia",
+      "oscila",
+      "travou na dieta",
+      "nao desce mais",
+      "bulking",
+      "cutting",
+      "por mes",
+      "por semana",
+    ].join("|") +
+    ")\\b",
+);
+
 /** Decide se a pergunta é sobre os dados da pessoa. Continuação curta ("e no agachamento?") herda o tipo anterior. */
 export function matchData(text: string, ctx: DataContext = {}): { kind: DataKind; exercise?: ExerciseRef; muscle?: MuscleId } | null {
   const t = norm(text).replace(/[^a-z0-9\s]/g, " ");
+  if (NON_DATA.test(t)) return null;
   const exercise = detectExercise(t);
+  if (!exercise && /\b(para|pra) que serve\b/.test(t)) return null;
   const muscle = detectMuscleWord(t);
   for (const p of PATTERNS) {
     if (!p.re.test(t)) continue;

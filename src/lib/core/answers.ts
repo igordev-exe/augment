@@ -23,7 +23,12 @@ const STOPWORDS = new Set(
     "muitas bem tem ter tenho temos ser sou e foi estou esta to ta tava fazer faz faco devo deve devia posso pode podem " +
     "preciso precisa vale vou vai algum alguma alguns so tambem entao ne ok oi ola sobre coisa tipo mesmo ainda hoje bom boa " +
     "certo certa ideal sim nao eh ao aos seu sua seus suas nosso nossa tudo nada quero queria gostaria saber sabe alguem " +
-    "dar da dou realmente favor ajuda ideais acho negocio sei deu tive teve vcs ruim entendi entender tal gente cara mano sempre agora dai nisso ate"
+    "dar da dou realmente favor ajuda ideais acho negocio sei deu tive teve vcs ruim entendi entender tal gente cara mano sempre agora dai nisso ate " +
+    "sao estao foram eram seja fosse sendo vamos vao possa poderia pude consigo consegue conseguem conseguir precisar precisam " +
+    "uso usa usar usando falo fala falar digo diz dizer jeito nenhum nenhuma forma maneira modo caso parte ponto vez coisas " +
+    "ninguem qualquer cada outro outra outros outras tanto tanta assim aonde bastante " +
+    "existe existem existir influencia influenciar interfere interferir " +
+    "verdade mito real serio apenas somente exatamente basicamente principalmente normalmente geralmente costuma costumam"
   ).split(/\s+/),
 );
 
@@ -60,7 +65,13 @@ const SYNONYMS: Record<string, string[]> = {
     "ganhar musculos",
     "massa muscular",
     "crescer musculo",
+    "crescer o musculo",
     "ganho massa",
+    "ganho muscular",
+    "ganhar corpo",
+    "encorpar",
+    "ficar forte",
+    "ficar musculoso",
     "cresceu",
     "cresce",
     "crescendo",
@@ -77,17 +88,31 @@ const SYNONYMS: Record<string, string[]> = {
     "perda de peso",
     "perda de gordura",
     "queimar gordura",
+    "queimar banha",
+    "derreter gordura",
     "emagrecimento",
+    "secar a barriga",
+    "secar barriga",
+    "perder barriga",
+    "perder panca",
+    "perder pochete",
+    "pochete",
+    "definir o corpo",
+    "ficar trincado",
+    "ficar rasgado",
+    "trincar",
+    "rasgar",
     "secar",
     "seca",
     "seco",
     "definir",
     "definicao",
+    "deficit calorico",
+    "deficit",
     "cutting",
     "cut",
-    "perder barriga",
   ],
-  bulking: ["bulk", "superavit", "engordar"],
+  bulking: ["superavit calorico", "fase de ganho", "bulk limpo", "bulk sujo", "bulk", "superavit"],
   divisao: [
     "abcde",
     "abcd",
@@ -134,10 +159,15 @@ const SYNONYMS: Record<string, string[]> = {
   carga: ["peso", "kg", "quilo", "quilos", "kilo", "kilos", "anilha", "anilhas"],
   mulher: ["mulheres", "feminino", "feminina", "menina", "meninas", "garota", "musculosa"],
   iniciante: [
+    "comecar na academia",
+    "primeira semana",
+    "primeiro dia",
     "comecando",
     "comecei",
     "novato",
     "novata",
+    "sedentario",
+    "sedentaria",
     "primeira vez",
     "nunca treinei",
     "nunca fui",
@@ -147,7 +177,16 @@ const SYNONYMS: Record<string, string[]> = {
   rim: ["rins", "renal", "renais"],
   backup: ["copia de seguranca", "exportar", "celular novo", "trocar de celular", "outro celular"],
   ficha: ["programa de treino", "rotina de treino", "planilha"],
-  proteina: ["proteinas", "prot"],
+  proteina: ["proteinas", "proteico", "proteica", "proteicos", "proteicas", "prot"],
+  carboidrato: ["carboidratos", "carbos", "carbo", "hidrato"],
+  caloria: ["gasto calorico", "gasto energetico", "calorias", "kcal"],
+  gordura: ["gorduras", "lipidio", "lipidios"],
+  suplemento: ["suplementos", "suplementacao", "suplementar"],
+  dor: ["incomodando", "incomodo", "doendo", "dores", "doeu", "doi"],
+  lombar: ["parte baixa das costas", "coluna"],
+  estagnado: ["parou de crescer", "parou de subir", "nao progride", "nao sobe", "estagnacao", "travado", "travou", "plato"],
+  casa: ["sem academia", "home gym", "no quarto", "na sala", "calistenia", "em casa"],
+  jejum: ["de barriga vazia", "estomago vazio", "em jejum"],
   creatina: ["creatine", "monohidratada"],
   progressao: [
     "progredir",
@@ -456,6 +495,7 @@ function topicTerms(text: string): string[] {
 interface Doc {
   answer: Answer;
   tf: Map<string, number>;
+  head: Set<string>;
   len: number;
 }
 
@@ -470,16 +510,30 @@ export interface AnswerIndex {
 export function buildIndex(answers: Answer[] = ANSWERS): AnswerIndex {
   const docs: Doc[] = answers.map((answer) => {
     const tf = new Map<string, number>();
-    const add = (text: string, w: number) => {
-      // Dentro de um campo, cada termo conta uma vez por frase (as perguntas repetem palavras de propósito).
-      for (const term of new Set(topicTerms(text))) tf.set(term, (tf.get(term) ?? 0) + w);
-    };
-    for (const q of answer.asks) add(q, FIELD_WEIGHT.asks);
-    for (const k of answer.keys ?? []) add(k, FIELD_WEIGHT.keys);
-    add(answer.answer, FIELD_WEIGHT.answer);
+    const head = new Set<string>();
+    const askCount = new Map<string, number>();
+    for (const q of answer.asks) {
+      // Dentro de um campo, cada termo conta uma vez por frase; repetir o mesmo termo em muitas perguntas tem teto.
+      for (const term of new Set(topicTerms(q))) {
+        head.add(term);
+        const n = askCount.get(term) ?? 0;
+        if (n === 0) tf.set(term, (tf.get(term) ?? 0) + FIELD_WEIGHT.asks);
+        else if (n < 3) tf.set(term, (tf.get(term) ?? 0) + 1);
+        askCount.set(term, n + 1);
+      }
+    }
+    for (const k of answer.keys ?? []) {
+      for (const term of new Set(topicTerms(k))) {
+        head.add(term);
+        tf.set(term, (tf.get(term) ?? 0) + FIELD_WEIGHT.keys);
+      }
+    }
+    for (const term of new Set(topicTerms(answer.answer))) {
+      tf.set(term, (tf.get(term) ?? 0) + FIELD_WEIGHT.answer);
+    }
     let len = 0;
     for (const v of tf.values()) len += v;
-    return { answer, tf, len };
+    return { answer, tf, head, len };
   });
   const df = new Map<string, number>();
   for (const d of docs) for (const term of d.tf.keys()) df.set(term, (df.get(term) ?? 0) + 1);
@@ -512,44 +566,77 @@ export interface Hit {
 export function rank(query: string, ix: AnswerIndex = answerIndex()): Hit[] {
   // Nome de exercício ou músculo que nenhuma resposta cita não é o assunto ("começo pelo supino ou pelo
   // crucifixo?" é sobre ordem): sai da conta, em vez de derrubar a cobertura como palavra desconhecida.
-  const d = domain();
+  const dom = domain();
   // Número solto ("55 anos", "30 séries") que nenhuma resposta cita também não é assunto.
-  const qTerms = [...new Set(topicTerms(query))].filter((t) => ix.df.has(t) || (!d.has(t) && !/^\d+$/.test(t)));
-  if (!qTerms.length) return [];
+  const qTerms = [...new Set(topicTerms(query))].filter((t) => ix.df.has(t) || (!dom.has(t) && !/^\d+$/.test(t)));
+  if (!qTerms.length || (qTerms.length === 1 && qTerms[0] === "hor")) return [];
   const maxIdf = Math.log(1 + (ix.docs.length + 0.5) / 0.5);
   // Cada termo da pergunta vira uma lista de termos do índice (ele mesmo, ou vizinhos com erro de 1 letra).
   const expanded = qTerms.map((q) => {
-    if (ix.df.has(q)) return { q, alts: [{ term: q, w: 1 }] };
+    if (ix.df.has(q)) return { q, isDomain: dom.has(q), alts: [{ term: q, w: 1 }] };
     if (q.length >= 5) {
       const near = ix.long.filter((v) => within1(q, v)).map((term) => ({ term, w: 0.8 }));
-      if (near.length) return { q, alts: near };
+      if (near.length) return { q, isDomain: dom.has(q), alts: near };
     }
-    return { q, alts: [] as { term: string; w: number }[] };
+    return { q, isDomain: dom.has(q), alts: [] as { term: string; w: number }[] };
   });
   // Peso de cada termo na cobertura: a raridade dele; termo desconhecido pesa o máximo.
   const weightOf = (e: (typeof expanded)[number]) => (e.alts.length ? Math.max(...e.alts.map((a) => idf(ix, a.term))) : maxIdf);
-  const totalW = expanded.reduce((s, e) => s + weightOf(e), 0);
+  const hasNonDomain = expanded.some((e) => !e.isDomain);
+  const nonDomainKnown = expanded.filter((e) => !e.isDomain && e.alts.length > 0).length;
 
   const hits: Hit[] = [];
   for (const d of ix.docs) {
     let score = 0;
     let covered = 0;
+    let knownUnmatchedW = 0;
+    let unknownUnmatchedW = 0;
+    let headMatched = false;
+    let headHits = 0;
+    let nonDomainHead = false;
+    let nonDomainMatched = 0;
     const matched: string[] = [];
     for (const e of expanded) {
+      const w = weightOf(e);
       let best = 0;
+      let inHead = false;
       for (const a of e.alts) {
         const tf = d.tf.get(a.term);
         if (!tf) continue;
         const s = a.w * idf(ix, a.term) * ((tf * (BM25.k1 + 1)) / (tf + BM25.k1 * (1 - BM25.b + (BM25.b * d.len) / ix.avgLen)));
         best = Math.max(best, s);
+        if (d.head.has(a.term)) inHead = true;
       }
+      // Exemplo de exercício ou músculo na pergunta ("quando subo o peso do supino"): se não aparece no documento,
+      // não derruba a cobertura da resposta geral.
+      if (e.isDomain && hasNonDomain && best === 0) continue;
       if (best > 0) {
         score += best;
-        covered += weightOf(e);
+        covered += w;
         matched.push(e.q);
+        if (inHead) {
+          headMatched = true;
+          headHits++;
+          if (!e.isDomain) nonDomainHead = true;
+        }
+        if (!e.isDomain) nonDomainMatched++;
+      } else if (e.alts.length > 0) {
+        knownUnmatchedW += w;
+      } else {
+        unknownUnmatchedW += w;
       }
     }
-    if (score > 0) hits.push({ answer: d.answer, score, coverage: covered / totalW, matched });
+    const unkScale = headHits >= 2 && nonDomainMatched >= 1 ? 0.5 : 1;
+    const docTotalW = covered + knownUnmatchedW + unknownUnmatchedW * unkScale;
+    if (score > 0 && docTotalW > 0) {
+      const coverage = covered / docTotalW;
+      // Só casar exemplo do corpo da resposta (sem asks/keys) ou só nome de exercício no cabeçalho não ganha de uma resposta real.
+      if (!headMatched || (nonDomainKnown > 0 && !nonDomainHead)) score *= 0.45;
+      if (nonDomainMatched === 0 && nonDomainKnown > 0) score *= 0.45;
+      if (headHits >= 2) score *= 1 + Math.min(0.1, (headHits - 1) * 0.05);
+      score *= 0.55 + 0.45 * coverage;
+      hits.push({ answer: d.answer, score, coverage, matched });
+    }
   }
   return hits.sort((a, b) => b.score - a.score);
 }

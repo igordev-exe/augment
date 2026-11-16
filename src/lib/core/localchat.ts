@@ -217,7 +217,7 @@ function generatedReply(g: GeneratedReply, ctx: ChatContext): LocalReply {
   return {
     text: g.text,
     meta: { kind: "answer", level: g.level, principle: g.principle, route: g.route, chips: g.chips },
-    ctx,
+    ctx: { ...ctx, exercise: g.exercise ?? ctx.exercise, muscle: g.muscle ?? ctx.muscle },
   };
 }
 
@@ -368,6 +368,9 @@ export function localReply(text: string, data: AnswerData, ctx: ChatContext = {}
     return { text: smalltalkReply(chat, data, seed), meta: { kind: "smalltalk" }, ctx };
   }
 
+  const lib = libraryAnswer(text, data);
+  if (lib) return generatedReply(lib, ctx);
+
   const d = queryAnswer(text, data, ctx);
   if (d) {
     return {
@@ -376,9 +379,6 @@ export function localReply(text: string, data: AnswerData, ctx: ChatContext = {}
       ctx: { ...ctx, lastKind: d.kind, exercise: d.exercise ?? ctx.exercise, muscle: d.muscle ?? ctx.muscle, query: d.query },
     };
   }
-
-  const lib = libraryAnswer(text, data);
-  if (lib) return generatedReply(lib, ctx);
 
   // Papo só casa a mensagem inteira e curta ("boa noite", "valeu"): não é pergunta para resposta pronta. A medição
   // confere que nenhuma pergunta do conjunto de respostas prontas cai aqui.

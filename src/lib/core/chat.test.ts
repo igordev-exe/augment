@@ -219,7 +219,7 @@ describe("AUG.CORE — chat amplo: papo, fora do escopo e travas", () => {
     let hijacked = 0;
     for (const g of GOLDEN_IN) {
       const r = coreReply(g.q, FULL, {}, { now: NOW });
-      if (r.layer === "command" || r.layer === "smalltalk") {
+      if (r.layer === "command" || r.layer === "smalltalk" || r.layer === "data") {
         hijacked++;
         misses.push(`[sequestro] "${g.q}" (resposta ${g.id}) virou ${r.layer}`);
       }
@@ -229,7 +229,7 @@ describe("AUG.CORE — chat amplo: papo, fora do escopo e travas", () => {
         `Papo: ${GOLDEN_SMALLTALK.length} | situação certa ${pct(small / GOLDEN_SMALLTALK.length)}`,
         `Fora do escopo: ${GOLDEN_OUT_WIDE.length} | respondido como se soubesse ${pct(outWrong / GOLDEN_OUT_WIDE.length)}`,
         `Travas: ${guards.length} | falhas ${guardMissed}`,
-        `Respostas prontas sequestradas por comando ou papo: ${hijacked} de ${GOLDEN_IN.length}`,
+        `Respostas prontas sequestradas por comando, papo ou dados: ${hijacked} de ${GOLDEN_IN.length}`,
         ...misses.map((x) => `  ✗ ${x}`),
       ].join("\n"),
     );
@@ -237,6 +237,45 @@ describe("AUG.CORE — chat amplo: papo, fora do escopo e travas", () => {
     expect(hijacked).toBe(0);
     expect(outWrong / GOLDEN_OUT_WIDE.length).toBeLessThanOrEqual(0.05);
     expect(small / GOLDEN_SMALLTALK.length).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it("perguntas relatadas não viram resposta desconexa nem 'não sei'", () => {
+    const cases: [string, string][] = [
+      ["quais fontes cientificas você usa?", "ACSM"],
+      ["quais são suas fontes?", "ACSM"],
+      ["como eu posso melhorar meu treino", "10 a 20 séries"],
+      ["como aumentar minha força", "1 a 6 repetições"],
+      ["onde vejo meus recordes", "Progresso"],
+      ["onde registro meu peso", "Biometria"],
+      ["meu peso sobe e desce todo dia", "1 a 2 kg"],
+    ];
+    for (const [q, expected] of cases) {
+      const r = coreReply(q, FULL, {}, { now: NOW });
+      expect(r.layer, q).toBe("answer");
+      expect(r.text, q).toContain(expected);
+    }
+  });
+
+  it("motor composicional responde aspectos de exercícios, músculos, modelos e auditorias", () => {
+    const cases: [string, string][] = [
+      ["quais os erros comuns no supino inclinado", "Erros comuns a evitar"],
+      ["quantas repetições na elevação lateral", "repetições"],
+      ["quanto descanso no terra romeno", "descanso"],
+      ["cadeira extensora é composto ou isolado", "isolado"],
+      ["exercícios de peito com halteres", "halteres"],
+      ["exercícios de costas na polia", "polia/cabo"],
+      ["exercícios de perna em casa", "peso corporal"],
+      ["exercícios isolados de ombro", "isolados"],
+      ["quanto tempo o peito leva para recuperar", "48 a 72 horas"],
+      ["quais os exercícios do treino upper lower", "Upper A"],
+      ["o que a ciência diz sobre mais de 10 séries", "Pelland 2026"],
+      ["é verdade que mulher precisa treinar diferente", "Refalo 2025"],
+    ];
+    for (const [q, expected] of cases) {
+      const r = coreReply(q, FULL, {}, { now: NOW });
+      expect(r.layer, q).toBe("answer");
+      expect(r.text, q).toContain(expected);
+    }
   });
 
   it("todo princípio do Guia tem resposta e todo termo do glossário responde", () => {
