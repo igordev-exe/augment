@@ -6,7 +6,8 @@ import { libraryName } from "../data/library-extended";
 import { SysModule } from "./SysModule";
 import { friendsRanking } from "../lib/online/account";
 import { apiUrl } from "../lib/online/client";
-import { useOnline } from "../lib/online/sync";
+import { rememberNetItem, useOnline } from "../lib/online/sync";
+import { NetWait } from "./NetWait";
 import { formatWeight } from "../lib/progression";
 
 /** Frase da comparação: "mais carga que 72% dos usuários". */
@@ -55,14 +56,21 @@ function FairLines({ p }: { p: Percentile }) {
 /** Na página do exercício: sua posição entre todos os usuários e o ranking entre amigos. */
 export function CommunityCard({ libId }: { libId: string }) {
   const online = useOnline();
-  const [ranking, setRanking] = useState<RankRow[] | null>(null);
+  const [fresh, setFresh] = useState<{ libId: string; rows: RankRow[] } | null>(null);
+  /** Exercício cujo ranking falhou (sem conexão): some a linha de espera, nada de "buscando" para sempre. */
+  const [failed, setFailed] = useState<string | null>(null);
   const user = online?.user;
+  // O último ranking guardado aparece na hora (F4); a resposta nova troca quando chega.
+  const ranking = (fresh?.libId === libId ? fresh.rows : online?.net?.ranking?.[libId]) ?? null;
 
   useEffect(() => {
     if (!user || libId.startsWith("custom-")) return;
     friendsRanking(libId)
-      .then(setRanking)
-      .catch(() => setRanking(null));
+      .then((rows) => {
+        setFresh({ libId, rows });
+        void rememberNetItem("ranking", libId, rows);
+      })
+      .catch(() => setFailed(libId));
   }, [user, libId]);
 
   if (!apiUrl() || online === undefined || libId.startsWith("custom-")) return null;
@@ -138,6 +146,8 @@ export function CommunityCard({ libId }: { libId: string }) {
             Adicione amigos para ver o ranking deste exercício &gt;
           </Link>
         )}
+        {/* Sem ranking guardado (1ª vez neste exercício): a linha já ocupa o lugar, com o estado dentro (F4). */}
+        {!ranking && failed !== libId && <NetWait text="Buscando o ranking entre amigos…" />}
       </div>
     </section>
   );

@@ -183,7 +183,7 @@ export function Kit() {
           <div className="list-label">Slots com cantoneiras</div>
           <div className="kit-slots">
             <Slot label="Avatar">
-              <img src={avatarSrc(DEFAULT_PERSONA)} alt="" />
+              <img src={avatarSrc(DEFAULT_PERSONA)} alt="" width={192} height={192} />
             </Slot>
             <Slot label="Foto" onClick={() => {}} />
             <Slot label="Frente" />

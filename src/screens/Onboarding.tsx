@@ -70,7 +70,7 @@ export function Onboarding({ inApp = false }: { inApp?: boolean }) {
       {step === 0 && (
         <section className="stack ob-step">
           <div className="ob-hero" aria-hidden="true">
-            <img src={heroSrc(undefined)} alt="" width={720} height={720} decoding="async" />
+            <img src={heroSrc(undefined)} alt="" width={720} height={720} />
             <span className="scan-line" />
             <span className="ob-hero-tag">BIO-LINK // OPERADOR</span>
           </div>

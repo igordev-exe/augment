@@ -1,0 +1,137 @@
+/* 18-fluidez: entrada de tela que não atrasa (regra F7 de docs/prompt-fluidez.md) e o contêiner da pré-montagem.
+   Vem por último para ajustar os tempos da entrada única (MC1, 15-pecas.css) sem mexer no --t-ligar global, que o
+   balão e as peças usam. Para voltar à cascata antiga, apague o bloco "Entrada de tela" abaixo. */
+
+/* ---------- Entrada de tela ---------- */
+/* 1ª visita a uma tela nesta abertura do app: cascata curta, o último bloco visível em até 150 ms
+   (--t-entra + 2 × --t-entra-cascata). Antes: 220 ms + 5 × 40 ms = 420 ms com o 6º bloco invisível esperando. */
+:root {
+  --t-entra: 120ms;
+  --t-entra-cascata: 15ms;
+}
+.app > .stack-lg > * {
+  animation-duration: var(--t-entra);
+}
+.app > .stack-lg > :nth-child(2) {
+  animation-delay: var(--t-entra-cascata);
+}
+.app > .stack-lg > :nth-child(n + 3) {
+  animation-delay: calc(var(--t-entra-cascata) * 2);
+}
+.app > .stack-lg > .band-panel .band::before {
+  animation-duration: var(--t-entra);
+}
+
+/* Tela já vista nesta abertura (voltar de aba, classe posta pelo Shell, lib/seen.ts): sem cascata, sem entradas
+   internas; só um fade curto no contêiner, sem atraso. O estado final de cada animação é o estilo normal. */
+.app.rota-vista > .stack-lg {
+  animation: pc-volta var(--t-toque) var(--ease-seco);
+}
+.app.rota-vista > .stack-lg > *,
+.app.rota-vista > .stack-lg > .band-panel .band::before,
+.app.rota-vista
+  :is(
+    .fm .vb-row,
+    .vb-fill,
+    .vb-extra,
+    .aw-core,
+    .fm .aw-node,
+    .aw-segments i.on,
+    .mod-card,
+    .holo-area,
+    .holo-line,
+    .holo-series.dashed .holo-line,
+    .holo-dot,
+    .holo-head,
+    .holo-tag,
+    .holo-scroll .hm-cell,
+    .seg-bar.fx-leitura .seg-fill,
+    .seg-bar.fx-leitura .seg-pat
+  ) {
+  animation: none;
+}
+@keyframes pc-volta {
+  from {
+    opacity: 0.55;
+  }
+}
+:root:is(.fx-gym, .fx-min) .app.rota-vista > .stack-lg {
+  animation: none;
+}
+
+/* ---------- Pré-montagem das abas (App.tsx → Prewarm) ---------- */
+/* Fora da tela e invisível, mas com estilo e layout calculados (display: none não aqueceria nada). Sem animação. */
+.prewarm {
+  position: fixed;
+  top: 0;
+  left: -200vw;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+.prewarm *,
+.prewarm *::before,
+.prewarm *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ---------- Imagens (F5, F6) ---------- */
+/* Miniatura de exercício: o espaço reservado tem fundo; a foto da rede aparece por opacidade quando chega. */
+.ws-photo {
+  background: var(--surface-2);
+}
+img[data-net] {
+  transition: opacity var(--t-toque) var(--ease-seco);
+}
+img.net-wait {
+  opacity: 0;
+}
+:root:is(.fx-gym, .fx-min) img[data-net] {
+  transition: none;
+}
+
+/* ---------- Progresso: blocos abaixo da dobra (F8) ---------- */
+/* O navegador só calcula estilo, layout e pintura deles quando chegam perto da vista. Na 1ª troca para o Progresso
+   eram ~1.200 dos ~2.200 elementos calculados antes de pintar. A altura reservada é a medida em 390 px; depois da 1ª
+   vez o navegador lembra a real (auto). */
+#p-atributos {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 895px;
+}
+#p-series {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 731px;
+}
+.pg-ano {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 347px;
+}
+
+/* ---------- Botão fixo dentro da tela (F5) ---------- */
+/* O botão do Guia (Exercícios) é position: fixed. Se o bloco dele anima com transform, o bloco vira a referência do
+   fixed: o botão nascia no topo e pulava para o rodapé quando a entrada terminava (medido: deslocamento de 0,02).
+   A entrada mudou de lugar: o bloco fica parado e o próprio botão "liga" (transform num elemento fixo não muda a
+   referência dele). Mesmo ritmo da cascata da tela, com o tempo antigo como reserva. */
+.app > .stack-lg > .holo-guide {
+  animation: none;
+}
+.app > .stack-lg > .holo-guide > .holo-fab {
+  animation: pc-ligar var(--t-entra, var(--t-ligar)) var(--ease-seco) calc(var(--t-entra-cascata, var(--t-cascata)) * 2) backwards;
+}
+.app.rota-vista > .stack-lg > .holo-guide > .holo-fab,
+:root:is(.fx-gym, .fx-min) .app > .stack-lg > .holo-guide > .holo-fab {
+  animation: none;
+}
+
+/* ---------- Painel de rede sem valor guardado (F4) ---------- */
+/* A linha de espera já ocupa a altura de uma linha de texto (o alvo de toque do link que costuma vir no lugar). */
+.net-wait-line {
+  margin: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}

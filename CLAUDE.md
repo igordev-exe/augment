@@ -259,8 +259,28 @@ total), `Online` (900), `server/src/app.ts` (990), `SessionScreen` (786), `Anato
 
 **`hooks.tsx`**: `useSessions`, `usePrograms`, `useProgram`, `useSession(id)`, `useSettings()` → `[s, save, loaded]`,
 `useBodyLog`, `useToday`, `ToastProvider`/`useToast` (o balão do núcleo; `toast(texto, tom, fx?, ação | opções?)`,
-`setBubblePersona`, `useCoreTyping`) e `useWakeLock`. Os dados vêm de `liveQuery` do Dexie. Aviso com efeito `glitch`
-vira o tom `reward` (recorde, meta batida) e vibra `RECORD_BUZZ` (curto-curto-longo), diferente do fim do descanso.
+`setBubblePersona`, `useCoreTyping`), `useWakeLock` e `useRestorePoints`. Os dados vêm do **estoque em memória**
+(`store.ts`), lidos com `useSyncExternalStore`: o 1º quadro já tem o dado e a tela não consulta o banco ao montar. Aviso
+com efeito `glitch` vira o tom `reward` (recorde, meta batida) e vibra `RECORD_BUZZ` (curto-curto-longo), diferente do
+fim do descanso.
+
+**`store.ts`** (fluidez, F1/F2): `cell<T>(share?)` = uma célula por dado com `get`/`set`/`subscribe`/`watch(query)`
+(uma assinatura `liveQuery` só, ligada no App antes de montar as telas); `set` com dado igual guarda a MESMA referência;
+`shareById` reaproveita item por item (gravar uma série troca só aquele treino). Não importa nada do app. As células
+moram com quem conhece o dado: `db.ts` (`settingsCell`, `sessionsCell`, `programsCell`, `bodyLogCell`, `memoryCell`,
+`aliasesCell`; `startLocalData()` liga todas; `saveSettings`/`saveOperatorMemory` gravam na célula antes do banco),
+`restore.ts` (`restorePointsCell`) e `online/sync.ts` (`onlineCell`, `watchOnline`). **Nada de `useLiveQuery` fora
+daqui** (o lint acusa).
+
+**`derived.ts`** + **`memo.ts`** (F8): `memoByArgs(fn)` guarda as 3 últimas contas pela identidade dos argumentos (+ a
+versão do programa); `derived.ts` embrulha `operatorState`, `muscleStatus` (com `minuteNow()`), `prsBySession`,
+`computeAchievements`, `activityGrid`, `attributes`, `volumeSlots`, `weeklyReport`, `mesoReport` etc. (`*Of`). As telas
+chamam estes; `warmDerived` faz as contas uma vez depois do boot. Não mutar o que devolvem.
+
+**`seen.ts`** (F7): telas já vistas nesta abertura (`enterRoute`, `markRouteSeen`, `routeSeen`); o Shell põe
+`.rota-vista` no `.app` e a tela volta sem cascata. **`images.ts`** (F6): `decodeImage`/`decodePersona` (decodifica e
+prende a referência). **`delayedFlag.ts`** (F3): `useDelayedFlag(on)`, indicador de rede só depois de 200 ms e por
+300 ms no mínimo.
 
 **`bubble.ts`**: fila pura do balão: `ToastTone` (com `reward`), `ToastOpts` (`title`, `actions` até 2, `route`,
 `sticky`), `makeBubble`, `TONE_RANK` (danger > reward > warn > info > ok), `enqueue`, `isRepeat` (10 min; `ok`,
@@ -582,6 +602,8 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 | `Ticker`                                                     | número que conta até o valor (família "leitura"; respeita reduzir movimento)                                                                                                                                    |
 | `Reactions`                                                  | emojis próprios em pixel 12×12 (`REACTION_ART`, `ReactionEmoji`) e `ReactionBar` (fichas com contagem + seletor holográfico 4×2) no feed dos Amigos                                                             |
 | `GuideHolo`                                                  | botão holográfico flutuante em Exercícios: painel com 6 atalhos de seção e "Abrir o Guia completo"                                                                                                              |
+| `NetImg`                                                     | foto que vem da rede (miniaturas de exercício): `width`/`height`, `data-net`, aparece por opacidade só se não estava no cache                                                                                   |
+| `NetWait`                                                    | linha de espera de painel de rede sem valor guardado (ranking entre amigos, recordes do amigo): já ocupa o lugar; texto só depois de 200 ms                                                                     |
 
 ### `src/screens/`
 
@@ -645,7 +667,10 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
   - erro 401: sai da conta sem apagar dados locais.
 - `account.ts`: `register`, `login`, `recover`, `logout`, `updateProfile`, `newRecoveryCode`, `changePassword`,
   `deleteAccount`, mais os atalhos de amigos, ranking, bloqueio (`blockUser`, `unblockUser`, `getBlocked`) e
-  `reportUser`.
+  `reportUser`. `refreshSocial()` busca amigos, feed e bloqueados e guarda no estado online; o App chama em tempo
+  ocioso depois do boot (com conta), junto com os backups da nuvem, para a 1ª visita já abrir com dados (F4).
+- Cache dos painéis de rede: `OnlineState.net` (`ranking`, `records` por item, até `NET_CACHE_MAX` = 30; `backups`,
+  `blocked`), gravado por `rememberNet`/`rememberNetItem` em `sync.ts`. Some no logout e ao apagar a conta.
 - `workouts.ts`: `syncWorkouts()` (baixa e envia treino por treino; chamado no começo de cada sync) e
   `resetWorkoutSync()`. Estado no kv `online-workouts`. `hash.ts`: `quickHash`.
 
@@ -713,7 +738,7 @@ movimento, variação e equipamento têm de bater; na dúvida vira `custom-…`)
 - **Datas** são strings locais `AAAA-MM-DD` (`dates.ts`). Nada de `Date` em UTC para dia. `trainingDays` vai de 0 =
   domingo a 6 = sábado; `ProgramDay.weekday` usa 1 = segunda.
 
-## 7. Sistema visual (`src/styles/`, 17 arquivos)
+## 7. Sistema visual (`src/styles/`, 18 arquivos)
 
 Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/styles/index.css`. **A ordem importa**
 (regra de baixo vence a de cima): estilo novo entra no arquivo da sua área ou num arquivo novo no fim.
@@ -737,6 +762,7 @@ Os estilos ficam em `src/styles/NN-nome.css`, carregados na ordem por `src/style
 | `15-pecas`                   | peças de jogo (MC0): tokens de setor e de movimento, as seis peças, barra segmentada, mira, famílias de movimento, ruído                                             |
 | `16-chat`                    | treinador no layout do mockup do dono (`.cx-*`): gaveta de conversas, topo fixo, núcleo neural, cartão de protocolo, análise, caixa de mensagem fixa acima das abas  |
 | `17-balao`                   | balão do núcleo (`.core-bubble`, `.cb-*`): avatar em hexágono, faixa de título, tons, botões, barra de vida, "digitando…"                                            |
+| `18-fluidez`                 | entrada de tela curta (`--t-entra`, `--t-entra-cascata`), `.rota-vista` (volta sem cascata), `.prewarm`, fotos da rede (`img[data-net]`, `.net-wait`)                |
 
 **Peças de jogo** (`15-pecas.css` + `components/Pieces.tsx` + `components/Ticker.tsx`; vitrine em `#/kit`, só no
 dev, `screens/Kit.tsx`). Os módulos M1–M6 montam as telas com elas; cada peça tem um papel só:
@@ -847,6 +873,26 @@ entre duas soluções, vence a que obedece mais regras:
 - **R11 Limites que não mudam**: alvo ≥ 44 px, fonte mínima `--fs-1`, contraste AA, 320 px até tablet, texto a 130%,
   `prefers-reduced-motion`, orçamento de 400 hex.
 
+**Regras de fluidez** (F1–F9; análise, números e prompt em `docs/prompt-fluidez.md`). Valem para qualquer tela nova:
+
+- **F1 Primeiro quadro certo.** Dado que já está no aparelho aparece no 1º quadro. Proibido `useState(padrão)` +
+  `useEffect(carregar)` para dado local.
+- **F2 Uma assinatura por dado.** Cada dado tem uma célula em `lib/store.ts`, assinada uma vez no App. Tela lê; tela não
+  consulta o banco ao montar. O mesmo dado sem mudança devolve o mesmo objeto.
+- **F3 Sem "carregando" para dado local.** Indicador só para rede, só depois de 200 ms e por no mínimo 300 ms
+  (`useDelayedFlag`).
+- **F4 Rede: mostra o que já tinha.** Painel que depende do servidor mostra o último valor guardado (`online.net`,
+  `rememberNet`/`rememberNetItem`) e troca quando o novo chega. Sem valor guardado, reserva o espaço.
+- **F5 Nada muda de lugar depois de pintar.** Todo `<img>` com `width` e `height` (o lint acusa; exceção com
+  `lint-ok` e motivo); foto da rede com `NetImg` (espaço reservado, aparece por opacidade).
+- **F6 Imagem crítica já decodificada.** Avatar e herói pré-decodificados (`lib/images.ts`), sem `decoding="async"`.
+- **F7 Entrada não é espera.** Animação de entrada nunca esconde conteúdo por mais de 150 ms e não repete em tela já
+  vista na mesma abertura (`.rota-vista`).
+- **F8 Toque responde em 100 ms.** Conta pesada vai por `lib/derived.ts`; a barra de abas e o Shell não assinam os
+  treinos (`NavBar`, `NoticeSync`, `FirstUseGate` em `App.tsx`).
+- **F9 Aparência muda antes de pintar.** Classe no `<html>`, rolagem para o topo e variável medida no DOM vão em
+  `useLayoutEffect`.
+
 ## 8. Armadilhas conhecidas (já custaram tempo)
 
 - **CRLF/LF misturados** nos arquivos. Edite com a ferramenta Edit, ou com Python normalizando as quebras. `sed` pode
@@ -857,6 +903,9 @@ entre duas soluções, vence a que obedece mais regras:
 - **Vite HMR**: `import('/src/...')` dentro do `eval` da página carrega **outra instância** do módulo (registro de
   programa vazio). Para conferir estado, leia o banco (`D.db.programs.get(...)`), não o registro em memória.
 - **O BootScreen cobre o app ao carregar**: espere ~4–5 s nos testes de navegador antes de clicar.
+- **Medir fluidez só no build de produção** (`npm run build` + `npx vite preview --port 4173`). O `npm run dev`
+  tem `StrictMode` (tudo monta e roda efeito 2×) e módulos soltos: metade do que se sente lá não existe no APK. O
+  `seed.js` não funciona no build (importa módulos do Vite); o `flicker.mjs` grava os dados direto no IndexedDB.
 - **Ciclo de import `db.ts` ↔ `restore.ts`**: não crie novos ciclos. Lógica nova vai em `lib/` sem importar telas.
 - **Online**:
   - o celular é a fonte da verdade, então nunca faça o servidor sobrescrever dados locais automaticamente;
@@ -905,6 +954,11 @@ entre duas soluções, vence a que obedece mais regras:
    - `login.mjs`: a entrada na conta de teste (`AUDIT_API`), usada por `audit.mjs` e `shots.mjs`. O `shots.mjs` aceita
      `"/online@Conta"` (abre a rota e toca no botão com esse texto antes da foto).
    - `seed.js`: dados de demonstração.
+   - `flicker.mjs` (`npm run verify:flicker`, precisa do build e do preview na 4173; `[url] [chromium|webkit] [rodadas]`):
+     por troca de tela, com CPU 4× e 390 px, toque→pintura, tarefa longa, deslocamento, troca de imagem, elementos que
+     chegam depois, último bloco visível e quantas vezes a tela renderizou (gancho do React DevTools, sem código no
+     app). Mediana de 3. `FLICKER_BUDGET=1` falha acima do orçamento (`FLICKER_CI=1` dá a folga do CI);
+     `FLICKER_ONLY=progresso` mede só as trocas com esse texto. Rode sozinho.
 3. **Lógica**: escreva ou ajuste o teste vitest ao lado (`*.test.ts` em `src/lib`, `src/data`, `src/lib/coach`).
 4. **APK**: `npm run build:android` e, no CI, o workflow `android.yml`.
 

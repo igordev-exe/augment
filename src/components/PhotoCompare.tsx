@@ -44,10 +44,16 @@ export function PhotoCompare({ entries }: { entries: BodyEntry[] }) {
       </div>
 
       <div className="pc-frame">
-        <img src={after.photoDataUrl} alt={`Foto de ${after.date}`} />
+        <img src={after.photoDataUrl} alt={`Foto de ${after.date}`} width={300} height={400} />
         {!single && (
           <>
-            <img src={before.photoDataUrl} alt={`Foto de ${before.date}`} style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+            <img
+              src={before.photoDataUrl}
+              alt={`Foto de ${before.date}`}
+              width={300}
+              height={400}
+              style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+            />
             <span className="pc-line" style={{ left: `${pos}%` }} aria-hidden="true" />
             <span className="pc-tag l">ANTES · {caption(before)}</span>
             <span className="pc-tag r">DEPOIS · {caption(after)}</span>
@@ -87,7 +93,7 @@ export function PhotoCompare({ entries }: { entries: BodyEntry[] }) {
                   aria-label={`Usar foto de ${p.date} como ${slot}`}
                   onClick={() => choose(p.id)}
                 >
-                  <img src={p.photoDataUrl} alt="" loading="lazy" />
+                  <img src={p.photoDataUrl} alt="" width={56} height={72} loading="lazy" />
                   <span className="tiny">{shortDate(p.date)}</span>
                 </button>
               );

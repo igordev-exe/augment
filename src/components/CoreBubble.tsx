@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { avatarSrc } from "../data/personas";
 import { BUBBLE_SENDER, type BubbleItem } from "../lib/bubble";
 import { playReward } from "../lib/fx";
@@ -17,6 +18,19 @@ function floorGap(): number {
     if (r.height > 0 && r.top < top) top = r.top;
   });
   return Math.max(0, window.innerHeight - top);
+}
+
+/**
+ * Roda depois do próximo quadro pintado, quando o layout já está calculado: ler posição ali é barato. Ler no meio de
+ * uma troca de tela forçava o navegador a calcular a tela nova inteira antes da hora (docs/prompt-fluidez.md, F8).
+ */
+function afterPaint(fn: () => void): () => void {
+  let t = 0;
+  const raf = requestAnimationFrame(() => (t = window.setTimeout(fn, 0)));
+  return () => {
+    cancelAnimationFrame(raf);
+    window.clearTimeout(t);
+  };
 }
 
 export function CoreBubble({
@@ -44,16 +58,25 @@ export function CoreBubble({
   const [dx, setDx] = useState(0);
 
   useLayoutEffect(() => {
-    const place = () => setBottom(floorGap());
-    place();
+    setBottom(floorGap());
+    let cancel = () => {};
+    const place = () => {
+      cancel();
+      cancel = afterPaint(() => setBottom(floorGap()));
+    };
     window.addEventListener("resize", place);
     // A TimerBar pode aparecer com o balão já na tela.
     const id = window.setInterval(place, 1_000);
     return () => {
+      cancel();
       window.removeEventListener("resize", place);
       window.clearInterval(id);
     };
   }, [item.id]);
+  // Trocou de tela (a barra de abas some no treino, aparece a caixa do chat): reposiciona no mesmo quadro da troca,
+  // antes de pintar. Esperar o ciclo de 1 s fazia o balão pular depois (medido: deslocamento de 0,06–0,59).
+  const { pathname } = useLocation();
+  useLayoutEffect(() => setBottom(floorGap()), [pathname]);
 
   useEffect(() => {
     const el = ref.current;

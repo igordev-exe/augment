@@ -1,6 +1,7 @@
 import Dexie, { type Table } from "dexie";
+import { cell, shareById } from "./store";
 import { mergeAliases, mergeMisses, recordMiss, sanitizeAliases, sanitizeMisses, type ChatAlias, type ChatMiss } from "./core/learned";
-import { rememberPrograms, setActiveProgram } from "../data/program";
+import { rememberPrograms, rememberSessions, setActiveProgram } from "../data/program";
 import { pplProgram, PPL_PROGRAM_ID } from "../data/templates/ppl";
 import type { BodyEntry, BodyGoal, NoticeChannel, NoticeSettings, Program, ProgramExercise, Session, Settings, Unit } from "../data/types";
 import { PERSONAS } from "../data/personas";
@@ -209,18 +210,52 @@ function sanitizeNotices(raw: unknown): NoticeSettings | undefined {
   return { off, ...(hour != null ? { hour } : {}) };
 }
 
+// Estoque em memória (lib/store.ts): uma célula por dado, alimentada pelas funções abaixo e por uma assinatura
+// liveQuery ligada no App (startLocalData). As telas leem dela de forma síncrona: nada pisca no 1º quadro.
+export const settingsCell = cell<Settings>();
+export const sessionsCell = cell<Session[]>(shareById);
+export const programsCell = cell<Program[]>(shareById);
+export const bodyLogCell = cell<BodyEntry[]>(shareById);
+export const memoryCell = cell<OperatorMemory>();
+export const aliasesCell = cell<ChatAlias[]>();
+
+/** Guarda a lista de treinos no estoque e no registro de retratos (exOf de exercício que saiu do programa). */
+export function rememberSessionsSnap(list: Session[]): Session[] {
+  const kept = sessionsCell.set(list);
+  rememberSessions(kept);
+  return kept;
+}
+
+/**
+ * Liga as assinaturas únicas do que mora no aparelho (chamar uma vez, no App, antes de montar as telas). Resolve
+ * quando todas tiverem o 1º valor. Daí em diante, qualquer gravação no banco chega sozinha a todas as telas.
+ */
+export function startLocalData(): Promise<unknown> {
+  return Promise.all([
+    settingsCell.watch(loadSettings),
+    sessionsCell.watch(async () => rememberSessionsSnap(await db.sessions.toArray())),
+    programsCell.watch(async () => programsCell.set((await db.programs.toArray()).filter(isProgram))),
+    bodyLogCell.watch(loadBodyLog),
+    memoryCell.watch(loadOperatorMemory),
+    aliasesCell.watch(loadChatAliases),
+  ]);
+}
+
 export async function loadSettings(): Promise<Settings> {
   const row = await db.kv.get("settings");
-  return sanitizeSettings(row?.value);
+  return settingsCell.set(sanitizeSettings(row?.value));
 }
 
 export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
+  // Na hora, sem esperar o banco: a tela já mostra o ajuste novo; a transação abaixo confirma.
+  const cur = settingsCell.get();
+  if (cur) settingsCell.set(sanitizeSettings({ ...cur, ...patch }));
   return db.transaction("rw", db.kv, async () => {
     const row = await db.kv.get("settings");
     const cur = sanitizeSettings(row?.value);
     const next = sanitizeSettings({ ...cur, ...patch });
     await db.kv.put({ key: "settings", value: next });
-    return next;
+    return settingsCell.set(next);
   });
 }
 
@@ -302,7 +337,9 @@ async function ensureSettings(): Promise<void> {
   if (await db.kv.get("settings")) return;
   const first = await db.sessions.orderBy("date").first();
   const mesoStart = first ? addDays(mondayOf(first.date), -7 * Math.max(0, (first.week || 1) - 1)) : mondayOf(todayISO());
-  await db.kv.put({ key: "settings", value: sanitizeSettings({ ...DEFAULT_SETTINGS, mesoStart }) });
+  const next = sanitizeSettings({ ...DEFAULT_SETTINGS, mesoStart });
+  await db.kv.put({ key: "settings", value: next });
+  settingsCell.set(next);
 }
 
 export async function loadActiveProgram(): Promise<Program> {
@@ -315,7 +352,8 @@ export async function loadActiveProgram(): Promise<Program> {
     await db.programs.put(p);
   }
   if (settings.activeProgramId !== p.id) await saveSettings({ activeProgramId: p.id });
-  rememberPrograms((await db.programs.toArray()).filter(isProgram));
+  const progs = (await db.programs.toArray()).filter(isProgram);
+  rememberPrograms(programsCell.set(progs));
   setActiveProgram(p);
   return p;
 }
@@ -325,6 +363,8 @@ export async function saveProgram(p: Program): Promise<void> {
   if (!isProgram(p)) throw new Error("Programa inválido.");
   const next = { ...p, updatedAt: Date.now() };
   await db.programs.put(next);
+  const list = programsCell.get();
+  if (list) programsCell.set(list.some((x) => x.id === next.id) ? list.map((x) => (x.id === next.id ? next : x)) : [...list, next]);
   const settings = await loadSettings();
   if (settings.activeProgramId === p.id) setActiveProgram(next);
 }
@@ -334,7 +374,8 @@ export async function activateProgram(id: string): Promise<Program> {
   const p = await db.programs.get(id);
   if (!p || !isProgram(p)) throw new Error("Programa não encontrado.");
   await saveSettings({ activeProgramId: id });
-  rememberPrograms((await db.programs.toArray()).filter(isProgram));
+  const progs = (await db.programs.toArray()).filter(isProgram);
+  rememberPrograms(programsCell.set(progs));
   setActiveProgram(p);
   return p;
 }
@@ -344,6 +385,8 @@ export async function deleteProgram(id: string): Promise<void> {
   const settings = await loadSettings();
   if (settings.activeProgramId === id) throw new Error("Não dá para apagar o programa em uso.");
   await db.programs.delete(id);
+  const list = programsCell.get();
+  if (list) programsCell.set(list.filter((p) => p.id !== id));
 }
 
 // ---------- Body Log (F4: Peso corporal, medidas e fotos) ----------
@@ -355,17 +398,19 @@ function isBodyEntry(x: unknown): x is BodyEntry {
 
 export async function loadBodyLog(): Promise<BodyEntry[]> {
   const row = await db.kv.get("body-log");
-  if (!Array.isArray(row?.value)) return [];
-  return (row.value as unknown[])
-    .filter(isBodyEntry)
-    .sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date)));
+  if (!Array.isArray(row?.value)) return bodyLogCell.set([]);
+  return bodyLogCell.set(
+    (row.value as unknown[])
+      .filter(isBodyEntry)
+      .sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date))),
+  );
 }
 
 export async function saveBodyLog(entries: BodyEntry[]): Promise<BodyEntry[]> {
   return db.transaction("rw", db.kv, async () => {
     const clean = entries.filter(isBodyEntry).sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date)));
     await db.kv.put({ key: "body-log", value: clean });
-    return clean;
+    return bodyLogCell.set(clean);
   });
 }
 
@@ -375,7 +420,7 @@ export async function upsertBodyEntry(entry: BodyEntry): Promise<BodyEntry[]> {
     const rest = cur.filter((x) => x.id !== entry.id);
     const next = [entry, ...rest].sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date)));
     await db.kv.put({ key: "body-log", value: next });
-    return next;
+    return bodyLogCell.set(next);
   });
 }
 
@@ -384,7 +429,7 @@ export async function deleteBodyEntry(id: string): Promise<BodyEntry[]> {
     const cur = await loadBodyLog();
     const next = cur.filter((x) => x.id !== id);
     await db.kv.put({ key: "body-log", value: next });
-    return next;
+    return bodyLogCell.set(next);
   });
 }
 
@@ -408,27 +453,31 @@ export async function addChatMiss(text: string, layer: ChatMiss["layer"], today:
 }
 
 export async function loadChatAliases(): Promise<ChatAlias[]> {
-  return sanitizeAliases((await db.kv.get("chat-aliases"))?.value);
+  return aliasesCell.set(sanitizeAliases((await db.kv.get("chat-aliases"))?.value));
 }
 
 export async function saveChatAliases(list: ChatAlias[]): Promise<void> {
-  await db.kv.put({ key: "chat-aliases", value: sanitizeAliases(list) });
+  const clean = sanitizeAliases(list);
+  await db.kv.put({ key: "chat-aliases", value: clean });
+  aliasesCell.set(clean);
 }
 
 // ---------- Memória do Operador (AUG.CORE) ----------
 
 export async function loadOperatorMemory(): Promise<OperatorMemory> {
   const row = await db.kv.get("operator-memory");
-  return sanitizeOperatorMemory(row?.value);
+  return memoryCell.set(sanitizeOperatorMemory(row?.value));
 }
 
 export async function saveOperatorMemory(patch: Partial<OperatorMemory>): Promise<OperatorMemory> {
+  const cur = memoryCell.get();
+  if (cur) memoryCell.set(sanitizeOperatorMemory({ ...cur, ...patch }));
   return db.transaction("rw", db.kv, async () => {
     const row = await db.kv.get("operator-memory");
     const cur = sanitizeOperatorMemory(row?.value);
     const next = sanitizeOperatorMemory({ ...cur, ...patch });
     await db.kv.put({ key: "operator-memory", value: next });
-    return next;
+    return memoryCell.set(next);
   });
 }
 
@@ -438,7 +487,7 @@ export async function upsertConstraint(c: Constraint): Promise<OperatorMemory> {
     const rest = cur.constraints.filter((x) => x.id !== c.id && x.kind !== c.kind);
     const next = sanitizeOperatorMemory({ ...cur, constraints: [...rest, c] });
     await db.kv.put({ key: "operator-memory", value: next });
-    return next;
+    return memoryCell.set(next);
   });
 }
 
@@ -448,7 +497,7 @@ export async function addAbsence(a: Absence): Promise<OperatorMemory> {
     const cur = await loadOperatorMemory();
     const next = sanitizeOperatorMemory({ ...cur, absences: [...(cur.absences ?? []), a] });
     await db.kv.put({ key: "operator-memory", value: next });
-    return next;
+    return memoryCell.set(next);
   });
 }
 
@@ -457,8 +506,9 @@ export async function ensureMesoHistory(today: string): Promise<OperatorMemory |
   const [memory, settings, sessions] = await Promise.all([loadOperatorMemory(), loadSettings(), db.sessions.toArray()]);
   const next = closeFinishedMesos(memory, sessions.filter(isSession), settings, today);
   if (!next) return null;
-  await db.kv.put({ key: "operator-memory", value: sanitizeOperatorMemory(next) });
-  return next;
+  const clean = sanitizeOperatorMemory(next);
+  await db.kv.put({ key: "operator-memory", value: clean });
+  return memoryCell.set(clean);
 }
 
 export async function removeConstraint(id: string): Promise<OperatorMemory> {
@@ -466,7 +516,7 @@ export async function removeConstraint(id: string): Promise<OperatorMemory> {
     const cur = await loadOperatorMemory();
     const next = sanitizeOperatorMemory({ ...cur, constraints: cur.constraints.filter((x) => x.id !== id) });
     await db.kv.put({ key: "operator-memory", value: next });
-    return next;
+    return memoryCell.set(next);
   });
 }
 
@@ -620,6 +670,12 @@ export async function importBackup(b: Backup, mode: "merge" | "replace", opts: {
     }
     await db.sessions.bulkPut(sessions);
   });
-  await loadActiveProgram();
+  await Promise.all([
+    loadActiveProgram(),
+    db.sessions.toArray().then(rememberSessionsSnap),
+    loadBodyLog(),
+    loadOperatorMemory(),
+    loadChatAliases(),
+  ]);
   return sessions.length;
 }

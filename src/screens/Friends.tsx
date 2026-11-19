@@ -14,10 +14,8 @@ import { sessionStats } from "../lib/sessions";
 import { FoldRow, GroupPanel, LinkRow } from "../components/Pieces";
 import {
   acceptFriend,
-  getBlocked,
-  getFeed,
-  getFriends,
   reactToPost,
+  refreshSocial,
   removeFriend,
   requestFriend,
   searchUsers,
@@ -25,7 +23,9 @@ import {
   userRecords,
 } from "../lib/online/account";
 import { apiUrl, onlineErrorText } from "../lib/online/client";
-import { libraryBests, saveOnline, useOnline } from "../lib/online/sync";
+import { libraryBests, rememberNetItem, useOnline } from "../lib/online/sync";
+import { NetWait } from "../components/NetWait";
+import { sameData } from "../lib/store";
 import { formatWeight } from "../lib/progression";
 import { agoText } from "./Online";
 
@@ -40,18 +40,18 @@ export function Friends() {
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [offline, setOffline] = useState("");
-  const [blocked, setBlocked] = useState<PublicUser[]>([]);
+  const [blocked, setBlocked] = useState<PublicUser[]>(() => online?.net?.blocked ?? []);
   const [shown, setShown] = useState(5); // transmissões: as 5 mais recentes, depois de 5 em 5
   const user = online?.user;
 
   async function refresh() {
     try {
-      const [f, fd, bl] = await Promise.all([getFriends(), getFeed(), getBlocked().catch(() => [])]);
-      setFriends(f);
-      setFeed(fd);
-      setBlocked(bl);
+      const { friends: f, feed: fd, blocked: bl } = await refreshSocial();
+      // Resposta igual à que já está na tela: mantém o mesmo objeto (sem render à toa, F2).
+      setFriends((prev) => (sameData(prev ?? online?.social?.friends, f) ? prev : f));
+      setFeed((prev) => (sameData(prev ?? online?.social?.feed, fd) ? prev : fd));
+      setBlocked((prev) => (sameData(prev, bl) ? prev : bl));
       setOffline("");
-      await saveOnline({ social: { friends: f, feed: fd, at: Date.now() } });
     } catch (err) {
       setOffline(onlineErrorText(err));
     }
@@ -498,17 +498,23 @@ function AddFriend({ onDone }: { onDone: () => void }) {
 /** Amigo: toque abre a comparação de recordes nos exercícios que os dois fazem. */
 function FriendRow({ friend, onRemove, onChange }: { friend: PublicUser; onRemove: () => void; onChange: () => void }) {
   const [open, setOpen] = useState(false);
-  const [theirs, setTheirs] = useState<RecordIn[] | null>(null);
+  const online = useOnline();
+  // Os recordes guardados da última vez aparecem na hora ao abrir (F4); os do servidor trocam quando chegam.
+  const [fresh, setFresh] = useState<RecordIn[] | null>(null);
+  const theirs = fresh ?? online?.net?.records?.[friend.id] ?? null;
   const [error, setError] = useState("");
   const sessions = useSessions();
   const mine = useMemo(() => new Map(libraryBests(sessions ?? []).map((r) => [r.lib, r])), [sessions]);
 
   useEffect(() => {
-    if (!open || theirs) return;
+    if (!open || fresh) return;
     userRecords(friend.id)
-      .then(setTheirs)
+      .then((list) => {
+        setFresh(list);
+        void rememberNetItem("records", friend.id, list);
+      })
       .catch((err) => setError(onlineErrorText(err)));
-  }, [open, theirs, friend.id]);
+  }, [open, fresh, friend.id]);
 
   const common = (theirs ?? [])
     .filter((r) => mine.has(r.lib))
@@ -523,6 +529,7 @@ function FriendRow({ friend, onRemove, onChange }: { friend: PublicUser; onRemov
       {open && (
         <div className="stack" style={{ gap: 8 }}>
           {error && <p className="small warn-text">{error}</p>}
+          {!theirs && !error && <NetWait text={`Buscando os recordes de ${friend.displayName}…`} />}
           {theirs && common.length === 0 && (
             <p className="small muted">
               Vocês ainda não têm recordes no mesmo exercício (ou {friend.displayName} não compartilha os recordes).

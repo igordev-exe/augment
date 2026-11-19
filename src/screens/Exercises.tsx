@@ -10,6 +10,7 @@ import { MUSCLE_LABEL, programDays } from "../data/program";
 import { EXERCISE_EVIDENCE, PRINCIPLES } from "../data/science";
 import type { MuscleId, ProgramExercise } from "../data/types";
 import { useProgram, useSessions } from "../lib/hooks";
+import { NetImg } from "../components/NetImg";
 import { bestE1rm, formatWeight, historyOf, loadRef, workSets } from "../lib/progression";
 
 // Biblioteca no estilo oficina: filtros por músculo e equipamento, grade de cartões com foto,
@@ -178,7 +179,7 @@ export function Exercises() {
                 data-augmented-ui="tl-clip br-clip border"
                 className={`ws-card${inProgram ? "" : " off-program"}`}
               >
-                <span className="ws-photo">{img ? <img src={img} alt="" loading="lazy" /> : null}</span>
+                <span className="ws-photo">{img ? <NetImg src={img} width={400} height={300} /> : null}</span>
                 {ev && (
                   <span className={`ws-tag ${LEVEL[ev.why] === "evidencia" ? "ok" : "warn"}`} title={whyLabel(ev.why) ?? undefined}>
                     {ev.tag}

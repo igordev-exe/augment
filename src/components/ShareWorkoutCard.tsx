@@ -481,6 +481,8 @@ export function ShareWorkoutCard({
       {dataUrl && (
         <img
           src={dataUrl}
+          width={1080}
+          height={1350}
           alt={`Resumo do treino ${summary.dayName}`}
           style={{
             width: "100%",

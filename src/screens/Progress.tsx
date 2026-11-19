@@ -18,19 +18,30 @@ import { PhotoCompare } from "../components/PhotoCompare";
 import { RecordList } from "../components/RecordList";
 import { CommunityModule } from "../components/CommunityCard";
 import { exById, programDays, shortName } from "../data/program";
-import type { Unit } from "../data/types";
-import { computeAchievements } from "../lib/achievements";
 import { addDays, bySessionDesc, mondayOf, shortDate } from "../lib/dates";
 import { deleteBodyEntry, uid, upsertBodyEntry } from "../lib/db";
-import { learnedRecoveryMultipliers } from "../lib/core/operator";
 import { resizeImageFile } from "../lib/files";
 import { useBodyLog, useOperatorMemory, useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
-import { formatWeight, historyOf, LB_TO_KG, mainLoad, prsBySession, toKg, workSets, type PR } from "../lib/progression";
+import { formatWeight, historyOf, LB_TO_KG, mainLoad, toKg, workSets, type PR } from "../lib/progression";
 import { planAhead } from "../lib/schedule";
-import { attributes } from "../lib/attributes";
-import { volumeSlots } from "../lib/slots";
-import { activityGrid, dailySets, muscleStatus, readiness, relativeStrength } from "../lib/visual";
+import { readiness } from "../lib/visual";
+import {
+  achievementsOf,
+  activityGridOf,
+  attributesOf,
+  dailySetsOf,
+  muscleStatusOf,
+  prsOf,
+  recoveryOf,
+  relativeStrengthOf,
+  volumeSlotsOf,
+} from "../lib/derived";
+import { minuteNow } from "../lib/memo";
+import type { BodyEntry, Session, Unit } from "../data/types";
+
+const NO_BODY: BodyEntry[] = [];
+const NO_SESSIONS: Session[] = [];
 
 export function Progress() {
   const sessions = useSessions();
@@ -51,25 +62,24 @@ export function Progress() {
   const [bioSignal, setBioSignal] = useState(0);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const prMap = useMemo(() => (sessions ? prsBySession(sessions) : new Map<string, PR[]>()), [sessions]);
-  const achievements = useMemo(
-    () => (sessions ? computeAchievements(sessions, settings, bodyLog ?? []) : []),
-    [sessions, settings, bodyLog],
-  );
+  const body = bodyLog ?? NO_BODY;
+  const prMap = useMemo(() => (sessions ? prsOf(sessions) : new Map<string, PR[]>()), [sessions]);
+  const achievements = useMemo(() => (sessions ? achievementsOf(sessions, settings, body) : []), [sessions, settings, body]);
   const week = weekFor(settings.mesoStart, today);
   const operator = useOperatorState(sessions, bodyLog, settings, today);
   const [memory] = useOperatorMemory();
-  const recoveryMultipliers = useMemo(() => learnedRecoveryMultipliers(operator), [operator]);
+  const recoveryMultipliers = useMemo(() => recoveryOf(operator), [operator]);
+  const all = sessions ?? NO_SESSIONS;
   const muscles = useMemo(
-    () => muscleStatus(sessions ?? [], week, today, Date.now(), settings.setAdjust, recoveryMultipliers),
-    [sessions, week, today, settings.setAdjust, recoveryMultipliers],
+    () => muscleStatusOf(all, week, today, minuteNow(), settings.setAdjust, recoveryMultipliers),
+    [all, week, today, settings.setAdjust, recoveryMultipliers],
   );
   const grid = useMemo(
-    () => activityGrid(sessions ?? [], today, settings.trainingDays.length, 53, memory.absences),
-    [sessions, today, settings.trainingDays.length, memory.absences],
+    () => activityGridOf(all, today, settings.trainingDays.length, 53, memory.absences),
+    [all, today, settings.trainingDays.length, memory.absences],
   );
-  const relative = useMemo(() => relativeStrength(sessions ?? [], bodyLog ?? []), [sessions, bodyLog]);
-  const daily = useMemo(() => dailySets(sessions ?? [], today), [sessions, today]);
+  const relative = useMemo(() => relativeStrengthOf(all, body), [all, body]);
+  const daily = useMemo(() => dailySetsOf(all, today), [all, today]);
   const nextWorkout = useMemo(() => {
     const p = planAhead(sessions ?? [], today, 14, settings.trainingDays)[0];
     const day = p && programDays().find((d) => d.id === p.dayId);
@@ -81,8 +91,8 @@ export function Progress() {
   if (!sessions) return null;
 
   const done = sessions.filter((s) => s.status === "done");
-  const slots = volumeSlots(sessions, today, week, settings.setAdjust);
-  const attrs = attributes({ sessions, bodyLog: bodyLog ?? [], settings, today });
+  const slots = volumeSlotsOf(sessions, today, week, settings.setAdjust);
+  const attrs = attributesOf(sessions, body, settings, today);
 
   // Treinos por semana (últimas 8)
   const monday = mondayOf(today);
@@ -245,7 +255,7 @@ export function Progress() {
         </p>
       </section>
 
-      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack">
+      <section data-augmented-ui="tr-clip bl-clip border" className="card data stack pg-ano">
         <h2 className="h-sec">Atividade do ano</h2>
         <div className="stats-grid">
           <div>
@@ -396,6 +406,7 @@ export function Progress() {
                   />
                 </div>
                 {bPhoto && (
+                  // lint-ok: prévia da foto escolhida agora (data URL, proporção da foto), abaixo do formulário
                   <img
                     src={bPhoto}
                     alt="Prévia"
@@ -467,6 +478,7 @@ export function Progress() {
                       </div>
                     </div>
                     {viewPhotoId === entry.id && entry.photoDataUrl && (
+                      // lint-ok: foto aberta por toque (data URL, proporção da foto)
                       <img
                         src={entry.photoDataUrl}
                         alt={`Registro de ${entry.date}`}

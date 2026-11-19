@@ -1,11 +1,9 @@
-import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { shareOrDownload } from "../lib/files";
-import { useToast } from "../lib/hooks";
+import { useRestorePoints, useToast } from "../lib/hooks";
 import {
   createRestorePoint,
   deleteRestorePoint,
-  listRestorePoints,
   loadRestorePoint,
   MAX_POINTS,
   RESTORE_LABEL,
@@ -18,7 +16,7 @@ function when(p: RestorePoint): string {
 }
 
 export function RestorePoints() {
-  const points = useLiveQuery(() => listRestorePoints(), []);
+  const points = useRestorePoints();
   const toast = useToast();
   const [confirm, setConfirm] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

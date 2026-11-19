@@ -11,7 +11,7 @@ import { avatarSrc, heroSrc } from "../data/personas";
 import { dayById, programDays } from "../data/program";
 import type { Session } from "../data/types";
 import { addDays, bySessionDesc, daysBetween, formatDuration, fromISO, mondayOf, shortDate, weekdayName, weekdayShort } from "../lib/dates";
-import { db, ensureMesoHistory, exportBackup } from "../lib/db";
+import { db, ensureMesoHistory, exportBackup, rememberSessionsSnap } from "../lib/db";
 import { operatorBrief } from "../lib/core/operator";
 import { planDay } from "../lib/core/planner";
 import { bootBeam } from "../lib/fx";
@@ -19,7 +19,7 @@ import { shareOrDownload } from "../lib/files";
 import { useBodyLog, useOperatorState, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
 import { fatigueAlert } from "../lib/engine";
 import { defaultRest, reentryFor, setsFor, weekFor, WEEK_RULES } from "../lib/mesocycle";
-import { weeklyReport } from "../lib/report";
+import { weeklyReportOf } from "../lib/derived";
 import { planAhead } from "../lib/schedule";
 import { buildSession, sessionStats } from "../lib/sessions";
 
@@ -79,6 +79,8 @@ export function Today() {
     const targetAdapt = from ? undefined : targetDayId === dayId ? adaptation : planDay(targetDayId, week, settings, sessions!, operator);
     const s = buildSession(targetDayId, today, week, settings, sessions!, from, targetAdapt);
     await db.sessions.add(s);
+    // No estoque antes de navegar: a tela do treino já abre com ele, sem um quadro vazio esperando a assinatura (F1).
+    rememberSessionsSnap([...(sessions ?? []), s]);
     navigate(`/treino/${s.id}`);
   }
 
@@ -99,7 +101,7 @@ export function Today() {
   const report =
     settings.reportSeen === monday
       ? null
-      : weeklyReport(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
+      : weeklyReportOf(sessions, lastWeek, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
   const showReport = !!report && (report.done > 0 || lastWeek >= settings.mesoStart);
   const doneThisWeek = doneAll.filter((s) => s.date >= monday && s.date < addDays(monday, 7)).length;
   const backupAge = settings.lastBackupAt ? daysBetween(settings.lastBackupAt, today) : null;
@@ -330,7 +332,7 @@ export function Today() {
       {!active && (
         <section className="stack">
           <div data-augmented-ui="tl-clip br-clip border" className="mission">
-            <img className="figure" src={heroSrc(settings.persona)} alt="" width={720} height={720} decoding="async" />
+            <img className="figure" src={heroSrc(settings.persona)} alt="" width={720} height={720} />
             <span className="shade" aria-hidden="true" />
             <span className="hatch" aria-hidden="true" />
             <span className="scan-line" aria-hidden="true" />

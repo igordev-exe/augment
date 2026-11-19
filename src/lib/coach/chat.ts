@@ -86,12 +86,22 @@ export function archiveChat(list: CoachArchiveItem[], chat: CoachChat, now = Dat
   return [{ id: `c${at}-${list.length}`, title: chatTitle(chat), at, chat }, ...list].slice(0, ARCHIVE_MAX);
 }
 
+let configSnap: CoachConfig | null = null;
+let chatSnap: CoachChat | null = null;
+let archiveSnap: CoachArchiveItem[] | null = null;
+
+export const peekCoachConfig = () => configSnap;
+export const peekCoachChat = () => chatSnap;
+export const peekCoachArchive = () => archiveSnap;
+
 export async function loadCoachArchive(): Promise<CoachArchiveItem[]> {
   const row = await db.kv.get("coach-archive");
-  return Array.isArray(row?.value) ? (row!.value as CoachArchiveItem[]) : [];
+  archiveSnap = Array.isArray(row?.value) ? (row!.value as CoachArchiveItem[]) : [];
+  return archiveSnap;
 }
 
 export async function saveCoachArchive(list: CoachArchiveItem[]): Promise<void> {
+  archiveSnap = list;
   await db.kv.put({ key: "coach-archive", value: list });
 }
 
@@ -131,16 +141,21 @@ export function pruneExpiredToolResults(chat: CoachChat, now = Date.now()): Coac
 export async function loadCoachConfig(): Promise<CoachConfig> {
   const row = await db.kv.get("coach-config");
   const cfg = { ...DEFAULT_CONFIG, ...((row?.value as Partial<CoachConfig>) ?? {}) };
-  if (!isNative) return cfg;
+  if (!isNative) {
+    configSnap = cfg;
+    return cfg;
+  }
   // APK: a chave mora no armazenamento seguro do Android. Uma chave antiga no IndexedDB é movida para lá.
   if (cfg.apiKey) {
     await saveCoachConfig(cfg);
     return cfg;
   }
-  return { ...cfg, apiKey: await readSecretKey().catch(() => "") };
+  configSnap = { ...cfg, apiKey: await readSecretKey().catch(() => "") };
+  return configSnap;
 }
 
 export async function saveCoachConfig(c: CoachConfig): Promise<void> {
+  configSnap = c;
   if (isNative) {
     await writeSecretKey(c.apiKey);
     await db.kv.put({ key: "coach-config", value: { ...c, apiKey: "" } });
@@ -151,10 +166,12 @@ export async function saveCoachConfig(c: CoachConfig): Promise<void> {
 
 export async function loadCoachChat(): Promise<CoachChat> {
   const row = await db.kv.get("coach-chat");
-  return { ...EMPTY_CHAT, ...((row?.value as Partial<CoachChat>) ?? {}) };
+  chatSnap = { ...EMPTY_CHAT, ...((row?.value as Partial<CoachChat>) ?? {}) };
+  return chatSnap;
 }
 
 export async function saveCoachChat(c: CoachChat): Promise<void> {
+  chatSnap = c;
   await db.kv.put({ key: "coach-chat", value: c });
 }
 

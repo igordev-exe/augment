@@ -18,10 +18,26 @@ export function ActivityHeatmap({ grid, today }: { grid: ActivityGrid; today: st
   const scroller = useRef<HTMLDivElement>(null);
   const [picked, setPicked] = useState<string | null>(null);
 
-  // Abre já mostrando as semanas mais recentes (à direita).
+  // Abre já mostrando as semanas mais recentes (à direita). Só quando o mapa entra na vista: ler scrollWidth ao montar
+  // forçava o navegador a calcular estilo e layout da tela inteira no meio da troca de aba (docs/prompt-fluidez.md, F8).
   useEffect(() => {
     const el = scroller.current;
-    if (el) el.scrollLeft = el.scrollWidth;
+    if (!el) return;
+    const toEnd = () => {
+      el.scrollLeft = el.scrollWidth;
+    };
+    if (!("IntersectionObserver" in window)) {
+      toEnd();
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        toEnd();
+        io.disconnect();
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
   }, [grid.weeks.length]);
 
   const width = LEFT + grid.weeks.length * STEP;

@@ -8,7 +8,7 @@
 //  2. Sem restrição: as mesmas ações animam de verdade (prova de que o teste acima não passa à toa).
 //  3. Contraste do texto da faixa cheia sobre a cor de cada setor, também no deload (≥ 4,5:1).
 // Uso: node tools/verify/motion.mjs [url]   (precisa do npm run dev). Sai com 1 se algo falhar.
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -111,6 +111,6 @@ for (const r of ROUTES) {
 await js(`document.documentElement.classList.remove("fx-min")`);
 await send("Emulation.setCPUThrottlingRate", { rate: 1 });
 ws.close();
-proc.kill();
+await killBrowser(proc, port);
 console.log(`\nPior quadro: ${worst} ms (CPU 4× mais lenta).`);
 process.exit(fail ? 1 : 0);

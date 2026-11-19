@@ -1,4 +1,3 @@
-import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHead } from "../components/bits";
@@ -8,8 +7,8 @@ import { EQUIP_LABEL, EXTENDED } from "../data/library-extended";
 import { MUSCLE_LABEL, MUSCLE_ORDER } from "../data/program";
 import { SCIENCE } from "../data/science";
 import type { MuscleId, Program, ProgramDay, ProgramExercise, StopKind } from "../data/types";
-import { activateProgram, db, saveProgram } from "../lib/db";
-import { useProgram, useSettings, useToast } from "../lib/hooks";
+import { activateProgram, saveProgram } from "../lib/db";
+import { usePrograms, useProgram, useSettings, useToast } from "../lib/hooks";
 import {
   addDay,
   addExercise,
@@ -544,7 +543,8 @@ function PlanVolume({ program, adjust }: { program: Program; adjust?: Record<str
 
 export function ProgramEditor() {
   const { id } = useParams();
-  const stored = useLiveQuery(() => (id ? db.programs.get(id) : undefined), [id]);
+  const programs = usePrograms();
+  const stored = useMemo(() => (id ? programs?.find((p) => p.id === id) : undefined), [programs, id]);
   const active = useProgram();
   const [settings] = useSettings();
   const toast = useToast();

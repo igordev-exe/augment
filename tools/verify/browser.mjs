@@ -32,7 +32,35 @@ export function browserArgs(port, profileDir) {
     `--user-data-dir=${profileDir}`,
     "--no-first-run",
     "--hide-scrollbars",
+    // Extensões instaladas no aparelho (ex.: corretor ortográfico) entram até em perfil novo e pesam em cada toque.
+    "--disable-extensions",
+    "--disable-component-extensions-with-background-pages",
     ...(process.env.CI ? ["--no-sandbox", "--disable-gpu"] : []),
     "about:blank",
   ];
+}
+
+/**
+ * Fecha o navegador inteiro pelo protocolo de depuração (Browser.close). No Windows o msedge.exe que a gente inicia
+ * passa o trabalho a outro processo, então matar o processo (nem a árvore) não fecha nada: os filhos ficam vivos
+ * rodando o app e, depois de algumas execuções, somam centenas e distorcem qualquer medição.
+ */
+export async function killBrowser(proc, port) {
+  if (port) {
+    try {
+      const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
+      const ws = new WebSocket(webSocketDebuggerUrl);
+      await new Promise((res, rej) => ((ws.onopen = res), (ws.onerror = rej), setTimeout(rej, 2000)));
+      ws.send(JSON.stringify({ id: 1, method: "Browser.close" }));
+      await new Promise((res) => ((ws.onclose = res), setTimeout(res, 2000)));
+    } catch {}
+  }
+  if (process.platform === "win32" && proc?.pid) {
+    try {
+      execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" });
+    } catch {}
+  }
+  try {
+    proc?.kill();
+  } catch {}
 }

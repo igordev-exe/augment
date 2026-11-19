@@ -1,6 +1,6 @@
 // Varredura de layout: todas as telas × vários aparelhos. Procura vazamento horizontal, texto cortado, letra < 11 px
 // e alvo de toque pequeno. Edge headless por CDP, com dados de demonstração.
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { loginScript } from "./login.mjs";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -225,7 +225,7 @@ async function main() {
   writeFileSync(join(OUT, "audit.txt"), text);
   console.log(rows.length + " achados" + (rows.length ? ":\n" + text : ""));
   ws.close();
-  proc.kill();
+  await killBrowser(proc, port);
   process.exit(rows.length ? 1 : 0);
 }
 main();

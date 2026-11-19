@@ -1,36 +1,44 @@
-import { useLiveQuery } from "dexie-react-hooks";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { activeProgram, programVersion, rememberSessions, subscribeProgram } from "../data/program";
+import { activeProgram, programVersion, subscribeProgram } from "../data/program";
 import type { BodyEntry, Program, Session, Settings } from "../data/types";
-import { EMPTY_OPERATOR_MEMORY, operatorState, type OperatorMemory, type OperatorState } from "./core/operator";
+import { EMPTY_OPERATOR_MEMORY, type OperatorMemory, type OperatorState } from "./core/operator";
+import { operatorStateOf } from "./derived";
 import type { ChatAlias } from "./core/learned";
 import {
+  aliasesCell,
+  bodyLogCell,
   db,
   DEFAULT_SETTINGS,
-  loadBodyLog,
-  loadChatAliases,
-  loadOperatorMemory,
-  loadSettings,
+  memoryCell,
+  programsCell,
+  rememberSessionsSnap,
   saveOperatorMemory,
   saveSettings,
+  sessionsCell,
+  settingsCell,
 } from "./db";
+import { restorePointsCell, type RestorePoint } from "./restore";
+import type { Cell } from "./store";
 import { todayISO } from "./dates";
 import { isNative, keepAwake, vibrate } from "./native";
 import { enqueue, isRepeat, makeBubble, remainingWithQueue, toastDuration, type BubbleItem, type ToastFn } from "./bubble";
 import { CoreBubble, CoreTyping } from "../components/CoreBubble";
 
+// Leitura síncrona do estoque em memória (lib/store.ts): o 1º quadro já tem o dado e a tela não consulta o banco ao
+// montar. As assinaturas ao banco são ligadas uma vez no App (startLocalData).
+const EMPTY_ALIASES: ChatAlias[] = [];
+const NO_BODY: BodyEntry[] = [];
+function useCell<T>(c: Cell<T>): T | undefined {
+  return useSyncExternalStore(c.subscribe, c.get);
+}
+
 export function useSessions(): Session[] | undefined {
-  return useLiveQuery(async () => {
-    const list = await db.sessions.toArray();
-    // Exercícios que já saíram do programa continuam resolvendo pelo retrato salvo na sessão.
-    rememberSessions(list);
-    return list;
-  }, []);
+  return useCell(sessionsCell);
 }
 
 /** Todos os programas salvos (lista em Programas). */
 export function usePrograms(): Program[] | undefined {
-  return useLiveQuery(() => db.programs.toArray(), []);
+  return useCell(programsCell);
 }
 
 /** Programa ativo; a tela renderiza de novo quando ele muda (import de backup, edição do programa). */
@@ -39,33 +47,58 @@ export function useProgram(): Program {
   return activeProgram();
 }
 
+/** Um treino pelo id (undefined = carregando, null = não existe). */
 export function useSession(id: string | undefined): Session | null | undefined {
-  return useLiveQuery(async () => (id ? ((await db.sessions.get(id)) ?? null) : null), [id]);
+  const list = useCell(sessionsCell);
+  const found = useMemo(() => (id ? list?.find((s) => s.id === id) : undefined), [list, id]);
+  // Treino recém-criado (gravou e já navegou): a assinatura ainda não trouxe. Busca direto e põe no estoque, em vez
+  // de dizer "não existe" por um quadro.
+  const [missing, setMissing] = useState<string | null>(null);
+  useEffect(() => {
+    if (!list || !id || found) return;
+    let alive = true;
+    void db.sessions.get(id).then((s) => {
+      if (!alive) return;
+      if (s) rememberSessionsSnap([...(sessionsCell.get() ?? []).filter((x) => x.id !== s.id), s]);
+      else setMissing(id);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [list, id, found]);
+  if (list === undefined) return undefined;
+  if (!id) return null;
+  return found ?? (missing === id ? null : undefined);
 }
 
+const updateSettings = async (patch: Partial<Settings>) => {
+  await saveSettings(patch);
+};
 export function useSettings(): [Settings, (patch: Partial<Settings>) => Promise<void>, boolean] {
-  const s = useLiveQuery(() => loadSettings(), []);
-  const update = useCallback(async (patch: Partial<Settings>) => {
-    await saveSettings(patch);
-  }, []);
-  return [s ?? DEFAULT_SETTINGS, update, s !== undefined];
+  const s = useCell(settingsCell);
+  return [s ?? DEFAULT_SETTINGS, updateSettings, s !== undefined];
 }
 
 export function useBodyLog(): BodyEntry[] | undefined {
-  return useLiveQuery(() => loadBodyLog(), []);
+  return useCell(bodyLogCell);
 }
 
+const updateMemory = async (patch: Partial<OperatorMemory>) => {
+  await saveOperatorMemory(patch);
+};
 export function useOperatorMemory(): [OperatorMemory, (patch: Partial<OperatorMemory>) => Promise<void>] {
-  const m = useLiveQuery(() => loadOperatorMemory(), []);
-  const update = useCallback(async (patch: Partial<OperatorMemory>) => {
-    await saveOperatorMemory(patch);
-  }, []);
-  return [m ?? EMPTY_OPERATOR_MEMORY, update];
+  const m = useCell(memoryCell);
+  return [m ?? EMPTY_OPERATOR_MEMORY, updateMemory];
 }
 
 /** Frases que o chat aprendeu (apelidos). */
 export function useChatAliases(): ChatAlias[] {
-  return useLiveQuery(() => loadChatAliases(), []) ?? [];
+  return useCell(aliasesCell) ?? EMPTY_ALIASES;
+}
+
+/** Pontos de restauração (Ajustes → Backup). */
+export function useRestorePoints(): RestorePoint[] | undefined {
+  return useCell(restorePointsCell);
 }
 
 export function useOperatorState(
@@ -76,7 +109,7 @@ export function useOperatorState(
 ): OperatorState | undefined {
   const [memory] = useOperatorMemory();
   return useMemo(
-    () => (sessions ? operatorState(sessions, bodyLog ?? [], settings, memory, today) : undefined),
+    () => (sessions ? operatorStateOf(sessions, bodyLog ?? NO_BODY, settings, memory, today) : undefined),
     [sessions, bodyLog, settings, memory, today],
   );
 }

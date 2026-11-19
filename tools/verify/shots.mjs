@@ -1,6 +1,6 @@
 // Fotografa cada tela do app (390 × 844, 2×, com dados de demonstração) para revisão de design.
 // Uso: node tools/verify/shots.mjs [url] [pasta] [rotas separadas por vírgula]
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { loginScript } from "./login.mjs";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -90,5 +90,5 @@ await js(
 );
 console.log("ok", OUT);
 ws.close();
-proc.kill();
+await killBrowser(proc, port);
 process.exit(0);

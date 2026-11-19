@@ -1,6 +1,6 @@
 // Mede, nos pixels da captura, a folga entre a borda direita da etiqueta do banner e o capacete do robô.
 // Para cada largura e cada texto possível da etiqueta: grava a captura e a caixa da etiqueta (px de tela).
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -90,5 +90,5 @@ for (const [w, h, dpr] of WIDTHS) {
 writeFileSync(join(OUT, "boxes.json"), JSON.stringify(rows));
 console.log("ok", rows.length);
 ws.close();
-proc.kill();
+await killBrowser(proc, port);
 process.exit(0);

@@ -4,7 +4,7 @@
 //  2. Sem restrição: as mesmas ações animam de verdade (prova de que o teste acima não passa à toa).
 //  3. Contraste do texto da faixa cheia sobre a cor de cada setor, também no deload (≥ 4,5:1).
 // Uso: node tools/verify/motion.mjs [url]   (precisa do npm run dev). Sai com 1 se algo falhar.
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -126,6 +126,6 @@ for (const deload of [false, true]) {
 }
 
 ws.close();
-proc.kill();
+await killBrowser(proc, port);
 console.log(fail ? `\n${fail} falha(s).` : "\nTudo certo.");
 process.exit(fail ? 1 : 0);

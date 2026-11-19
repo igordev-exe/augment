@@ -5,24 +5,25 @@ Tempos e curvas novos usam os tokens de `15-pecas.css` (`--t-toque`, `--t-mira`,
 `--t-leitura`, `--t-recompensa`, `--ease-seco`). Regra: só `transform`, `opacity` e cor nas `@keyframes`
 (`npm run verify:keyframes`); tudo para com "reduzir movimento", `fx-min` e `fx-gym` (`node tools/verify/motion.mjs`).
 
-| Família    | Animação                                                                                                                        | Onde dispara                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Ligar      | `pc-ligar`, `pc-desenha`                                                                                                        | Toda troca de tela (`.app > .stack-lg > *`, cascata de 40 ms, só os 6 primeiros blocos) e `.fx-ligar` nas peças  |
-| Ligar      | `route-beam`                                                                                                                    | Feixe ao abrir o app e ao iniciar um protocolo (`fx-boot`)                                                       |
-| Ligar      | `vb-row-in`, `aw-core-in`, `aw-node-in`, `aw-hex-spin`, `aw-panel-in`, `fm-callout-in`, `holo-fade`, `holo-draw`, `mod-card-in` | Painéis do Progresso entrando (séries da semana, roda de atributos, mapa de fadiga, gráfico)                     |
-| Ligar      | `sysmod-load`, `sysmod-scan`                                                                                                    | Módulo de sistema abrindo (Hoje, Progresso)                                                                      |
-| Ligar      | `nav-bar-in`, `dock-drop`, `term-appear`, `term-boot`                                                                           | Barra de abas, botão do banner do Hoje, log de fim de treino (áreas protegidas: não mexer)                       |
-| Toque      | `tapfx`, `zap`, `btn-charge`, `radial-in`                                                                                       | Retícula no ponto tocado, luz que varre o botão (`.btn.zap`), menu circular do treino                            |
-| Toque      | `nav-glitch`, `nav-light`                                                                                                       | Aba tocada na barra de abas (protegida)                                                                          |
-| Mira       | (transição, sem `@keyframes`) `.aim::after`                                                                                     | Filtro de músculo em Exercícios, abas do perfil, abas do Guia, hexágono selecionado; `hud-next` no HUD do treino |
-| Leitura    | `pc-seg-fill`, `pc-seg-pat`, `<Ticker>` (JS)                                                                                    | Barra segmentada (`SegBar read`) e números do perfil e do Progresso, só na 1ª vez que aparecem                   |
-| Leitura    | `vb-fill`, `aw-seg`, `aw-lock`, `toast-life`, `term-fill`, `term-type`                                                          | Barras de séries, segmentos da roda, valor que trava, tempo do aviso, log de fim de treino                       |
-| Recompensa | `glitch-main`, `glitch-a`, `glitch-b`, `pc-clarao`                                                                              | Aviso de recorde e de meta batida (`toast(…, "glitch")` + `RECORD_BUZZ`), posto novo (`RankRow`, `playReward`)   |
-| Ambiente   | `led-breathe`, `scan-pass`, `scan-pass-card`                                                                                    | LED do título e da lista, varredura do banner do Hoje                                                            |
-| Ambiente   | `fm-signal-flow`, `fm-anatomy-scan` (ficam); `fm-orbit`, `fm-ring-flow`, `fm-reticle` (param no Progresso)                      | Mapa de fadiga                                                                                                   |
-| Ambiente   | `aw-flow`, `aw-ring`, `aw-rail`, `sysmod-led`, `holo-ping`, `hm-sweep`, `hm-today`                                              | Roda de atributos, módulos, gráfico e mapa do ano do Progresso                                                   |
-| Ambiente   | `scan-beam`, `bm-sweep`, `id-scan`, `id-ring`, `op-scan`, `term-led`, `term-sweep`                                              | Treinador pensando, foto do corpo, portão de login, capa do perfil, log de fim de treino                         |
-| Boot       | `boot-draw`, `boot-show`, `boot-reveal`, `boot-bar`, `boot-glitch`                                                              | Abertura do app (protegida: não mexer)                                                                           |
+| Família    | Animação                                                                                                                        | Onde dispara                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Ligar      | `pc-ligar`, `pc-desenha`                                                                                                        | 1ª visita a cada tela (`.app > .stack-lg > *`, `--t-entra` 120 ms, cascata de 15 ms nos 3 primeiros) e `.fx-ligar` |
+| Ligar      | `pc-volta`                                                                                                                      | Volta a uma tela já vista nesta abertura (`.app.rota-vista`): fade de `--t-toque` no contêiner, sem atraso         |
+| Ligar      | `route-beam`                                                                                                                    | Feixe ao abrir o app e ao iniciar um protocolo (`fx-boot`)                                                         |
+| Ligar      | `vb-row-in`, `aw-core-in`, `aw-node-in`, `aw-hex-spin`, `aw-panel-in`, `fm-callout-in`, `holo-fade`, `holo-draw`, `mod-card-in` | Painéis do Progresso entrando (séries da semana, roda de atributos, mapa de fadiga, gráfico)                       |
+| Ligar      | `sysmod-load`, `sysmod-scan`                                                                                                    | Módulo de sistema abrindo (Hoje, Progresso)                                                                        |
+| Ligar      | `nav-bar-in`, `dock-drop`, `term-appear`, `term-boot`                                                                           | Barra de abas, botão do banner do Hoje, log de fim de treino (áreas protegidas: não mexer)                         |
+| Toque      | `tapfx`, `zap`, `btn-charge`, `radial-in`                                                                                       | Retícula no ponto tocado, luz que varre o botão (`.btn.zap`), menu circular do treino                              |
+| Toque      | `nav-glitch`, `nav-light`                                                                                                       | Aba tocada na barra de abas (protegida)                                                                            |
+| Mira       | (transição, sem `@keyframes`) `.aim::after`                                                                                     | Filtro de músculo em Exercícios, abas do perfil, abas do Guia, hexágono selecionado; `hud-next` no HUD do treino   |
+| Leitura    | `pc-seg-fill`, `pc-seg-pat`, `<Ticker>` (JS)                                                                                    | Barra segmentada (`SegBar read`) e números do perfil e do Progresso, só na 1ª vez que aparecem                     |
+| Leitura    | `vb-fill`, `aw-seg`, `aw-lock`, `toast-life`, `term-fill`, `term-type`                                                          | Barras de séries, segmentos da roda, valor que trava, tempo do aviso, log de fim de treino                         |
+| Recompensa | `glitch-main`, `glitch-a`, `glitch-b`, `pc-clarao`                                                                              | Aviso de recorde e de meta batida (`toast(…, "glitch")` + `RECORD_BUZZ`), posto novo (`RankRow`, `playReward`)     |
+| Ambiente   | `led-breathe`, `scan-pass`, `scan-pass-card`                                                                                    | LED do título e da lista, varredura do banner do Hoje                                                              |
+| Ambiente   | `fm-signal-flow`, `fm-anatomy-scan` (ficam); `fm-orbit`, `fm-ring-flow`, `fm-reticle` (param no Progresso)                      | Mapa de fadiga                                                                                                     |
+| Ambiente   | `aw-flow`, `aw-ring`, `aw-rail`, `sysmod-led`, `holo-ping`, `hm-sweep`, `hm-today`                                              | Roda de atributos, módulos, gráfico e mapa do ano do Progresso                                                     |
+| Ambiente   | `scan-beam`, `bm-sweep`, `id-scan`, `id-ring`, `op-scan`, `term-led`, `term-sweep`                                              | Treinador pensando, foto do corpo, portão de login, capa do perfil, log de fim de treino                           |
+| Boot       | `boot-draw`, `boot-show`, `boot-reveal`, `boot-bar`, `boot-glitch`                                                              | Abertura do app (protegida: não mexer)                                                                             |
 
 ## O que mudou no MC1
 
@@ -38,3 +39,14 @@ Tempos e curvas novos usam os tokens de `15-pecas.css` (`--t-toque`, `--t-mira`,
   demais telas 1.
 - **Bug corrigido**: em `13-atmosfera.css`, a regra que parava o LED da lista no modo academia tinha um pseudo-elemento
   dentro de `:is()`, e o navegador descartava a regra inteira. Agora é uma linha para cada.
+
+## Fluidez (docs/prompt-fluidez.md, F7)
+
+- **Entrada não é espera**: a cascata de entrada escondia o 6º bloco por 420 ms (220 ms + 5 × 40 ms) em toda troca de
+  aba. Agora a 1ª visita a uma tela usa tokens próprios em `18-fluidez.css` (`--t-entra` 120 ms, `--t-entra-cascata`
+  15 ms, só os 3 primeiros blocos escalonados): o último bloco fica visível em 150 ms. O `--t-ligar` global (balão,
+  peças) não mudou. Para voltar à cascata antiga, apague o bloco "Entrada de tela" de `18-fluidez.css`.
+- **Tela já vista** nesta abertura (`lib/seen.ts`, classe `.rota-vista` no `.app`): sem cascata e sem as entradas
+  internas do Progresso (`vb-*`, `aw-core-in`, `aw-node-in`, `aw-seg`, `mod-card-in`, `holo-*`); `<Ticker>` e
+  `SegBar read` mostram o valor final direto. Só um fade `pc-volta` de 90 ms no contêiner.
+- **Pré-montagem** (`.prewarm`): as abas pesadas montam uma vez fora da tela, sem nenhuma animação.

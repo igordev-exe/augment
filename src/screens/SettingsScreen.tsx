@@ -9,6 +9,7 @@ import { apiUrl } from "../lib/online/client";
 import { useOnline } from "../lib/online/sync";
 import { LIB_BY_ID } from "../data/library";
 import { avatarSrc, PERSONAS, personaOf } from "../data/personas";
+import { decodePersona } from "../lib/images";
 import { programDays, shortName, exOf } from "../data/program";
 import { addDays, bySessionAsc, mondayOf, shortDate, weekdayShort } from "../lib/dates";
 import { db, DEFAULT_SETTINGS, exportBackup, importBackup, isBackup, loadActiveProgram } from "../lib/db";
@@ -136,7 +137,8 @@ export function SettingsScreen() {
                   data-augmented-ui="tl-clip br-clip border"
                   className="persona-opt"
                   aria-pressed={on}
-                  onClick={() => update({ persona: p.id })}
+                  // A imagem nova já decodificada antes de gravar: o avatar e o herói trocam sem piscar (F6).
+                  onClick={() => void decodePersona(p.id).then(() => update({ persona: p.id }))}
                 >
                   <img src={avatarSrc(p.id)} alt="" width={56} height={56} />
                   <span className="stack" style={{ gap: 2, minWidth: 0 }}>

@@ -49,6 +49,9 @@ export function ExerciseDemo({ libId, variant = "full" }: { libId: string; varia
             key={src}
             src={src}
             alt={i === 0 ? "Posição inicial" : "Posição final"}
+            width={400}
+            height={300}
+            data-net=""
             loading="lazy"
             style={{ opacity: frame === i ? 1 : 0 }}
           />

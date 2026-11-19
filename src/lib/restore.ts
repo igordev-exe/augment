@@ -1,5 +1,6 @@
 import { addDays } from "./dates";
 import { db, exportBackup, importBackup, uid, type Backup } from "./db";
+import { cell } from "./store";
 
 // Pontos de restauração: cópias completas guardadas no próprio aparelho (IndexedDB), feitas sozinhas
 // uma vez por semana e antes de importar, restaurar ou apagar. Protegem contra um "Substituir tudo" errado.
@@ -29,9 +30,12 @@ export const MAX_POINTS = 6;
 const INDEX = "restore-index";
 const key = (id: string) => `restore:${id}`;
 
+/** Lista dos pontos no estoque em memória (Ajustes lê daqui, sem consultar o banco ao abrir). */
+export const restorePointsCell = cell<RestorePoint[]>();
+
 export async function listRestorePoints(): Promise<RestorePoint[]> {
   const row = await db.kv.get(INDEX);
-  return Array.isArray(row?.value) ? (row.value as RestorePoint[]) : [];
+  return restorePointsCell.set(Array.isArray(row?.value) ? (row.value as RestorePoint[]) : []);
 }
 
 /** Cria um ponto com tudo o que está no aparelho agora. Não cria se não houver nada para guardar. */

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { routeSeen } from "../lib/seen";
 
 // Número que conta até o valor (família "leitura", docs/plano-refino-visual.md seção 3A). Conta uma vez, quando entra
 // na vista; depois, cada mudança de valor conta a partir do anterior. Com "reduzir movimento" ou efeitos no mínimo,
-// mostra o valor final direto. O leitor de tela lê só o valor final.
+// mostra o valor final direto. Numa tela já vista nesta abertura (voltar de aba), também: conta só na 1ª vez (F7).
+// O leitor de tela lê só o valor final.
 
 const READ_MS = 500;
 
@@ -31,15 +33,16 @@ export function Ticker({
 }) {
   const fmt = format ?? ((n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }));
   const ref = useRef<HTMLSpanElement>(null);
-  const [shown, setShown] = useState<number>(() => (motionOff() ? value : 0));
-  const from = useRef<number | null>(null);
+  const still = useRef(motionOff() || routeSeen());
+  const [shown, setShown] = useState<number>(() => (still.current ? value : 0));
+  const from = useRef<number | null>(still.current ? value : null);
   const [seen, setSeen] = useState(false);
 
   // Só começa quando aparece na tela.
   useEffect(() => {
     const el = ref.current;
     if (!el || seen) return;
-    if (motionOff() || !("IntersectionObserver" in window)) {
+    if (still.current || motionOff() || !("IntersectionObserver" in window)) {
       setSeen(true);
       return;
     }

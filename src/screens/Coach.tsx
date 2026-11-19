@@ -16,6 +16,9 @@ import {
   loadCoachConfig,
   modelPrice,
   MODELS,
+  peekCoachArchive,
+  peekCoachChat,
+  peekCoachConfig,
   saveCoachArchive,
   saveCoachChat,
   saveCoachConfig,
@@ -42,6 +45,7 @@ import {
   saveOperatorMemory,
   uid,
 } from "../lib/db";
+import { sameData } from "../lib/store";
 import { applyPure, latestUndo, pushUndo, revertPure, undoFor, type ChatState, type UndoRecord } from "../lib/core/undo";
 import type { CommandAction } from "../lib/core/commands";
 import { forgetAlias, learnAlias } from "../lib/core/learned";
@@ -333,11 +337,11 @@ export function Coach() {
   const undoStack = useRef<UndoRecord[]>([]);
   const today = useToday();
   const [params, setParams] = useSearchParams();
-  const [config, setConfig] = useState<CoachConfig | null>(null);
-  const [chat, setChat] = useState<CoachChat>(EMPTY_CHAT);
-  const [chatLoaded, setChatLoaded] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [config, setConfig] = useState<CoachConfig | null>(() => peekCoachConfig());
+  const [chat, setChat] = useState<CoachChat>(() => peekCoachChat() ?? EMPTY_CHAT);
+  const [chatLoaded, setChatLoaded] = useState(() => peekCoachChat() !== null);
+  const [editing, setEditing] = useState(() => !!params.get("config"));
+  const [draft, setDraft] = useState(() => params.get("q") ?? "");
   const [live, setLive] = useState("");
   const [tool, setTool] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -353,7 +357,7 @@ export function Coach() {
   useCoreTyping(busy && !!config?.apiKey);
   /** Gaveta de conversas (a barra lateral do mockup). */
   const [sideOpen, setSideOpen] = useState(false);
-  const [archive, setArchive] = useState<CoachArchiveItem[]>([]);
+  const [archive, setArchive] = useState<CoachArchiveItem[]>(() => peekCoachArchive() ?? []);
   const sideRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -361,16 +365,23 @@ export function Coach() {
   const autoSent = useRef(false);
 
   useEffect(() => {
-    loadCoachConfig().then((c) => {
-      setConfig(c);
-      // Sem chave, o chat de respostas prontas é a tela principal; a configuração só abre quando pedida.
-      if (params.get("config")) setEditing(true);
-    });
-    loadCoachChat().then((ch) => {
-      setChat(ch);
+    let active = true;
+    Promise.all([loadCoachConfig(), loadCoachChat(), loadCoachArchive()]).then(([c, ch, ar]) => {
+      if (!active) return;
+      // O que já veio da memória (peekCoach*) fica o mesmo objeto se não mudou: a tela não renderiza de novo (F2).
+      setConfig((prev) => (sameData(prev, c) ? prev : c));
+      setChat((prev) => (sameData(prev, ch) ? prev : ch));
       setChatLoaded(true);
+      setArchive((prev) => (sameData(prev, ar) ? prev : ar));
     });
-    loadCoachArchive().then(setArchive);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Sem chave, o chat de respostas prontas é a tela principal; a configuração só abre quando pedida.
+    if (params.get("config")) setEditing(true);
     const q = params.get("q");
     if (q) setDraft(q);
   }, [params]);
@@ -751,7 +762,7 @@ ${t}`,
               setEditing(true);
             }}
           >
-            <img className="cx-avatar-img" src={avatarSrc(settings.persona)} alt="" />
+            <img className="cx-avatar-img" src={avatarSrc(settings.persona)} alt="" width={31} height={31} decoding="sync" />
             <span>
               <strong>{operatorName}</strong>
               <small>{hasKey ? "TREINADOR COMPLETO LIGADO" : "LIGAR O TREINADOR COMPLETO"}</small>

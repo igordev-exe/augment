@@ -1,5 +1,5 @@
 // Ponta a ponta dos achados dos testes com usuários, no app de verdade (Edge headless, 360 px).
-import { browserArgs, browserPath } from "./browser.mjs";
+import { browserArgs, browserPath, killBrowser } from "./browser.mjs";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -174,5 +174,5 @@ out.push(
 await shot("5-treinador");
 console.log(out.join("\n"));
 ws.close();
-proc.kill();
+await killBrowser(proc, port);
 process.exit(0);

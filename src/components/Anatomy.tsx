@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useId, type CSSProperties, type ReactNode } from "react";
 import type { MuscleId } from "../data/types";
 import { fatigueColor, type FatigueLevel } from "../lib/visual";
 
@@ -343,6 +343,19 @@ const posteriorFiberDirections: typeof fiberDirections = {
   ],
 };
 
+/** O traçado das 18 fibras de uma parte, calculado uma vez (nunca muda). */
+const FIBER_CACHE = new Map<string, string[]>();
+function fibersOf(view: View, group: Group, part: number) {
+  const key = `${view}:${group}:${part}`;
+  let hit = FIBER_CACHE.get(key);
+  if (!hit) {
+    const dirs = view === "front" ? fiberDirections : posteriorFiberDirections;
+    hit = Array.from({ length: 18 }, (_, i) => dirs[group][part](i / 17));
+    FIBER_CACHE.set(key, hit);
+  }
+  return hit;
+}
+
 const LEVEL_COLOR: Record<FatigueLevel, string> = {
   critico: "var(--red-hi)",
   atencao: "var(--amber)",
@@ -373,7 +386,7 @@ export function Anatomy({
   const ref = (name: string) => `${uid}-${name}`;
   const paint = (name: string) => `url(#${ref(name)})`;
   const muscleShapes = view === "front" ? shapes : posteriorShapes;
-  const fibers = view === "front" ? fiberDirections : posteriorFiberDirections;
+  const fiberPaths = (group: Group, part: number) => fibersOf(view, group, part);
   const footOutline = view === "front" ? FOOT_FRONT : FOOT_BACK;
   const groups = Object.keys(OWNERS[view]) as Group[];
   // Partes de cada músculo da vista; as sem dono viram placas neutras.
@@ -668,15 +681,15 @@ export function Anatomy({
                   fill="none"
                   pointerEvents="none"
                 >
-                  {Array.from({ length: 18 }, (_, i) => {
-                    const d = fibers[group][part](i / 17);
-                    return (
-                      <g key={i}>
-                        <path d={d} stroke="#e7e3dc" strokeOpacity={i % 3 === 0 ? ".25" : ".12"} strokeWidth=".55" />
-                        <path d={d} transform="translate(.8 .8)" stroke="#000" strokeOpacity=".24" strokeWidth=".7" />
-                      </g>
-                    );
-                  })}
+                  {/* 18 fibras por parte, cada uma com a luz e a sombra na ordem original (traço separado: as
+                      sobreposições somam, e juntar os traços mudava o desenho). Sem o <g> vazio de cada fibra: 36 nós em
+                      vez de 54, o mesmo desenho pixel a pixel (docs/prompt-fluidez.md). */}
+                  {fiberPaths(group, part).map((d, i) => (
+                    <Fragment key={i}>
+                      <path d={d} stroke="#e7e3dc" strokeOpacity={i % 3 === 0 ? ".25" : ".12"} strokeWidth=".55" />
+                      <path d={d} transform="translate(.8 .8)" stroke="#000" strokeOpacity=".24" strokeWidth=".7" />
+                    </Fragment>
+                  ))}
                   <ellipse className="muscle-specular" cx={SPECULAR[group][0]} cy={SPECULAR[group][1] - 8} rx="10" ry="18" />
                 </g>
               ))}

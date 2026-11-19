@@ -5,7 +5,8 @@ import { Icon } from "../components/Icon";
 import { addDays, bySessionDesc, formatDuration, fromISO, monthName, mondayOf, shortDate, toISO, weekdayShort } from "../lib/dates";
 import { useSessions, useSettings, useToday } from "../lib/hooks";
 import { weekFor } from "../lib/mesocycle";
-import { prsBySession, type PR } from "../lib/progression";
+import { type PR } from "../lib/progression";
+import { prsOf } from "../lib/derived";
 import { planAhead } from "../lib/schedule";
 import { sessionStats } from "../lib/sessions";
 
@@ -18,7 +19,7 @@ export function History() {
     return { y: d.getFullYear(), m: d.getMonth() };
   });
 
-  const prMap = useMemo(() => (sessions ? prsBySession(sessions) : new Map<string, PR[]>()), [sessions]);
+  const prMap = useMemo(() => (sessions ? prsOf(sessions) : new Map<string, PR[]>()), [sessions]);
 
   if (!sessions) return null;
 

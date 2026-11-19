@@ -4,8 +4,19 @@
 // - Backup automático do app inteiro (os 5 últimos ficam na nuvem).
 // Sem internet nada quebra: cada envio tenta de novo na próxima oportunidade (abrir o app, voltar a conexão,
 // terminar um treino, sair do app).
-import { useLiveQuery } from "dexie-react-hooks";
-import type { ActivityIn, BackupMeta, FeedItem, FriendsResponse, Me, Percentile, RecordIn } from "../../../server/src/protocol";
+import { useSyncExternalStore } from "react";
+import { cell, sameData } from "../store";
+import type {
+  ActivityIn,
+  BackupMeta,
+  FeedItem,
+  FriendsResponse,
+  Me,
+  Percentile,
+  PublicUser,
+  RankRow,
+  RecordIn,
+} from "../../../server/src/protocol";
 import { LIMITS } from "../../../server/src/protocol";
 import { dayOf, exOf } from "../../data/program";
 import type { Session } from "../../data/types";
@@ -33,23 +44,70 @@ export interface OnlineState {
   recoveryAck?: boolean;
   /** Última lista de amigos e feed recebidos: a tela de amigos abre mesmo sem internet. */
   social?: { friends: FriendsResponse; feed: FeedItem[]; at: number };
+  /**
+   * Último valor de cada painel que depende do servidor (regra F4 de docs/prompt-fluidez.md): a tela mostra na hora e
+   * troca quando a resposta nova chega. Mora dentro do estado online, então some ao sair da conta e ao apagá-la.
+   */
+  net?: NetCache;
 }
 
+export interface NetCache {
+  /** Ranking entre amigos por exercício da biblioteca. */
+  ranking?: Record<string, RankRow[]>;
+  backups?: BackupMeta[];
+  /** Recordes de cada amigo (comparação nos Amigos). */
+  records?: Record<string, RecordIn[]>;
+  blocked?: PublicUser[];
+}
+/** Quantos exercícios ou amigos ficam guardados em cada mapa do cache (os mais antigos saem). */
+export const NET_CACHE_MAX = 30;
+
 const KEY = "online";
+/** Estado online no estoque em memória (lib/store.ts): uma assinatura só, ligada no App por watchOnline(). */
+export const onlineCell = cell<OnlineState>();
 
 export async function loadOnline(): Promise<OnlineState> {
   const row = await db.kv.get(KEY);
-  return (row?.value as OnlineState) ?? { user: null };
+  return onlineCell.set((row?.value as OnlineState) ?? { user: null });
 }
 
 export async function saveOnline(patch: Partial<OnlineState>): Promise<OnlineState> {
   const next = { ...(await loadOnline()), ...patch };
+  onlineCell.set(next);
   await db.kv.put({ key: KEY, value: next });
-  return next;
+  return onlineCell.get() ?? next;
+}
+
+/** Guarda o último valor de um painel de rede. Não grava se não mudou. */
+export async function rememberNet<K extends "backups" | "blocked">(key: K, value: NetCache[K]): Promise<void> {
+  const cur = await loadOnline();
+  if (!cur.user || sameData(cur.net?.[key], value)) return;
+  await saveOnline({ net: { ...cur.net, [key]: value } });
+}
+
+/** Guarda o último valor de um painel por item (exercício, amigo), com teto de NET_CACHE_MAX itens. */
+export async function rememberNetItem<K extends "ranking" | "records">(
+  key: K,
+  id: string,
+  value: NonNullable<NetCache[K]>[string],
+): Promise<void> {
+  const cur = await loadOnline();
+  const map = { ...(cur.net?.[key] ?? {}) } as Record<string, unknown>;
+  if (!cur.user || sameData(map[id], value)) return;
+  delete map[id];
+  map[id] = value;
+  const ids = Object.keys(map);
+  ids.slice(0, Math.max(0, ids.length - NET_CACHE_MAX)).forEach((old) => delete map[old]);
+  await saveOnline({ net: { ...cur.net, [key]: map } });
+}
+
+/** Liga a assinatura do estado online (uma vez, no App). */
+export function watchOnline(): Promise<OnlineState | undefined> {
+  return onlineCell.watch(loadOnline);
 }
 
 export function useOnline(): OnlineState | undefined {
-  return useLiveQuery(loadOnline, []);
+  return useSyncExternalStore(onlineCell.subscribe, onlineCell.get);
 }
 
 // ---------- o que sobe ----------

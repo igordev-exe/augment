@@ -13,7 +13,7 @@ import type {
 } from "../../../server/src/protocol";
 import { db } from "../db";
 import { api, saveToken } from "./client";
-import { saveOnline, syncNow } from "./sync";
+import { rememberNet, saveOnline, syncNow } from "./sync";
 import { resetWorkoutSync } from "./workouts";
 
 async function signedIn(r: AuthResponse): Promise<AuthResponse> {
@@ -101,3 +101,15 @@ export const friendsRanking = async (lib: string) =>
   (await api<{ ranking: RankRow[] }>("GET", `/records/friends?lib=${encodeURIComponent(lib)}`)).ranking;
 export const userRecords = async (userId: string) =>
   (await api<{ records: RecordIn[] }>("GET", `/users/${encodeURIComponent(userId)}/records`)).records;
+
+/**
+ * Busca amigos, feed e bloqueados e guarda no estado online (cache `social` e `net.blocked`). A tela de Amigos usa
+ * para atualizar; o App chama uma vez em tempo ocioso depois do boot, com conta, para a 1ª visita já abrir com dados
+ * (regra F4 de docs/prompt-fluidez.md). Devolve o que veio, ou lança o erro da rede.
+ */
+export async function refreshSocial(): Promise<{ friends: FriendsResponse; feed: FeedItem[]; blocked: PublicUser[] }> {
+  const [friends, feed, blocked] = await Promise.all([getFriends(), getFeed(), getBlocked().catch(() => [] as PublicUser[])]);
+  await saveOnline({ social: { friends, feed, at: Date.now() } });
+  await rememberNet("blocked", blocked);
+  return { friends, feed, blocked };
+}

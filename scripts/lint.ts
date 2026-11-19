@@ -85,7 +85,27 @@ function lintFile(filePath: string): LintIssue[] {
     report(node, "react-hooks/rules-of-hooks", "Hook chamado no escopo global fora de componente ou hook.");
   }
 
+  const lines = text.split(/\r?\n/);
+  /** `lint-ok` na linha do nó ou nas 2 de cima (comentário explicando a exceção). */
+  function allowed(node: ts.Node): boolean {
+    const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+    return lines.slice(Math.max(0, line - 2), line + 1).some((l) => l.includes("lint-ok"));
+  }
+
   function visit(node: ts.Node) {
+    // Fluidez (docs/prompt-fluidez.md): F5, toda imagem com width e height (o espaço fica reservado antes de chegar).
+    if ((ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) && node.tagName.getText(sf) === "img") {
+      const names = node.attributes.properties.map((p) => (ts.isJsxAttribute(p) ? p.name.getText(sf) : "..."));
+      if (!names.includes("...") && !(names.includes("width") && names.includes("height")) && !allowed(node)) {
+        report(node, "fluidez/img-size", "<img> sem width e height: reserve o espaço (ou explique com lint-ok).");
+      }
+    }
+    // F2, uma assinatura por dado: só lib/store.ts conversa com o banco ao vivo; telas leem o estoque (hooks.tsx).
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && /^(useLiveQuery|liveQuery)$/.test(node.expression.text)) {
+      if (rel !== "src/lib/store.ts" && !allowed(node)) {
+        report(node, "fluidez/live-query", `${node.expression.text} fora de lib/store.ts: crie uma célula no estoque e leia com um hook.`);
+      }
+    }
     if (node.kind === ts.SyntaxKind.AnyKeyword) {
       report(node, "@typescript-eslint/no-explicit-any", "Evite usar 'any' explícito; prefira 'unknown' ou tipos específicos.");
     }

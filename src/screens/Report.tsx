@@ -14,7 +14,7 @@ import { fatigueAlert } from "../lib/engine";
 import { WEEK_RULES, withSetAdjust } from "../lib/mesocycle";
 import { engineDiagnostics } from "../lib/diagnostics";
 import { formatWeight } from "../lib/progression";
-import { mesoReport, weeklyReport } from "../lib/report";
+import { mesoReportOf, weeklyReportOf } from "../lib/derived";
 
 function rirLabel([a, b]: [number, number]): string {
   return a === b ? `${a}` : `${a}–${b}`;
@@ -54,8 +54,8 @@ export function Report() {
 
   const current = mondayOf(today);
   const weekStart = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? mondayOf(param) : addDays(current, -7);
-  const r = weeklyReport(sessions, weekStart, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
-  const m = mesoReport(sessions, settings.mesoStart, settings.trainingDays, today);
+  const r = weeklyReportOf(sessions, weekStart, settings.mesoStart, settings.trainingDays, today, settings.setAdjust);
+  const m = mesoReportOf(sessions, settings.mesoStart, settings.trainingDays, today);
   const fatigue = fatigueAlert(sessions, settings.mesoStart, today, settings.reentryDismissed);
   const open = weekStart === current;
   const sets = r.sessions.reduce((n, s) => n + s.exercises.reduce((k, e) => k + e.sets.filter((x) => x.kind !== "warmup").length, 0), 0);

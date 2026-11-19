@@ -8,9 +8,11 @@ import { weekFor } from "../lib/mesocycle";
 import { PageHead } from "../components/bits";
 import { HoldButton } from "../components/HoldButton";
 import { useBodyLog, useProgram, useSessions, useSettings, useToast, useToday } from "../lib/hooks";
+import { sameData } from "../lib/store";
 import { changePassword, deleteAccount, login, logout, newRecoveryCode, recover, register, updateProfile } from "../lib/online/account";
 import { apiUrl, hasCustomApiUrl, onlineErrorText, setApiUrl } from "../lib/online/client";
-import { listCloudBackups, restoreCloudBackup, saveOnline, syncNow, useOnline, type OnlineState } from "../lib/online/sync";
+import { useDelayedFlag } from "../lib/delayedFlag";
+import { listCloudBackups, rememberNet, restoreCloudBackup, saveOnline, syncNow, useOnline, type OnlineState } from "../lib/online/sync";
 import { parseNum } from "../components/SetRow";
 
 /** "agora", "há 5 min", "há 3 h", "há 2 dias". */
@@ -488,7 +490,10 @@ function SignedIn({
   const [settings] = useSettings();
   const sessions = useSessions();
   const [syncing, setSyncing] = useState(false);
-  const [backups, setBackups] = useState<BackupMeta[] | null>(null);
+  // "Sincronizando…" só se a rede demorar mais de 200 ms, e por no mínimo 300 ms (F3).
+  const syncLabel = useDelayedFlag(syncing);
+  // Última lista guardada na hora (F4); a da nuvem troca quando chega.
+  const [backups, setBackups] = useState<BackupMeta[] | null>(() => online.net?.backups ?? null);
   const [backupError, setBackupError] = useState("");
   const [restoring, setRestoring] = useState<string | null>(null);
   const [merging, setMerging] = useState<string | null>(null);
@@ -500,8 +505,10 @@ function SignedIn({
 
   async function refreshBackups() {
     try {
-      setBackups(await listCloudBackups());
+      const list = await listCloudBackups();
+      setBackups((prev) => (sameData(prev, list) ? prev : list));
       setBackupError("");
+      void rememberNet("backups", list);
     } catch (err) {
       setBackupError(onlineErrorText(err));
     }
@@ -565,7 +572,7 @@ function SignedIn({
           <span className={`sync-led${online.lastError ? " off" : ""}`} aria-hidden="true" />
           <span className="grow">{online.lastError ? online.lastError : `Nuvem sincronizada ${agoText(online.lastSyncAt)}`}</span>
           <button type="button" className="text-btn" onClick={syncClick} disabled={syncing}>
-            {syncing ? "Sincronizando…" : "Sincronizar"}
+            {syncLabel ? "Sincronizando…" : "Sincronizar"}
           </button>
         </p>
       </OperatorProfile>

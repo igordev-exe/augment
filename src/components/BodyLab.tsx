@@ -179,6 +179,7 @@ export function BodyLab({ entries, goal, sessions, today }: { entries: BodyEntry
             <i>BIOMETRIA</i>
           </figcaption>
           <div className="bm-photo">
+            {/* lint-ok: foto da pessoa (data URL, proporção dela); a caixa tem altura máxima fixa */}
             <img src={photo.photoDataUrl} alt={`Foto de ${shortDate(photo.date)}`} />
             <span className="bm-sweep" aria-hidden="true" />
             {photo.weightKg != null && (
